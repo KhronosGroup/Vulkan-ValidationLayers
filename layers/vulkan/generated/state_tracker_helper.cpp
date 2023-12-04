@@ -1122,6 +1122,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->multiviewClusterCullingShader |= enabled->multiviewClusterCullingShader == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_VRS_FEATURES_HUAWEI: {
+                const VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI *>(pNext);
+                features->clusterShadingRate |= enabled->clusterShadingRate == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT: {
                 const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT *>(pNext);
@@ -1163,6 +1169,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT *>(pNext);
                 features->nonSeamlessCubeMap |= enabled->nonSeamlessCubeMap == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_FEATURES_ARM: {
+                const VkPhysicalDeviceRenderPassStripedFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRenderPassStripedFeaturesARM *>(pNext);
+                features->renderPassStriped |= enabled->renderPassStriped == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM: {

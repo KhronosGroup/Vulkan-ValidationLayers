@@ -226,6 +226,18 @@ void WrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                     safe_struct->swapchain = layer_data->Unwrap(safe_struct->swapchain);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_SUBMIT_INFO_ARM: {
+                safe_VkRenderPassStripeSubmitInfoARM* safe_struct =
+                    reinterpret_cast<safe_VkRenderPassStripeSubmitInfoARM*>(cur_pnext);
+                if (safe_struct->pStripeSemaphoreInfos) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stripeSemaphoreInfoCount; ++index0) {
+                        if (safe_struct->pStripeSemaphoreInfos[index0].semaphore) {
+                            safe_struct->pStripeSemaphoreInfos[index0].semaphore =
+                                layer_data->Unwrap(safe_struct->pStripeSemaphoreInfos[index0].semaphore);
+                        }
+                    }
+                }
+            } break;
             case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT: {
                 safe_VkRenderingFragmentDensityMapAttachmentInfoEXT* safe_struct =
                     reinterpret_cast<safe_VkRenderingFragmentDensityMapAttachmentInfoEXT*>(cur_pnext);
@@ -2608,6 +2620,10 @@ VkResult DispatchQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmi
                         }
                     }
                 }
+                if (local_pSubmits[index0].pCommandBufferInfos) {
+                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
+                    }
+                }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {
                     for (uint32_t index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
                         if (pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore) {
@@ -4810,6 +4826,10 @@ VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
                             local_pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore =
                                 layer_data->Unwrap(pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore);
                         }
+                    }
+                }
+                if (local_pSubmits[index0].pCommandBufferInfos) {
+                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {

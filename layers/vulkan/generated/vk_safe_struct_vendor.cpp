@@ -10628,6 +10628,57 @@ void safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::initialize(
     }
 }
 
+safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI(
+    const VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
+    bool copy_pnext)
+    : sType(in_struct->sType), clusterShadingRate(in_struct->clusterShadingRate) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_VRS_FEATURES_HUAWEI), pNext(nullptr), clusterShadingRate() {}
+
+safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI(
+    const safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI& copy_src) {
+    sType = copy_src.sType;
+    clusterShadingRate = copy_src.clusterShadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI& safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::operator=(
+    const safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    clusterShadingRate = copy_src.clusterShadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::~safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::initialize(
+    const VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    clusterShadingRate = in_struct->clusterShadingRate;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI::initialize(
+    const safe_VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    clusterShadingRate = copy_src->clusterShadingRate;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM(
     const VkPhysicalDeviceShaderCorePropertiesARM* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
     : sType(in_struct->sType), pixelRate(in_struct->pixelRate), texelRate(in_struct->texelRate), fmaRate(in_struct->fmaRate) {
@@ -10988,6 +11039,336 @@ void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const safe_VkDes
     descriptorOffset = copy_src->descriptorOffset;
     descriptorSize = copy_src->descriptorSize;
     pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::safe_VkPhysicalDeviceRenderPassStripedFeaturesARM(
+    const VkPhysicalDeviceRenderPassStripedFeaturesARM* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), renderPassStriped(in_struct->renderPassStriped) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::safe_VkPhysicalDeviceRenderPassStripedFeaturesARM()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_FEATURES_ARM), pNext(nullptr), renderPassStriped() {}
+
+safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::safe_VkPhysicalDeviceRenderPassStripedFeaturesARM(
+    const safe_VkPhysicalDeviceRenderPassStripedFeaturesARM& copy_src) {
+    sType = copy_src.sType;
+    renderPassStriped = copy_src.renderPassStriped;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRenderPassStripedFeaturesARM& safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::operator=(
+    const safe_VkPhysicalDeviceRenderPassStripedFeaturesARM& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    renderPassStriped = copy_src.renderPassStriped;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::~safe_VkPhysicalDeviceRenderPassStripedFeaturesARM() { FreePnextChain(pNext); }
+
+void safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::initialize(const VkPhysicalDeviceRenderPassStripedFeaturesARM* in_struct,
+                                                                   [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    renderPassStriped = in_struct->renderPassStriped;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceRenderPassStripedFeaturesARM::initialize(
+    const safe_VkPhysicalDeviceRenderPassStripedFeaturesARM* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    renderPassStriped = copy_src->renderPassStriped;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::safe_VkPhysicalDeviceRenderPassStripedPropertiesARM(
+    const VkPhysicalDeviceRenderPassStripedPropertiesARM* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType),
+      renderPassStripeGranularity(in_struct->renderPassStripeGranularity),
+      maxRenderPassStripes(in_struct->maxRenderPassStripes) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::safe_VkPhysicalDeviceRenderPassStripedPropertiesARM()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_PROPERTIES_ARM),
+      pNext(nullptr),
+      renderPassStripeGranularity(),
+      maxRenderPassStripes() {}
+
+safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::safe_VkPhysicalDeviceRenderPassStripedPropertiesARM(
+    const safe_VkPhysicalDeviceRenderPassStripedPropertiesARM& copy_src) {
+    sType = copy_src.sType;
+    renderPassStripeGranularity = copy_src.renderPassStripeGranularity;
+    maxRenderPassStripes = copy_src.maxRenderPassStripes;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRenderPassStripedPropertiesARM& safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::operator=(
+    const safe_VkPhysicalDeviceRenderPassStripedPropertiesARM& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    renderPassStripeGranularity = copy_src.renderPassStripeGranularity;
+    maxRenderPassStripes = copy_src.maxRenderPassStripes;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::~safe_VkPhysicalDeviceRenderPassStripedPropertiesARM() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::initialize(
+    const VkPhysicalDeviceRenderPassStripedPropertiesARM* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    renderPassStripeGranularity = in_struct->renderPassStripeGranularity;
+    maxRenderPassStripes = in_struct->maxRenderPassStripes;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceRenderPassStripedPropertiesARM::initialize(
+    const safe_VkPhysicalDeviceRenderPassStripedPropertiesARM* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    renderPassStripeGranularity = copy_src->renderPassStripeGranularity;
+    maxRenderPassStripes = copy_src->maxRenderPassStripes;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkRenderPassStripeInfoARM::safe_VkRenderPassStripeInfoARM(const VkRenderPassStripeInfoARM* in_struct,
+                                                               [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), stripeArea(in_struct->stripeArea) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkRenderPassStripeInfoARM::safe_VkRenderPassStripeInfoARM()
+    : sType(VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_INFO_ARM), pNext(nullptr), stripeArea() {}
+
+safe_VkRenderPassStripeInfoARM::safe_VkRenderPassStripeInfoARM(const safe_VkRenderPassStripeInfoARM& copy_src) {
+    sType = copy_src.sType;
+    stripeArea = copy_src.stripeArea;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkRenderPassStripeInfoARM& safe_VkRenderPassStripeInfoARM::operator=(const safe_VkRenderPassStripeInfoARM& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stripeArea = copy_src.stripeArea;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkRenderPassStripeInfoARM::~safe_VkRenderPassStripeInfoARM() { FreePnextChain(pNext); }
+
+void safe_VkRenderPassStripeInfoARM::initialize(const VkRenderPassStripeInfoARM* in_struct,
+                                                [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    stripeArea = in_struct->stripeArea;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkRenderPassStripeInfoARM::initialize(const safe_VkRenderPassStripeInfoARM* copy_src,
+                                                [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    stripeArea = copy_src->stripeArea;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkRenderPassStripeBeginInfoARM::safe_VkRenderPassStripeBeginInfoARM(const VkRenderPassStripeBeginInfoARM* in_struct,
+                                                                         [[maybe_unused]] PNextCopyState* copy_state,
+                                                                         bool copy_pnext)
+    : sType(in_struct->sType), stripeInfoCount(in_struct->stripeInfoCount), pStripeInfos(nullptr) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+    if (stripeInfoCount && in_struct->pStripeInfos) {
+        pStripeInfos = new safe_VkRenderPassStripeInfoARM[stripeInfoCount];
+        for (uint32_t i = 0; i < stripeInfoCount; ++i) {
+            pStripeInfos[i].initialize(&in_struct->pStripeInfos[i]);
+        }
+    }
+}
+
+safe_VkRenderPassStripeBeginInfoARM::safe_VkRenderPassStripeBeginInfoARM()
+    : sType(VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM), pNext(nullptr), stripeInfoCount(), pStripeInfos(nullptr) {}
+
+safe_VkRenderPassStripeBeginInfoARM::safe_VkRenderPassStripeBeginInfoARM(const safe_VkRenderPassStripeBeginInfoARM& copy_src) {
+    sType = copy_src.sType;
+    stripeInfoCount = copy_src.stripeInfoCount;
+    pStripeInfos = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stripeInfoCount && copy_src.pStripeInfos) {
+        pStripeInfos = new safe_VkRenderPassStripeInfoARM[stripeInfoCount];
+        for (uint32_t i = 0; i < stripeInfoCount; ++i) {
+            pStripeInfos[i].initialize(&copy_src.pStripeInfos[i]);
+        }
+    }
+}
+
+safe_VkRenderPassStripeBeginInfoARM& safe_VkRenderPassStripeBeginInfoARM::operator=(
+    const safe_VkRenderPassStripeBeginInfoARM& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pStripeInfos) delete[] pStripeInfos;
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stripeInfoCount = copy_src.stripeInfoCount;
+    pStripeInfos = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stripeInfoCount && copy_src.pStripeInfos) {
+        pStripeInfos = new safe_VkRenderPassStripeInfoARM[stripeInfoCount];
+        for (uint32_t i = 0; i < stripeInfoCount; ++i) {
+            pStripeInfos[i].initialize(&copy_src.pStripeInfos[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkRenderPassStripeBeginInfoARM::~safe_VkRenderPassStripeBeginInfoARM() {
+    if (pStripeInfos) delete[] pStripeInfos;
+    FreePnextChain(pNext);
+}
+
+void safe_VkRenderPassStripeBeginInfoARM::initialize(const VkRenderPassStripeBeginInfoARM* in_struct,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pStripeInfos) delete[] pStripeInfos;
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    stripeInfoCount = in_struct->stripeInfoCount;
+    pStripeInfos = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (stripeInfoCount && in_struct->pStripeInfos) {
+        pStripeInfos = new safe_VkRenderPassStripeInfoARM[stripeInfoCount];
+        for (uint32_t i = 0; i < stripeInfoCount; ++i) {
+            pStripeInfos[i].initialize(&in_struct->pStripeInfos[i]);
+        }
+    }
+}
+
+void safe_VkRenderPassStripeBeginInfoARM::initialize(const safe_VkRenderPassStripeBeginInfoARM* copy_src,
+                                                     [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    stripeInfoCount = copy_src->stripeInfoCount;
+    pStripeInfos = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (stripeInfoCount && copy_src->pStripeInfos) {
+        pStripeInfos = new safe_VkRenderPassStripeInfoARM[stripeInfoCount];
+        for (uint32_t i = 0; i < stripeInfoCount; ++i) {
+            pStripeInfos[i].initialize(&copy_src->pStripeInfos[i]);
+        }
+    }
+}
+
+safe_VkRenderPassStripeSubmitInfoARM::safe_VkRenderPassStripeSubmitInfoARM(const VkRenderPassStripeSubmitInfoARM* in_struct,
+                                                                           [[maybe_unused]] PNextCopyState* copy_state,
+                                                                           bool copy_pnext)
+    : sType(in_struct->sType), stripeSemaphoreInfoCount(in_struct->stripeSemaphoreInfoCount), pStripeSemaphoreInfos(nullptr) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+    if (stripeSemaphoreInfoCount && in_struct->pStripeSemaphoreInfos) {
+        pStripeSemaphoreInfos = new safe_VkSemaphoreSubmitInfo[stripeSemaphoreInfoCount];
+        for (uint32_t i = 0; i < stripeSemaphoreInfoCount; ++i) {
+            pStripeSemaphoreInfos[i].initialize(&in_struct->pStripeSemaphoreInfos[i]);
+        }
+    }
+}
+
+safe_VkRenderPassStripeSubmitInfoARM::safe_VkRenderPassStripeSubmitInfoARM()
+    : sType(VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_SUBMIT_INFO_ARM),
+      pNext(nullptr),
+      stripeSemaphoreInfoCount(),
+      pStripeSemaphoreInfos(nullptr) {}
+
+safe_VkRenderPassStripeSubmitInfoARM::safe_VkRenderPassStripeSubmitInfoARM(const safe_VkRenderPassStripeSubmitInfoARM& copy_src) {
+    sType = copy_src.sType;
+    stripeSemaphoreInfoCount = copy_src.stripeSemaphoreInfoCount;
+    pStripeSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stripeSemaphoreInfoCount && copy_src.pStripeSemaphoreInfos) {
+        pStripeSemaphoreInfos = new safe_VkSemaphoreSubmitInfo[stripeSemaphoreInfoCount];
+        for (uint32_t i = 0; i < stripeSemaphoreInfoCount; ++i) {
+            pStripeSemaphoreInfos[i].initialize(&copy_src.pStripeSemaphoreInfos[i]);
+        }
+    }
+}
+
+safe_VkRenderPassStripeSubmitInfoARM& safe_VkRenderPassStripeSubmitInfoARM::operator=(
+    const safe_VkRenderPassStripeSubmitInfoARM& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pStripeSemaphoreInfos) delete[] pStripeSemaphoreInfos;
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stripeSemaphoreInfoCount = copy_src.stripeSemaphoreInfoCount;
+    pStripeSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stripeSemaphoreInfoCount && copy_src.pStripeSemaphoreInfos) {
+        pStripeSemaphoreInfos = new safe_VkSemaphoreSubmitInfo[stripeSemaphoreInfoCount];
+        for (uint32_t i = 0; i < stripeSemaphoreInfoCount; ++i) {
+            pStripeSemaphoreInfos[i].initialize(&copy_src.pStripeSemaphoreInfos[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkRenderPassStripeSubmitInfoARM::~safe_VkRenderPassStripeSubmitInfoARM() {
+    if (pStripeSemaphoreInfos) delete[] pStripeSemaphoreInfos;
+    FreePnextChain(pNext);
+}
+
+void safe_VkRenderPassStripeSubmitInfoARM::initialize(const VkRenderPassStripeSubmitInfoARM* in_struct,
+                                                      [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pStripeSemaphoreInfos) delete[] pStripeSemaphoreInfos;
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    stripeSemaphoreInfoCount = in_struct->stripeSemaphoreInfoCount;
+    pStripeSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (stripeSemaphoreInfoCount && in_struct->pStripeSemaphoreInfos) {
+        pStripeSemaphoreInfos = new safe_VkSemaphoreSubmitInfo[stripeSemaphoreInfoCount];
+        for (uint32_t i = 0; i < stripeSemaphoreInfoCount; ++i) {
+            pStripeSemaphoreInfos[i].initialize(&in_struct->pStripeSemaphoreInfos[i]);
+        }
+    }
+}
+
+void safe_VkRenderPassStripeSubmitInfoARM::initialize(const safe_VkRenderPassStripeSubmitInfoARM* copy_src,
+                                                      [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    stripeSemaphoreInfoCount = copy_src->stripeSemaphoreInfoCount;
+    pStripeSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (stripeSemaphoreInfoCount && copy_src->pStripeSemaphoreInfos) {
+        pStripeSemaphoreInfos = new safe_VkSemaphoreSubmitInfo[stripeSemaphoreInfoCount];
+        for (uint32_t i = 0; i < stripeSemaphoreInfoCount; ++i) {
+            pStripeSemaphoreInfos[i].initialize(&copy_src->pStripeSemaphoreInfos[i]);
+        }
+    }
 }
 
 safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(

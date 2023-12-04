@@ -27,8 +27,6 @@
 #include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
-#include <vulkan/layer/vk_layer_settings_ext.h>
-
 bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const VkBaseOutStructure* header, const char* pnext_vuid,
                                                       bool is_physdev_api, bool is_const_param) const {
     bool skip = false;
@@ -6188,6 +6186,18 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI structure members  -- Covers
         // VUID-VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI-sType-sType
 
+        // Validation code for VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_VRS_FEATURES_HUAWEI: {  // Covers
+                                                                                              // VUID-VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI);
+                VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI* structure =
+                    (VkPhysicalDeviceClusterCullingShaderVrsFeaturesHUAWEI*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::clusterShadingRate), structure->clusterShadingRate);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceBorderColorSwizzleFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceBorderColorSwizzleFeaturesEXT-sType-sType
@@ -6307,6 +6317,63 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT);
                 VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT* structure = (VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::nonSeamlessCubeMap), structure->nonSeamlessCubeMap);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceRenderPassStripedFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_FEATURES_ARM: {  // Covers
+                                                                                    // VUID-VkPhysicalDeviceRenderPassStripedFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRenderPassStripedFeaturesARM);
+                VkPhysicalDeviceRenderPassStripedFeaturesARM* structure = (VkPhysicalDeviceRenderPassStripedFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::renderPassStriped), structure->renderPassStriped);
+            }
+        } break;
+
+        // No Validation code for VkPhysicalDeviceRenderPassStripedPropertiesARM structure members  -- Covers
+        // VUID-VkPhysicalDeviceRenderPassStripedPropertiesARM-sType-sType
+
+        // Validation code for VkRenderPassStripeBeginInfoARM structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM: {  // Covers VUID-VkRenderPassStripeBeginInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassStripeBeginInfoARM);
+                VkRenderPassStripeBeginInfoARM* structure = (VkRenderPassStripeBeginInfoARM*)header;
+                skip |= ValidateStructTypeArray(pNext_loc.dot(Field::stripeInfoCount), pNext_loc.dot(Field::pStripeInfos),
+                                                "VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_INFO_ARM", structure->stripeInfoCount,
+                                                structure->pStripeInfos, VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_INFO_ARM, true, true,
+                                                "VUID-VkRenderPassStripeInfoARM-sType-sType",
+                                                "VUID-VkRenderPassStripeBeginInfoARM-pStripeInfos-parameter",
+                                                "VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-arraylength");
+            }
+        } break;
+
+        // Validation code for VkRenderPassStripeSubmitInfoARM structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_SUBMIT_INFO_ARM: {  // Covers VUID-VkRenderPassStripeSubmitInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassStripeSubmitInfoARM);
+                VkRenderPassStripeSubmitInfoARM* structure = (VkRenderPassStripeSubmitInfoARM*)header;
+                skip |= ValidateStructTypeArray(pNext_loc.dot(Field::stripeSemaphoreInfoCount),
+                                                pNext_loc.dot(Field::pStripeSemaphoreInfos),
+                                                "VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO", structure->stripeSemaphoreInfoCount,
+                                                structure->pStripeSemaphoreInfos, VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, true,
+                                                true, "VUID-VkSemaphoreSubmitInfo-sType-sType",
+                                                "VUID-VkRenderPassStripeSubmitInfoARM-pStripeSemaphoreInfos-parameter",
+                                                "VUID-VkRenderPassStripeSubmitInfoARM-stripeSemaphoreInfoCount-arraylength");
+
+                if (structure->pStripeSemaphoreInfos != nullptr) {
+                    for (uint32_t stripeSemaphoreInfoIndex = 0; stripeSemaphoreInfoIndex < structure->stripeSemaphoreInfoCount;
+                         ++stripeSemaphoreInfoIndex) {
+                        [[maybe_unused]] const Location pStripeSemaphoreInfos_loc =
+                            pNext_loc.dot(Field::pStripeSemaphoreInfos, stripeSemaphoreInfoIndex);
+                        skip |= ValidateRequiredHandle(pStripeSemaphoreInfos_loc.dot(Field::semaphore),
+                                                       structure->pStripeSemaphoreInfos[stripeSemaphoreInfoIndex].semaphore);
+
+                        skip |= ValidateFlags(pStripeSemaphoreInfos_loc.dot(Field::stageMask), "VkPipelineStageFlagBits2",
+                                              AllVkPipelineStageFlagBits2,
+                                              structure->pStripeSemaphoreInfos[stripeSemaphoreInfoIndex].stageMask, kOptionalFlags,
+                                              "VUID-VkSemaphoreSubmitInfo-stageMask-parameter");
+                    }
+                }
             }
         } break;
 
@@ -6829,6 +6896,39 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV structure members  -- Covers
         // VUID-VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV-sType-sType
 
+        // Validation code for VkLayerSettingsCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT: {  // Covers VUID-VkLayerSettingsCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkLayerSettingsCreateInfoEXT);
+                VkLayerSettingsCreateInfoEXT* structure = (VkLayerSettingsCreateInfoEXT*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::settingCount), pNext_loc.dot(Field::pSettings), structure->settingCount,
+                                      &structure->pSettings, false, true, kVUIDUndefined,
+                                      "VUID-VkLayerSettingsCreateInfoEXT-pSettings-parameter");
+
+                if (structure->pSettings != nullptr) {
+                    for (uint32_t settingIndex = 0; settingIndex < structure->settingCount; ++settingIndex) {
+                        [[maybe_unused]] const Location pSettings_loc = pNext_loc.dot(Field::pSettings, settingIndex);
+                        skip |= ValidateRequiredPointer(pSettings_loc.dot(Field::pLayerName),
+                                                        structure->pSettings[settingIndex].pLayerName,
+                                                        "VUID-VkLayerSettingEXT-pLayerName-parameter");
+
+                        skip |= ValidateRequiredPointer(pSettings_loc.dot(Field::pSettingName),
+                                                        structure->pSettings[settingIndex].pSettingName,
+                                                        "VUID-VkLayerSettingEXT-pSettingName-parameter");
+
+                        skip |=
+                            ValidateRangedEnum(pSettings_loc.dot(Field::type), "VkLayerSettingTypeEXT",
+                                               structure->pSettings[settingIndex].type, "VUID-VkLayerSettingEXT-type-parameter");
+
+                        skip |= ValidateArray(pSettings_loc.dot(Field::valueCount), pSettings_loc.dot(Field::pValues),
+                                              structure->pSettings[settingIndex].valueCount,
+                                              &structure->pSettings[settingIndex].pValues, false, true, kVUIDUndefined,
+                                              "VUID-VkLayerSettingEXT-pValues-parameter");
+                    }
+                }
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM-sType-sType
@@ -7171,6 +7271,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
                                                                      VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
                                                                      VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG,
                                                                      VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
+                                                                     VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
                                                                      VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
                                                                      VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT,
                                                                      VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT};
@@ -7518,6 +7619,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
@@ -11380,7 +11482,9 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(VkCommandBuffer comm
         constexpr std::array allowed_structs_VkRenderPassBeginInfo = {
             VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
-            VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT,
+            VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO,
+            VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT,
+            VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM};
 
         skip |=
@@ -11728,6 +11832,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES,
@@ -12756,7 +12861,9 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer com
         constexpr std::array allowed_structs_VkRenderPassBeginInfo = {
             VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
-            VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT,
+            VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO,
+            VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT,
+            VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM};
 
         skip |=
@@ -13630,10 +13737,14 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
                      ++commandBufferInfoIndex) {
                     [[maybe_unused]] const Location pCommandBufferInfos_loc =
                         pSubmits_loc.dot(Field::pCommandBufferInfos, commandBufferInfoIndex);
-                    skip |= ValidateStructPnext(pCommandBufferInfos_loc,
-                                                pSubmits[submitIndex].pCommandBufferInfos[commandBufferInfoIndex].pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferSubmitInfo-pNext-pNext",
-                                                kVUIDUndefined, false, true);
+                    constexpr std::array allowed_structs_VkCommandBufferSubmitInfo = {
+                        VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_SUBMIT_INFO_ARM};
+
+                    skip |= ValidateStructPnext(
+                        pCommandBufferInfos_loc, pSubmits[submitIndex].pCommandBufferInfos[commandBufferInfoIndex].pNext,
+                        allowed_structs_VkCommandBufferSubmitInfo.size(), allowed_structs_VkCommandBufferSubmitInfo.data(),
+                        GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferSubmitInfo-pNext-pNext",
+                        "VUID-VkCommandBufferSubmitInfo-sType-unique", false, true);
 
                     skip |= ValidateRequiredHandle(pCommandBufferInfos_loc.dot(Field::commandBuffer),
                                                    pSubmits[submitIndex].pCommandBufferInfos[commandBufferInfoIndex].commandBuffer);
@@ -13997,6 +14108,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(VkCommandBuffer comma
             VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
+            VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR};
 
@@ -24929,6 +25041,7 @@ bool StatelessValidation::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(V
             VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
+            VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR};
 

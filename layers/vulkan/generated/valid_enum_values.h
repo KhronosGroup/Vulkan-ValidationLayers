@@ -123,6 +123,7 @@ template<> std::vector<VkDirectDriverLoadingModeLUNARG> ValidationObject::ValidP
 template<> std::vector<VkOpticalFlowPerformanceLevelNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkOpticalFlowSessionBindingPointNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkShaderCodeTypeEXT> ValidationObject::ValidParamValues() const;
+template<> std::vector<VkLayerSettingTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkLatencyMarkerNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkOutOfBandQueueTypeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkBlockMatchWindowCompareModeQCOM> ValidationObject::ValidParamValues() const;

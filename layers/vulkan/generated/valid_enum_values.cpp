@@ -1713,6 +1713,22 @@ std::vector<VkShaderCodeTypeEXT> ValidationObject::ValidParamValues() const {
 }
 
 template<>
+std::vector<VkLayerSettingTypeEXT> ValidationObject::ValidParamValues() const {
+    constexpr std::array CoreVkLayerSettingTypeEXTEnums = {VK_LAYER_SETTING_TYPE_BOOL32_EXT, VK_LAYER_SETTING_TYPE_INT32_EXT, VK_LAYER_SETTING_TYPE_INT64_EXT, VK_LAYER_SETTING_TYPE_UINT32_EXT, VK_LAYER_SETTING_TYPE_UINT64_EXT, VK_LAYER_SETTING_TYPE_FLOAT32_EXT, VK_LAYER_SETTING_TYPE_FLOAT64_EXT, VK_LAYER_SETTING_TYPE_STRING_EXT};
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkLayerSettingTypeEXT>> ExtendedVkLayerSettingTypeEXTEnums = {
+    };
+    std::vector<VkLayerSettingTypeEXT> values(CoreVkLayerSettingTypeEXTEnums.cbegin(), CoreVkLayerSettingTypeEXTEnums.cend());
+    std::set<VkLayerSettingTypeEXT> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkLayerSettingTypeEXTEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+template<>
 std::vector<VkLatencyMarkerNV> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkLatencyMarkerNVEnums = {VK_LATENCY_MARKER_SIMULATION_START_NV, VK_LATENCY_MARKER_SIMULATION_END_NV, VK_LATENCY_MARKER_RENDERSUBMIT_START_NV, VK_LATENCY_MARKER_RENDERSUBMIT_END_NV, VK_LATENCY_MARKER_PRESENT_START_NV, VK_LATENCY_MARKER_PRESENT_END_NV, VK_LATENCY_MARKER_INPUT_SAMPLE_NV, VK_LATENCY_MARKER_TRIGGER_FLASH_NV, VK_LATENCY_MARKER_OUT_OF_BAND_RENDERSUBMIT_START_NV, VK_LATENCY_MARKER_OUT_OF_BAND_RENDERSUBMIT_END_NV, VK_LATENCY_MARKER_OUT_OF_BAND_PRESENT_START_NV, VK_LATENCY_MARKER_OUT_OF_BAND_PRESENT_END_NV};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkLatencyMarkerNV>> ExtendedVkLatencyMarkerNVEnums = {
