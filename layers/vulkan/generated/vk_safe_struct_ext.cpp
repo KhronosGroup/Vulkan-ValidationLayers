@@ -18115,6 +18115,146 @@ void safe_VkShaderCreateInfoEXT::initialize(const safe_VkShaderCreateInfoEXT* co
     if (copy_src->pSpecializationInfo) pSpecializationInfo = new safe_VkSpecializationInfo(*copy_src->pSpecializationInfo);
 }
 
+safe_VkLayerSettingEXT::safe_VkLayerSettingEXT(const VkLayerSettingEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+    : type(in_struct->type), valueCount(in_struct->valueCount), pValues(in_struct->pValues) {
+    pLayerName = SafeStringCopy(in_struct->pLayerName);
+    pSettingName = SafeStringCopy(in_struct->pSettingName);
+}
+
+safe_VkLayerSettingEXT::safe_VkLayerSettingEXT()
+    : pLayerName(nullptr), pSettingName(nullptr), type(), valueCount(), pValues(nullptr) {}
+
+safe_VkLayerSettingEXT::safe_VkLayerSettingEXT(const safe_VkLayerSettingEXT& copy_src) {
+    type = copy_src.type;
+    valueCount = copy_src.valueCount;
+    pValues = copy_src.pValues;
+    pLayerName = SafeStringCopy(copy_src.pLayerName);
+    pSettingName = SafeStringCopy(copy_src.pSettingName);
+}
+
+safe_VkLayerSettingEXT& safe_VkLayerSettingEXT::operator=(const safe_VkLayerSettingEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pLayerName) delete[] pLayerName;
+    if (pSettingName) delete[] pSettingName;
+
+    type = copy_src.type;
+    valueCount = copy_src.valueCount;
+    pValues = copy_src.pValues;
+    pLayerName = SafeStringCopy(copy_src.pLayerName);
+    pSettingName = SafeStringCopy(copy_src.pSettingName);
+
+    return *this;
+}
+
+safe_VkLayerSettingEXT::~safe_VkLayerSettingEXT() {
+    if (pLayerName) delete[] pLayerName;
+    if (pSettingName) delete[] pSettingName;
+}
+
+void safe_VkLayerSettingEXT::initialize(const VkLayerSettingEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pLayerName) delete[] pLayerName;
+    if (pSettingName) delete[] pSettingName;
+    type = in_struct->type;
+    valueCount = in_struct->valueCount;
+    pValues = in_struct->pValues;
+    pLayerName = SafeStringCopy(in_struct->pLayerName);
+    pSettingName = SafeStringCopy(in_struct->pSettingName);
+}
+
+void safe_VkLayerSettingEXT::initialize(const safe_VkLayerSettingEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    type = copy_src->type;
+    valueCount = copy_src->valueCount;
+    pValues = copy_src->pValues;
+    pLayerName = SafeStringCopy(copy_src->pLayerName);
+    pSettingName = SafeStringCopy(copy_src->pSettingName);
+}
+
+safe_VkLayerSettingsCreateInfoEXT::safe_VkLayerSettingsCreateInfoEXT(const VkLayerSettingsCreateInfoEXT* in_struct,
+                                                                     [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), settingCount(in_struct->settingCount), pSettings(nullptr) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+    if (settingCount && in_struct->pSettings) {
+        pSettings = new safe_VkLayerSettingEXT[settingCount];
+        for (uint32_t i = 0; i < settingCount; ++i) {
+            pSettings[i].initialize(&in_struct->pSettings[i]);
+        }
+    }
+}
+
+safe_VkLayerSettingsCreateInfoEXT::safe_VkLayerSettingsCreateInfoEXT()
+    : sType(VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT), pNext(nullptr), settingCount(), pSettings(nullptr) {}
+
+safe_VkLayerSettingsCreateInfoEXT::safe_VkLayerSettingsCreateInfoEXT(const safe_VkLayerSettingsCreateInfoEXT& copy_src) {
+    sType = copy_src.sType;
+    settingCount = copy_src.settingCount;
+    pSettings = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (settingCount && copy_src.pSettings) {
+        pSettings = new safe_VkLayerSettingEXT[settingCount];
+        for (uint32_t i = 0; i < settingCount; ++i) {
+            pSettings[i].initialize(&copy_src.pSettings[i]);
+        }
+    }
+}
+
+safe_VkLayerSettingsCreateInfoEXT& safe_VkLayerSettingsCreateInfoEXT::operator=(const safe_VkLayerSettingsCreateInfoEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pSettings) delete[] pSettings;
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    settingCount = copy_src.settingCount;
+    pSettings = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (settingCount && copy_src.pSettings) {
+        pSettings = new safe_VkLayerSettingEXT[settingCount];
+        for (uint32_t i = 0; i < settingCount; ++i) {
+            pSettings[i].initialize(&copy_src.pSettings[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkLayerSettingsCreateInfoEXT::~safe_VkLayerSettingsCreateInfoEXT() {
+    if (pSettings) delete[] pSettings;
+    FreePnextChain(pNext);
+}
+
+void safe_VkLayerSettingsCreateInfoEXT::initialize(const VkLayerSettingsCreateInfoEXT* in_struct,
+                                                   [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pSettings) delete[] pSettings;
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    settingCount = in_struct->settingCount;
+    pSettings = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (settingCount && in_struct->pSettings) {
+        pSettings = new safe_VkLayerSettingEXT[settingCount];
+        for (uint32_t i = 0; i < settingCount; ++i) {
+            pSettings[i].initialize(&in_struct->pSettings[i]);
+        }
+    }
+}
+
+void safe_VkLayerSettingsCreateInfoEXT::initialize(const safe_VkLayerSettingsCreateInfoEXT* copy_src,
+                                                   [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    settingCount = copy_src->settingCount;
+    pSettings = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (settingCount && copy_src->pSettings) {
+        pSettings = new safe_VkLayerSettingEXT[settingCount];
+        for (uint32_t i = 0; i < settingCount; ++i) {
+            pSettings[i].initialize(&copy_src->pSettings[i]);
+        }
+    }
+}
+
 safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(
     const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
     bool copy_pnext)

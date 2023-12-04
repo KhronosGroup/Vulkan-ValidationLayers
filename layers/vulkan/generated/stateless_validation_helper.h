@@ -35,6 +35,7 @@ static inline bool IsDuplicatePnext(VkStructureType input_value) {
         case VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT:
         case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT:
         case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT:
+        case VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT:
             return true;
         default:
             return false;

@@ -14,7 +14,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <vulkan/layer/vk_layer_settings_ext.h>
 
 #include "../layers/vk_lunarg_device_profile_api_layer.h"
 
