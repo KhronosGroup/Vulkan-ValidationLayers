@@ -81,6 +81,18 @@ if (USE_ROBIN_HOOD_HASHING)
     target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
 endif()
 
+# Using mimalloc on non-Windows OSes currently results in unit test instability with some
+# OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
+# the amount of virtual address space needed, which can also cause stability problems.
+if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+   find_package(mimalloc CONFIG)
+   option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
+   if (USE_MIMALLOC)
+      target_compile_definitions(VkLayer_utils PUBLIC USE_MIMALLOC)
+      target_link_libraries(VkLayer_utils PUBLIC mimalloc-static)
+   endif()
+endif()
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     target_compile_options(VkLayer_utils PRIVATE
         -Wno-sign-conversion
@@ -330,11 +342,6 @@ elseif(MSVC)
     )
 endif()
 
-# Khronos validation additional dependencies
-if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(vvl PRIVATE robin_hood::robin_hood)
-endif()
-
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
 target_link_libraries(vvl PRIVATE
@@ -343,18 +350,6 @@ target_link_libraries(vvl PRIVATE
     SPIRV-Tools-link
     VkLayer_utils
 )
-
-# Using mimalloc on non-Windows OSes currently results in unit test instability with some
-# OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
-# the amount of virtual address space needed, which can also cause stability problems.
-if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-   find_package(mimalloc CONFIG)
-   option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
-   if (USE_MIMALLOC)
-      target_compile_definitions(vvl PRIVATE USE_MIMALLOC)
-      target_link_libraries(vvl PRIVATE mimalloc-static)
-   endif()
-endif()
 
 target_include_directories(vvl SYSTEM PRIVATE external)
 
