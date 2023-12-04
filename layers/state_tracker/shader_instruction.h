@@ -92,10 +92,12 @@ class Instruction {
 
 #ifndef NDEBUG
     // Helping values to make debugging what is happening in a instruction easier
-    std::string opcode_;
+    std::string d_opcode_;
+    uint32_t d_length_;
+    uint32_t d_result_id_;
+    uint32_t d_type_id_;
     // helps people new to using SPIR-V spec to understand Word()
-    uint32_t length_;
-    uint32_t words_debug_[12];
+    uint32_t d_words_[12];
 #endif
 };
 

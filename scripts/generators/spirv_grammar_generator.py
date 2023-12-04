@@ -55,6 +55,12 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.imageOperandsPosition = [[] for i in range(8)]
         self.imageAccessOperand = [[] for i in range(4)]
 
+        self.kindId = [] # "category" : "Id"
+        self.kindLiteral = [] # "category" : "Literal"
+        self.kindComposite = [] # "category" : "Composite"
+        self.kindValueEnum = [] # "category" : "ValueEnum"
+        self.kindBitEnum = [] # "category" : "BitEnum"
+
         self.parseGrammar(grammar)
 
     def addToStringList(self, operandKind, kind, list, ignoreList = []):
@@ -90,11 +96,25 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             kernelCapability.append('SubgroupAvcMotionEstimationChromaINTEL')
 
             for operandKind in operandKinds:
-                if operandKind['kind'] == 'Capability':
+                kind = operandKind['kind']
+                category = operandKind['category']
+
+                if category == 'Id':
+                    self.kindId.append(kind)
+                elif category == 'Literal':
+                    self.kindLiteral.append(kind)
+                elif category == 'Composite':
+                    self.kindComposite.append(kind)
+                elif category == 'ValueEnum':
+                    self.kindValueEnum.append(kind)
+                elif category == 'BitEnum':
+                    self.kindBitEnum.append(kind)
+
+                if kind == 'Capability':
                     for enum in operandKind['enumerants']:
                         if 'capabilities' in enum and len(enum['capabilities']) == 1 and enum['capabilities'][0] == 'Kernel':
                             kernelCapability.append(enum['enumerant'])
-                if operandKind['kind'] == 'ImageOperands':
+                elif kind == 'ImageOperands':
                     values = [] # prevent alias from being duplicatd
                     for enum in operandKind['enumerants']:
                         count = 0  if 'parameters' not in enum else len(enum['parameters'])
@@ -146,6 +166,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 self.opcodes[opcode] = {
                     'imageRefPosition' : 0,
                     'sampledImageRefPosition' : 0,
+
+                    'opname' : opname,
+                    'operands' : [],
+                    'hasOptional' : False,
+                    'hasVariableLength' : False,
                 }
 
                 if instruction['class'] == 'Atomic':
@@ -168,8 +193,30 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     for index, operand in enumerate(instruction['operands']):
                         if operand['kind'] == 'IdResultType':
                             self.hasType.append(opname)
-                        if operand['kind'] == 'IdResult':
+                        elif operand['kind'] == 'IdResult':
                             self.hasResult.append(opname)
+                        else:
+                            # Operands are anything that isn't a result or result type
+                            if 'quantifier' in operand:
+                                if operand['quantifier'] == '?':
+                                    self.opcodes[opcode]['hasOptional'] = True
+                                if operand['quantifier'] == '*':
+                                    self.opcodes[opcode]['hasVariableLength'] = True
+
+                            if operand['kind'] in self.kindId:
+                                self.opcodes[opcode]['operands'].append('Id')
+                            elif operand['kind'] in self.kindLiteral:
+                                if operand['kind'] == 'LiteralString':
+                                    self.opcodes[opcode]['operands'].append('LiteralString')
+                                else:
+                                    self.opcodes[opcode]['operands'].append('Literal')
+                            elif operand['kind'] in self.kindComposite:
+                                self.opcodes[opcode]['operands'].append('Composite')
+                            elif operand['kind'] in self.kindValueEnum:
+                                self.opcodes[opcode]['operands'].append('ValueEnum')
+                            elif operand['kind'] in self.kindBitEnum:
+                                self.opcodes[opcode]['operands'].append('BitEnum')
+
                         # some instructions have both types of IdScope
                         # OpReadClockKHR has the wrong 'name' as 'Scope'
                         if operand['kind'] == 'IdScope':
@@ -246,6 +293,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             #pragma once
             #include <cstdint>
             #include <string>
+            #include <vector>
             #include <spirv/unified1/spirv.hpp>
 
             const char* string_SpvOpcode(uint32_t opcode);
@@ -476,11 +524,29 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             }}
             ''')
 
+        out.append('''
+            enum class OperandKind {
+                Id,
+                Literal,
+                LiteralString,
+                Composite,
+                ValueEnum,
+                BitEnum,
+            };
+
+            struct OperandInfo {
+                std::vector<OperandKind> types;
+            };
+
+            const OperandInfo& GetOperandInfo(uint32_t opcode);
+            ''')
+
         self.write("".join(out))
 
     def generateSource(self):
         out = []
         out.append('''
+            #include "containers/custom_containers.h"
             #include "spirv_grammar_helper.h"
             ''')
 
@@ -579,5 +645,24 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
                 return ret;
             }}
+            ''')
+
+
+        out.append('''
+            const OperandInfo& GetOperandInfo(uint32_t opcode) {
+                static const vvl::unordered_map<uint32_t, OperandInfo> kOperandTable {
+                // clang-format off\n''')
+        for info in self.opcodes.values():
+            opname = info['opname']
+            kinds = ", ".join([f"OperandKind::{f}" for f in info['operands']])
+            out.append(f'        {{spv::{opname}, {{{{{kinds}}}}}}},\n')
+        out.append('''    }; // clang-format on
+
+                auto info = kOperandTable.find(opcode);
+                if (info != kOperandTable.end()) {
+                    return info->second;
+                }
+                return kOperandTable.find(spv::OpNop)->second;
+            }
             ''')
         self.write("".join(out))

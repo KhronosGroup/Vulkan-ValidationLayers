@@ -27,6 +27,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <spirv/unified1/spirv.hpp>
 
 const char* string_SpvOpcode(uint32_t opcode);
@@ -1260,5 +1261,20 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::Empty;
     }
 }
+
+enum class OperandKind {
+    Id,
+    Literal,
+    LiteralString,
+    Composite,
+    ValueEnum,
+    BitEnum,
+};
+
+struct OperandInfo {
+    std::vector<OperandKind> types;
+};
+
+const OperandInfo& GetOperandInfo(uint32_t opcode);
 
 // NOLINTEND

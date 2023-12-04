@@ -37,10 +37,12 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
     }
 
 #ifndef NDEBUG
-    opcode_ = std::string(string_SpvOpcode(Opcode()));
-    length_ = Length();
-    for (uint32_t i = 0; i < length_ && i < 12; i++) {
-        words_debug_[i] = words_[i];
+    d_opcode_ = std::string(string_SpvOpcode(Opcode()));
+    d_length_ = Length();
+    d_result_id_ = ResultId();
+    d_type_id_ = TypeId();
+    for (uint32_t i = 0; i < d_length_ && i < 12; i++) {
+        d_words_[i] = words_[i];
     }
 #endif
 }
@@ -48,30 +50,41 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
 std::string Instruction::Describe() const {
     std::ostringstream ss;
     const uint32_t opcode = Opcode();
+    const uint32_t length = Length();
+    const bool has_result = ResultId() != 0;
+    const bool has_type = TypeId() != 0;
     uint32_t operand_offset = 1;  // where to start printing operands
     // common disassembled for SPIR-V is
     // %result = Opcode %result_type %operands
-    if (OpcodeHasResult(opcode)) {
+    if (has_result) {
         operand_offset++;
-        ss << "%" << (OpcodeHasType(opcode) ? Word(2) : Word(1)) << " = ";
+        ss << "%" << (has_type ? Word(2) : Word(1)) << " = ";
     }
 
     ss << string_SpvOpcode(opcode);
 
-    if (OpcodeHasType(opcode)) {
+    if (has_type) {
         operand_offset++;
         ss << " %" << Word(1);
     }
 
-    // TODO - For now don't list the '%' for any operands since they are only for reference IDs. Without generating a table of each
-    // instructions operand types and covering the many edge cases (such as optional, paired, or variable operands) this is the
-    // simplest way to print the instruction and give the developer something to look into when an error occurs.
-    //
-    // For now this safely should be able to assume it will never come across a LiteralString such as in OpExtInstImport or
-    // OpEntryPoint
-    for (uint32_t i = operand_offset; i < Length(); i++) {
-        ss << " " << Word(i);
+    // Exception for some opcode
+    if (opcode == spv::OpEntryPoint) {
+        ss << " " << string_SpvExecutionModel(Word(1)) << " %" << Word(2) << " [Unknown]";
+    } else {
+        const OperandInfo& info = GetOperandInfo(opcode);
+        const uint32_t operands = static_cast<uint32_t>(info.types.size());
+        const uint32_t remaining_words = length - operand_offset;
+        for (uint32_t i = 0; i < remaining_words; i++) {
+            OperandKind kind = (i < operands) ? info.types[i] : info.types.back();
+            if (kind == OperandKind::LiteralString) {
+                ss << " [string]";
+                break;
+            }
+            ss << ((kind == OperandKind::Id) ? " %" : " ") << Word(operand_offset + i);
+        }
     }
+
     return ss.str();
 }
 
