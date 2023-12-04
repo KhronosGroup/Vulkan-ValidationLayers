@@ -561,8 +561,6 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     InitState();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface, skipping test";
     }
@@ -604,11 +602,16 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
         }
     }
 
-    ASSERT_EQ(VK_ERROR_VALIDATION_FAILED_EXT, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
-    m_errorMonitor->VerifyFound();
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
+        const auto err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+
+        ASSERT_TRUE(err == VK_ERROR_VALIDATION_FAILED_EXT) << string_VkResult(err);
+        m_errorMonitor->VerifyFound();
+    }
+
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
 }
