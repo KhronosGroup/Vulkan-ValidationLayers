@@ -16,6 +16,8 @@
 # limitations under the License.
 # ~~~
 
+include(common_build.cmake)
+
 # This variable enables downstream users to customize the CMake targets
 # based on the target API variant (e.g. Vulkan SC)
 set(LAYER_NAME "VkLayer_khronos_validation")
@@ -298,12 +300,12 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
 set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
+common_compile_and_link_options(vvl)
+
 if(MSVC)
     target_link_options(vvl PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
-    target_compile_options(vvl PRIVATE /bigobj)
 elseif(MINGW)
     target_sources(vvl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
-    target_compile_options(vvl PRIVATE -Wa,-mbig-obj)
 elseif(APPLE)
     set_target_properties(vvl PROPERTIES SUFFIX ".dylib")
     target_link_options(vvl PRIVATE -exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.exp)
@@ -330,11 +332,6 @@ elseif(MSVC)
     )
 endif()
 
-# Khronos validation additional dependencies
-if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(vvl PRIVATE robin_hood::robin_hood)
-endif()
-
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
 target_link_libraries(vvl PRIVATE
@@ -343,18 +340,6 @@ target_link_libraries(vvl PRIVATE
     SPIRV-Tools-link
     VkLayer_utils
 )
-
-# Using mimalloc on non-Windows OSes currently results in unit test instability with some
-# OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
-# the amount of virtual address space needed, which can also cause stability problems.
-if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-   find_package(mimalloc CONFIG)
-   option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
-   if (USE_MIMALLOC)
-      target_compile_definitions(vvl PRIVATE USE_MIMALLOC)
-      target_link_libraries(vvl PRIVATE mimalloc-static)
-   endif()
-endif()
 
 target_include_directories(vvl SYSTEM PRIVATE external)
 
