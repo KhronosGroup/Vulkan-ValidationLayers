@@ -1256,8 +1256,8 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
     // Vertex - Need to read input topology in pipeline
     // Geo/Tess - Need to know the feature bit is on
     // Mesh - are checked in spirv-val as they don't require any runtime information
-    if (stage != VK_SHADER_STAGE_VERTEX_BIT && stage != VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
-        stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
+    if (!IsValueIn(stage,
+                   {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT})) {
         return skip;
     }
     if (!create_info.pipeline) {
