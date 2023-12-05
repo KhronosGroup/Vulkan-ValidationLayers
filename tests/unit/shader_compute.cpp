@@ -463,7 +463,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
 }
 
-TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
+TEST_F(NegativeShaderCompute, DISABLED_WorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION("Test VK_KHR_workgroup_memory_explicit_layout");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 

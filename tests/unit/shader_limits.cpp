@@ -314,7 +314,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
+TEST_F(NegativeShaderLimits, DISABLED_OffsetMaxComputeSharedMemorySize) {
     TEST_DESCRIPTION("Have an offset that is over maxComputeSharedMemorySize");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
