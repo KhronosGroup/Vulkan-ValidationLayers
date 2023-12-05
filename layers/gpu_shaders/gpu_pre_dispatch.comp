@@ -35,11 +35,11 @@ void main() {
     uint indirect_z = indirect_buffer[u_info.indirect_x_offset + 2];
 
     if (indirect_x > u_info.limit_x) {
-        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_x_error, indirect_x);
+        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_x_error, indirect_x, 0);
     } else if (indirect_y > u_info.limit_y) {
-        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_y_error, indirect_y);
+        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_y_error, indirect_y, 0);
     } else if (indirect_z > u_info.limit_z) {
-        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_z_error, indirect_z);
+        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_z_error, indirect_z, 0);
     }
 
 }
