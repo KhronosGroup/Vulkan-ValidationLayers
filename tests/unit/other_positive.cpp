@@ -757,19 +757,37 @@ TEST_F(VkPositiveLayerTest, GDPAWithMultiCmdExt) {
     ASSERT_NE(vkCmdSetColorBlendAdvancedEXT, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, UseInteractionApi) {
-    TEST_DESCRIPTION("Use an API that is provided by multiple extensions");
+TEST_F(VkPositiveLayerTest, UseInteractionApi1) {
+    TEST_DESCRIPTION("Use an API that is provided by multiple extensions (part 1)");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     auto vkGetDeviceGroupPresentCapabilitiesKHR =
         GetDeviceProcAddr<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>("vkGetDeviceGroupPresentCapabilitiesKHR");
-    ASSERT_NE(vkGetDeviceGroupPresentCapabilitiesKHR, nullptr);
+    if (!vkGetDeviceGroupPresentCapabilitiesKHR) {
+        GTEST_SKIP() << "Driver doesn't expose vkGetDeviceGroupPresentCapabilitiesKHR";
+    }
 
     VkDeviceGroupPresentCapabilitiesKHR device_group_present_caps = vku::InitStructHelper();
-    vkGetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
+    vk::GetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
+}
+
+TEST_F(VkPositiveLayerTest, UseInteractionApi2) {
+    TEST_DESCRIPTION("Use an API that is provided by multiple extensions (part 2)");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    auto vkGetDeviceGroupPresentCapabilitiesKHR =
+        GetDeviceProcAddr<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>("vkGetDeviceGroupPresentCapabilitiesKHR");
+    if (!vkGetDeviceGroupPresentCapabilitiesKHR) {
+        GTEST_SKIP() << "Driver doesn't expose vkGetDeviceGroupPresentCapabilitiesKHR";
+    }
+
+    VkDeviceGroupPresentCapabilitiesKHR device_group_present_caps = vku::InitStructHelper();
+    vk::GetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
 }
 
 TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
