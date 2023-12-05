@@ -1215,7 +1215,7 @@ TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     // Break memory binding and attempt update
     image.memory().destroy();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -5298,7 +5298,7 @@ TEST_F(NegativeDescriptors, DescriptorTypeNotInPool) {
     if (result != VK_ERROR_OUT_OF_POOL_MEMORY) {
         GTEST_SKIP() << "Does not return expected VK_ERROR_OUT_OF_POOL_MEMORY";
     }
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-CoreValidation-AllocateDescriptorSets-WrongType");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "WARNING-CoreValidation-AllocateDescriptorSets-WrongType");
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }

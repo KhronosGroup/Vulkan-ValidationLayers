@@ -308,7 +308,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     if (vkuFormatIsDepthOrStencil(pCreateInfo->format)) {
         // Should never hopefully get here, but there are known driver advertising the wrong feature flags
         // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
-        skip |= LogError(kVUID_Core_invalidDepthStencilFormat, device, create_info_loc.dot(Field::format),
+        skip |= LogError("UNASSIGNED-VkBufferViewCreateInfo-depthStencil-format", device, create_info_loc.dot(Field::format),
                          "is a depth/stencil format (%s) but depth/stencil formats do not have a "
                          "defined sizes for alignment, replace with a color format.",
                          string_VkFormat(pCreateInfo->format));

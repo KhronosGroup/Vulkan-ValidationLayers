@@ -16,13 +16,6 @@
  * limitations under the License.
  */
 
-// clang-format off
-[[maybe_unused]] static const char *kVUID_ObjectTracker_Info = "UNASSIGNED-ObjectTracker-Info";
-[[maybe_unused]] static const char *kVUID_ObjectTracker_InternalError = "UNASSIGNED-ObjectTracker-InternalError";
-[[maybe_unused]] static const char *kVUID_ObjectTracker_ObjectLeak =    "UNASSIGNED-ObjectTracker-ObjectLeak";
-[[maybe_unused]] static const char *kVUID_ObjectTracker_UnknownObject = "UNASSIGNED-ObjectTracker-UnknownObject";
-// clang-format on
-
 extern uint64_t object_track_index;
 
 // Object Status -- used to track state of individual objects
@@ -88,7 +81,8 @@ class ObjectLifetimes : public ValidationObject {
         if (!inserted) {
             // The object should not already exist. If we couldn't add it to the map, there was probably
             // a race condition in the app. Report an error and move on.
-            (void)LogError(kVUID_ObjectTracker_Info, object, loc,
+            // TODO should this be an error? https://gitlab.khronos.org/vulkan/vulkan/-/issues/3616
+            (void)LogError("UNASSIGNED-ObjectTracker-Insert", object, loc,
                            "Couldn't insert %s Object 0x%" PRIxLEAST64
                            ", already existed. This should not happen and may indicate a "
                            "race condition in the application.",

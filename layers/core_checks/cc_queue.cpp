@@ -453,7 +453,8 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
     if (const uint64_t submissions = cb_state.submitCount + current_submit_count;
         (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && (submissions > 1)) {
-        skip |= LogError(kVUID_Core_DrawState_CommandBufferSingleSubmitViolation, cb_state.commandBuffer(), loc,
+        // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
+        skip |= LogError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation", cb_state.commandBuffer(), loc,
                          "%s recorded with VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT has been submitted %" PRIu64 " times.",
                          FormatHandle(cb_state).c_str(), submissions);
     }

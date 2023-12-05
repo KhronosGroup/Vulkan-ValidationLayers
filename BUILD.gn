@@ -150,7 +150,6 @@ vvl_sources = [
   "layers/drawdispatch/descriptor_validator.h",
   "layers/drawdispatch/drawdispatch_vuids.cpp",
   "layers/drawdispatch/drawdispatch_vuids.h",
-  "layers/error_message/validation_error_enums.h",
   "layers/external/vma/vk_mem_alloc.h",
   "layers/external/vma/vma.cpp",
   "layers/external/vma/vma.h",

@@ -390,10 +390,10 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
                                       pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
             UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
-                std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " "
+                std::cout << "WARNING-DEBUG-PRINTF " << common_message.c_str() << " "
                           << shader_message.str().c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
             } else {
-                LogInfo("UNASSIGNED-DEBUG-PRINTF", queue, loc, "%s %s %s%s", common_message.c_str(),
+                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s %s %s%s", common_message.c_str(),
                         shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
@@ -401,13 +401,13 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
                 std::cout << shader_message.str();
             } else {
                 // Don't let LogInfo process any '%'s in the string
-                LogInfo("UNASSIGNED-DEBUG-PRINTF", device, loc, "%s", shader_message.str().c_str());
+                LogInfo("WARNING-DEBUG-PRINTF", device, loc, "%s", shader_message.str().c_str());
             }
         }
         index += debug_record->size;
     }
     if ((index - spvtools::kDebugOutputDataOffset) != expect) {
-        LogWarning("UNASSIGNED-DEBUG-PRINTF", device, loc,
+        LogWarning("WARNING-DEBUG-PRINTF", device, loc,
                    "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));

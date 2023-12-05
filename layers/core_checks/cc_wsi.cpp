@@ -377,7 +377,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
     if ((pCreateInfo->preTransform & current_transform) != pCreateInfo->preTransform) {
-        skip |= LogPerformanceWarning(kVUID_Core_Swapchain_PreTransform, physical_device, create_info_loc.dot(Field::preTransform),
+        skip |= LogPerformanceWarning("WARNING-Swapchain-PreTransform", physical_device, create_info_loc.dot(Field::preTransform),
                                       "(%s) doesn't match the currentTransform (%s) returned by "
                                       "vkGetPhysicalDeviceSurfaceCapabilitiesKHR, the presentation engine will transform the image "
                                       "content as part of the presentation operation.",
@@ -565,7 +565,8 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     // Validate state for shared presentable case
     if (shared_present_mode) {
         if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
-            if (LogError(kVUID_Core_DrawState_ExtensionNotEnabled, device, create_info_loc,
+            // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2787
+            if (LogError("UNASSIGNED-DrawState-ExtensionNotEnabled", device, create_info_loc,
                          "called with presentMode %s which requires the VK_KHR_shared_presentable_image extension, which has not "
                          "been enabled.",
                          string_VkPresentModeKHR(present_mode))) {

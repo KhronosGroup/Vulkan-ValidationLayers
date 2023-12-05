@@ -546,7 +546,6 @@ def main(argv):
     unassigned_vuid_files = [repo_relative(path) for path in [
         'layers/best_practices/best_practices_error_enums.h',
         'layers/stateless/stateless_validation.h',
-        'layers/error_message/validation_error_enums.h',
         'layers/object_tracker/object_lifetime_validation.h'
     ]]
 

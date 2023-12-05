@@ -1152,8 +1152,7 @@ TEST_F(NegativeShaderInterface, VertexOutputNotConsumed) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
-                                      "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
 // Spec doesn't clarify if this is valid or not
@@ -1225,8 +1224,7 @@ TEST_F(NegativeShaderInterface, DISABLED_InputAndOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
-                                          "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
     }
 
     {

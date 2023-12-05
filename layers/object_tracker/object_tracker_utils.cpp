@@ -104,7 +104,7 @@ void ObjectLifetimes::DestroyObjectSilently(uint64_t object, VulkanObjectType ob
         // We've already checked that the object exists. If we couldn't find and atomically remove it
         // from the map, there must have been a race condition in the app. Report an error and move on.
         const Location loc(Func::vkDestroyDevice);
-        (void)LogError(kVUID_ObjectTracker_Info, device, loc,
+        (void)LogError("UNASSIGNED-ObjectTracker-Destroy", device, loc,
                        "Couldn't destroy %s Object 0x%" PRIxLEAST64
                        ", not found. This should not happen and may indicate a race condition in the application.",
                        object_string[object_type], object);
@@ -403,9 +403,9 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
         VkDevice device = reinterpret_cast<VkDevice>(node->handle);
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[node->object_type];
 
-        skip |= LogError(kVUID_ObjectTracker_ObjectLeak, instance, error_obj.location,
-                         "OBJ ERROR : %s object %s has not been destroyed.", string_VkDebugReportObjectTypeEXT(debug_object_type),
-                         FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
+        skip |=
+            LogError("VUID-vkDestroyInstance-instance-00629", instance, error_obj.location, "%s object %s has not been destroyed.",
+                     string_VkDebugReportObjectTypeEXT(debug_object_type), FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
         auto device_layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);

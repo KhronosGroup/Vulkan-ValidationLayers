@@ -262,8 +262,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     VkDevice leaked_device;
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device, &dci, nullptr, &leaked_device));
 
-    // VUID-vkDestroyInstance-instance-00629
-    Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-ObjectTracker-ObjectLeak");
+    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00629");
     vk::DestroyInstance(instance, nullptr);
     Monitor().VerifyFound();
 }

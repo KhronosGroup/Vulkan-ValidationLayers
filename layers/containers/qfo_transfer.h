@@ -83,14 +83,14 @@ struct QFOImageTransferBarrier : public QFOTransferBarrierBase<VkImage> {
     // TODO: codegen a comprehensive complie time type -> string (and or other traits) template family
     static const char *BarrierName() { return "VkImageMemoryBarrier"; }
     static const char *HandleName() { return "VkImage"; }
-    // UNASSIGNED-VkImageMemoryBarrier-image-00001 QFO transfer image barrier must not duplicate QFO recorded in command buffer
-    static const char *ErrMsgDuplicateQFOInCB() { return "UNASSIGNED-VkImageMemoryBarrier-image-00001"; }
-    // UNASSIGNED-VkImageMemoryBarrier-image-00002 QFO transfer image barrier must not duplicate QFO submitted in batch
-    static const char *ErrMsgDuplicateQFOInSubmit() { return "UNASSIGNED-VkImageMemoryBarrier-image-00002"; }
-    // UNASSIGNED-VkImageMemoryBarrier-image-00003 QFO transfer image barrier must not duplicate QFO submitted previously
-    static const char *ErrMsgDuplicateQFOSubmitted() { return "UNASSIGNED-VkImageMemoryBarrier-image-00003"; }
-    // UNASSIGNED-VkImageMemoryBarrier-image-00004 QFO acquire image barrier must have matching QFO release submitted previously
-    static const char *ErrMsgMissingQFOReleaseInSubmit() { return "UNASSIGNED-VkImageMemoryBarrier-image-00004"; }
+    // QFO transfer image barrier must not duplicate QFO recorded in command buffer
+    static const char *DuplicateQFOInCB() { return "WARNING-VkImageMemoryBarrier-image-00001"; }
+    // QFO transfer image barrier must not duplicate QFO submitted in batch
+    static const char *DuplicateQFOInSubmit() { return "WARNING-VkImageMemoryBarrier-image-00002"; }
+    // QFO transfer image barrier must not duplicate QFO submitted previously
+    static const char *DuplicateQFOSubmitted() { return "WARNING-VkImageMemoryBarrier-image-00003"; }
+    // QFO acquire image barrier must have matching QFO release submitted previously
+    static const char *MissingQFOReleaseInSubmit() { return "UNASSIGNED-VkImageMemoryBarrier-image-00004"; }
 };
 
 // Buffer barrier specific implementation
@@ -113,14 +113,14 @@ struct QFOBufferTransferBarrier : public QFOTransferBarrierBase<VkBuffer> {
     }
     static const char *BarrierName() { return "VkBufferMemoryBarrier"; }
     static const char *HandleName() { return "VkBuffer"; }
-    // UNASSIGNED-VkImageMemoryBarrier-buffer-00001 QFO transfer buffer barrier must not duplicate QFO recorded in command buffer
-    static const char *ErrMsgDuplicateQFOInCB() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00001"; }
-    // UNASSIGNED-VkBufferMemoryBarrier-buffer-00002 QFO transfer buffer barrier must not duplicate QFO submitted in batch
-    static const char *ErrMsgDuplicateQFOInSubmit() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00002"; }
-    // UNASSIGNED-VkBufferMemoryBarrier-buffer-00003 QFO transfer buffer barrier must not duplicate QFO submitted previously
-    static const char *ErrMsgDuplicateQFOSubmitted() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00003"; }
-    // UNASSIGNED-VkBufferMemoryBarrier-buffer-00004 QFO acquire buffer barrier must have matching QFO release submitted previously
-    static const char *ErrMsgMissingQFOReleaseInSubmit() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004"; }
+    // QFO transfer buffer barrier must not duplicate QFO recorded in command buffer
+    static const char *DuplicateQFOInCB() { return "WARNING-VkBufferMemoryBarrier-buffer-00001"; }
+    // QFO transfer buffer barrier must not duplicate QFO submitted in batch
+    static const char *DuplicateQFOInSubmit() { return "WARNING-VkBufferMemoryBarrier-buffer-00002"; }
+    // QFO transfer buffer barrier must not duplicate QFO submitted previously
+    static const char *DuplicateQFOSubmitted() { return "WARNING-VkBufferMemoryBarrier-buffer-00003"; }
+    // QFO acquire buffer barrier must have matching QFO release submitted previously
+    static const char *MissingQFOReleaseInSubmit() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004"; }
 };
 
 template <typename TransferBarrier>

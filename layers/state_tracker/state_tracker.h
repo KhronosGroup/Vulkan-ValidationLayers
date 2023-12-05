@@ -20,7 +20,6 @@
 
 #pragma once
 #include "generated/chassis.h"
-#include "error_message/validation_error_enums.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/query_state.h"

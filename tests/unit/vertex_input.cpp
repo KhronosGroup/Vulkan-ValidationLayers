@@ -666,8 +666,7 @@ TEST_F(NegativeVertexInput, AttributeNotConsumed) {
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
-                                      "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
 TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
@@ -691,8 +690,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
 
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
-                                      "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
 TEST_F(NegativeVertexInput, AttributeNotProvided) {

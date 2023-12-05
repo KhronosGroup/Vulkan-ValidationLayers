@@ -18,7 +18,6 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "utils/vk_layer_utils.h"
-#include "error_message/validation_error_enums.h"
 
 TEST_F(NegativeImage, UsageBits) {
     TEST_DESCRIPTION(
@@ -6108,7 +6107,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         vk::CmdDispatch(cmd.handle(), 1, 1, 1);
         cmd.end();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
         cmd.QueueCommandBuffer(false);
         m_errorMonitor->VerifyFound();
     }
@@ -6122,7 +6121,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         vk::CmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
         cmd.end();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
         cmd.QueueCommandBuffer(false);
         m_errorMonitor->VerifyFound();
     }
@@ -6167,7 +6166,7 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     vk::CmdDispatchBase(m_commandBuffer->handle(), 0, 0, 0, 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 }

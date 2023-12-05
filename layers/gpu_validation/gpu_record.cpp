@@ -242,7 +242,7 @@ void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevic
         if (device_props->limits.maxBoundDescriptorSets > 1) {
             device_props->limits.maxBoundDescriptorSets -= 1;
         } else {
-            LogWarning("UNASSIGNED-GPU-Assisted Validation Setup Error.", physicalDevice, record_obj.location,
+            LogWarning("WARNING-GPU-Assisted-Validation-Setup", physicalDevice, record_obj.location,
                        "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
@@ -258,7 +258,7 @@ void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevi
         if (device_props2->properties.limits.maxBoundDescriptorSets > 1) {
             device_props2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {
-            LogWarning("UNASSIGNED-GPU-Assisted Validation Setup Error.", physicalDevice, record_obj.location,
+            LogWarning("WARNING-GPU-Assisted-Validation-Setup", physicalDevice, record_obj.location,
                        "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }

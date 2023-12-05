@@ -127,7 +127,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
         !shaderInt64) {
-        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
+        LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
     }
     buffer_device_address_enabled = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
@@ -158,7 +158,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
-        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
+        LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
                    "Use of descriptor buffers will result in no descriptor checking");
     }
@@ -167,13 +167,13 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     if (gpuav_settings.validate_descriptors && !force_buffer_device_address) {
         gpuav_settings.validate_descriptors = false;
-        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
+        LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "Buffer Device Address + feature is not available.  No descriptor checking will be attempted");
     }
 
     if (gpuav_settings.validate_indirect_buffer && (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(uint32_t))) {
         gpuav_settings.validate_indirect_buffer = false;
-        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc,
+        LogWarning("WARNING-GPU-Assisted-Validation", device, loc,
                    "Device does not support the minimum range of push constants (32 bytes).  No indirect buffer checking will be "
                    "attempted");
     }
@@ -271,7 +271,7 @@ void gpuav::Validator::CreateAccelerationStructureBuildValidationState(const VkD
         }
     }
     if (!graphics_queue_exists) {
-        LogWarning("UNASSIGNED-GPU-Assisted Validation Warning", device, loc, "No queue that supports graphics, GPU-AV aborted.");
+        LogWarning("WARNING-GPU-Assisted-Validation", device, loc, "No queue that supports graphics, GPU-AV aborted.");
         aborted = true;
         return;
     }
@@ -575,7 +575,7 @@ void gpuav::Validator::CreateAccelerationStructureBuildValidationState(const VkD
 
     if (result == VK_SUCCESS) {
         as_validation_state.initialized = true;
-        LogInfo("UNASSIGNED-GPU-Assisted Validation.", device, loc, "Acceleration Structure Building GPU Validation Enabled.");
+        LogInfo("WARNING-GPU-Assisted-Validation", device, loc, "Acceleration Structure Building GPU Validation Enabled.");
     } else {
         aborted = true;
     }

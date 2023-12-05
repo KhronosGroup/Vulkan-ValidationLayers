@@ -709,7 +709,7 @@ bool gpuav::Validator::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state
                 for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                     const auto subresource = image_state.subresource_encoder.Decode(index);
                     const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                    skip |= LogError(objlist, kVUID_Core_DrawState_InvalidImageLayout,
+                    skip |= LogError(objlist, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
                                      "%s command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                      ", mip level %" PRIu32
                                      ") "

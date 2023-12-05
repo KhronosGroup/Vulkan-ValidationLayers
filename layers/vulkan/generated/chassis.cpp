@@ -261,19 +261,18 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     Location loc(vvl::Func::vkCreateInstance);
     // Output layer status information message
     context->LogInfo(
-        "UNASSIGNED-CreateInstance-status-message", context->instance, loc,
+        "WARNING-CreateInstance-status-message", context->instance, loc,
         "Khronos Validation Layer Active:\n    Settings File: %s\n    Current Enables: %s.\n    Current Disables: %s.\n",
         settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
 
     // Create warning message if user is running debug layers.
 #ifndef NDEBUG
-    context->LogPerformanceWarning(
-        "UNASSIGNED-CreateInstance-debug-warning", context->instance, loc,
-        "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
+    context->LogPerformanceWarning("WARNING-CreateInstance-debug-warning", context->instance, loc,
+                                   "Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
     if (!context->fine_grained_locking) {
         context->LogPerformanceWarning(
-            "UNASSIGNED-CreateInstance-locking-warning", context->instance, loc,
+            "WARNING-CreateInstance-locking-warning", context->instance, loc,
             "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
 }

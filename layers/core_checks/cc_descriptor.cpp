@@ -18,7 +18,6 @@
 
 #include <valarray>
 
-#include "error_message/validation_error_enums.h"
 #include "core_validation.h"
 #include "state_tracker/descriptor_sets.h"
 #include "cc_buffer_address.h"
@@ -1022,8 +1021,9 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     }
 
     // Validate that memory is bound to image
+    // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5598
     skip |= ValidateMemoryIsBoundToImage(LogObjectList(image), *image_node, image_info_loc.dot(Field::image),
-                                         kVUID_Core_Bound_Resource_FreedMemoryAccess);
+                                         "UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
 
     const LogObjectList objlist(iv_state->Handle(), image_node->Handle());
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
@@ -3119,7 +3119,7 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
                 const VkDescriptorType type = layout->GetTypeFromIndex(j);
                 if (!pool_state->IsAvailableType(type)) {
                     // This check would be caught by validation if VK_KHR_maintenance1 was not enabled
-                    LogWarning("UNASSIGNED-CoreValidation-AllocateDescriptorSets-WrongType", pool_state->Handle(),
+                    LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", pool_state->Handle(),
                                record_obj.location.dot(Field::pAllocateInfo).dot(Field::pSetLayouts, i),
                                "binding %" PRIu32
                                " was created with %s but the "

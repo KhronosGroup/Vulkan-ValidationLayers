@@ -1264,6 +1264,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     for (auto index = iter->range.begin; index < iter->range.end; index++) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
                         const auto subresource = image_state->subresource_encoder.Decode(index);
+                        // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
                         skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, cb_loc,
                                          "was executed using %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                          ", mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",

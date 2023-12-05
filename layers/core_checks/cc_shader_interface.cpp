@@ -99,7 +99,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
         const auto shader_input = location_it.second.shader_input;
 
         if (attribute_input && !shader_input) {
-            skip |= LogPerformanceWarning(kVUID_Core_Shader_OutputNotConsumed, module_state.handle(), vi_loc,
+            skip |= LogPerformanceWarning("WARNING-Shader-OutputNotConsumed", module_state.handle(), vi_loc,
                                           "Vertex attribute at location %" PRIu32 " not consumed by vertex shader.", location);
         } else if (!attribute_input && shader_input) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-07904", module_state.handle(),
@@ -552,7 +552,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 // Don't give any warning if maintenance4 with vectors
                 if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
-                    skip |= LogPerformanceWarning(kVUID_Core_Shader_OutputNotConsumed, objlist, create_info_loc,
+                    skip |= LogPerformanceWarning("WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,
                                                   "(SPIR-V Interface) %s declared to output location %" PRIu32 " Component %" PRIu32
                                                   " but is not an Input declared by %s.",
                                                   string_VkShaderStageFlagBits(producer_stage), location, component,
