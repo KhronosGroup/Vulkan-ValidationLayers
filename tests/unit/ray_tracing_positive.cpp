@@ -837,15 +837,19 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    vkt::rt::Pipeline test_pipeline(*this, m_device);
+    vkt::rt::Pipeline pipeline(*this, m_device);
     auto top_level_accel_struct =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
-    test_pipeline.AddTopLevelAccelStructBinding(std::move(top_level_accel_struct), 0);
-    test_pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
-    test_pipeline.Build();
+    pipeline.AddTopLevelAccelStructBinding(std::move(top_level_accel_struct), 0);
+    pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.Build();
     m_commandBuffer->begin();
-    test_pipeline.BindResources(*m_commandBuffer);
-    test_pipeline.TraceRays(*m_commandBuffer);
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                              &pipeline.GetDescriptorSet()->set_, 0, nullptr);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     vk::DeviceWaitIdle(*m_device);

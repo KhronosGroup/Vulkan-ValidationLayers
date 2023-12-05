@@ -3636,15 +3636,17 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    vkt::rt::Pipeline test_pipeline(*this, m_device);
-    test_pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
-    test_pipeline.AddDynamicState(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
-    test_pipeline.Build();
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.AddDynamicState(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
+    pipeline.Build();
 
     m_commandBuffer->begin();
-    test_pipeline.BindResources(*m_commandBuffer);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-None-09458");
-    test_pipeline.TraceRays(*m_commandBuffer);
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
