@@ -1124,7 +1124,7 @@ bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint
             if (!(FindDependency(subpass, sp.index, subpass_to_node, processed_nodes) ||
                   FindDependency(sp.index, subpass, subpass_to_node, processed_nodes))) {
                 skip |=
-                    LogError(kVUID_Core_DrawState_InvalidRenderpass, renderpass, attachment_loc,
+                    LogError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", renderpass, attachment_loc,
                              "A dependency between subpasses %d and %d must exist but one is not specified.", subpass, sp.index);
                 result = false;
             }
@@ -1163,7 +1163,7 @@ bool CoreChecks::CheckPreserved(const VkRenderPass renderpass, const VkRenderPas
             }
         }
         if (!has_preserved) {
-            skip |= LogError(kVUID_Core_DrawState_InvalidRenderpass, renderpass, attachment_loc,
+            skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", renderpass, attachment_loc,
                              "Attachment %d is used by a later subpass and must be preserved in subpass %d.", attachment, index);
         }
     }
@@ -2154,10 +2154,10 @@ bool CoreChecks::ValidateDependencies(const vvl::Framebuffer &framebuffer_state,
             }
 
             if (attachment_indices.count(attachment)) {
-                skip |= LogError(kVUID_Core_DrawState_InvalidRenderpass, render_pass_state.renderPass(), error_obj.location,
-                                 "Cannot use same attachment (%" PRIu32 ") as both color and depth output in same subpass (%" PRIu32
-                                 ").",
-                                 attachment, i);
+                skip |= LogError(
+                    "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", render_pass_state.renderPass(), error_obj.location,
+                    "Cannot use same attachment (%" PRIu32 ") as both color and depth output in same subpass (%" PRIu32 ").",
+                    attachment, i);
             }
         }
     }
@@ -4208,8 +4208,9 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
             // Verify that image memory is valid
             auto image_data = Get<vvl::Image>(ivci.image);
+            // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5598
             skip |= ValidateMemoryIsBoundToImage(LogObjectList(ivci.image), *image_data, attachment_loc,
-                                                 kVUID_Core_Bound_Resource_FreedMemoryAccess);
+                                                 "UNASSIGNED-VkFramebufferCreateInfo-BoundResourceFreedMemoryAccess");
 
             // Verify that view only has a single mip level
             if (subresource_range.levelCount != 1) {

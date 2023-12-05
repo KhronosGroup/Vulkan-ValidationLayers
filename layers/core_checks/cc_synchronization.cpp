@@ -168,7 +168,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         objlist.add(other_queue);
                     }
                     skip |= core->LogError(
-                        kVUID_Core_DrawState_QueueForwardProgress, objlist, signal_semaphore_loc,
+                        "UNASSIGNED-vkQueueSubmit-QueueForwardProgress", objlist, signal_semaphore_loc,
                         "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
                         core->FormatHandle(semaphore).c_str(), core->FormatHandle(queue).c_str(), initiator.str().c_str());
                 } else {
@@ -1289,7 +1289,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const E
     auto event_state = Get<vvl::Event>(event);
     if (event_state) {
         if (event_state->write_in_use) {
-            skip |= LogError(kVUID_Core_DrawState_QueueForwardProgress, event, error_obj.location.dot(Field::event),
+            skip |= LogError("UNASSIGNED-vkSetEvent-QueueForwardProgress", event, error_obj.location.dot(Field::event),
                              "(%s) that is already in use by a command buffer.", FormatHandle(event).c_str());
         }
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
@@ -1534,7 +1534,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
         // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
         if (image_state->layout_locked) {
             // TODO: waiting for VUID https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5078
-            skip |= LogError("VUID-Undefined", img_barrier.image, image_loc,
+            skip |= LogError("UNASSIGNED-barrier-shared-presentable", img_barrier.image, image_loc,
                              "(%s) is a shared presentable and attempting to transition from layout %s to layout %s, but image has "
                              "already been presented and cannot have its layout transitioned.",
                              FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.oldLayout),
@@ -1815,7 +1815,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
     if (!inserted.second && inserted.first->second != &cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
         const LogObjectList objlist(cb_state.commandBuffer(), barrier.handle, inserted.first->second->commandBuffer());
-        skip = LogWarning(TransferBarrier::ErrMsgDuplicateQFOInSubmit(), objlist, loc,
+        skip = LogWarning(TransferBarrier::DuplicateQFOInSubmit(), objlist, loc,
                           "%s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
                           " duplicates existing barrier submitted in this batch from %s.",
                           TransferBarrier::BarrierName(), operation, TransferBarrier::HandleName(),
@@ -1842,7 +1842,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
             const QFOTransferBarrierSet<TransferBarrier> &set_for_handle = set_it->second;
             const auto found = set_for_handle.find(release);
             if (found != set_for_handle.cend()) {
-                skip |= LogWarning(TransferBarrier::ErrMsgDuplicateQFOSubmitted(), cb_state.commandBuffer(), loc,
+                skip |= LogWarning(TransferBarrier::DuplicateQFOSubmitted(), cb_state.commandBuffer(), loc,
                                    "%s releasing queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                                    " to dstQueueFamilyIndex %" PRIu32
                                    " duplicates existing barrier queued for execution, without intervening acquire operation.",
@@ -1861,7 +1861,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
             matching_release_found = set_for_handle.find(acquire) != set_for_handle.cend();
         }
         if (!matching_release_found) {
-            skip |= LogError(TransferBarrier::ErrMsgMissingQFOReleaseInSubmit(), cb_state.commandBuffer(), loc,
+            skip |= LogError(TransferBarrier::MissingQFOReleaseInSubmit(), cb_state.commandBuffer(), loc,
                              "in submitted command buffer %s acquiring ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                              " to dstQueueFamilyIndex %" PRIu32 " has no matching release barrier queued for execution.",
                              barrier_name, handle_name, FormatHandle(acquire.handle).c_str(), acquire.srcQueueFamilyIndex,
@@ -1946,7 +1946,7 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &barrier_lo
         }
     }
     if (barrier_record != nullptr) {
-        skip |= LogWarning(TransferBarrier::ErrMsgDuplicateQFOInCB(), cb_state->commandBuffer(), barrier_loc,
+        skip |= LogWarning(TransferBarrier::DuplicateQFOInCB(), cb_state->commandBuffer(), barrier_loc,
                            "%s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
                            " duplicates existing barrier recorded in this command buffer.",
                            transfer_type, handle_name, FormatHandle(barrier_record->handle).c_str(),

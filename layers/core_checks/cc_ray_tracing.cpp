@@ -969,7 +969,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             }
         }
         if (dst_as_state != nullptr && !dst_as_state->update_scratch_memory_requirements_checked) {
-            skip |= LogWarning(kVUID_Core_CmdBuildAccelNV_NoUpdateMemReqQuery, dst, error_obj.location,
+            skip |= LogWarning("WARNING-vkCmdBuildAccelerationStructureNV-update-requirements", dst, error_obj.location,
                                "Updating %s but vkGetAccelerationStructureMemoryRequirementsNV() "
                                "has not been called for update scratch memory.",
                                FormatHandle(dst_as_state->acceleration_structure()).c_str());
@@ -988,7 +988,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     } else {
         if (dst_as_state != nullptr && !dst_as_state->build_scratch_memory_requirements_checked) {
-            skip |= LogWarning(kVUID_Core_CmdBuildAccelNV_NoScratchMemReqQuery, dst, error_obj.location,
+            skip |= LogWarning("WARNING-vkCmdBuildAccelerationStructureNV-scratch-requirements", dst, error_obj.location,
                                "Assigning scratch buffer to %s but "
                                "vkGetAccelerationStructureMemoryRequirementsNV() has not been called for scratch memory.",
                                FormatHandle(dst_as_state->acceleration_structure()).c_str());

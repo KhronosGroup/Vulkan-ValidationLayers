@@ -1345,23 +1345,23 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
 
         // negative testing for QFO transfer tracking
         // Duplicate release in one CB
-        excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00001", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00001", submit_family,
+        excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family,
                   other_family, submit_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
         // Duplicate pending release
-        excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00003", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00003", submit_family,
+        excl_test("WARNING-VkImageMemoryBarrier-image-00003", "WARNING-VkBufferMemoryBarrier-buffer-00003", submit_family,
                   other_family, submit_family);
         // Duplicate acquire in one CB
-        excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00001", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00001", submit_family,
+        excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family,
                   other_family, other_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
         // No pending release
         excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00004", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004", submit_family,
                   other_family, other_family);
         // Duplicate release in two CB
-        excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00002", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00002", submit_family,
+        excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family,
                   other_family, submit_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
         // Duplicate acquire in two CB
         excl_test(submit_family, other_family, submit_family);  // need a succesful release
-        excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00002", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00002", submit_family,
+        excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family,
                   other_family, other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
 
         // Need a third queue family to test this.
@@ -3508,7 +3508,7 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *queue_forward_progress_message = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
+    const char *queue_forward_progress_message = "UNASSIGNED-vkQueueSubmit-QueueForwardProgress";
 
     vkt::CommandBuffer cb1(m_device, m_commandPool);
     cb1.begin();

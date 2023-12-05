@@ -1436,8 +1436,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
                 if (image_state->create_from_swapchain != swapchain_info->swapchain) {
                     const LogObjectList objlist(bind_info.image, image_state->create_from_swapchain, swapchain_info->swapchain);
+                    // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5078
                     skip |= LogError(
-                        kVUID_Core_BindImageMemory_Swapchain, objlist, loc.dot(Field::image),
+                        "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain", objlist, loc.dot(Field::image),
                         "(%s) is created by %s, but the image is bound by %s. The image should be created and bound by the same "
                         "swapchain",
                         FormatHandle(bind_info.image).c_str(), FormatHandle(image_state->create_from_swapchain).c_str(),

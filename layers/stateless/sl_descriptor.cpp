@@ -313,7 +313,8 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
         if (!IsExtEnabled(device_extensions.vk_ext_custom_border_color)) {
-            skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc.dot(Field::borderColor),
+            // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2787
+            skip |= LogError("UNASSIGNED-DrawState-ExtensionNotEnabled", device, create_info_loc.dot(Field::borderColor),
                              "is %s but %s is not enabled.", string_VkBorderColor(pCreateInfo->borderColor),
                              VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
         }
@@ -570,16 +571,17 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
 
     // TODO - Remove these 2 extension checks once the enum-to-extensions logic is generated
     // mostly likely will fail test trying to hit these
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2787
     if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR &&
         !IsExtEnabled(device_extensions.vk_khr_push_descriptor)) {
-        skip |= LogError(kVUID_Core_DrawState_ExtensionNotEnabled, device, error_obj.location,
+        skip |= LogError("UNASSIGNED-DrawState-ExtensionNotEnabled", device, error_obj.location,
                          "Attempted to use %s in %s but its required extension %s has not been enabled.\n",
                          "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR", "VkDescriptorSetLayoutCreateInfo::flags",
                          VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
     if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT &&
         !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
-        skip |= LogError(kVUID_Core_DrawState_ExtensionNotEnabled, device, error_obj.location,
+        skip |= LogError("UNASSIGNED-DrawState-ExtensionNotEnabled", device, error_obj.location,
                          "Attemped to use %s in %s but its required extension %s has not been enabled.\n",
                          "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT", "VkDescriptorSetLayoutCreateInfo::flags",
                          VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);

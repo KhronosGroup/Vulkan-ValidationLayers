@@ -570,7 +570,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     // Introduce error:
     // Free the attachment image memory, then create framebuffer.
     delete image_memory;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkFramebufferCreateInfo-BoundResourceFreedMemoryAccess");
     vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
     m_errorMonitor->VerifyFound();
 }

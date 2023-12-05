@@ -1223,7 +1223,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
     // There's no way we can destroy the fence at this point. Even though DestroyDevice failed, the loader has already removed
     // references to the device
     m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyInstance-instance-00629");
 }
 
 TEST_F(VkLayerTest, LeakABuffer) {
@@ -1274,7 +1274,7 @@ TEST_F(VkLayerTest, LeakABuffer) {
     // There's no way we can destroy the buffer at this point.
     // Even though DestroyDevice failed, the loader has already removed references to the device
     m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyInstance-instance-00629");
 }
 
 TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
@@ -1828,7 +1828,7 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     }
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is already in use by a command buffer.");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkSetEvent-QueueForwardProgress");
         vk::SetEvent(m_device->device(), event.handle());
         m_errorMonitor->VerifyFound();
     }

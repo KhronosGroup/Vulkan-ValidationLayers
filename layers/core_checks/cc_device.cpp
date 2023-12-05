@@ -461,7 +461,7 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
             read_file.close();
         } else {
             Location loc(Func::vkCreateDevice);
-            LogInfo("UNASSIGNED-cache-file-error", device, loc,
+            LogInfo("WARNING-cache-file-error", device, loc,
                     "Cannot open shader validation cache at %s for reading (it may not exist yet)", validation_cache_path.c_str());
         }
 
@@ -488,7 +488,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 
         validation_cache_data = (char *)malloc(sizeof(char) * validation_cache_size);
         if (!validation_cache_data) {
-            LogInfo("UNASSIGNED-cache-memory-error", device, loc, "Validation Cache Memory Error");
+            LogInfo("WARNING-cache-memory-error", device, loc, "Validation Cache Memory Error");
             return;
         }
 
@@ -496,7 +496,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
             CoreLayerGetValidationCacheDataEXT(device, core_validation_cache, &validation_cache_size, validation_cache_data);
 
         if (result != VK_SUCCESS) {
-            LogInfo("UNASSIGNED-cache-retrieval-error", device, loc, "Validation Cache Retrieval Error");
+            LogInfo("WARNING-cache-retrieval-error", device, loc, "Validation Cache Retrieval Error");
             free(validation_cache_data);
             return;
         }
@@ -507,7 +507,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
                 write_file.write(static_cast<char *>(validation_cache_data), validation_cache_size);
                 write_file.close();
             } else {
-                LogInfo("UNASSIGNED-cache-write-error", device, loc, "Cannot open shader validation cache at %s for writing",
+                LogInfo("WARNING-cache-write-error", device, loc, "Cannot open shader validation cache at %s for writing",
                         validation_cache_path.c_str());
             }
         }

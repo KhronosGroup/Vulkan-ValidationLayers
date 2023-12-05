@@ -117,7 +117,7 @@ bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state
             if (image_state.createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
                 // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
                 const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                skip |= LogPerformanceWarning(kVUID_Core_DrawState_InvalidImageLayout, objlist, loc,
+                skip |= LogPerformanceWarning("WARNING-ImageLayout-General", objlist, loc,
                                               "For optimal performance %s layout should be %s instead of GENERAL.",
                                               FormatHandle(image_state).c_str(), string_VkImageLayout(optimal_layout));
             }
@@ -266,7 +266,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_state.commandBuffer(), image_state->Handle());
-                        skip |= LogError(kVUID_Core_DrawState_InvalidImageLayout, objlist, loc,
+                        skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
                                          "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                          ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
                                          FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(), subresource.aspectMask,
@@ -504,7 +504,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
 
     if (render_pass_info->attachmentCount != framebuffer_info.attachmentCount) {
         const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer());
-        skip |= LogError(kVUID_Core_DrawState_InvalidRenderpass, objlist, rp_begin_loc,
+        // VU bieng worked on at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2267
+        skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", objlist, rp_begin_loc,
                          "You cannot start a render pass using a framebuffer with a different number of attachments (%" PRIu32
                          " vs %" PRIu32 ").",
                          render_pass_info->attachmentCount, framebuffer_info.attachmentCount);

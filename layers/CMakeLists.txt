@@ -165,7 +165,6 @@ target_sources(vvl PRIVATE
     core_checks/cc_ycbcr.cpp
     drawdispatch/descriptor_validator.cpp
     drawdispatch/drawdispatch_vuids.cpp
-    error_message/validation_error_enums.h
     external/vma/vma.h
     external/vma/vma.cpp
     ${API_TYPE}/generated/best_practices.cpp

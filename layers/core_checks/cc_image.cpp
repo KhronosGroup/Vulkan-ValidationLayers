@@ -308,7 +308,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             total_size = (total_size + ig_mask) & ~ig_mask;
 
             if (total_size > format_limits.maxResourceSize) {
-                skip |= LogWarning(kVUID_Core_Image_InvalidFormatLimitsViolation, device, error_obj.location,
+                skip |= LogWarning("WARNING-Image-InvalidFormatLimitsViolation", device, error_obj.location,
                                    "resource size exceeds allowable maximum Image resource size = %" PRIu64
                                    ", maximum resource size = %" PRIu64 " for format %s.",
                                    total_size, format_limits.maxResourceSize, string_VkFormat(pCreateInfo->format));

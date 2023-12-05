@@ -122,6 +122,7 @@
     "UNASSIGNED-BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat";
 
 [[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_InvalidCount = "UNASSIGNED-BestPractices-SwapchainInvalidCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_PriorCount = "UNASSIGNED-BestPractices-SwapchainPriorCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_DepthBiasNoAttachment = "UNASSIGNED-BestPractices-DepthBiasNoAttachment";
 [[maybe_unused]] static const char *kVUID_BestPractices_SpirvDeprecated_WorkgroupSize =
     "UNASSIGNED-BestPractices-SpirvDeprecated_WorkgroupSize";
