@@ -126,6 +126,31 @@ struct SyncBufferMemoryBarrier {
     SyncBufferMemoryBarrier() = default;
 };
 
+struct SyncImageMemoryBarrier {
+    using ImageState = syncval_state::ImageState;
+    using Image = std::shared_ptr<const ImageState>;
+
+    Image image;
+    uint32_t index;
+    SyncBarrier barrier;
+    VkImageLayout old_layout;
+    VkImageLayout new_layout;
+    VkImageSubresourceRange range;
+
+    bool IsLayoutTransition() const { return old_layout != new_layout; }
+    const VkImageSubresourceRange &Range() const { return range; };
+    const ImageState *GetState() const { return image.get(); }
+    SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
+                           VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
+        : image(image_),
+          index(index_),
+          barrier(barrier_),
+          old_layout(old_layout_),
+          new_layout(new_layout_),
+          range(subresource_range_) {}
+    SyncImageMemoryBarrier() = default;
+};
+
 class SyncOpBase {
   public:
     SyncOpBase() : command_(vvl::Func::Empty) {}

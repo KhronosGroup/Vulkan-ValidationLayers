@@ -486,11 +486,6 @@ HazardResult AccessContext::DetectImageBarrierHazard(const ImageState &image, Vk
     return DetectHazard(detector, image, subresource_range, false, options);
 }
 
-HazardResult AccessContext::DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const {
-    return DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope.exec_scope,
-                                    image_barrier.barrier.src_access_scope, image_barrier.range, kDetectAll);
-}
-
 ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(ResourceAccessRangeMap *accesses,
                                                                                        const Iterator &pos,
                                                                                        const ResourceAccessRange &range) const {
