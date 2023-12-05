@@ -252,6 +252,14 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Comma
 }  // namespace as
 
 namespace rt {
+
+struct TraceRaysSbt {
+    VkStridedDeviceAddressRegionKHR ray_gen_sbt{};
+    VkStridedDeviceAddressRegionKHR miss_sbt{};
+    VkStridedDeviceAddressRegionKHR hit_sbt{};
+    VkStridedDeviceAddressRegionKHR callable_sbt{};
+};
+
 class Pipeline {
   public:
     Pipeline(VkLayerTest& test, vkt::Device* device);
@@ -263,7 +271,7 @@ class Pipeline {
     void AddBinding(VkDescriptorSetLayoutBinding binding);
     std::shared_ptr<as::BuildGeometryInfoKHR> AddTopLevelAccelStructBinding(
         std::shared_ptr<vkt::as::BuildGeometryInfoKHR> top_level_accel_struct, uint32_t bind_point);
-    void SetPushConstantRangeSize(uint32_t size);
+    void SetPushConstantRangeSize(uint32_t byte_size);
     void SetRayGenShader(const char* glsl);
     void AddMissShader(const char* glsl);
     void AddLibrary(const Pipeline& library);
@@ -275,14 +283,12 @@ class Pipeline {
     void BuildPipeline();
     void BuildSbt();
 
-    // Use
-    // ---
-    void BindResources(vkt::CommandBuffer& cmd_buffer, void* push_constants = nullptr, uint32_t push_constants_byte_size = 0);
-    void TraceRays(vkt::CommandBuffer& cmd_buffer);
-
     // Get
     // ---
-    const auto& GetPipelineHandle() { return rt_pipeline_; }
+    const auto& Handle() { return rt_pipeline_; }
+    const auto& GetPipelineLayout() { return pipeline_layout_; }
+    const auto& GetDescriptorSet() { return desc_set_; }
+    TraceRaysSbt GetTraceRaysSbt();
     uint32_t GetShaderGroupsCount();
     std::vector<uint8_t> GetRayTracingShaderGroupHandles();
     std::vector<uint8_t> GetRayTracingCaptureReplayShaderGroupHandles();
