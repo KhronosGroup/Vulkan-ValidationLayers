@@ -4044,9 +4044,8 @@ TEST_F(VkGpuAssistedLayerTest, UpdateAfterBind) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[1], 0, NULL);
 
     m_commandBuffer->end();
-    // TODO: this is the correct error m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor uninitialized");
+    
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();

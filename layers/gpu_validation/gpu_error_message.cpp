@@ -369,7 +369,7 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
             strm << "(set = " << debug_record[kInstBindlessUninitOutDescSet]
                  << ", binding = " << debug_record[kInstBindlessUninitOutBinding] << ") Descriptor index "
                  << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized.";
-            out_vuid_msg = "UNASSIGNED-Descriptor uninitialized";
+            out_vuid_msg = vuid.invalid_descriptor;
             error_found = true;
         } break;
         case kInstErrorBindlessDestroyed: {
@@ -397,7 +397,7 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
             if (size == 0) {
                 strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
                      << " is uninitialized.";
-                out_vuid_msg = "UNASSIGNED-Descriptor uninitialized";
+                out_vuid_msg = vuid.invalid_descriptor;
                 error_found = true;
                 break;
             }
