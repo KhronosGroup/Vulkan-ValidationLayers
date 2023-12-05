@@ -489,7 +489,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     attachments[subpass.pColorAttachments[1].attachment].samples = VK_SAMPLE_COUNT_8_BIT;
     depth.attachment = VK_ATTACHMENT_UNUSED;  // Avoids triggering 01418
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-06868",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-09430",
                          "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872");
 
     depth.attachment = 3;
@@ -1055,8 +1055,8 @@ TEST_F(NegativeRenderPass, MixedAttachmentSamplesAMD) {
     attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
     attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-01506",
-                         "VUID-VkSubpassDescription2-pColorAttachments-03070");
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-None-09431",
+                         "VUID-VkSubpassDescription2-None-09456");
 }
 
 TEST_F(NegativeRenderPass, BeginRenderArea) {

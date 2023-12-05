@@ -1843,7 +1843,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                     .samples;
                             if (current_sample_count != last_sample_count) {
                                 const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
-                                                           : "VUID-VkSubpassDescription-pColorAttachments-06868";
+                                                           : "VUID-VkSubpassDescription-pColorAttachments-09430";
                                 skip |= LogError(vuid, device, attachment_loc.dot(Field::samples),
                                                  "is %s, but the pColorAttachments[%" PRIu32 "] has sample count %s.",
                                                  string_VkSampleCountFlagBits(current_sample_count), last_sample_count_attachment,
@@ -1867,8 +1867,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
                         if (IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples)) {
                             if (current_sample_count > depth_stencil_sample_count) {
-                                const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-03070"
-                                                           : "VUID-VkSubpassDescription-pColorAttachments-01506";
+                                const char *vuid =
+                                    use_rp2 ? "VUID-VkSubpassDescription2-None-09456" : "VUID-VkSubpassDescription-None-09431";
                                 skip |= LogError(vuid, device, attachment_loc.dot(Field::samples),
                                                  "%s) (referenced by %s) is larger than from pCreateInfo->pAttachments[%" PRIu32
                                                  "].samples (%s) (referenced by %s).",
