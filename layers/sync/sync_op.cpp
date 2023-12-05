@@ -250,13 +250,19 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
     if (!context) return skip;
     assert(barriers_.size() == 1);  // PipelineBarriers only support a single barrier set.
 
+    auto detect_image_barrier_hazard = [context](const SyncImageMemoryBarrier &image_barrier) {
+        return context->DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope.exec_scope,
+                                                 image_barrier.barrier.src_access_scope, image_barrier.range,
+                                                 AccessContext::kDetectAll);
+    };
+
     // Validate Image Layout transitions
     const auto &barrier_set = barriers_[0];
     for (const auto &image_barrier : barrier_set.image_memory_barriers) {
         if (image_barrier.new_layout == image_barrier.old_layout) continue;  // Only interested in layout transitions at this point.
         const auto *image_state = image_barrier.image.get();
         if (!image_state) continue;
-        const auto hazard = context->DetectImageBarrierHazard(image_barrier);
+        const auto hazard = detect_image_barrier_hazard(image_barrier);
         if (hazard.IsHazard()) {
             // PHASE1 TODO -- add tag information to log msg when useful.
             const Location loc(command_);
