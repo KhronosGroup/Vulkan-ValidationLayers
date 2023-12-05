@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=ON"
             ],
-            "commit": "b5d60826e9d2ad130fd9eb140ea633c349159952"
+            "commit": "6b4f0c9d0b7d02db5ed0b03433ae62c03bbff722"
         },
         {
             "name": "robin-hood-hashing",
