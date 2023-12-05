@@ -3021,6 +3021,140 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
+TEST_F(VkLayerTest, ExtensionXmlDependsLogic) {
+    TEST_DESCRIPTION("Make sure the OR in 'depends' from XML is observed correctly");
+    // VK_KHR_buffer_device_address requires
+    // (VK_KHR_get_physical_device_properties2 AND VK_KHR_device_group) OR VK_VERSION_1_1
+    // If Vulkan 1.1 is not supported, should still be valid
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    if (!InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME) ||
+        !InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required instance extensions";
+    }
+    m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (!DeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) ||
+        !DeviceExtensionSupported(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required device extensions";
+    }
+
+    m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    // missing VK_KHR_device_group
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priority;
+
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = nullptr;
+    dev_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
+    VkDevice device;
+    vk::CreateDevice(gpu_, &dev_info, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ExtensionXmlDependsLogic2) {
+    // VK_KHR_shared_presentable_image requires
+    // VK_KHR_swapchain
+    //    and
+    // VK_KHR_get_surface_capabilities2 (missing)
+    //    and
+    //      VK_KHR_get_physical_device_properties2
+    //         or
+    //      Version 1.1
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    if (!InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME) ||
+        !InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required instance extensions";
+    }
+    m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (!DeviceExtensionSupported(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME) ||
+        !DeviceExtensionSupported(VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required device extensions";
+    }
+
+    m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priority;
+
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = nullptr;
+    dev_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
+    VkDevice device;
+    vk::CreateDevice(gpu_, &dev_info, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ExtensionXmlDependsLogic3) {
+    // VK_KHR_shared_presentable_image requires
+    // VK_KHR_swapchain
+    //    and
+    // VK_KHR_get_surface_capabilities2
+    //    and
+    //      VK_KHR_get_physical_device_properties2  (missing)
+    //         or
+    //      Version 1.1  (missing)
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    if (!InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME) ||
+        !InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required instance extensions";
+    }
+    m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (!DeviceExtensionSupported(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME) ||
+        !DeviceExtensionSupported(VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required device extensions";
+    }
+
+    m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priority;
+
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = nullptr;
+    dev_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
+    VkDevice device;
+    vk::CreateDevice(gpu_, &dev_info, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, MissingExtensionPhysicalDeviceProperties) {
     TEST_DESCRIPTION("Don't enable instance extension needed");
 
