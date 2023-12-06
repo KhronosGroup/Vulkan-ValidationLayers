@@ -837,9 +837,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             extStructVar = f'allowed_structs_{structTypeName}'
                             extStructCount = f'{extStructVar}.size()'
                             extStructData = f'{extStructVar}.data()'
-                            extraStype = ', VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT' if structTypeName == 'VkInstanceCreateInfo' else ''
                             extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
-                            usedLines.append(f'constexpr std::array {extStructVar} = {{ {extendedBy}{extraStype} }};\n')
+                            usedLines.append(f'constexpr std::array {extStructVar} = {{ {extendedBy} }};\n')
                         usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {extStructCount}, {extStructData}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, valueRequired, lenValueRequired, lenPtrRequired, funcName, structTypeName)

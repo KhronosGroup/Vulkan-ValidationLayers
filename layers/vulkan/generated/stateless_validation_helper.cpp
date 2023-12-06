@@ -7273,8 +7273,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
                                                                      VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                                                                      VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
                                                                      VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-                                                                     VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT,
-                                                                     VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT};
+                                                                     VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT};
 
         skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkInstanceCreateInfo.size(),
                                     allowed_structs_VkInstanceCreateInfo.data(), GeneratedVulkanHeaderVersion,
