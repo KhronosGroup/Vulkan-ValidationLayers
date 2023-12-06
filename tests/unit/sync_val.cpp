@@ -583,6 +583,9 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
 }
 
 TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 

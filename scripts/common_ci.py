@@ -225,34 +225,20 @@ def RunVVLTests(args):
 
     lvt_cmd = os.path.join(CI_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 
-    # The following test(s) fail with thread sanitization enabled.
-    failing_tsan_tests = '-VkPositiveLayerTest.QueueThreading'
-    failing_tsan_tests += ':NegativeCommand.SecondaryCommandBufferRerecordedExplicitReset'
-    failing_tsan_tests += ':NegativeCommand.SecondaryCommandBufferRerecordedNoReset'
-    failing_tsan_tests += ':NegativeSyncVal.CopyOptimalImageHazards'
-    failing_tsan_tests += ':NegativeViewportInheritance.BasicUsage'
-    failing_tsan_tests += ':NegativeViewportInheritance.MultiViewport'
-    # NOTE: These test(s) fails sporadically.
-    # These need extra care to prevent a regression in the future.
-    failing_tsan_tests += ':PositiveSyncObject.WaitTimelineSemThreadRace'
-    failing_tsan_tests += ':PositiveSyncObject.WaitEventThenSet'
-    failing_tsan_tests += ':PositiveQuery.ResetQueryPoolFromDifferentCB'
-    failing_tsan_tests += ':PositiveQuery.PerformanceQueries'
-
     if args.mockAndroid:
         # TODO - only reason running this subset, is mockAndoid fails any test that does
         # a manual vkCreateDevice call and need to investigate more why
         RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
         return
 
-    RunShellCmd(lvt_cmd + f" --gtest_filter={failing_tsan_tests}", env=lvt_env)
+    RunShellCmd(lvt_cmd, env=lvt_env)
 
     print("Re-Running syncval tests with core validation enabled")
-    RunShellCmd(lvt_cmd + f' --gtest_filter=*SyncVal*:{failing_tsan_tests} --syncval-enable-core', env=lvt_env)
+    RunShellCmd(lvt_cmd + f' --gtest_filter=*SyncVal* --syncval-enable-core', env=lvt_env)
 
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING disabled")
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '0'
-    RunShellCmd(lvt_cmd + f' --gtest_filter=*Thread*:{failing_tsan_tests}', env=lvt_env)
+    RunShellCmd(lvt_cmd + f' --gtest_filter=*Thread*', env=lvt_env)
 
 def GetArgParser():
     configs = ['release', 'debug']

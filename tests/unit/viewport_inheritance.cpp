@@ -401,6 +401,9 @@ class ViewportInheritanceTestData {
 };
 
 TEST_F(NegativeViewportInheritance, BasicUsage) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     TEST_DESCRIPTION("Simple correct and incorrect usage of VK_NV_inherited_viewport_scissor");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -662,6 +665,9 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
 }
 
 TEST_F(NegativeViewportInheritance, MultiViewport) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     TEST_DESCRIPTION("VK_NV_inherited_viewport_scissor tests with multiple viewports/scissors");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());

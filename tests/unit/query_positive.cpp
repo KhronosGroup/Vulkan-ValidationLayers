@@ -24,6 +24,10 @@ bool QueryTest::HasZeroTimestampValidBits() {
 }
 
 TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
+#if defined(VVL_ENABLE_TSAN)
+    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     TEST_DESCRIPTION("Reset a query on one CB and use it in another.");
 
     RETURN_IF_SKIP(Init());
@@ -443,6 +447,10 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
 }
 
 TEST_F(PositiveQuery, PerformanceQueries) {
+#if defined(VVL_ENABLE_TSAN)
+    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     TEST_DESCRIPTION("Test performance queries.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
