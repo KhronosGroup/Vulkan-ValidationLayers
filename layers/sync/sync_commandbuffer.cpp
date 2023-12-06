@@ -1083,7 +1083,7 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
             out << ", subcmd: " << record.sub_command;
         }
         for (const auto &named_handle : record.handles) {
-            out << "," << named_handle.Formatter(formatter.sync_state);
+            out << ", " << named_handle.Formatter(formatter.sync_state);
         }
         out << ", reset_no: " << std::to_string(record.reset_count);
     }
