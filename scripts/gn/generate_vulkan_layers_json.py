@@ -28,7 +28,7 @@ import platform
 import sys
 
 def glob_slash(dirname):
-    """Like regular glob but replaces \ with / in returned paths."""
+    r"""Like regular glob but replaces \ with / in returned paths."""
     return [s.replace('\\', '/') for s in glob.glob(dirname)]
 
 def main():
