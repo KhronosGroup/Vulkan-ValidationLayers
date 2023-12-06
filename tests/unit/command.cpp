@@ -483,6 +483,10 @@ TEST_F(NegativeCommand, NoBeginCommandBuffer) {
 }
 
 TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
+
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-recording");
@@ -507,6 +511,10 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
 }
 
 TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedNoReset) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
+
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-recording");

@@ -55,6 +55,16 @@ using std::vector;
 #define VVL_ENABLE_ASAN 1
 #endif
 
+// GCC defines __SANITIZE_THREAD__ when compiling with address sanitization
+// However, clang doesn't. Instead you have to use __has_feature to check.
+#if defined(__clang__)
+#if __has_feature(thread_sanitizer)
+#define VVL_ENABLE_TSAN 1
+#endif
+#elif defined(__SANITIZE_THREAD__)
+#define VVL_ENABLE_TSAN 1
+#endif
+
 #if defined(VVL_ENABLE_ASAN)
 #if __has_include(<sanitizer/lsan_interface.h>)
 #include <sanitizer/lsan_interface.h>

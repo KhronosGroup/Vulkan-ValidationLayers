@@ -433,6 +433,10 @@ TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
 }
 
 TEST_F(VkPositiveLayerTest, QueueThreading) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
+
     TEST_DESCRIPTION("Test concurrent Queue access from vkGet and vkSubmit");
 
     using namespace std::chrono;

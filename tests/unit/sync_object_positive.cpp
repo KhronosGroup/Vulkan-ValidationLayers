@@ -1568,6 +1568,10 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
 }
 
 TEST_F(PositiveSyncObject, WaitEventThenSet) {
+#if defined(VVL_ENABLE_TSAN)
+    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 
     RETURN_IF_SKIP(Init());
@@ -2128,6 +2132,10 @@ struct WaitTimelineSemThreadData : public SemBufferRaceData {
 };
 
 TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
+#if defined(VVL_ENABLE_TSAN)
+    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework());
