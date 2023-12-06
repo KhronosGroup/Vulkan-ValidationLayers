@@ -220,7 +220,7 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
     void *safe_pNext{};
 
     while (pNext) {
-        const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
+        const VkBaseOutStructure *header = static_cast<const VkBaseOutStructure *>(pNext);
 
         switch (header->sType) {
             // Add special-case code to copy beloved secret loader structs
@@ -245,7 +245,7 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'            case {struct.sType}:\n')
-            out.append(f'                safe_pNext = new safe_{struct.name}(reinterpret_cast<const {struct.name} *>(pNext), copy_state, false);\n')
+            out.append(f'                safe_pNext = new safe_{struct.name}(static_cast<const {struct.name} *>(pNext), copy_state, false);\n')
             out.append('                break;\n')
         out.extend(guard_helper.add_guard(None))
 
@@ -279,24 +279,28 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
 void FreePnextChain(const void *pNext) {
     if (!pNext) return;
 
-    auto header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
+    auto header = const_cast<VkBaseOutStructure *>(static_cast<const VkBaseOutStructure *>(pNext));
 
     switch (header->sType) {
         // Special-case Loader Instance Struct passed to/from layer in pNext chain
         case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO:
             FreePnextChain(header->pNext);
-            delete reinterpret_cast<const VkLayerInstanceCreateInfo *>(pNext);
+            header->pNext = nullptr;       
+            delete static_cast<const VkLayerInstanceCreateInfo *>(pNext);
             break;
         // Special-case Loader Device Struct passed to/from layer in pNext chain
         case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO:
             FreePnextChain(header->pNext);
-            delete reinterpret_cast<const VkLayerDeviceCreateInfo *>(pNext);
+            header->pNext = nullptr;       
+            delete static_cast<const VkLayerDeviceCreateInfo *>(pNext);
             break;
 ''')
 
         for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'        case {struct.sType}:\n')
+            out.append(f'            FreePnextChain(header->pNext);\n')
+            out.append(f'            header->pNext = nullptr;\n')
             out.append(f'            delete reinterpret_cast<const safe_{struct.name} *>(header);\n')
             out.append(f'            break;\n')
         out.extend(guard_helper.add_guard(None))
@@ -308,6 +312,7 @@ void FreePnextChain(const void *pNext) {
                 if (item.first == header->sType) {
                     if (header->pNext) {
                         FreePnextChain(header->pNext);
+                        header->pNext = nullptr;
                     }
                     free(const_cast<void *>(pNext));
                     pNext = nullptr;
@@ -316,6 +321,7 @@ void FreePnextChain(const void *pNext) {
             }
             if (pNext) {
                 FreePnextChain(header->pNext);
+                header->pNext = nullptr;   
             }
             break;
     }
