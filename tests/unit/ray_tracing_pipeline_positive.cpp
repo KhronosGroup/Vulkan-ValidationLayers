@@ -19,7 +19,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -113,7 +113,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&features13);
@@ -161,34 +161,17 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
         "Regression test for issue 6282: make sure that when validating vkGetRayTracingCaptureReplayShaderGroupHandlesKHR on a "
         "pipeline created using pipeline libraries, the total shader group count is computed using info from the libraries.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper();
-    accel_struct_features.accelerationStructure = VK_TRUE;
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_struct_features);
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper(&bda_features);
-    rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
-    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&rt_pipeline_features);
-    gpl_features.graphicsPipelineLibrary = VK_TRUE;
-    VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_group_handle_features = vku::InitStructHelper(&gpl_features);
-    pipeline_group_handle_features.pipelineLibraryGroupHandles = VK_TRUE;
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&pipeline_group_handle_features);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
 
-    features2 = GetPhysicalDeviceFeatures2(pipeline_group_handle_features);
-    if (!gpl_features.graphicsPipelineLibrary) {
-        GTEST_SKIP() << "graphicsPipelineLibrary feature not supported, skipping test";
-    }
-    if (!pipeline_group_handle_features.pipelineLibraryGroupHandles) {
-        GTEST_SKIP() << "pipelineLibraryGroupHandles feature not supported, skipping test";
-    }
-    if (!rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
-        GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not supported, skipping test";
-    }
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
     rt_pipe_lib.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);

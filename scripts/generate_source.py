@@ -70,6 +70,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
     from generators.state_tracker_helper_generator import StateTrackerHelperOutputGenerator
+    from generators.feature_requirements import FeatureRequirementsGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -276,6 +277,14 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'state_tracker_helper.cpp' : {
             'generator' : StateTrackerHelperOutputGenerator,
+            'genCombined': True,
+        },
+        'feature_requirements_helper.h' : {
+            'generator' : FeatureRequirementsGenerator,
+            'genCombined': True,
+        },
+        'feature_requirements_helper.cpp' : {
+            'generator' : FeatureRequirementsGenerator,
             'genCombined': True,
         },
     }

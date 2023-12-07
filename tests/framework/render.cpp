@@ -393,6 +393,14 @@ std::string VkRenderFramework::RequiredExtensionsNotSupported() const {
     return ss.str();
 }
 
+void VkRenderFramework::AddRequiredFeature(vkt::Feature feature) {
+    feature_requirements_.AddRequiredFeature(m_target_api_version, feature);
+}
+
+void VkRenderFramework::AddDisabledFeature(vkt::Feature feature) {
+    feature_requirements_.AddDisabledFeature(m_target_api_version, feature);
+}
+
 bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     if (CanEnableInstanceExtension(ext_name)) {
         return true;
@@ -586,6 +594,29 @@ VkFormat VkRenderFramework::GetRenderTargetFormat() {
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
+    if (!features && !create_device_pnext) {
+        if (feature_requirements_.HasFeatures2()) {
+            if (vk::GetPhysicalDeviceFeatures2) {
+                vk::GetPhysicalDeviceFeatures2(gpu(), feature_requirements_.GetFeatures2());
+            } else {
+                vk::GetPhysicalDeviceFeatures2KHR(gpu(), feature_requirements_.GetFeatures2());
+            }
+        } else {
+            GetPhysicalDeviceFeatures(feature_requirements_.GetFeatures());
+        }
+
+        if (const char *f = feature_requirements_.AnyRequiredFeatureDisabled()) {
+            GTEST_SKIP() << "Required feature " << f << " is not available on device, skipping test";
+        }
+
+        feature_requirements_.EnforceDisableFeatures();
+
+        if (feature_requirements_.HasFeatures2()) {
+            create_device_pnext = feature_requirements_.GetFeatures2();
+        } else {
+            features = feature_requirements_.GetFeatures();
+        }
+    }
     VkPhysicalDeviceVulkan12Features vk12_features = vku::InitStructHelper();
     const auto ExtensionIncludedInDeviceApiVersion = [&](const char *extension) {
         if (IsPromotedDeviceExtension(extension)) {

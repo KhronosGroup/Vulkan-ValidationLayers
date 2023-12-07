@@ -20,6 +20,7 @@
 
 import os
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import PlatformGuardHelper
 
 class PnextChainExtractionGenerator(BaseGenerator):
     def __init__(self):
@@ -82,6 +83,9 @@ class PnextChainExtractionGenerator(BaseGenerator):
 
             // Remove last element from a pNext chain
             void PnextChainRemoveLast(void *chain);
+            
+            // Free dynamically allocated pnext chain structs
+            void PnextChainFree(void *chain);       
 
             // Helper class relying on RAII to help with adding and removing an element from a pNext chain
             class PnextChainScopedAdd {
@@ -159,7 +163,24 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
                 prev->pNext = nullptr;
             }
 
+            void PnextChainFree(void *chain) {
+                if (!chain) return;       
+                auto header = reinterpret_cast<VkBaseOutStructure *>(chain);
+                switch (header->sType) {
             ''')
+        
+        guard_helper = PlatformGuardHelper()
+        for struct in [x for x in self.vk.structs.values() if x.extends]:
+            out.extend(guard_helper.add_guard(struct.protect))
+            out.append(f'case {struct.sType}:\n')
+            out.append('PnextChainFree(header->pNext);\n')
+            out.append('header->pNext = nullptr;\n')
+            out.append(f'delete reinterpret_cast<const {struct.name} *>(header);\n')
+            out.append('break;\n')
+        out.extend(guard_helper.add_guard(None))
+        out.append('default:assert(false);break;')
+        out.append('    }')
+        out.append('}\n')
 
         # Define functions
         for struct_name in self.target_structs:

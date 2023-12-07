@@ -397,6 +397,8 @@ source_set("vulkan_layer_utils") {
     "layers/vulkan/generated/error_location_helper.cpp",
     "layers/vulkan/generated/error_location_helper.h",
     "layers/vulkan/generated/layer_chassis_dispatch.h",
+    "layers/vulkan/generated/feature_requirements_helper.cpp",
+    "layers/vulkan/generated/feature_requirements_helper.h",
     "layers/vulkan/generated/pnext_chain_extraction.cpp",
     "layers/vulkan/generated/pnext_chain_extraction.h",
     "layers/vulkan/generated/vk_api_version.h",

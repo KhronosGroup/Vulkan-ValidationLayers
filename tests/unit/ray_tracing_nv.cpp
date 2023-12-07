@@ -18,9 +18,23 @@
 #include "../framework/descriptor_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
 
+void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 /*= nullptr*/,
+                                                      VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
+
+    RETURN_IF_SKIP(InitFramework(enabled_features));
+
+    if (features2) {
+        // extension enabled as dependency of RT extension
+        vk::GetPhysicalDeviceFeatures2KHR(gpu(), features2);
+    }
+}
+
 TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_props);
@@ -65,7 +79,7 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
 TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     TEST_DESCRIPTION("Validate acceleration structure geometries.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
@@ -317,7 +331,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
 TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
@@ -424,7 +438,7 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure binding.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
@@ -572,7 +586,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     OneOffDescriptorSet ds(m_device,
@@ -604,7 +618,7 @@ TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
@@ -726,7 +740,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
@@ -773,7 +787,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
 TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
     TEST_DESCRIPTION("Validate acceleration structure handle querying.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;
@@ -812,7 +826,7 @@ TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
 TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure copying.");
 
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer vbo;

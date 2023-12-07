@@ -25,7 +25,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationInvalidHan
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest(nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
@@ -101,7 +101,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest(nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
@@ -186,7 +186,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest(nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
@@ -287,7 +287,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationRestoresSt
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false, nullptr, &validation_features));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest(nullptr, &validation_features));
 
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";

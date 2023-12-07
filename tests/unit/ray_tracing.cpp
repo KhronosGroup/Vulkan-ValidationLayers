@@ -1206,7 +1206,7 @@ TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStruc
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     VkDescriptorSetLayoutBinding binding = {};
@@ -1508,7 +1508,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper();
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&as_features);
@@ -1628,16 +1628,15 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate CmdCopyMemoryToAccelerationStructureKHR with dst buffer not bound to memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ray_tracing_features);
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -1835,13 +1834,12 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&ray_tracing_features);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_struct_features = vku::InitStructHelper(&ray_query_features);
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&acc_struct_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
@@ -1923,13 +1921,13 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     TEST_DESCRIPTION("Validate acceleration structure creation replay feature.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_struct_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&acc_struct_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
 
-    acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+
+    AddDisabledFeature(vkt::Feature::accelerationStructureCaptureReplay);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -1961,15 +1959,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&bda_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_tracing_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Create ray tracing pipeline
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
@@ -2035,10 +2029,8 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
 
     const VkDeviceAddress device_address = buffer.address();
 
-    VkStridedDeviceAddressRegionKHR stridebufregion = {};
-    stridebufregion.deviceAddress = device_address;
-    stridebufregion.stride = ray_tracing_properties.shaderGroupHandleAlignment;
-    stridebufregion.size = stridebufregion.stride;
+    const VkStridedDeviceAddressRegionKHR stridebufregion = {device_address, ray_tracing_properties.shaderGroupHandleAlignment,
+                                                             ray_tracing_properties.shaderGroupHandleAlignment};
 
     m_commandBuffer->begin();
 
@@ -2094,19 +2086,21 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
 
     // buffer is missing flag VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
-    vkt::Buffer buffer_missing_flag;
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    buffer_missing_flag.init_no_mem(*m_device, buffer_ci);
-    vk::BindBufferMemory(device(), buffer_missing_flag.handle(), mem.handle(), 0);
-    const VkDeviceAddress device_address_missing_flag = buffer_missing_flag.address();
-
-    // buffer is missing flag VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
     {
-        VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
-        // This address is the same as the one from the first (valid) buffer, so no validation error
-        invalid_stride.deviceAddress = device_address_missing_flag;
-        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
-                            100, 1);
+        vkt::Buffer buffer_missing_flag;
+        buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        buffer_missing_flag.init_no_mem(*m_device, buffer_ci);
+        vk::BindBufferMemory(device(), buffer_missing_flag.handle(), mem.handle(), 0);
+        const VkDeviceAddress device_address_missing_flag = buffer_missing_flag.address();
+
+        // buffer is missing flag VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
+        if (device_address_missing_flag == device_address) {
+            VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
+            // This address is the same as the one from the first (valid) buffer, so no validation error
+            invalid_stride.deviceAddress = device_address_missing_flag;
+            vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion,
+                                100, 100, 1);
+        }
     }
 
     // pRayGenShaderBindingTable address range and stride are invalid
@@ -2114,7 +2108,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.stride = 8128;
         invalid_stride.size = 8128;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkStridedDeviceAddressRegionKHR-size-04631");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkStridedDeviceAddressRegionKHR-size-04632");
         vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
@@ -2154,15 +2147,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirectKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&ray_tracing_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
 
-    if (ray_tracing_features.rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
-        GTEST_SKIP() << "rayTracingIndirectTraceRays not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2248,11 +2237,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
-    // VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR maintenance1_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddDisabledFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2281,15 +2270,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
-    VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR maintenance1_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&maintenance1_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    if (maintenance1_features.rayTracingPipelineTraceRaysIndirect2 == VK_FALSE) {
-        GTEST_SKIP() << "rayTracingPipelineTraceRaysIndirect2 not supported";
-    }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2316,7 +2301,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
     TEST_DESCRIPTION("Validate VkAccelerationStructureVersionInfoKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -2346,22 +2331,58 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
     }
 }
 
+TEST_F(NegativeRayTracing, IndirectCmdBuildAccelerationStructuresKHR) {
+    TEST_DESCRIPTION("Validate acceleration structure indirect builds.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Command buffer indirect build
+    auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03800");
+    build_info_null_dst.BuildCmdBufferIndirect(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, HostCmdBuildAccelerationStructuresKHR) {
+    TEST_DESCRIPTION("Validate acceleration structure indirect builds.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Host build
+    auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+    build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
+    build_info_null_dst.BuildHost(instance(), *m_device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
     AddOptionalExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    ray_query_features.rayQuery = VK_TRUE;
-    accel_features.accelerationStructureIndirectBuild = VK_TRUE;
-    accel_features.accelerationStructureHostCommands = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     const bool index_type_uint8 = IsExtensionsEnabled(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
 
@@ -2386,25 +2407,6 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
             build_info_null_dst.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
-            m_errorMonitor->VerifyFound();
-        }
-
-        // Command buffer indirect build
-        if (accel_features.accelerationStructureIndirectBuild == VK_TRUE) {
-            auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03800");
-            build_info_null_dst.BuildCmdBufferIndirect(*m_device, m_commandBuffer->handle());
-            m_errorMonitor->VerifyFound();
-        }
-
-        // Host build
-        if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-            auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
-            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
-            build_info_null_dst.BuildHost(instance(), *m_device);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -2653,16 +2655,12 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
         "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     constexpr size_t build_info_count = 3;
 
@@ -2912,12 +2910,12 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ray_tracing_features);
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&bda_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     vkt::as::BuildGeometryInfoKHR build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     m_commandBuffer->begin();
@@ -2941,7 +2939,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     TEST_DESCRIPTION("Validate CmdCopyAccelerationStructureToMemoryKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&ray_tracing_features);
@@ -2993,7 +2991,7 @@ TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Test for updating an acceleration structure without a srcAccelerationStructure");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_address_features = vku::InitStructHelper(&ray_tracing_features);
@@ -3028,12 +3026,12 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
         "as long as valid buffers are correctly removed from the internal buffer device addresses to buffers mapping.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_addr_features = vku::InitStructHelper(&ray_tracing_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&buffer_addr_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Allocate common buffer memory
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -3304,16 +3302,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidMode) {
     TEST_DESCRIPTION("Build an acceleration structure with an invalid mode");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_info.SetMode(static_cast<VkBuildAccelerationStructureModeKHR>(42));
@@ -3329,16 +3323,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTy
         "Build a list of destination acceleration structures, then do an update build on that same list changing geometry type");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to geometry type
     m_commandBuffer->begin();
@@ -3365,16 +3355,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryFl
         "geometry flag");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to geometry flags
     m_commandBuffer->begin();
@@ -3400,16 +3386,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
         "vertex format for the triangles");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to triangles vertex format
     m_commandBuffer->begin();
@@ -3435,16 +3417,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
         "maxVertex for triangles");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to triangles max vertex
     m_commandBuffer->begin();
@@ -3470,16 +3448,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
         "type for the triangles");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to triangles index type
     m_commandBuffer->begin();
@@ -3505,16 +3479,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
         "pointer for the transform data");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to triangles transform data
     m_commandBuffer->begin();
@@ -3540,16 +3510,12 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) 
         "transform data going from non NULL to NULL");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper();
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features = vku::InitStructHelper(&bda_features);
-    accel_features.accelerationStructure = VK_TRUE;
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    ray_query_features.rayQuery = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_query_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // Invalid update to triangles transform data
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
@@ -3583,12 +3549,11 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
         "but do not set size before tracing rays");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&bda_features);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_struct_features = vku::InitStructHelper(&ray_tracing_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&accel_struct_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
     pipeline.SetRayGenShader(kRayTracingMinimalGlsl);

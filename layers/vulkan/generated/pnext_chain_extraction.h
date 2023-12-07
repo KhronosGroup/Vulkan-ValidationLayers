@@ -37,6 +37,9 @@ void *PnextChainAdd(void *chain, void *new_struct);
 // Remove last element from a pNext chain
 void PnextChainRemoveLast(void *chain);
 
+// Free dynamically allocated pnext chain structs
+void PnextChainFree(void *chain);
+
 // Helper class relying on RAII to help with adding and removing an element from a pNext chain
 class PnextChainScopedAdd {
   public:
