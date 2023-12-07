@@ -969,6 +969,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpConstantCompositeContinuedINTEL";
         case spv::OpSpecConstantCompositeContinuedINTEL:
             return "OpSpecConstantCompositeContinuedINTEL";
+        case spv::OpCompositeConstructContinuedINTEL:
+            return "OpCompositeConstructContinuedINTEL";
         case spv::OpConvertFToBF16INTEL:
             return "OpConvertFToBF16INTEL";
         case spv::OpConvertBF16ToFINTEL:
@@ -1481,6 +1483,12 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "BankBitsINTEL";
         case spv::DecorationForcePow2DepthINTEL:
             return "ForcePow2DepthINTEL";
+        case spv::DecorationStridesizeINTEL:
+            return "StridesizeINTEL";
+        case spv::DecorationWordsizeINTEL:
+            return "WordsizeINTEL";
+        case spv::DecorationTrueDualPortINTEL:
+            return "TrueDualPortINTEL";
         case spv::DecorationBurstCoalesceINTEL:
             return "BurstCoalesceINTEL";
         case spv::DecorationCacheSizeINTEL:
@@ -1517,12 +1525,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "VectorComputeCallableFunctionINTEL";
         case spv::DecorationMediaBlockIOINTEL:
             return "MediaBlockIOINTEL";
-        case spv::DecorationInitModeINTEL:
-            return "InitModeINTEL";
-        case spv::DecorationImplementInRegisterMapINTEL:
-            return "ImplementInRegisterMapINTEL";
-        case spv::DecorationHostAccessINTEL:
-            return "HostAccessINTEL";
+        case spv::DecorationStallFreeINTEL:
+            return "StallFreeINTEL";
         case spv::DecorationFPMaxErrorDecorationINTEL:
             return "FPMaxErrorDecorationINTEL";
         case spv::DecorationLatencyControlLabelINTEL:
@@ -1547,6 +1551,12 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "MMHostInterfaceWaitRequestINTEL";
         case spv::DecorationStableKernelArgumentINTEL:
             return "StableKernelArgumentINTEL";
+        case spv::DecorationHostAccessINTEL:
+            return "HostAccessINTEL";
+        case spv::DecorationInitModeINTEL:
+            return "InitModeINTEL";
+        case spv::DecorationImplementInRegisterMapINTEL:
+            return "ImplementInRegisterMapINTEL";
         case spv::DecorationCacheControlLoadINTEL:
             return "CacheControlLoadINTEL";
         case spv::DecorationCacheControlStoreINTEL:
@@ -2327,6 +2337,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpTypeStructContinuedINTEL, {{OperandKind::Id}}},
         {spv::OpConstantCompositeContinuedINTEL, {{OperandKind::Id}}},
         {spv::OpSpecConstantCompositeContinuedINTEL, {{OperandKind::Id}}},
+        {spv::OpCompositeConstructContinuedINTEL, {{OperandKind::Id}}},
         {spv::OpConvertFToBF16INTEL, {{OperandKind::Id}}},
         {spv::OpConvertBF16ToFINTEL, {{OperandKind::Id}}},
         {spv::OpControlBarrierArriveINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},

@@ -391,6 +391,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpRayQueryGetIntersectionObjectToWorldKHR:
         case spv::OpRayQueryGetIntersectionWorldToObjectKHR:
         case spv::OpAtomicFAddEXT:
+        case spv::OpCompositeConstructContinuedINTEL:
         case spv::OpConvertFToBF16INTEL:
         case spv::OpConvertBF16ToFINTEL:
         case spv::OpGroupIMulKHR:
@@ -787,6 +788,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpRayQueryGetIntersectionWorldToObjectKHR:
         case spv::OpAtomicFAddEXT:
         case spv::OpTypeBufferSurfaceINTEL:
+        case spv::OpCompositeConstructContinuedINTEL:
         case spv::OpConvertFToBF16INTEL:
         case spv::OpConvertBF16ToFINTEL:
         case spv::OpGroupIMulKHR:
