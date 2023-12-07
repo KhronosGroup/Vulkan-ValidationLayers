@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2022 LunarG, Inc. -->
+<!-- Copyright 2015-2023 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -25,3 +25,12 @@ Best Practices Validation settings are managed by configuring the Validation Lay
 [VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
 
 Best Practices Validation settings can also be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
+
+### Setting vendor best practices via programmatic interface
+
+As of `1.3.272` the [VK_EXT_layer_settings](https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_layer_settings.html) extension is now official!
+
+Now developers can enable vendor specific best practices via this extension.
+
+See [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) for more information on how to
+configure layer settings via `VK_EXT_layer_settings`
