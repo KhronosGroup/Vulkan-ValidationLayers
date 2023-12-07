@@ -314,7 +314,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeShaderLimits, DISABLED_OffsetMaxComputeSharedMemorySize) {
+TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     TEST_DESCRIPTION("Have an offset that is over maxComputeSharedMemorySize");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -341,6 +341,8 @@ TEST_F(NegativeShaderLimits, DISABLED_OffsetMaxComputeSharedMemorySize) {
     std::stringstream csSource;
     csSource << R"asm(
                OpCapability Shader
+               OpCapability WorkgroupMemoryExplicitLayoutKHR
+               OpExtension "SPV_KHR_workgroup_memory_explicit_layout"
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %_
                OpExecutionMode %main LocalSize 1 1 1
