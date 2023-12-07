@@ -1160,10 +1160,10 @@ void CommandBuffer::Init(Device *device, const CommandPool *pool, VkCommandBuffe
 
 void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info)); }
 
-void CommandBuffer::begin() {
+void CommandBuffer::begin(VkCommandBufferUsageFlags flags) {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
-    info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    info.flags = flags;
     info.pInheritanceInfo = &hinfo;
     hinfo.renderPass = VK_NULL_HANDLE;
     hinfo.subpass = 0;

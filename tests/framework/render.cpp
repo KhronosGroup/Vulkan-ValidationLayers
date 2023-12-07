@@ -1241,7 +1241,7 @@ void VkImageObj::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout
     vkt::CommandBuffer cmd_buf(m_device, &pool);
 
     /* Build command buffer to set image layout in the driver */
-    cmd_buf.begin();
+    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     SetLayout(&cmd_buf, aspect, image_layout);
     cmd_buf.end();
 
@@ -1469,7 +1469,7 @@ VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
     vkt::CommandBuffer cmd_buf(m_device, &pool);
 
     /* Build command buffer to copy staging texture to usable texture */
-    cmd_buf.begin();
+    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     /* TODO: Can we determine image aspect from image object? */
     src_image_layout = src_image.Layout();
@@ -1515,7 +1515,7 @@ VkResult VkImageObj::CopyImageOut(VkImageObj &dst_image) {
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     vkt::CommandBuffer cmd_buf(m_device, &pool);
 
-    cmd_buf.begin();
+    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     src_image_layout = this->Layout();
     this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);

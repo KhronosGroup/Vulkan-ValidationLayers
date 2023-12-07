@@ -967,7 +967,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     // vkBeginCommandBuffer()
     void begin(const VkCommandBufferBeginInfo *info);
-    void begin();
+    void begin(VkCommandBufferUsageFlags flags);
+    void begin() { begin(0u); }
 
     // vkEndCommandBuffer()
     // vkResetCommandBuffer()
