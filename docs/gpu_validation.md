@@ -104,7 +104,7 @@ array elements, those elements are not required to have been written.
 The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
 that has not been written.
 
-Note that currently, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT validation is not working and all accesses are reported as valid.
+Note that currently, `VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT` validation is not working and all accesses are reported as valid.
 
 ### Buffer device address checking
 The vkGetBufferDeviceAddressEXT routine can be used to get a GPU address that a shader can use to directly address a particular buffer.
@@ -115,7 +115,7 @@ Note: The mapping between a `VkBuffer` and a GPU address is not necessarily one 
 
 ### Selective Shader Instrumentation
 With the khronos_validation.select_instrumented_shaders feature, an application can control which shaders are instrumented and thus, will return GPU-AV errors.
-After enabling the feature, the application will need to include a VkValidationFeaturesEXT structure with VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT in the pEnabledFeatures list 
+After enabling the feature, the application will need to include a `VkValidationFeaturesEXT` structure with `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT` in the pEnabledFeatures list 
 in the pNext chain of the VkShaderModuleCreateInfo used to create the shader. Otherwise, the shader will not be instrumented.
 
 ## GPU-Assisted Validation Limitations
@@ -285,9 +285,9 @@ More detail is found in the discussion of the individual hooked functions below.
 
 ### Initialization
 
-When the validation layer loads, it examines the user options from both the layer settings file and the
-`VK_EXT_validation_features` extension.
-Note that it also processes the subsumed `VK_EXT_validation_flags` extension for simple backwards compatibility.
+When the validation layer loads, it examines the user settings from the layer settings file, the environment variables and the
+`VK_EXT_layer_settings` extension as described by [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
+Note that it also processes the subsumed `VK_EXT_validation_features` and `VK_EXT_validation_flags` extensions for simple backwards compatibility.
 From these options, the layer sets instance-scope flags in the validation layer tracking data to indicate if
 GPU-Assisted Validation has been requested, along with any other associated options.
 
