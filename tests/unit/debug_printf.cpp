@@ -63,10 +63,8 @@ TEST_F(NegativeDebugPrintf, BasicCompute) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -1260,7 +1258,9 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&maintenance_4_features);
     VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&shader_object_features);
+    VkPhysicalDeviceMultiviewFeaturesKHR multiview_features = vku::InitStructHelper(&shader_object_features);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR shading_rate_features = vku::InitStructHelper(&multiview_features);
+    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&shading_rate_features);
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
         GTEST_SKIP() << "Task or mesh shader not supported";

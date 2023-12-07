@@ -254,7 +254,9 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
 
-    m_commandBuffer->begin();
+    // NOTE: VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT should be set for all tests in this file because
+    // otherwise UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit will be triggered.
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->VerifyFound();
@@ -290,7 +292,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
@@ -441,7 +443,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         pr_pipe.CreateGraphicsPipeline();
 
         vk::ResetCommandPool(m_device->device(), m_commandPool->handle(), 0);
-        m_commandBuffer->begin();
+        m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -507,7 +509,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
@@ -733,7 +735,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     VkConstantBufferObj ibo(m_device, sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     // record a command buffer which doesn't use enough depth pre-passes or geometry to matter
@@ -997,7 +999,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
     const auto execute_work = [&](const std::function<void(vkt::CommandBuffer & command_buffer)>& work) {
         vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
-        m_commandBuffer->begin();
+        m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         work(*m_commandBuffer);
 
@@ -1094,7 +1096,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
     VkImageSubresourceRange subresource_range = {};
@@ -1199,7 +1201,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
     VkImageSubresourceRange subresource_range = {};
@@ -1345,7 +1347,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
     VkImageSubresourceRange subresource_range = {};
@@ -1420,7 +1422,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
@@ -1581,7 +1583,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     pipe_stencil.ds_ci_.stencilTestEnable = VK_TRUE;
     pipe_stencil.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     // Nothing is redundant.
     {

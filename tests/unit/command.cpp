@@ -252,9 +252,7 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    // We luck out b/c by default the framework creates CB w/ the
-    // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
@@ -289,9 +287,7 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
     InitRenderTarget();
 
-    // We luck out b/c by default the framework creates CB w/ the
-    // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set
-    m_commandBuffer->begin();
+    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_commandBuffer->end();
 
     // Bypass framework since it does the waits automatically
