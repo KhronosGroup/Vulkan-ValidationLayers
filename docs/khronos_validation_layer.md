@@ -22,7 +22,7 @@ correctly use the API.
 
 ## Configuring the Validation Layer
 
-For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
+For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document. With Vulkan Header 272, `VK_EXT_validation_features` was deprecated and replaced with `VK_EXT_layer_settings` enabling all settings to be controlled programmatically.
 
 The Validation Layer settings are documented in detail in the
 [VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
@@ -30,37 +30,13 @@ The Validation Layer settings are documented in detail in the
 The Validation Layer can also be enabled and configured using vkconfig. See the [vkconfig](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) documentation for more information.
 
 
-## Layer Controls
-Layer behavior is controlled through either a layer settings file or an extension.
-The layer settings file allows a user to control various layer features and behaviors by providing easily modifiable settings.
-The Vulkan Validation Features extension provides layer controls, while the Vulkan Debug Utils extension provides methods of
-accessing and controlling feedback from the layers:
+## Layer feedback
+The Vulkan Debug Utils extension provides methods of accessing and controlling feedback from the layers:
 
 | Extension                 | Description                       |
 | ------------------------ | ---------------------------- |
-|  [VK_EXT_validation_features](#validationfeatures)  | allows application control of various layer features      |
 |  [VK_EXT_debug_utils](#debugutils)  | allows application control and capture of debug reporting information   |
 
-
-See the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document for more detailed information on configuring Vulkan layers.
-
-### <a name="validationfeatures"></a>VK\_EXT\_validation\_features
-The preferred method for an application to programmatically control validation layer features is through the `VK_EXT_validation_features` extension.
-Using this extension allows an application to enable or disable specific Khronos validation features.
-Note that this extension provides low-level control to an application, and that some combinations of enable/disable settings may produce undefined behavior.
-
-The `VK_EXT_validation_features` flags can be used to disable validation corresponding to the following deprecated layers:
-
-| Setting this `VK_EXT_validation_features` disable flag | Corresponds to not loading this deprecated layer |
-| -------------------------------------------------------|--------------------------------------------------|
-| `VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT` | `VK_LAYER_GOOGLE_threading` |
-| `VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT` | `VK_LAYER_LUNARG_parameter_validation` |
-| `VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT` | `VK_LAYER_LUNARG_object_tracker` |
-| `VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT` | `VK_LAYER_LUNARG_core_validation` |
-| `VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT` | `VK_LAYER_GOOGLE_unique_objects` |
-
-Refer to [VK_EXT_validation_features](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VK_EXT_validation_features)
-in the Vulkan specification for details on this extension.
 
 ### <a name="debugutils"></a>VK\_EXT\_debug\_utils
 The preferred method for an app to control layer logging is via the `VK_EXT_debug_utils` extension.
