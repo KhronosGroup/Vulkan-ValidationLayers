@@ -21,6 +21,7 @@
 #include "generated/vk_function_pointers.h"
 #include "error_monitor.h"
 #include "test_framework.h"
+#include "feature_requirements.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
@@ -116,7 +117,7 @@ class VkRenderFramework : public VkTestFramework {
     // default to CommandPool Reset flag to allow recording multiple command buffers simpler
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
                    const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
+    void InitStateWithRequirements(vkt::FeatureRequirements &feature_requirements);
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
                                   uint32_t spec_version = 0) const {  // deprecated
@@ -139,6 +140,11 @@ class VkRenderFramework : public VkTestFramework {
     // By default, requested extensions that are promoted to the effective API version (and thus are redundant)
     // are not enabled, but this can be overridden for individual test cases that explicitly test such use cases.
     void AllowPromotedExtensions() { allow_promoted_extensions_ = true; }
+
+    // Add a feature required for the test to be executed
+    void AddRequiredFeature(vkt::Feature feature);
+    // Add a feature that will be disabled when creating the device
+    void AddDisabledFeature(vkt::Feature feature);
 
     void *SetupValidationSettings(void *first_pnext);
 
@@ -181,6 +187,7 @@ class VkRenderFramework : public VkTestFramework {
     VkInstance instance_;
     VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties physDevProps_;
+    vkt::FeatureRequirements feature_requirements_;
 
     uint32_t m_gpu_index;
     vkt::Device *m_device;

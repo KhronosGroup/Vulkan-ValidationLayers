@@ -52,6 +52,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/gpu_av_helper.h
     framework/render_pass_helper.h
     framework/render_pass_helper.cpp
+    framework/feature_requirements.h
+    framework/feature_requirements.cpp
     framework/queue_submit_context.h
     framework/queue_submit_context.cpp
     unit/amd_best_practices.cpp

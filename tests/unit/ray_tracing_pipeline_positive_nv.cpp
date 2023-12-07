@@ -17,7 +17,7 @@
 
 TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rtnv_props);

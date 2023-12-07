@@ -18,7 +18,7 @@
 
 TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipleline_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(pipleline_features);
@@ -171,7 +171,7 @@ TEST_F(NegativeRayTracingPipelineNV, BindPoint) {
 
 TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
@@ -641,7 +641,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPropertiesNV rtnv_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rtnv_props);
@@ -672,7 +672,7 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
 TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline with missing entrypoint.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(false));
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
     char const missShaderText[] = R"glsl(

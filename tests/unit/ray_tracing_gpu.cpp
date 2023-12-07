@@ -29,18 +29,14 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirectKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&bda_features);
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_tracing_features);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2, &validation_features))
-
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2))
+    RETURN_IF_SKIP(InitState());
 
     // Create ray tracing pipeline
     std::vector<VkDescriptorSetLayoutBinding> bindings(1);

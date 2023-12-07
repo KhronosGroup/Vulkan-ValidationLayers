@@ -48,3 +48,6 @@ buildtools/
 depot_tools/
 testing/
 tools/
+
+scripts/*.args.json
+scripts/*.pyproj

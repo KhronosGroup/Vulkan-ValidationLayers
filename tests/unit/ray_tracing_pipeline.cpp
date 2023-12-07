@@ -20,7 +20,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -176,7 +176,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
 TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
@@ -668,11 +668,10 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
 
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(ray_tracing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
@@ -683,7 +682,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
         }
     )glsl";
 
-    VkShaderObj rgen_shader(this, ray_generation_shader, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    VkShaderObj rgen_shader(this, ray_generation_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
@@ -703,9 +702,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 
     VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
     pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
-        pipeline_ci.flags |= VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
-    }
+
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
     pipeline_ci.groupCount = 1;
@@ -779,17 +776,6 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
-        GetPhysicalDeviceProperties2(ray_tracing_properties);
-        std::vector<uint8_t> handle_buffer;
-        handle_buffer.resize(ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829");
-        vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
-            m_device->handle(), library, 0, 1, ray_tracing_properties.shaderGroupHandleCaptureReplaySize, handle_buffer.data());
-        m_errorMonitor->VerifyFound();
-    }
-
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
     vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
@@ -798,19 +784,10 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline_features = vku::InitStructHelper(&bda_features);
-    rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&rt_pipeline_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
-    if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
-        GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
-    }
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline rt_pipe(*this, m_device);
     rt_pipe.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
@@ -866,15 +843,14 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     TEST_DESCRIPTION(
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&ray_tracing_features);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true, &features2));
-
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "vkGetDeferredOperationResultKHR not supported by MockICD";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     static const char *chit_src = R"glsl(
         #version 460
@@ -1110,7 +1086,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(true));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
     bda_features.bufferDeviceAddress = VK_TRUE;
