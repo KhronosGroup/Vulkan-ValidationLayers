@@ -282,7 +282,7 @@ class VkImageObj : public vkt::Image {
                                                VkImageTiling const requested_tiling = VK_IMAGE_TILING_OPTIMAL,
                                                const std::vector<uint32_t> *queue_families = nullptr);
     void Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format, VkFlags const usage,
-              VkImageTiling const tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags const reqs = 0,
+              VkImageTiling const tiling = VK_IMAGE_TILING_OPTIMAL, VkMemoryPropertyFlags const reqs = 0,
               const std::vector<uint32_t> *queue_families = nullptr, bool memory = true);
     void Init(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs = 0, bool memory = true);
 

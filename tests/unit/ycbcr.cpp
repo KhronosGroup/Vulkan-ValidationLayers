@@ -257,7 +257,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkSamplerYcbcrConversionInfo conversion_info = vku::InitStructHelper();
@@ -1259,7 +1259,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     RETURN_IF_SKIP(InitBasicYcbcr());
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkSamplerYcbcrConversionCreateInfo sampler_conversion_ci = vku::InitStructHelper();

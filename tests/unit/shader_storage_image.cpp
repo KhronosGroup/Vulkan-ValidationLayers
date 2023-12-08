@@ -273,7 +273,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         VkFormat format = tests[t].format;
 
         VkImageObj image(m_device);
-        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
         vkt::ImageView view = image.CreateView();
 
         VkDescriptorImageInfo image_info = {};
@@ -427,7 +427,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         VkFormat format = tests[t].format;
 
         VkImageObj image(m_device);
-        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
         vkt::ImageView view = image.CreateView();
 
         VkDescriptorImageInfo image_info = {};
@@ -848,7 +848,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
@@ -931,7 +931,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};

@@ -1389,7 +1389,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
 
     VkImageObj image(m_device);
     // Initialize image with transfer source usage
-    image.Init(128, 128, 1, format, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, format, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo createinfo = vku::InitStructHelper();
@@ -2280,7 +2280,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
 
     // Create an image without the SRI bit
     VkImageObj nonSRIimage(m_device);
-    nonSRIimage.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    nonSRIimage.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(nonSRIimage.initialized());
     vkt::ImageView nonSRIview = nonSRIimage.CreateView();
 
@@ -2730,7 +2730,7 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
     {
         // Create an image with 2 mip levels.
         VkImageObj image(m_device);
-        image.Init(128, 128, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        image.Init(128, 128, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         ASSERT_TRUE(image.initialized());
 
         // Create a image view with two mip levels.
@@ -2872,7 +2872,7 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
     {
         // Create an image with one mip level.
         VkImageObj image(m_device);
-        image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         ASSERT_TRUE(image.initialized());
 
         // Create view attachment with non-identity swizzle
@@ -2933,7 +2933,7 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
 
             // Create an image with 1 layer
             VkImageObj image(m_device);
-            image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+            image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
             ASSERT_TRUE(image.initialized());
 
             VkImageViewCreateInfo ivci = vku::InitStructHelper();

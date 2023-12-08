@@ -586,7 +586,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
 
     const vkt::PipelineLayout pipeline_layout_variable(*m_device, {&descriptor_set_variable.layout_});
     VkImageObj image(m_device);
-    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR);
     vkt::ImageView image_view = image.CreateView();
 
     VkDescriptorBufferInfo buffer_info[1] = {};

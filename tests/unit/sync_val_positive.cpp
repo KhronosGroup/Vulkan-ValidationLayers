@@ -661,7 +661,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     VkImageObj images[4] = {m_device, m_device, m_device, m_device};
     vkt::ImageView views[4];
     for (int i = 0; i < 4; i++) {
-        images[i].Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+        images[i].Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
         ASSERT_TRUE(images[i].initialized());
         images[i].SetLayout(image_layout);
         views[i] = images[i].CreateView();
@@ -742,7 +742,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     InitRenderTarget();
 
     VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     ASSERT_TRUE(image.initialized());
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     const vkt::ImageView view = image.CreateView();

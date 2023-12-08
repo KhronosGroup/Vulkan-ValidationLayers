@@ -1106,8 +1106,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
 
     VkImageObj image(m_device);
     image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM,
-               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-               VK_IMAGE_TILING_OPTIMAL);
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView imageView = image.CreateView();
 
     // random invalid struct for a framebuffer pNext change

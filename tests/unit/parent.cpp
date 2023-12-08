@@ -656,7 +656,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkImageObj image(m_second_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     OneOffDescriptorSet ds(m_device, {
