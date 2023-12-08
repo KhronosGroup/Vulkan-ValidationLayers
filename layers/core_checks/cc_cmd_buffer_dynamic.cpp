@@ -681,7 +681,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if (dyn_viewport_count && !dyn_scissor_count) {
             const auto required_viewport_mask = (1 << viewport_state->scissorCount) - 1;
             const auto missing_viewport_mask = ~cb_state.viewportWithCountMask & required_viewport_mask;
-            if (missing_viewport_mask) {
+            if (missing_viewport_mask || !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT]) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(vuid.viewport_count_03417, objlist, loc,
                                  "Dynamic viewport with count 0x%x are used by pipeline state object, but were not provided "
@@ -693,7 +693,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if (dyn_scissor_count && !dyn_viewport_count) {
             const auto required_scissor_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_scissor_mask = ~cb_state.scissorWithCountMask & required_scissor_mask;
-            if (missing_scissor_mask) {
+            if (missing_scissor_mask || !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(vuid.scissor_count_03418, objlist, loc,
                                  "Dynamic scissor with count 0x%x are used by pipeline state object, but were not provided via "
@@ -703,7 +703,9 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         }
 
         if (dyn_scissor_count && dyn_viewport_count) {
-            if (cb_state.viewportWithCountMask != cb_state.scissorWithCountMask) {
+            if (cb_state.viewportWithCountMask != cb_state.scissorWithCountMask ||
+                !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT] ||
+                !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(vuid.viewport_scissor_count_03419, objlist, loc,
                                  "Dynamic viewport and scissor with count 0x%x are used by pipeline state object, but were not "
