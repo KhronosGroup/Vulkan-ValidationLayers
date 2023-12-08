@@ -88,3 +88,17 @@ class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
     VkImageMemoryBarrier2KHR image_barrier_;
     VkBufferMemoryBarrier2KHR buffer_barrier_;
 };
+
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, VkPipelineStageFlags src_stages,
+                              VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
+                              const VkImageMemoryBarrier *img_barrier);
+
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
+                              const VkImageMemoryBarrier2KHR *img_barrier);
+
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
+                            VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
+                            const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier);
+
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
+                            const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier);

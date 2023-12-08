@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/barrier_queue_family.h"
 #include "generated/vk_extension_helper.h"
 
 TEST_F(PositiveBuffer, OwnershipTranfers) {
