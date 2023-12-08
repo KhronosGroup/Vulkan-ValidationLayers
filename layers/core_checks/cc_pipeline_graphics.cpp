@@ -3594,26 +3594,26 @@ bool CoreChecks::ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInput
     }
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
     for (uint32_t j = 0; j < divisor_state_info->vertexBindingDivisorCount; j++) {
-        const Location divisor_loc = loc.pNext(Struct::VkVertexInputBindingDivisorDescriptionEXT, Field::pVertexBindingDivisors, j);
+        const Location divisor_loc = loc.pNext(Struct::VkVertexInputBindingDivisorDescriptionKHR, Field::pVertexBindingDivisors, j);
         const auto *vibdd = &(divisor_state_info->pVertexBindingDivisors[j]);
         if (vibdd->binding >= device_limits->maxVertexInputBindings) {
-            skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869", device,
+            skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionKHR-binding-01869", device,
                              divisor_loc.dot(Field::binding), "(%" PRIu32 ") exceeds device maxVertexInputBindings (%" PRIu32 ").",
                              vibdd->binding, device_limits->maxVertexInputBindings);
         }
         if (vibdd->divisor > phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor) {
-            skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870", device,
+            skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionKHR-divisor-01870", device,
                              divisor_loc.dot(Field::divisor), "(%" PRIu32 ") exceeds device maxVertexAttribDivisor (%" PRIu32 ").",
                              vibdd->divisor, phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
         }
         if ((0 == vibdd->divisor) && !enabled_features.vertexAttributeInstanceRateZeroDivisor) {
             skip |=
-                LogError("VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228", device,
+                LogError("VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228", device,
                          divisor_loc.dot(Field::divisor),
                          "is (%" PRIu32 ") but vertexAttributeInstanceRateZeroDivisor feature was not enabled.", vibdd->divisor);
         }
         if ((1 != vibdd->divisor) && !enabled_features.vertexAttributeInstanceRateDivisor) {
-            skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateDivisor-02229", device,
+            skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateDivisor-02229", device,
                              divisor_loc.dot(Field::divisor),
                              "is (%" PRIu32 ") but vertexAttributeInstanceRateDivisor feature was not enabled.", vibdd->divisor);
         }
@@ -3629,7 +3629,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInput
         }
         if (failed_01871) {  // Description not found, or has incorrect inputRate value
             skip |=
-                LogError("VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871", device, divisor_loc.dot(Field::binding),
+                LogError("VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871", device, divisor_loc.dot(Field::binding),
                          "is %" PRIu32 ", but inputRate is not VK_VERTEX_INPUT_RATE_INSTANCE.", vibdd->binding);
         }
     }

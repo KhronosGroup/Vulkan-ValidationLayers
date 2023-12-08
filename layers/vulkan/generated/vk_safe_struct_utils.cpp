@@ -619,6 +619,15 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
                 safe_pNext = new safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixPropertiesKHR *>(pNext), copy_state, false);
                 break;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_KHR:
+                safe_pNext = new safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR(reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_KHR:
+                safe_pNext = new safe_VkPipelineVertexInputDivisorStateCreateInfoKHR(reinterpret_cast<const VkPipelineVertexInputDivisorStateCreateInfoKHR *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR:
+                safe_pNext = new safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR *>(pNext), copy_state, false);
+                break;
             case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
                 safe_pNext = new safe_VkDebugReportCallbackCreateInfoEXT(reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(pNext), copy_state, false);
                 break;
@@ -938,12 +947,6 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
                 break;
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT:
                 safe_pNext = new safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT *>(pNext), copy_state, false);
-                break;
-            case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT:
-                safe_pNext = new safe_VkPipelineVertexInputDivisorStateCreateInfoEXT(reinterpret_cast<const VkPipelineVertexInputDivisorStateCreateInfoEXT *>(pNext), copy_state, false);
-                break;
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT:
-                safe_pNext = new safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *>(pNext), copy_state, false);
                 break;
 #ifdef VK_USE_PLATFORM_GGP
             case VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP:
@@ -2335,6 +2338,15 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkDebugReportCallbackCreateInfoEXT *>(header);
             break;
@@ -2654,12 +2666,6 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT *>(header);
-            break;
-        case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT:
-            delete reinterpret_cast<const safe_VkPipelineVertexInputDivisorStateCreateInfoEXT *>(header);
-            break;
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT:
-            delete reinterpret_cast<const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *>(header);
             break;
 #ifdef VK_USE_PLATFORM_GGP
         case VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP:

@@ -564,6 +564,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->cooperativeMatrixRobustBufferAccess |= enabled->cooperativeMatrixRobustBufferAccess == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR: {
+                const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR *>(pNext);
+                features->vertexAttributeInstanceRateDivisor |= enabled->vertexAttributeInstanceRateDivisor == VK_TRUE;
+                features->vertexAttributeInstanceRateZeroDivisor |= enabled->vertexAttributeInstanceRateZeroDivisor == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
                 const VkPhysicalDeviceTransformFeedbackFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT *>(pNext);
@@ -639,13 +646,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *>(pNext);
                 features->representativeFragmentTest |= enabled->representativeFragmentTest == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT: {
-                const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT *>(pNext);
-                features->vertexAttributeInstanceRateDivisor |= enabled->vertexAttributeInstanceRateDivisor == VK_TRUE;
-                features->vertexAttributeInstanceRateZeroDivisor |= enabled->vertexAttributeInstanceRateZeroDivisor == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV: {

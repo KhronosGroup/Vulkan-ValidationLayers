@@ -91,14 +91,14 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
             1,
             0,
             VK_VERTEX_INPUT_RATE_VERTEX,
-            {"VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871"}
+            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
         },
         {   dev_limits.maxVertexInputBindings + 1,
             1,
             0,
             VK_VERTEX_INPUT_RATE_INSTANCE,
-            {"VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869",
-             "VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871"}
+            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-binding-01869",
+             "VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
         }
     };
 
@@ -108,7 +108,7 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
                 pdvad_props.maxVertexAttribDivisor + 1,
                 0,
                 VK_VERTEX_INPUT_RATE_INSTANCE,
-                {"VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870"}
+                {"VUID-VkVertexInputBindingDivisorDescriptionKHR-divisor-01870"}
             } );
     }
     // clang-format on
@@ -165,7 +165,7 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
     };
     CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
-                                      "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateDivisor-02229");
+                                      "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateDivisor-02229");
 }
 
 TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
@@ -200,7 +200,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
     };
     CreatePipelineHelper::OneshotTest(
         *this, instance_rate, kErrorBit,
-        "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228");
+        "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228");
 }
 
 TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {

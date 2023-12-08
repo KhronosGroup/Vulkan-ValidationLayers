@@ -117,6 +117,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+    PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
     PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
@@ -473,6 +474,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
     PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
     PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
+    PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
     PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT;

@@ -3218,6 +3218,45 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPhysicalDeviceCooperativeMatrixPropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceCooperativeMatrixPropertiesKHR-sType-sType
 
+        // No Validation code for VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR structure members  -- Covers
+        // VUID-VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR-sType-sType
+
+        // Validation code for VkPipelineVertexInputDivisorStateCreateInfoKHR structure members
+        case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_KHR: {  // Covers
+                                                                                       // VUID-VkPipelineVertexInputDivisorStateCreateInfoKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPipelineVertexInputDivisorStateCreateInfoKHR);
+                VkPipelineVertexInputDivisorStateCreateInfoKHR* structure = (VkPipelineVertexInputDivisorStateCreateInfoKHR*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::vertexBindingDivisorCount), pNext_loc.dot(Field::pVertexBindingDivisors),
+                                      structure->vertexBindingDivisorCount, &structure->pVertexBindingDivisors, true, true,
+                                      "VUID-VkPipelineVertexInputDivisorStateCreateInfoKHR-vertexBindingDivisorCount-arraylength",
+                                      "VUID-VkPipelineVertexInputDivisorStateCreateInfoKHR-pVertexBindingDivisors-parameter");
+
+                if (structure->pVertexBindingDivisors != nullptr) {
+                    for (uint32_t vertexBindingDivisorIndex = 0; vertexBindingDivisorIndex < structure->vertexBindingDivisorCount;
+                         ++vertexBindingDivisorIndex) {
+                        [[maybe_unused]] const Location pVertexBindingDivisors_loc =
+                            pNext_loc.dot(Field::pVertexBindingDivisors, vertexBindingDivisorIndex);
+                    }
+                }
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR: {  // Covers
+                                                                                         // VUID-VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR);
+                VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* structure =
+                    (VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::vertexAttributeInstanceRateDivisor),
+                                       structure->vertexAttributeInstanceRateDivisor);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::vertexAttributeInstanceRateZeroDivisor),
+                                       structure->vertexAttributeInstanceRateZeroDivisor);
+            }
+        } break;
+
         // Validation code for VkDebugReportCallbackCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT: {  // Covers
                                                                          // VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType
@@ -4418,42 +4457,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT structure members  -- Covers
         // VUID-VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT-sType-sType
-
-        // Validation code for VkPipelineVertexInputDivisorStateCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT: {  // Covers
-                                                                                       // VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPipelineVertexInputDivisorStateCreateInfoEXT);
-                VkPipelineVertexInputDivisorStateCreateInfoEXT* structure = (VkPipelineVertexInputDivisorStateCreateInfoEXT*)header;
-                skip |= ValidateArray(pNext_loc.dot(Field::vertexBindingDivisorCount), pNext_loc.dot(Field::pVertexBindingDivisors),
-                                      structure->vertexBindingDivisorCount, &structure->pVertexBindingDivisors, true, true,
-                                      "VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-vertexBindingDivisorCount-arraylength",
-                                      "VUID-VkPipelineVertexInputDivisorStateCreateInfoEXT-pVertexBindingDivisors-parameter");
-
-                if (structure->pVertexBindingDivisors != nullptr) {
-                    for (uint32_t vertexBindingDivisorIndex = 0; vertexBindingDivisorIndex < structure->vertexBindingDivisorCount;
-                         ++vertexBindingDivisorIndex) {
-                        [[maybe_unused]] const Location pVertexBindingDivisors_loc =
-                            pNext_loc.dot(Field::pVertexBindingDivisors, vertexBindingDivisorIndex);
-                    }
-                }
-            }
-        } break;
-
-        // Validation code for VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT: {  // Covers
-                                                                                         // VUID-VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT);
-                VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* structure =
-                    (VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT*)header;
-                skip |= ValidateBool32(pNext_loc.dot(Field::vertexAttributeInstanceRateDivisor),
-                                       structure->vertexAttributeInstanceRateDivisor);
-
-                skip |= ValidateBool32(pNext_loc.dot(Field::vertexAttributeInstanceRateZeroDivisor),
-                                       structure->vertexAttributeInstanceRateZeroDivisor);
-            }
-        } break;
 #ifdef VK_USE_PLATFORM_GGP
 
         // No Validation code for VkPresentFrameTokenGGP structure members  -- Covers VUID-VkPresentFrameTokenGGP-sType-sType
@@ -7659,7 +7662,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
@@ -11854,6 +11857,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES};
@@ -18330,6 +18334,51 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
     return skip;
 }
 
+bool StatelessValidation::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
+                                                                                      uint32_t* pTimeDomainCount,
+                                                                                      VkTimeDomainKHR* pTimeDomains,
+                                                                                      const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |=
+        ValidateArray(loc.dot(Field::pTimeDomainCount), loc.dot(Field::pTimeDomains), pTimeDomainCount, &pTimeDomains, true, false,
+                      false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-pTimeDomains-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                                    const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                                    uint64_t* pTimestamps, uint64_t* pMaxDeviation,
+                                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_khr_calibrated_timestamps) && loc.function == vvl::Func::vkGetCalibratedTimestampsKHR)
+        skip |= OutputExtensionError(loc, "VK_KHR_calibrated_timestamps");
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::timestampCount), loc.dot(Field::pTimestampInfos), "VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_KHR",
+        timestampCount, pTimestampInfos, VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_KHR, true, true,
+        "VUID-VkCalibratedTimestampInfoKHR-sType-sType", "VUID-vkGetCalibratedTimestampsKHR-pTimestampInfos-parameter",
+        "VUID-vkGetCalibratedTimestampsKHR-timestampCount-arraylength");
+    if (pTimestampInfos != nullptr) {
+        for (uint32_t timestampIndex = 0; timestampIndex < timestampCount; ++timestampIndex) {
+            [[maybe_unused]] const Location pTimestampInfos_loc = loc.dot(Field::pTimestampInfos, timestampIndex);
+            skip |= ValidateStructPnext(pTimestampInfos_loc, pTimestampInfos[timestampIndex].pNext, 0, nullptr,
+                                        GeneratedVulkanHeaderVersion, "VUID-VkCalibratedTimestampInfoKHR-pNext-pNext",
+                                        kVUIDUndefined, false, true);
+
+            skip |= ValidateRangedEnum(pTimestampInfos_loc.dot(Field::timeDomain), "VkTimeDomainKHR",
+                                       pTimestampInfos[timestampIndex].timeDomain,
+                                       "VUID-VkCalibratedTimestampInfoKHR-timeDomain-parameter");
+        }
+    }
+    skip |= ValidateArray(loc.dot(Field::timestampCount), loc.dot(Field::pTimestamps), timestampCount, &pTimestamps, true, true,
+                          "VUID-vkGetCalibratedTimestampsKHR-timestampCount-arraylength",
+                          "VUID-vkGetCalibratedTimestampsKHR-pTimestamps-parameter");
+    skip |= ValidateRequiredPointer(loc.dot(Field::pMaxDeviation), pMaxDeviation,
+                                    "VUID-vkGetCalibratedTimestampsKHR-pMaxDeviation-parameter");
+    return skip;
+}
+
 bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance,
                                                                       const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                                       const VkAllocationCallbacks* pAllocator,
@@ -20938,46 +20987,24 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                                       uint32_t* pTimeDomainCount,
-                                                                                      VkTimeDomainEXT* pTimeDomains,
+                                                                                      VkTimeDomainKHR* pTimeDomains,
                                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |=
-        ValidateArray(loc.dot(Field::pTimeDomainCount), loc.dot(Field::pTimeDomains), pTimeDomainCount, &pTimeDomains, true, false,
-                      false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsEXT-pTimeDomains-parameter");
+    skip |= PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains, error_obj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                                    const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                                    const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                                     uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_ext_calibrated_timestamps))
         skip |= OutputExtensionError(loc, "VK_EXT_calibrated_timestamps");
-    skip |= ValidateStructTypeArray(
-        loc.dot(Field::timestampCount), loc.dot(Field::pTimestampInfos), "VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT",
-        timestampCount, pTimestampInfos, VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT, true, true,
-        "VUID-VkCalibratedTimestampInfoEXT-sType-sType", "VUID-vkGetCalibratedTimestampsEXT-pTimestampInfos-parameter",
-        "VUID-vkGetCalibratedTimestampsEXT-timestampCount-arraylength");
-    if (pTimestampInfos != nullptr) {
-        for (uint32_t timestampIndex = 0; timestampIndex < timestampCount; ++timestampIndex) {
-            [[maybe_unused]] const Location pTimestampInfos_loc = loc.dot(Field::pTimestampInfos, timestampIndex);
-            skip |= ValidateStructPnext(pTimestampInfos_loc, pTimestampInfos[timestampIndex].pNext, 0, nullptr,
-                                        GeneratedVulkanHeaderVersion, "VUID-VkCalibratedTimestampInfoEXT-pNext-pNext",
-                                        kVUIDUndefined, false, true);
-
-            skip |= ValidateRangedEnum(pTimestampInfos_loc.dot(Field::timeDomain), "VkTimeDomainEXT",
-                                       pTimestampInfos[timestampIndex].timeDomain,
-                                       "VUID-VkCalibratedTimestampInfoEXT-timeDomain-parameter");
-        }
-    }
-    skip |= ValidateArray(loc.dot(Field::timestampCount), loc.dot(Field::pTimestamps), timestampCount, &pTimestamps, true, true,
-                          "VUID-vkGetCalibratedTimestampsEXT-timestampCount-arraylength",
-                          "VUID-vkGetCalibratedTimestampsEXT-pTimestamps-parameter");
-    skip |= ValidateRequiredPointer(loc.dot(Field::pMaxDeviation), pMaxDeviation,
-                                    "VUID-vkGetCalibratedTimestampsEXT-pMaxDeviation-parameter");
+    skip |=
+        PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, error_obj);
     return skip;
 }
 
@@ -26396,7 +26423,7 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
                                "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
 
     constexpr std::array allowed_structs_VkPipelineVertexInputStateCreateInfo = {
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_KHR};
 
     skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineVertexInputStateCreateInfo.size(),
                                 allowed_structs_VkPipelineVertexInputStateCreateInfo.data(), GeneratedVulkanHeaderVersion,

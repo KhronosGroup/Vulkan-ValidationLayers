@@ -457,6 +457,8 @@ PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
 PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
 PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
 PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
+PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
 PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
 PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
@@ -1183,6 +1185,10 @@ void InitExtensionFromCore(const char* extension_name) {
             }
         },
         {
+            "VK_EXT_calibrated_timestamps", []() {
+            }
+        },
+        {
             "VK_EXT_tooling_info", []() {
                 GetPhysicalDeviceToolPropertiesEXT = GetPhysicalDeviceToolProperties;
             }
@@ -1729,6 +1735,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         {
             "VK_KHR_cooperative_matrix", [](VkInstance instance, VkDevice ) {
                 GetPhysicalDeviceCooperativeMatrixPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR"));
+            }
+        },
+        {
+            "VK_KHR_calibrated_timestamps", [](VkInstance instance, VkDevice device) {
+                GetCalibratedTimestampsKHR = reinterpret_cast<PFN_vkGetCalibratedTimestampsKHR>(GetDeviceProcAddr(device, "vkGetCalibratedTimestampsKHR"));
+                GetPhysicalDeviceCalibrateableTimeDomainsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCalibrateableTimeDomainsKHR"));
             }
         },
         {
@@ -2552,6 +2564,8 @@ void ResetAllExtensions() {
     GetDeviceImageSubresourceLayoutKHR = nullptr;
     GetImageSubresourceLayout2KHR = nullptr;
     GetPhysicalDeviceCooperativeMatrixPropertiesKHR = nullptr;
+    GetPhysicalDeviceCalibrateableTimeDomainsKHR = nullptr;
+    GetCalibratedTimestampsKHR = nullptr;
     CreateDebugReportCallbackEXT = nullptr;
     DestroyDebugReportCallbackEXT = nullptr;
     DebugReportMessageEXT = nullptr;
