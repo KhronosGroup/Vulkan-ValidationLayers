@@ -2192,8 +2192,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
     VkImageObj image2D(m_device);
-    auto image_ci =
-        VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, ds_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, ds_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     image2D.Init(image_ci);
     ASSERT_TRUE(image2D.initialized());
 
@@ -3049,7 +3048,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 2, format, usage);
     image.Init(image_ci);
     vkt::ImageView view_input = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
     VkImageView attachments[] = {view_input, depth_view};

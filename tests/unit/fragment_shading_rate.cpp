@@ -412,8 +412,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
-    image.InitNoLayout(image.ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                               VK_IMAGE_TILING_OPTIMAL, 0));
+    image.InitNoLayout(image.ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, VK_REMAINING_MIP_LEVELS, 0, 2);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
@@ -973,8 +972,8 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
-    VkImageCreateInfo ici = VkImageObj::ImageCreateInfo2D(
-        1, 1, 1, 2, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageCreateInfo ici =
+        VkImageObj::ImageCreateInfo2D(1, 1, 1, 2, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     image.InitNoLayout(ici);
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.subresourceRange.layerCount = 2;
@@ -1421,8 +1420,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
         } else {
             VkImageObj image2(m_device);
             image2.Init(VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_R8_UINT,
-                                                      VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
-                                                      VK_IMAGE_TILING_OPTIMAL));
+                                                      VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR));
             ASSERT_TRUE(image2.initialized());
 
             createinfo.image = image2.handle();

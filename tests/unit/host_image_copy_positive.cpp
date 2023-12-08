@@ -73,8 +73,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 1, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     if (IsPlatformMockICD()) {
@@ -213,8 +212,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 4, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;

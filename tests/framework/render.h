@@ -279,7 +279,7 @@ class VkImageObj : public vkt::Image {
   public:
     static VkImageCreateInfo ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mipLevels,
                                                uint32_t const layers, VkFormat const format, VkFlags const usage,
-                                               VkImageTiling const requested_tiling = VK_IMAGE_TILING_LINEAR,
+                                               VkImageTiling const requested_tiling = VK_IMAGE_TILING_OPTIMAL,
                                                const std::vector<uint32_t> *queue_families = nullptr);
     void Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format, VkFlags const usage,
               VkImageTiling const tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags const reqs = 0,

@@ -141,8 +141,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     vkt::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     image.init_no_mem(*m_device, image_ci);
 
@@ -261,8 +260,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     VkDeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
     ASSERT_EQ(VK_SUCCESS, err);

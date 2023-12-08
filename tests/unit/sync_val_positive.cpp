@@ -66,7 +66,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj rt(m_device);
-    rt.InitNoLayout(VkImageObj::ImageCreateInfo2D(width, height, 1, layers, rt_format, rt_usage, VK_IMAGE_TILING_OPTIMAL));
+    rt.InitNoLayout(VkImageObj::ImageCreateInfo2D(width, height, 1, layers, rt_format, rt_usage));
     rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     auto attachment_without_load_store = [](VkFormat format) {
