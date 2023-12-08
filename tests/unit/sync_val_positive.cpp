@@ -62,7 +62,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     const auto rt_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | transfer_usage;
 
     VkImageObj image(m_device);
-    image.InitNoLayout(width, height, 1, rt_format, transfer_usage, VK_IMAGE_TILING_OPTIMAL);
+    image.InitNoLayout(width, height, 1, rt_format, transfer_usage);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj rt(m_device);
@@ -160,7 +160,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
 
     vkt::Buffer buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     VkImageObj image(m_device);
-    image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;

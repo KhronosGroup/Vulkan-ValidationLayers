@@ -298,7 +298,7 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     VkSampler sampler_handle = sampler.handle();
 
     VkImageObj image(m_device);
-    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {

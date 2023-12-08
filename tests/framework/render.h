@@ -290,7 +290,7 @@ class VkImageObj : public vkt::Image {
     void init_no_mem(const vkt::Device &dev, const VkImageCreateInfo &info);
 
     void InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
-                      VkFlags const usage, VkImageTiling tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags reqs = 0,
+                      VkFlags const usage, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL, VkMemoryPropertyFlags reqs = 0,
                       const std::vector<uint32_t> *queue_families = nullptr, bool memory = true);
 
     void InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags reqs = 0, bool memory = true);
