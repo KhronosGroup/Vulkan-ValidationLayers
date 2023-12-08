@@ -5819,3 +5819,39 @@ TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
     vk::CmdEndQuery(m_commandBuffer->handle(), pg_query_pool.handle(), 0u);
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, MissingScissorWithCount) {
+    TEST_DESCRIPTION("Create pipeline with VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT, but set dynamic state with vkCmdSetScissor");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(eds_features);
+    if (!eds_features.extendedDynamicState) {
+        GTEST_SKIP() << "extendedDynamicState not supported";
+    }
+    RETURN_IF_SKIP(InitState(nullptr, &eds_features));
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.vp_state_ci_.viewportCount = 0u;
+    pipe.vp_state_ci_.scissorCount = 0u;
+    pipe.CreateGraphicsPipeline();
+
+    const VkViewport viewport = {0, 0, 32.0f, 32.0f, 0.0f, 1.0f};
+    const VkRect2D scissor = {{0, 0}, {32u, 32u}};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0u, 1u, &viewport);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0u, 1u, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewportCount-03419");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
