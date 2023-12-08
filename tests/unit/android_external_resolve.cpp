@@ -472,15 +472,8 @@ TEST_F(NegativeAndroidExternalResolve, Framebuffer) {
     attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
-    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
-    fb_ci.width = 32;
-    fb_ci.height = 32;
-    fb_ci.layers = 1;
-    fb_ci.renderPass = render_pass.handle();
-    fb_ci.attachmentCount = 2;
-    fb_ci.pAttachments = attachments;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-09350");
-    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 2, attachments);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1228,14 +1221,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
-    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
-    fb_ci.width = 32;
-    fb_ci.height = 32;
-    fb_ci.layers = 1;
-    fb_ci.renderPass = render_pass.handle();
-    fb_ci.attachmentCount = 2;
-    fb_ci.pAttachments = attachments;
-    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 2, attachments);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

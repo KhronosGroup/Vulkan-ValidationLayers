@@ -148,14 +148,7 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
-    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
-    fb_ci.width = 32;
-    fb_ci.height = 32;
-    fb_ci.layers = 1;
-    fb_ci.renderPass = render_pass.handle();
-    fb_ci.attachmentCount = 2;
-    fb_ci.pAttachments = attachments;
-    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 2, attachments);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

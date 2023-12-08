@@ -1750,15 +1750,7 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
 
     VkImageView image_view_handle = image_view.handle();
 
-    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
-    fb_ci.renderPass = render_pass.handle();
-    fb_ci.attachmentCount = 1;
-    fb_ci.pAttachments = &image_view_handle;
-    fb_ci.width = 64;
-    fb_ci.height = 64;
-    fb_ci.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view_handle, 64, 64);
 
     VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -2215,15 +2207,7 @@ TEST_F(NegativeQuery, MultiviewEndQuery) {
 
     VkImageView image_view_handle = image_view.handle();
 
-    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
-    fb_ci.renderPass = render_pass.handle();
-    fb_ci.attachmentCount = 1;
-    fb_ci.pAttachments = &image_view_handle;
-    fb_ci.width = 64;
-    fb_ci.height = 64;
-    fb_ci.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view_handle, 64, 64);
 
     VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;

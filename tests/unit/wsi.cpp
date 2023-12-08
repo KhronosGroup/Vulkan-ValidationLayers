@@ -3475,15 +3475,7 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
     vkt::RenderPass rp(*m_device, rpci);
-
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = rp.handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view_handle;
-    fbci.width = 1u;
-    fbci.height = 1u;
-    fbci.layers = 1u;
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view_handle, 1, 1);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -3493,8 +3485,8 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
     rpbinfo.renderPass = rp.handle();
     rpbinfo.framebuffer = fb.handle();
-    rpbinfo.renderArea.extent.width = fbci.width;
-    rpbinfo.renderArea.extent.height = fbci.height;
+    rpbinfo.renderArea.extent.width = 1;
+    rpbinfo.renderArea.extent.height = 1;
 
     VkSwapchainKHR oldSwapchain = m_swapchain;
     swapchain_create_info.oldSwapchain = m_swapchain;

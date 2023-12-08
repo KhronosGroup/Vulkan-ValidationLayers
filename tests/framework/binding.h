@@ -1030,6 +1030,18 @@ class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
   public:
     Framebuffer() = default;
     Framebuffer(const Device &dev, const VkFramebufferCreateInfo &info) { init(dev, info); }
+    // The most common case, anything outside of this should create there own VkFramebufferCreateInfo
+    Framebuffer(const Device &dev, VkRenderPass rp, uint32_t attchment_count, const VkImageView *attchments, uint32_t width = 32,
+                uint32_t height = 32) {
+        VkFramebufferCreateInfo info = vku::InitStructHelper();
+        info.renderPass = rp;
+        info.attachmentCount = attchment_count;
+        info.pAttachments = attchments;
+        info.width = width;
+        info.height = height;
+        info.layers = 1;
+        init(dev, info);
+    }
     ~Framebuffer() noexcept;
     void destroy() noexcept;
 

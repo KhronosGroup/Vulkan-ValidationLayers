@@ -94,16 +94,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     image.Init(image_create_info);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
-    framebufferCreateInfo.width = 32;
-    framebufferCreateInfo.height = 32;
-    framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
-    framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &imageView.handle();
-
-    vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-    ASSERT_TRUE(framebuffer.initialized());
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
 
     // Start no RenderPass
     m_commandBuffer->begin();
@@ -675,15 +666,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     const vkt::ImageView imageView(*m_device, image_view_ci);
 
-    VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
-    framebufferCreateInfo.width = 32;
-    framebufferCreateInfo.height = 32;
-    framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
-    framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &imageView.handle();
-
-    vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
 
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = rp.Handle();

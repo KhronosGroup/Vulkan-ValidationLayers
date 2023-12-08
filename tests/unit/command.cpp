@@ -63,9 +63,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
     VkImageObj image2(m_device);
     image2.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.Handle(), 1, &imageView.handle(), 32, 32, 1};
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
 
     m_commandBuffer->begin();
 
@@ -5837,15 +5835,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = render_pass.handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &imageView.handle();
-    fbci.width = 32;
-    fbci.height = 32;
-    fbci.layers = 1;
-    vkt::Framebuffer framebuffer(*m_device, fbci);
-    ASSERT_TRUE(framebuffer.initialized());
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &imageView.handle());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 32;
@@ -5970,11 +5960,7 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
-
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass.handle(), 1, &imageView.handle(), 32, 32, 1};
-    vkt::Framebuffer framebuffer(*m_device, fbci);
-    ASSERT_TRUE(framebuffer.initialized());
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &imageView.handle());
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -6029,10 +6015,7 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
-
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1.handle(), 1, &imageView.handle(), 32, 32, 1};
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass_1.handle(), 1, &imageView.handle());
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -6550,16 +6533,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_dynamic_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_dynamic_pipe.CreateGraphicsPipeline(false);
 
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.width = 32;
-    framebuffer_ci.height = 32;
-    framebuffer_ci.layers = 1;
-    framebuffer_ci.renderPass = rp.Handle();
-    framebuffer_ci.attachmentCount = 1;
-    framebuffer_ci.pAttachments = &image_view.handle();
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
-    ASSERT_TRUE(framebuffer.initialized());
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = rp.Handle();
     render_pass_begin_info.framebuffer = framebuffer.handle();
@@ -7380,8 +7354,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         rp.AddDepthStencilAttachment(0);
         rp.CreateRenderPass();
 
-        auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0, rp.Handle(), 1, &image_view.handle(), 32, 32, 1);
-        vkt::Framebuffer framebuffer(*m_device, fbci);
+        vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
         VkClearValue clear_value = {};
         clear_value.depthStencil = {0};

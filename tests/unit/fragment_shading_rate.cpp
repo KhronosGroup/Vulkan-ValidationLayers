@@ -910,16 +910,10 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
 
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView.handle();
-    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
-    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
-    fb_info.layers = 1;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04548");
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer framebuffer(*m_device, rp.handle(), 1, &imageView.handle(),
+                                 fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
+                                 fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2038,19 +2032,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     ASSERT_TRUE(iv6.initialized());
     iv[6] = iv6.handle();
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.flags = 0;
-    fbci.width = 16;
-    fbci.height = 16;
-    fbci.layers = 1;
-    fbci.renderPass = rp2[0].handle();
-    fbci.attachmentCount = 7;
-    fbci.pAttachments = iv;
-
-    vkt::Framebuffer fb1(*m_device, fbci);
-
-    fbci.renderPass = rp2[1].handle();
-    vkt::Framebuffer fb2(*m_device, fbci);
+    vkt::Framebuffer fb1(*m_device, rp2[0].handle(), 7, iv, 16, 16);
+    vkt::Framebuffer fb2(*m_device, rp2[1].handle(), 7, iv, 16, 16);
 
     // define renderpass begin info
     auto rpbi1 =

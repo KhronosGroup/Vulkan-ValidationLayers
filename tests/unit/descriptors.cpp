@@ -3078,8 +3078,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
 
-    const auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(0, 0u, rp.Handle(), 2u, attachments, 64u, 64u, 1u);
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 2u, attachments, 64, 64);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_info);
@@ -3779,15 +3778,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.width = width;
-    fbci.height = height;
-    fbci.layers = 1;
-    fbci.renderPass = rp.Handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view_handle;
-
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();
@@ -3902,15 +3893,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.width = width;
-    fbci.height = height;
-    fbci.layers = 1;
-    fbci.renderPass = rp.Handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view_handle;
-
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();
@@ -4026,15 +4009,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.width = width;
-    fbci.height = height;
-    fbci.layers = 1;
-    fbci.renderPass = rp.Handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view_handle;
-
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();

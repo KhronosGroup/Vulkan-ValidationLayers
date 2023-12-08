@@ -51,15 +51,8 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
-
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView.handle(), 32, 32, 1};
-    vkt::Framebuffer fb(*m_device, fbci);
-    ASSERT_TRUE(fb.initialized());
-
-    fbci.renderPass = rp_noselfdep.handle();
-    vkt::Framebuffer fb_noselfdep(*m_device, fbci);
-    ASSERT_TRUE(fb_noselfdep.initialized());
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle());
+    vkt::Framebuffer fb_noselfdep(*m_device, rp_noselfdep.handle(), 1, &imageView.handle());
 
     m_commandBuffer->begin();
     VkRenderPassBeginInfo rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp_noselfdep.handle(), fb_noselfdep.handle(),

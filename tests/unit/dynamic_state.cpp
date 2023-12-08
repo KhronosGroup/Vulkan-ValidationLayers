@@ -5238,17 +5238,7 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamples) {
     render_pass_ci.pSubpasses = &subpass;
 
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
-
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.flags = 0u;
-    framebuffer_ci.renderPass = render_pass.handle();
-    framebuffer_ci.attachmentCount = 0u;
-    framebuffer_ci.pAttachments = nullptr;
-    framebuffer_ci.width = 32u;
-    framebuffer_ci.height = 32u;
-    framebuffer_ci.layers = 1u;
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 0, nullptr);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -5418,14 +5408,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = rp.Handle();
-    framebuffer_ci.attachmentCount = 1u;
-    framebuffer_ci.pAttachments = &image_view.handle();
-    framebuffer_ci.width = 32u;
-    framebuffer_ci.height = 32u;
-    framebuffer_ci.layers = 1u;
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     VkClearValue clear_value;
     clear_value.color = {{0, 0, 0, 0}};
@@ -5544,14 +5527,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     rp.AddDepthStencilAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = rp.Handle();
-    framebuffer_ci.attachmentCount = 1u;
-    framebuffer_ci.pAttachments = &image_view.handle();
-    framebuffer_ci.width = 32u;
-    framebuffer_ci.height = 32u;
-    framebuffer_ci.layers = 1u;
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     VkClearValue clear_value;
     clear_value.depthStencil = {1.0f, 0u};

@@ -348,10 +348,7 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     auto rcpi = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, sd, 0u, nullptr);
 
     vkt::RenderPass rp(*m_device, rcpi);
-
-    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 0u, nullptr, 16u, 16u, 1u);
-
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 0u, nullptr, 16, 16);
 
     m_commandBuffer->begin();
 
@@ -454,9 +451,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
-
-    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &imageView.handle(), 32u, 32u, 1u);
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1u, &imageView.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -527,9 +522,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     vkt::ImageView imageView2 = image2.CreateView();
     // re-use imageView from start of test
     VkImageView iv_array[2] = {imageView, imageView2};
-
-    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 2u, iv_array, 32u, 32u, 1u);
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 2u, iv_array);
 
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
@@ -600,21 +593,10 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     const auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
                                                             size32(subpasses), subpasses.data(), 0u, nullptr);
     vkt::RenderPass rp(*m_device, rpci);
-    ASSERT_TRUE(rp.initialized());
-
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = rp.handle();
-    fbci.attachmentCount = 1u;
-    fbci.pAttachments = &view_input.handle();
-    fbci.width = 64;
-    fbci.height = 64;
-    fbci.layers = 1u;
-    vkt::Framebuffer fb(*m_device, fbci);
-    ASSERT_TRUE(fb.initialized());
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view_input.handle(), 64, 64);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_info);
-    ASSERT_TRUE(sampler.initialized());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -777,16 +759,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
-
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = render_pass.handle();
-    framebuffer_ci.attachmentCount = 1;
-    framebuffer_ci.pAttachments = &imageView.handle();
-    framebuffer_ci.width = 32;
-    framebuffer_ci.height = 32;
-    framebuffer_ci.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &imageView.handle());
 
     CreatePipelineHelper pipe1(*this);
     pipe1.gp_ci_.renderPass = render_pass.handle();

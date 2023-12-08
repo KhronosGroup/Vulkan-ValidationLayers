@@ -1409,16 +1409,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView image_view = image.CreateView();
-
-    VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
-    framebuffer_info.renderPass = rp.Handle();
-    framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &image_view.handle();
-    framebuffer_info.width = 32;
-    framebuffer_info.height = 32;
-    framebuffer_info.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     VkClearValue clear_value;
     clear_value.color.float32[0] = 0.25f;

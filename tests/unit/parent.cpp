@@ -196,15 +196,8 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = m_renderPass;
-    fb_info.attachmentCount = 0;
-    fb_info.width = m_width;
-    fb_info.height = m_height;
-    fb_info.layers = 1;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-commonparent");
-    vkt::Framebuffer fb(*m_second_device, fb_info);
+    vkt::Framebuffer fb(*m_second_device, m_renderPass, 0, nullptr, m_width, m_height);
     m_errorMonitor->VerifyFound();
 }
 

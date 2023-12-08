@@ -2223,13 +2223,7 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &subpass_dependency;
     const vkt::RenderPass rp(*m_device, rpci);
-
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = rp;
-    fbci.width = m_width;
-    fbci.height = m_height;
-    fbci.layers = 1;
-    const vkt::Framebuffer fb(*m_device, fbci);
+    const vkt::Framebuffer fb(*m_device, rp, 0, nullptr, m_width, m_height);
 
     m_renderPassBeginInfo.renderPass = rp;
     m_renderPassBeginInfo.framebuffer = fb;
