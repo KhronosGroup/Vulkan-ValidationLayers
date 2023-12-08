@@ -516,22 +516,13 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     rpci.attachmentCount = size32(attachments);
     rpci.pAttachments = attachments;
     vkt::RenderPass render_pass(*m_device, rpci);
-
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.flags = 0;
-    fbci.renderPass = render_pass;
-    fbci.attachmentCount = size32(views);
-    fbci.pAttachments = views;
-    fbci.width = helper.width;
-    fbci.height = helper.height;
-    fbci.layers = 1;
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, size32(views), views, helper.width, helper.height);
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer;
     rpbi.renderPass = render_pass;
-    rpbi.renderArea.extent.width = fbci.width;
-    rpbi.renderArea.extent.height = fbci.height;
+    rpbi.renderArea.extent.width = helper.width;
+    rpbi.renderArea.extent.height = helper.height;
 
     auto begin_rendering = [&rpbi](vkt::CommandBuffer& cb) { vk::CmdBeginRenderPass(cb, &rpbi, VK_SUBPASS_CONTENTS_INLINE); };
     auto end_rendering = [](vkt::CommandBuffer& cb) { vk::CmdEndRenderPass(cb); };
@@ -2285,14 +2276,9 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     attach_desc.format = format_st;
     vkt::RenderPass rp_st(*m_device, rpci);
 
-    vkt::Framebuffer fb_ds, fb_dp, fb_st;
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, &image_view_ds.handle(), 16, 16, 1};
-    fb_ds.init(*m_device, fbci);
-    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_dp.handle(), 1, &image_view_dp.handle(), 16, 16, 1};
-    fb_dp.init(*m_device, fbci);
-    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_st.handle(), 1, &image_view_st.handle(), 16, 16, 1};
-    fb_st.init(*m_device, fbci);
+    vkt::Framebuffer fb_ds(*m_device, rp_ds.handle(), 1, &image_view_ds.handle(), 16, 16);
+    vkt::Framebuffer fb_dp(*m_device, rp_dp.handle(), 1, &image_view_dp.handle(), 16, 16);
+    vkt::Framebuffer fb_st(*m_device, rp_st.handle(), 1, &image_view_st.handle(), 16, 16);
 
     VkStencilOpState stencil = {};
     stencil.failOp = VK_STENCIL_OP_KEEP;
@@ -2462,9 +2448,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
                                                    1u,
                                                    &subpassDependency};
     vkt::RenderPass rp(*m_device, renderPassInfo);
-
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 2, attachments, 32, 32, 1};
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 2, attachments);
 
     image_input.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -2561,13 +2545,12 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     vkt::ImageView color_view = image_color.CreateView();
     vkt::ImageView depth_view = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     VkImageView fb_attachments[] = {color_view, depth_view};
-    const VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0u, rp.handle(), 2u, fb_attachments, 32, 32, 1u,
-    };
-    vkt::Framebuffer fb(*m_device, fbci);
+
+    vkt::Framebuffer fb(*m_device, rp.handle(), 2u, fb_attachments);
+
     vkt::ImageView color2_view = image_color2.CreateView();
     fb_attachments[0] = color2_view;
-    vkt::Framebuffer fb1(*m_device, fbci);
+    vkt::Framebuffer fb1(*m_device, rp.handle(), 2u, fb_attachments);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.gp_ci_.renderPass = rp.handle();
@@ -3277,14 +3260,6 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     renderpass_info.dependencyCount = 0;
     renderpass_info.pDependencies = nullptr;
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.flags = 0;
-    fbci.attachmentCount = attachments.size();
-    fbci.pAttachments = attachments.data();
-    fbci.width = kWidth;
-    fbci.height = kHeight;
-    fbci.layers = 1;
-
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_info);
 
@@ -3298,9 +3273,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     // run the renderpass with no dependencies
     {
         vkt::RenderPass rp(*m_device, renderpass_info);
-
-        fbci.renderPass = rp.handle();
-        vkt::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, rp.handle(), attachments.size(), attachments.data(), kWidth, kHeight);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
@@ -3383,9 +3356,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     {
         vkt::RenderPass rp(*m_device, renderpass_info);
-
-        fbci.renderPass = rp.handle();
-        vkt::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, rp.handle(), attachments.size(), attachments.data(), kWidth, kHeight);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
@@ -3475,9 +3446,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     renderpass_info.pDependencies = subpass_dependencies.data();
     {
         vkt::RenderPass rp(*m_device, renderpass_info);
-
-        fbci.renderPass = rp.handle();
-        vkt::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, rp.handle(), attachments.size(), attachments.data(), kWidth, kHeight);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
@@ -4246,15 +4215,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
 
     VkImageView framebuffer_attachments[1] = {image_view1.handle()};
 
-    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
-    fb_ci.renderPass = render_pass.handle();
-    fb_ci.attachmentCount = 1;
-    fb_ci.pAttachments = framebuffer_attachments;
-    fb_ci.width = 32;
-    fb_ci.height = 32;
-    fb_ci.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, framebuffer_attachments);
 
     VkRenderPassBeginInfo rp_bi = vku::InitStructHelper();
     rp_bi.renderPass = render_pass.handle();

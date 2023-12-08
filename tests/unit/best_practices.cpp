@@ -679,15 +679,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
 
     vkt::ImageView image_view(*m_device, iv_info);
 
-    VkFramebufferCreateInfo fb_info{};
-    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb_info.renderPass = rp.handle();
-    fb_info.layers = 1;
-    fb_info.width = 1920;
-    fb_info.height = 1080;
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view.handle();
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view.handle(), 1920, 1080);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1554,17 +1546,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     rp_info.pSubpasses = &spd;
 
     vkt::RenderPass rp(*m_device, rp_info);
-
-    // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.width = w;
-    fb_info.height = h;
-    fb_info.layers = 1;
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view.handle();
-
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view.handle(), w, h);
 
     m_commandBuffer->begin();
 
@@ -1649,17 +1631,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     rp_info.pSubpasses = &spd;
 
     vkt::RenderPass rp(*m_device, rp_info);
-
-    // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.width = w;
-    fb_info.height = h;
-    fb_info.layers = 1;
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view.handle();
-
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view.handle(), w, h);
 
     m_commandBuffer->begin();
 
@@ -1757,17 +1729,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     vkt::RenderPass rp2(*m_device, rp_info);
-
-    // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.width = w;
-    fb_info.height = h;
-    fb_info.layers = 1;
-    fb_info.renderPass = rp1.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view.handle();
-
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, rp1.handle(), 1, &image_view.handle(), w, h);
 
     m_commandBuffer->begin();
 
@@ -1925,17 +1887,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     rp_info.pSubpasses = &spd;
 
     vkt::RenderPass rp(*m_device, rp_info);
-
-    // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.width = w;
-    fb_info.height = h;
-    fb_info.layers = 1;
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view.handle();
-
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view.handle(), w, h);
 
     vkt::CommandPool graphics_pool(*m_device, graphics_queue->get_family_index());
 

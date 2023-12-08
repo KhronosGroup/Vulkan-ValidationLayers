@@ -1278,9 +1278,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
         for (TestType test_type : test_list) {
             VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
 
-            VkFramebufferCreateInfo fbci = {
-                VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view->handle(), kWidth, kHeight, 1};
-            vkt::Framebuffer fb(*m_device, fbci);
+            vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view->handle(), kWidth, kHeight);
 
             cmd_buf.begin();
             image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;

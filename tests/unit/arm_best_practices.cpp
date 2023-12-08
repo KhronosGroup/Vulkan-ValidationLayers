@@ -1507,9 +1507,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     vkt::RenderPass rp(*m_device, rpci);
 
     auto imageView = images[1]->CreateView();
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView.handle(), WIDTH, HEIGHT, 1};
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle(), WIDTH, HEIGHT);
 
     VkRenderPassBeginInfo rpbi =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {WIDTH, HEIGHT}}, 0u, nullptr);

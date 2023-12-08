@@ -622,11 +622,9 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     pipeline.gp_ci_.renderPass = renderpass.handle();
     pipeline.CreateGraphicsPipeline();
 
+    vkt::Framebuffer fb(test_device, renderpass.handle(), 0, nullptr, 256, 256);
+
     m_renderPassBeginInfo.renderPass = renderpass.handle();
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, renderpass.handle(), 0, nullptr, 256, 256, 1};
-    vkt::Framebuffer fb(test_device, fbci);
-    ASSERT_TRUE(fb.initialized());
     m_renderPassBeginInfo.framebuffer = fb.handle();
     m_renderPassBeginInfo.renderPass = renderpass.handle();
     commandBuffer.begin();
@@ -1119,16 +1117,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
-
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = rp.handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &imageView.handle();
-    fbci.width = 32;
-    fbci.height = 32;
-    fbci.layers = 1;
-
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp.handle();

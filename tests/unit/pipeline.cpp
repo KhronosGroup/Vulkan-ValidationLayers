@@ -484,14 +484,10 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     ASSERT_TRUE(renderpass.initialized());
 
     auto render_target_view = m_renderTargets[0]->CreateView();
-    VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
-    framebuffer_info.renderPass = renderpass;
-    framebuffer_info.width = m_renderTargets[0]->width();
-    framebuffer_info.height = m_renderTargets[0]->height();
-    framebuffer_info.layers = 1;
-    framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &render_target_view.handle();
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
+
+    const uint32_t fb_width = m_renderTargets[0]->width();
+    const uint32_t fb_height = m_renderTargets[0]->height();
+    vkt::Framebuffer framebuffer(*m_device, renderpass, 1, &render_target_view.handle(), fb_width, fb_height);
 
     CreatePipelineHelper pipeline_1(*this);
     pipeline_1.InitState();
@@ -508,8 +504,8 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
     rpbinfo.renderPass = renderpass.handle();
     rpbinfo.framebuffer = framebuffer;
-    rpbinfo.renderArea.extent.width = framebuffer_info.width;
-    rpbinfo.renderArea.extent.height = framebuffer_info.height;
+    rpbinfo.renderArea.extent.width = fb_width;
+    rpbinfo.renderArea.extent.height = fb_height;
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rpbinfo);
@@ -2436,16 +2432,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView image_view = image.CreateView();
 
-    VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
-    framebuffer_info.renderPass = render_pass.handle();
-    framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &image_view.handle();
-    framebuffer_info.width = 32;
-    framebuffer_info.height = 32;
-    framebuffer_info.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
-    ASSERT_TRUE(framebuffer.initialized());
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle());
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);

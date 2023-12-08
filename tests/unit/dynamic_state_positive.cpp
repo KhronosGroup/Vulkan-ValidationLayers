@@ -289,15 +289,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpasses;
     vkt::RenderPass rp(*m_device, rpci);
-
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &depth_image_view.handle();
-    fb_info.width = m_width;
-    fb_info.height = m_height;
-    fb_info.layers = 1;
-    vkt::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &depth_image_view.handle(), m_width, m_height);
 
     // Enable dynamic color write enable
     pipe.gp_ci_.renderPass = rp.handle();

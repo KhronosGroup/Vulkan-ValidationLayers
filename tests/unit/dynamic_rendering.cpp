@@ -3121,13 +3121,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
 
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = render_pass.handle();
-    framebuffer_ci.width = 32;
-    framebuffer_ci.height = 32;
-    framebuffer_ci.layers = 1;
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 0, nullptr);
 
     vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();
@@ -6130,10 +6124,7 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
 
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView.handle(), 32, 32, 1};
-    vkt::Framebuffer fb(*m_device, fbci);
-    ASSERT_TRUE(fb.initialized());
+    vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle());
 
     m_commandBuffer->begin();
 

@@ -34,9 +34,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     vkt::ImageView imageView = image.CreateView();
 
-    VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.Handle(), 1, &imageView.handle(), 32, 32, 1};
-    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
 
     m_commandBuffer->begin();
     VkRenderPassBeginInfo rpbi =
@@ -500,10 +498,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
-
-    VkFramebufferCreateInfo fci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.Handle(), 1, &view.handle(), 32, 32, 1};
-    vkt::Framebuffer fb(*m_device, fci);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
 
     // Explicitly create a command buffer to bind the FB to so that we can then
     //  destroy the command pool in order to implicitly free command buffer

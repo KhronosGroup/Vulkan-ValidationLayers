@@ -141,14 +141,8 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
                        0);
     vkt::ImageView imageView = image.CreateView();
 
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView.handle();
-    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
-    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
-    fb_info.layers = 1;
-
-    vkt::Framebuffer fb(*m_device, fb_info);
-    ASSERT_TRUE(fb.initialized());
+    vkt::Framebuffer framebuffer(*m_device, rp.handle(), 1, &imageView.handle(),
+                                 fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
+                                 fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
+    ASSERT_TRUE(framebuffer.initialized());
 }

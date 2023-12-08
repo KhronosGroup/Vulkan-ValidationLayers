@@ -600,19 +600,10 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
                        VK_COMPONENT_SWIZZLE_IDENTITY};
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, ivci);
-    ASSERT_TRUE(view.initialized());
-    VkFramebufferCreateInfo fci = vku::InitStructHelper();
-    fci.renderPass = rp1.handle();
-    fci.attachmentCount = 1;
-    fci.pAttachments = &view.handle();
-    fci.width = 1;
-    fci.height = 1;
-    fci.layers = 1;
-    vkt::Framebuffer fb1(*m_device, fci);
-    ASSERT_TRUE(fb1.initialized());
-    fci.renderPass = rp2.handle();
-    vkt::Framebuffer fb2(*m_device, fci);
-    ASSERT_TRUE(fb2.initialized());
+
+    vkt::Framebuffer fb1(*m_device, rp1.handle(), 1, &view.handle(), 1, 1);
+    vkt::Framebuffer fb2(*m_device, rp2.handle(), 1, &view.handle(), 1, 1);
+
     VkRenderPassBeginInfo rpbi =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp1.handle(), fb1.handle(), VkRect2D{{0, 0}, {1u, 1u}}, 0u, nullptr);
     m_commandBuffer->begin();
@@ -927,15 +918,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     ivci.format = format;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView image_view(*m_device, ivci);
-
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = render_pass.handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view.handle();
-    fbci.width = 1;
-    fbci.height = 1;
-    fbci.layers = 1;
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle(), 1, 1);
 
     vkt::CommandBuffer cmdbuff(DeviceObj(), m_commandPool);
     cmdbuff.begin();

@@ -610,15 +610,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.width = width;
-    fbci.height = height;
-    fbci.layers = 1;
-    fbci.renderPass = rp.Handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &image_view_handle;
-
-    vkt::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.framebuffer = framebuffer.handle();
@@ -826,15 +818,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     rp.AddInputAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-    fbci.renderPass = rp.Handle();
-    fbci.attachmentCount = 1;
-    fbci.pAttachments = &view_input.handle();
-    fbci.width = width;
-    fbci.height = height;
-    fbci.layers = 1;
-    vkt::Framebuffer fb(*m_device, fbci);
-    ASSERT_TRUE(fb.initialized());
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view_input.handle(), width, height);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1082,15 +1066,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     VkClearValue clear_value;
     clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
 
-    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.width = 32u;
-    framebuffer_ci.height = 32u;
-    framebuffer_ci.layers = 1u;
-    framebuffer_ci.renderPass = rp.Handle();
-    framebuffer_ci.attachmentCount = 1;
-    framebuffer_ci.pAttachments = &image_view.handle();
-
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     VkRenderPassBeginInfo render_pass_begin = vku::InitStructHelper();
     render_pass_begin.renderPass = rp.Handle();

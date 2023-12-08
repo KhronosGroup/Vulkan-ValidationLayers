@@ -832,9 +832,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
                             VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT);
     rp.CreateRenderPass();
 
-    VkFramebufferCreateInfo framebuffer_create_info = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.Handle(), 2, image_views, 8, 8, 1};
-    vkt::Framebuffer framebuffer(*m_device, framebuffer_create_info);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, image_views, 8, 8);
 
     // Various structs used for commands
     VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
