@@ -104,6 +104,8 @@ struct NamedHandle {
     bool IsIndexed() const { return index != kInvalidIndex; }
 };
 
+using NamedHandleVector = small_vector<NamedHandle, 1, uint32_t>;
+
 struct ResourceCmdUsageRecord {
     using TagIndex = ResourceUsageTag;
     using Count = uint32_t;
@@ -137,7 +139,7 @@ struct ResourceCmdUsageRecord {
     // plain pointer as a shared pointer is held by the context storing this record
     const vvl::CommandBuffer *cb_state = nullptr;
     Count reset_count;
-    small_vector<NamedHandle, 1> handles;
+    NamedHandleVector handles;
 };
 
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
@@ -368,7 +370,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     uint32_t command_number_;
     uint32_t subcommand_number_;
     uint32_t reset_count_;
-    small_vector<NamedHandle, 1> command_handles_;
+    NamedHandleVector command_handles_;
 
     AccessContext cb_access_context_;
     AccessContext *current_context_;
