@@ -249,7 +249,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     InitState();
 
     VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);

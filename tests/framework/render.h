@@ -200,7 +200,6 @@ class VkRenderFramework : public VkTestFramework {
     VkPresentModeKHR m_surface_non_shared_present_mode{};
     VkCompositeAlphaFlagBitsKHR m_surface_composite_alpha{};
 
-    bool m_addRenderPassSelfDependency;
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
     std::vector<std::unique_ptr<VkImageObj>> m_renderTargets;
@@ -231,9 +230,6 @@ class VkRenderFramework : public VkTestFramework {
   private:
     // TODO - move to own helper logic
     vkt::Framebuffer *m_framebuffer;
-    std::vector<VkAttachmentDescription> m_renderPass_attachments;
-    std::vector<VkSubpassDescription> m_renderPass_subpasses;
-    std::vector<VkSubpassDependency> m_renderPass_dependencies;
     std::vector<vkt::ImageView> m_render_target_views;   // color attachments but not depth
     std::vector<VkImageView> m_framebuffer_attachments;  // all attachments, can be consumed directly by the API
 

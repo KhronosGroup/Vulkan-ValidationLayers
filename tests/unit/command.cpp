@@ -4473,7 +4473,6 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
     VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper();
     cmdbuff_ii.renderPass = m_renderPass;
     cmdbuff_ii.subpass = 0;
-    cmdbuff_ii.framebuffer = framebuffer();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &cmdbuff_ii;
