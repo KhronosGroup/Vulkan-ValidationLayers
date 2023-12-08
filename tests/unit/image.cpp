@@ -631,15 +631,11 @@ TEST_F(NegativeImage, BlitLayout) {
     VkImageObj img_general(m_device);
     VkImageObj img_color(m_device);
 
-    img_src_transfer.InitNoLayout(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL, 0);
-    img_dst_transfer.InitNoLayout(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL, 0);
-    img_general.InitNoLayout(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                             VK_IMAGE_TILING_OPTIMAL, 0);
+    img_src_transfer.InitNoLayout(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    img_dst_transfer.InitNoLayout(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    img_general.InitNoLayout(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     img_color.InitNoLayout(64, 64, 1, fmt,
-                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                           VK_IMAGE_TILING_OPTIMAL, 0);
+                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     ASSERT_TRUE(img_src_transfer.initialized());
     ASSERT_TRUE(img_dst_transfer.initialized());
@@ -2480,7 +2476,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
     // VU 00733: The aspectMask member of pSubresource must only have a single bit set
     {
         VkImageObj img(m_device);
-        img.InitNoLayout(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         ASSERT_TRUE(img.initialized());
 
         VkImageSubresource subres = {};
@@ -2497,7 +2493,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
     // 00739 mipLevel must be less than the mipLevels specified in VkImageCreateInfo when the image was created
     {
         VkImageObj img(m_device);
-        img.InitNoLayout(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         ASSERT_TRUE(img.initialized());
 
         VkImageSubresource subres = {};
@@ -2513,7 +2509,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
     // 00740 arrayLayer must be less than the arrayLayers specified in VkImageCreateInfo when the image was created
     {
         VkImageObj img(m_device);
-        img.InitNoLayout(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         ASSERT_TRUE(img.initialized());
 
         VkImageSubresource subres = {};
@@ -2538,7 +2534,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
         if ((result == VK_SUCCESS) &&
             FormatFeaturesAreSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
             VkImageObj img(m_device);
-            img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+            img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
 
             VkImageSubresource subres = {};
             subres.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // ERROR: triggers VU 04462
@@ -2561,7 +2557,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
         if ((result == VK_SUCCESS) &&
             FormatFeaturesAreSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
             VkImageObj img(m_device);
-            img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+            img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
 
             VkImageSubresource subres = {};
             subres.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // ERROR: triggers VU 04463
@@ -2576,7 +2572,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
     // VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT
     {
         VkImageObj img(m_device);
-        img.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         ASSERT_TRUE(img.initialized());
 
         VkImageSubresource subres = {};
@@ -2589,7 +2585,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
     }
     {
         VkImageObj img(m_device);
-        img.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        img.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         ASSERT_TRUE(img.initialized());
 
         VkImageSubresource subres = {};

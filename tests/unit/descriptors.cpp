@@ -1807,7 +1807,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
 
     // Create an image to be used for invalid updates
     VkImageObj image_obj(m_device);
-    image_obj.InitNoLayout(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image_obj.InitNoLayout(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image_obj.initialized());
     vkt::ImageView image_view = image_obj.CreateView();
 

@@ -317,17 +317,17 @@ struct ClearAttachmentHazardHelper {
           image_ds(&device),
           rt(&device),
           ds(&device) {
-        image.InitNoLayout(width, height, 1, rt_format, transfer_usage, VK_IMAGE_TILING_OPTIMAL);
+        image.InitNoLayout(width, height, 1, rt_format, transfer_usage);
         image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-        image_ds.InitNoLayout(width, height, 1, ds_format, transfer_usage, VK_IMAGE_TILING_OPTIMAL);
+        image_ds.InitNoLayout(width, height, 1, ds_format, transfer_usage);
         image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-        rt.InitNoLayout(width, height, 1, rt_format, rt_usage, VK_IMAGE_TILING_OPTIMAL);
+        rt.InitNoLayout(width, height, 1, rt_format, rt_usage);
         rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         rt_view = rt.CreateView();
 
-        ds.InitNoLayout(width, height, 1, ds_format, ds_usage, VK_IMAGE_TILING_OPTIMAL);
+        ds.InitNoLayout(width, height, 1, ds_format, ds_usage);
         ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         ds_view = ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
