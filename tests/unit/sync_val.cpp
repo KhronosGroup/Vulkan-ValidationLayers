@@ -5693,3 +5693,84 @@ TEST_F(NegativeSyncVal, AvailabilityWithoutVisibilityForBuffer) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeSyncVal, ImageCopyHazardsLayoutTransition) {
+    TEST_DESCRIPTION("Copy to image and then start image layout transition without waiting for copy to end.");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    VkImageMemoryBarrier transition = vku::InitStructHelper();
+    transition.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    transition.image = image;
+    transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_commandBuffer->begin();
+    vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    // Create only execution dependency but do not specify any accesses, so copy writes still
+    // hazards with image layout transition writes
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &transition);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7010#issuecomment-1846751346
+TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
+    TEST_DESCRIPTION("Hazardous pipeline barrier contains many barrier structures (> 255). Test that reporting can handle this.");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // Setup copy from buffer to image that creates hazardous situation with the earlier layout transition.
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage, VK_IMAGE_TILING_OPTIMAL);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    VkImageMemoryBarrier transition = vku::InitStructHelper();
+    transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition.image = image;
+    transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    // Create a lot of buffer barriers (> 255) so error reporting will have a lot of objects to report.
+    constexpr uint32_t buffer_count = 300;
+    std::vector<vkt::Buffer> buffers;
+    std::vector<VkBufferMemoryBarrier> buffer_barriers(buffer_count);
+    for (uint32_t i = 0; i < buffer_count; i++) {
+        buffers.emplace_back(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        buffer_barriers[i] = vku::InitStructHelper();
+        buffer_barriers[i].buffer = buffers[i];
+        buffer_barriers[i].size = VK_WHOLE_SIZE;
+    }
+
+    m_commandBuffer->begin();
+
+    // Create only execution dependency but do not specify any accesses,
+    // so subsequent copy writes will hazard with the layout transition writes
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
+                           buffer_count, buffer_barriers.data(), 1, &transition);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
