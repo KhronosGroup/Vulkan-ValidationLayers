@@ -464,7 +464,7 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.renderPass = m_renderPass;
-    rpbi.framebuffer = m_framebuffer;
+    rpbi.framebuffer = framebuffer();
     rpbi.renderArea.offset.x = 0;
     rpbi.renderArea.offset.y = 0;
     rpbi.renderArea.extent.width = 32;

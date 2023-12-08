@@ -2061,7 +2061,7 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
-    cbii.framebuffer = m_framebuffer;
+    cbii.framebuffer = framebuffer();
     cbii.occlusionQueryEnable = VK_FALSE;  // Invalid
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
@@ -2097,7 +2097,7 @@ TEST_F(NegativeQuery, CommandBufferInheritanceFlags) {
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
-    cbii.framebuffer = m_framebuffer;
+    cbii.framebuffer = framebuffer();
     cbii.occlusionQueryEnable = VK_TRUE;
     cbii.queryFlags = 0;
 
@@ -2529,7 +2529,7 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
-    cbii.framebuffer = m_framebuffer;
+    cbii.framebuffer = framebuffer();
     cbii.occlusionQueryEnable = VK_TRUE;
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
@@ -2738,7 +2738,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
-    cbii.framebuffer = m_framebuffer;
+    cbii.framebuffer = framebuffer();
     cbii.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();

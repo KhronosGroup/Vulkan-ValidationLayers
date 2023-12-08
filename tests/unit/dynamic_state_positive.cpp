@@ -978,7 +978,7 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     auto hinfo = vku::InitStruct<VkCommandBufferInheritanceInfo>(&viewport_scissor_inheritance);
     hinfo.renderPass = m_renderPass;
     hinfo.subpass = 0;
-    hinfo.framebuffer = m_framebuffer;
+    hinfo.framebuffer = framebuffer();
 
     auto info = vku::InitStruct<VkCommandBufferBeginInfo>();
     info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;

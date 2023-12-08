@@ -94,7 +94,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledInSecondaryCB) {
     info.pInheritanceInfo = &hinfo;
     hinfo.renderPass = renderPass();
     hinfo.subpass = 0;
-    hinfo.framebuffer = m_framebuffer;
+    hinfo.framebuffer = framebuffer();
     hinfo.occlusionQueryEnable = VK_FALSE;
     hinfo.queryFlags = 0;
     hinfo.pipelineStatistics = 0;
@@ -222,7 +222,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_inheritance_info.renderPass = m_renderPass;
-    command_buffer_inheritance_info.framebuffer = m_framebuffer;
+    command_buffer_inheritance_info.framebuffer = framebuffer();
 
     command_buffer_begin_info.flags =
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
