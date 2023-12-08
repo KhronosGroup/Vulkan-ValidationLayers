@@ -2529,7 +2529,6 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
-    cbii.framebuffer = framebuffer();
     cbii.occlusionQueryEnable = VK_TRUE;
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();

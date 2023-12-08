@@ -16,6 +16,7 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/barrier_queue_family.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     TEST_DESCRIPTION("Add a pipeline barrier within a subpass that has conflicting state");
@@ -250,10 +251,30 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj color_image(m_device);
+    color_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    auto color_view = color_image.CreateView();
+
+    // Just using all framebuffer-space pipeline stages in order to get a reasonably large
+    //  set of bits that can be used for both src & dst
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                       VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // Add all of the gfx mem access bits that correlate to the fb-space pipeline stages
+    VkAccessFlags access_flags = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                 VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
     // Add a token self-dependency for this test to avoid unexpected errors
-    m_addRenderPassSelfDependency = true;
-    InitRenderTarget();
+    rp.AddSubpassDependency(stage_flags, stage_flags, access_flags, access_flags);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &color_view.handle());
+
+    auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
@@ -291,8 +312,14 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test("");
 
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    render_pass_begin_info.renderArea.extent.width = 1;
+    render_pass_begin_info.renderArea.extent.height = 1;
+
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
     // Can't send buffer memory barrier during a render pass
     m_commandBuffer->EndRenderPass();
@@ -766,9 +793,29 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageObj color_image(m_device);
+    color_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    auto color_view = color_image.CreateView();
+
+    // Just using all framebuffer-space pipeline stages in order to get a reasonably large
+    //  set of bits that can be used for both src & dst
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                       VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // Add all of the gfx mem access bits that correlate to the fb-space pipeline stages
+    VkAccessFlags access_flags = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                 VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
     // Add a token self-dependency for this test to avoid unexpected errors
-    m_addRenderPassSelfDependency = true;
-    InitRenderTarget();
+    rp.AddSubpassDependency(stage_flags, stage_flags, access_flags, access_flags);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &color_view.handle());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
@@ -805,8 +852,14 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test("");
 
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    render_pass_begin_info.renderArea.extent.width = 1;
+    render_pass_begin_info.renderArea.extent.height = 1;
+
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
     // Can't send buffer memory barrier during a render pass
     m_commandBuffer->EndRenderPass();

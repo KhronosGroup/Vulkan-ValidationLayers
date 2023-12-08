@@ -16,6 +16,7 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/external_memory_sync.h"
 
@@ -736,41 +737,28 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use image that's child of framebuffer.");
     RETURN_IF_SKIP(Init());
-    VkFormatProperties format_properties;
-    VkResult err = VK_SUCCESS;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
 
-    InitRenderTarget();
-
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_ci.extent.width = 256;
-    image_ci.extent.height = 256;
-    image_ci.extent.depth = 1;
-    image_ci.mipLevels = 1;
-    image_ci.arrayLayers = 1;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_ci.flags = 0;
     VkImageObj image(m_device);
-    image.init(&image_ci);
-
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView();
 
-    VkFramebufferCreateInfo fci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_EQ(VK_SUCCESS, err);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle(), 256, 256);
 
-    // Just use default renderpass with our framebuffer
-    m_renderPassBeginInfo.framebuffer = fb;
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    render_pass_begin_info.renderArea.extent.width = 1;
+    render_pass_begin_info.renderArea.extent.height = 1;
+
     // Create Null cmd buffer for submit
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put it (and attached imageView) in-flight
@@ -787,7 +775,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->SetUnexpectedError("If image is not VK_NULL_HANDLE, image must be a valid VkImage handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Image obj");
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
+    fb.destroy();
 }
 
 TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {

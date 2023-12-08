@@ -47,7 +47,6 @@ VkRenderFramework::VkRenderFramework()
       m_commandPool(VK_NULL_HANDLE),
       m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
-      m_addRenderPassSelfDependency(false),
       m_width(256),   // default window width
       m_height(256),  // default window height
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
@@ -924,7 +923,9 @@ void VkRenderFramework::InitRenderTarget(const VkImageView *dsBinding) { InitRen
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *dsBinding) {
     vector<VkAttachmentReference> color_references;
-    m_renderPass_attachments.reserve(targets + 1);  // +1 for dsBinding
+    vector<VkAttachmentDescription> attachment_descriptions;
+
+    attachment_descriptions.reserve(targets + 1);  // +1 for dsBinding
     color_references.reserve(targets);
     m_framebuffer_attachments.reserve(targets + 1);  // +1 for dsBinding
 
@@ -947,7 +948,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     clear.color = m_clear_color;
 
     for (uint32_t i = 0; i < targets; i++) {
-        m_renderPass_attachments.push_back(att);
+        attachment_descriptions.push_back(att);
 
         ref.attachment = i;
         color_references.push_back(ref);
@@ -977,9 +978,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
         m_renderTargets.push_back(std::move(img));
     }
 
-    m_renderPass_subpasses.clear();
-    m_renderPass_subpasses.resize(1);
-    VkSubpassDescription &subpass = m_renderPass_subpasses[0];
+    VkSubpassDescription subpass;
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.flags = 0;
     subpass.inputAttachmentCount = 0;
@@ -997,7 +996,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
         att.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         att.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        m_renderPass_attachments.push_back(att);
+        attachment_descriptions.push_back(att);
 
         clear.depthStencil.depth = 1.0;
         clear.depthStencil.stencil = VK_FORMAT_UNDEFINED;
@@ -1016,44 +1015,12 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     subpass.pPreserveAttachments = NULL;
 
     VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
-    rp_info.attachmentCount = m_renderPass_attachments.size();
-    rp_info.pAttachments = m_renderPass_attachments.data();
-    rp_info.subpassCount = m_renderPass_subpasses.size();
-    rp_info.pSubpasses = m_renderPass_subpasses.data();
-
-    m_renderPass_dependencies.clear();
-    if (m_addRenderPassSelfDependency) {
-        m_renderPass_dependencies.resize(1);
-        VkSubpassDependency &subpass_dep = m_renderPass_dependencies[0];
-        // Add a subpass self-dependency to subpass 0 of default renderPass
-        subpass_dep.srcSubpass = 0;
-        subpass_dep.dstSubpass = 0;
-        // Just using all framebuffer-space pipeline stages in order to get a reasonably large
-        //  set of bits that can be used for both src & dst
-        subpass_dep.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpass_dep.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        // Add all of the gfx mem access bits that correlate to the fb-space pipeline stages
-        subpass_dep.srcAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        subpass_dep.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        // Must include dep_by_region bit when src & dst both include framebuffer-space stages
-        subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    }
-
-    if (m_renderPass_dependencies.size()) {
-        rp_info.dependencyCount = static_cast<uint32_t>(m_renderPass_dependencies.size());
-        rp_info.pDependencies = m_renderPass_dependencies.data();
-    } else {
-        rp_info.dependencyCount = 0;
-        rp_info.pDependencies = nullptr;
-    }
+    rp_info.attachmentCount = attachment_descriptions.size();
+    rp_info.pAttachments = attachment_descriptions.data();
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &subpass;
+    rp_info.dependencyCount = 0;
+    rp_info.pDependencies = nullptr;
 
     vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
 

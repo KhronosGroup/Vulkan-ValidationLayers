@@ -1402,11 +1402,13 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     RETURN_IF_SKIP(InitState());
 
     VkImageObj rt_image_0(m_device);
-    rt_image_0.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    rt_image_0.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto rt_image_view_0 = rt_image_0.CreateView();
 
     VkImageObj rt_image_1(m_device);
-    rt_image_1.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    rt_image_1.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     auto rt_image_view_1 = rt_image_1.CreateView();
 
     const VkSubpassDependency external_subpass_dependency = {VK_SUBPASS_EXTERNAL,
@@ -1497,13 +1499,24 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    InitRenderTarget();
-    // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
-    m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    VkImageObj dst_image(m_device);
+    dst_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto dst_image_view = dst_image.CreateView();
 
-    VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
+
+    // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj src_image(m_device);
+    src_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1512,16 +1525,23 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
 
     m_commandBuffer->begin();
     // Initiate copy write
-    vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyImage(*m_commandBuffer, src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &region);
 
     // Execution barrier to ensure that copy and loadOp operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
     vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
                            nullptr, 0, nullptr, 0, nullptr);
 
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    render_pass_begin_info.renderArea.extent.width = 1;
+    render_pass_begin_info.renderArea.extent.height = 1;
+
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1534,7 +1554,8 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     // the absence of layout transition after the render pass is needed because the test hazards
     // attachment store operation with subsequent copy (and the transition would happen in between).
     VkImageObj dst_image(m_device);
-    dst_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    dst_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto dst_image_view = dst_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
