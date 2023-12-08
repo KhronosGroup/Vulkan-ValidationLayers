@@ -1680,8 +1680,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
     vk::AcquireNextImageKHR(device(), swapchain2, kWaitTimeout, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
     vk::WaitForFences(device(), 2, fence_handles, true, kWaitTimeout);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images2[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayoutPresentSrc(images[image_indices[0]]);
+    SetImageLayoutPresentSrc(images2[image_indices[1]]);
 
     VkSwapchainKHR swap_chains[2] = {m_swapchain, swapchain2};
     uint64_t present_ids[2] = {};
@@ -1701,8 +1701,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
     vk::AcquireNextImageKHR(device(), swapchain2, kWaitTimeout, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
     vk::WaitForFences(device(), 2, fence_handles, true, kWaitTimeout);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images2[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayoutPresentSrc(images[image_indices[0]]);
+    SetImageLayoutPresentSrc(images2[image_indices[1]]);
 
     // presentIds[0] = 3 (smaller than 4), presentIds[1] = 5 (wait for this after swapchain 2 is retired)
     present_ids[0] = 3;
@@ -1757,7 +1757,7 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayoutPresentSrc(images[image_index]);
 
     uint64_t present_id_index = 1;
     VkPresentIdKHR present_id = vku::InitStructHelper();
@@ -3054,7 +3054,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
 
     fence.wait(kWaitTimeout);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayoutPresentSrc(images[image_index]);
 
     VkQueue other = m_device->graphics_queues()[1]->handle();
 
@@ -3106,7 +3106,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
 
     fence.wait(kWaitTimeout);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayoutPresentSrc(images[image_index]);
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -3139,7 +3139,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
     }
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     for (auto image : swapchain_images) {
-        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        SetImageLayoutPresentSrc(image);
     }
 
     // Acquire image using a semaphore
@@ -3169,7 +3169,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     }
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     for (auto image : swapchain_images) {
-        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        SetImageLayoutPresentSrc(image);
     }
 
     // Acquire image using a semaphore
@@ -3216,7 +3216,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
     }
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     for (auto image : swapchain_images) {
-        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        SetImageLayoutPresentSrc(image);
     }
 
     // Acquire image using a fence
@@ -3251,7 +3251,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
     }
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     for (auto image : swapchain_images) {
-        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        SetImageLayoutPresentSrc(image);
     }
 
     // Acquire image using a semaphore and fence
@@ -3604,8 +3604,8 @@ TEST_F(NegativeWsi, PresentDuplicatedSwapchain) {
     VkFence fences[2] = {fence1.handle(), fence2.handle()};
     vk::WaitForFences(device(), 2u, fences, VK_TRUE, kWaitTimeout);
 
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayoutPresentSrc(images[image_indices[0]]);
+    SetImageLayoutPresentSrc(images[image_indices[1]]);
 
     VkPresentInfoKHR present_info = vku::InitStructHelper();
     present_info.swapchainCount = 2u;

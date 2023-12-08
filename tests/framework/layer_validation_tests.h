@@ -580,7 +580,11 @@ class PositiveVertexInput : public VertexInputTest {};
 
 class NegativeViewportInheritance : public VkLayerTest {};
 
-class WsiTest : public VkLayerTest {};
+class WsiTest : public VkLayerTest {
+  public:
+    // most tests need images in VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout
+    void SetImageLayoutPresentSrc(VkImage image);
+};
 class NegativeWsi : public WsiTest {};
 class PositiveWsi : public WsiTest {};
 
@@ -655,8 +659,6 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kU32Max);
 
 VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags2 undesired_features);
-
-void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, const std::string &code = "");
 
