@@ -677,9 +677,6 @@ bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHan
 
 void SetImageLayout(vkt::Device *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
-void AllocateDisjointMemory(vkt::Device *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
-                            VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane);
-
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, const std::string &code = "");
 
 void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, const std::string &code = "");

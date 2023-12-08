@@ -1067,14 +1067,28 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_a));
         ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_b));
 
-        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_a, &mp_image_a_mem[0],
-                               VK_IMAGE_ASPECT_PLANE_0_BIT);
-        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_a, &mp_image_a_mem[1],
-                               VK_IMAGE_ASPECT_PLANE_1_BIT);
-        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_b, &mp_image_b_mem[0],
-                               VK_IMAGE_ASPECT_PLANE_0_BIT);
-        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_b, &mp_image_b_mem[1],
-                               VK_IMAGE_ASPECT_PLANE_1_BIT);
+        auto allocate = [this](VkImage mp_image, VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
+            image_plane_req.planeAspect = plane;
+
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
+            mem_req_info2.image = mp_image;
+
+            VkMemoryRequirements2 mp_image_mem_reqs2 = vku::InitStructHelper();
+
+            vk::GetImageMemoryRequirements2KHR(m_device->device(), &mem_req_info2, &mp_image_mem_reqs2);
+
+            VkMemoryAllocateInfo mp_image_alloc_info = vku::InitStructHelper();
+            mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
+            ASSERT_TRUE(
+                m_device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
+            vk::AllocateMemory(m_device->device(), &mp_image_alloc_info, NULL, mp_image_mem);
+        };
+
+        allocate(mp_image_a, &mp_image_a_mem[0], VK_IMAGE_ASPECT_PLANE_0_BIT);
+        allocate(mp_image_a, &mp_image_a_mem[1], VK_IMAGE_ASPECT_PLANE_1_BIT);
+        allocate(mp_image_b, &mp_image_b_mem[0], VK_IMAGE_ASPECT_PLANE_0_BIT);
+        allocate(mp_image_b, &mp_image_b_mem[1], VK_IMAGE_ASPECT_PLANE_1_BIT);
 
         VkBindImagePlaneMemoryInfo plane_memory_info[2];
         plane_memory_info[0] = vku::InitStructHelper();
