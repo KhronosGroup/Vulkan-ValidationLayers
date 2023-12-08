@@ -59,3 +59,20 @@ class ThreadTimeoutHelper {
     std::condition_variable cv_;
     std::mutex mutex_;
 };
+
+#if GTEST_IS_THREADSAFE
+struct ThreadTestData {
+    VkCommandBuffer commandBuffer;
+    VkDevice device;
+    VkEvent event;
+    VkDescriptorSet descriptorSet;
+    VkBuffer buffer;
+    uint32_t binding;
+    std::atomic<bool> *bailout;
+};
+
+void AddToCommandBuffer(ThreadTestData *);
+void UpdateDescriptor(ThreadTestData *);
+#endif  // GTEST_IS_THREADSAFE
+
+void ReleaseNullFence(ThreadTestData *);

@@ -624,23 +624,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFla
                                                   VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                   const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
 
-#if GTEST_IS_THREADSAFE
-struct ThreadTestData {
-    VkCommandBuffer commandBuffer;
-    VkDevice device;
-    VkEvent event;
-    VkDescriptorSet descriptorSet;
-    VkBuffer buffer;
-    uint32_t binding;
-    std::atomic<bool> *bailout;
-};
-
-void AddToCommandBuffer(ThreadTestData *);
-void UpdateDescriptor(ThreadTestData *);
-#endif  // GTEST_IS_THREADSAFE
-
-void ReleaseNullFence(ThreadTestData *);
-
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
 void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,

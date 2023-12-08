@@ -47,8 +47,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/barrier_queue_family.cpp
     framework/descriptor_helper.h
     framework/descriptor_helper.cpp
-    framework/thread_timeout_helper.h
-    framework/thread_timeout_helper.cpp
+    framework/thread_helper.h
+    framework/thread_helper.cpp
     framework/gpu_av_helper.h
     framework/render_pass_helper.h
     framework/render_pass_helper.cpp
