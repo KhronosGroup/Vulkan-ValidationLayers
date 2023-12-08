@@ -190,3 +190,14 @@ bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreat
     const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
     return (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
 }
+
+bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    constexpr auto export_import_flags =
+        VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR;
+
+    VkPhysicalDeviceExternalSemaphoreInfo info = vku::InitStructHelper();
+    info.handleType = handle_type;
+    VkExternalSemaphoreProperties properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &info, &properties);
+    return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
+}
