@@ -345,24 +345,6 @@ bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHan
     return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
 }
 
-void AllocateDisjointMemory(vkt::Device *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
-                            VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
-    VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
-    image_plane_req.planeAspect = plane;
-
-    VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
-    mem_req_info2.image = mp_image;
-
-    VkMemoryRequirements2 mp_image_mem_reqs2 = vku::InitStructHelper();
-
-    fp(device->device(), &mem_req_info2, &mp_image_mem_reqs2);
-
-    VkMemoryAllocateInfo mp_image_alloc_info = vku::InitStructHelper();
-    mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
-    ASSERT_TRUE(device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
-    ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
-}
-
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
