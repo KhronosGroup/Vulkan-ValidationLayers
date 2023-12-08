@@ -104,7 +104,7 @@ class ViewportInheritanceTestData {
 
     void CreateColorImageObj() noexcept {
         assert(m_colorFormat != VK_FORMAT_UNDEFINED);
-        m_colorImageObj.Init(128, 128, 1, m_colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        m_colorImageObj.Init(128, 128, 1, m_colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         if (!m_colorImageObj.initialized()) {
             m_failureReason = "Image not initialized";
         }

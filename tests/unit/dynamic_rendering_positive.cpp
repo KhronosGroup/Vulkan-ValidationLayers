@@ -488,7 +488,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipe.CreateGraphicsPipeline();
 
     VkImageObj depth_image(m_device);
-    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     ASSERT_TRUE(depth_image.initialized());
 
     VkImageViewCreateInfo depth_view_ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -504,7 +504,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     vkt::ImageView depth_image_view(*m_device, depth_view_ci);
 
     VkImageObj color_image(m_device);
-    color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(color_image.initialized());
 
     VkImageViewCreateInfo color_view_ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -896,11 +896,11 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     pipeline_stencil.CreateGraphicsPipeline();
 
     VkImageObj colorImage(m_device);
-    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR);
 
     VkImageObj depthStencilImage(m_device);
     const VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
-    depthStencilImage.Init(32, 32, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthStencilImage.Init(32, 32, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR);
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1009,11 +1009,11 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
     pipeline_stencil.CreateGraphicsPipeline();
 
     VkImageObj colorImage(m_device);
-    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR);
     vkt::ImageView colorImageView = colorImage.CreateView();
 
     VkImageObj depthStencilImage(m_device);
-    depthStencilImage.Init(32, 32, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthStencilImage.Init(32, 32, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR);
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1203,7 +1203,7 @@ TEST_F(PositiveDynamicRendering, PipelineUnusedAttachments) {
     pipeline.CreateGraphicsPipeline();
 
     VkImageObj colorImage(m_device);
-    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR);
     vkt::ImageView colorImageView = colorImage.CreateView();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();

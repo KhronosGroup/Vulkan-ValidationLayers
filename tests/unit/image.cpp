@@ -31,7 +31,7 @@ TEST_F(NegativeImage, UsageBits) {
     auto format = FindSupportedDepthStencilFormat(gpu());
     VkImageObj image(m_device);
     // Initialize image with transfer source usage
-    image.Init(128, 128, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo dsvci = vku::InitStructHelper();
@@ -115,8 +115,8 @@ TEST_F(NegativeImage, CopyBufferToCompressedImage) {
     region.imageExtent.height = 4;
     region.imageExtent.depth = 1;
 
-    width_image.Init(5, 4, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
-    height_image.Init(8, 3, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    width_image.Init(5, 4, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    height_image.Init(8, 3, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     if (!width_image.initialized() || (!height_image.initialized())) {
         GTEST_SKIP() << "Unable to initialize surfaces";
     }
@@ -338,32 +338,27 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     bool d2src = !FormatFeaturesAreSupported(gpu(), f_depth2, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
 
     VkImageObj unsigned_image(m_device);
-    unsigned_image.Init(64, 64, 1, f_unsigned, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                        VK_IMAGE_TILING_OPTIMAL, 0);
+    unsigned_image.Init(64, 64, 1, f_unsigned, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(unsigned_image.initialized());
     unsigned_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj signed_image(m_device);
-    signed_image.Init(64, 64, 1, f_signed, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                      VK_IMAGE_TILING_OPTIMAL, 0);
+    signed_image.Init(64, 64, 1, f_signed, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(signed_image.initialized());
     signed_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj float_image(m_device);
-    float_image.Init(64, 64, 1, f_float, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL,
-                     0);
+    float_image.Init(64, 64, 1, f_float, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(float_image.initialized());
     float_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj depth_image(m_device);
-    depth_image.Init(64, 64, 1, f_depth, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL,
-                     0);
+    depth_image.Init(64, 64, 1, f_depth, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(depth_image.initialized());
     depth_image.SetLayout(VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj depth_image2(m_device);
-    depth_image2.Init(64, 64, 1, f_depth2, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                      VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image2.Init(64, 64, 1, f_depth2, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(depth_image2.initialized());
     depth_image2.SetLayout(VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
@@ -502,12 +497,12 @@ TEST_F(NegativeImage, BlitFormatTypes) {
         bool ycbcrdst = !FormatFeaturesAreSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
         VkImageObj ycbcr_image(m_device);
-        ycbcr_image.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        ycbcr_image.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
         ASSERT_TRUE(ycbcr_image.initialized());
         ycbcr_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
         VkImageObj ycbcr_image_2(m_device);
-        ycbcr_image_2.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        ycbcr_image_2.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         ASSERT_TRUE(ycbcr_image_2.initialized());
         ycbcr_image_2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
@@ -549,8 +544,8 @@ TEST_F(NegativeImage, BlitFilters) {
     // Create 2D images
     VkImageObj src2D(m_device);
     VkImageObj dst2D(m_device);
-    src2D.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    dst2D.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    src2D.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    dst2D.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(src2D.initialized());
     ASSERT_TRUE(dst2D.initialized());
     src2D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -2708,7 +2703,7 @@ TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), depth_format, formatProps);
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
@@ -2738,7 +2733,7 @@ TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
     }
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkFormatProperties formatProps;
@@ -2832,7 +2827,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
     GetPhysicalDeviceFeatures(&device_features);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image.create_info().arrayLayers == 1);
     ASSERT_TRUE(image.initialized());
 
@@ -3935,10 +3930,10 @@ TEST_F(NegativeImage, AstcDecodeMode) {
     const VkFormat ldr_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, rgba_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, rgba_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
     VkImageObj astc_image(m_device);
-    astc_image.Init(128, 128, 1, ldr_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    astc_image.Init(128, 128, 1, ldr_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(astc_image.initialized());
 
     VkImageViewASTCDecodeModeEXT astc_decode_mode = vku::InitStructHelper();
@@ -4083,7 +4078,7 @@ TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo view_info = vku::InitStructHelper();
@@ -5083,7 +5078,7 @@ TEST_F(NegativeImage, ImageViewMinLodFeature) {
     RETURN_IF_SKIP(Init());
     VkImageObj image(m_device);
     // Initialize image with transfer source usage
-    image.Init(128, 128, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -5109,7 +5104,7 @@ TEST_F(NegativeImage, ColorWthDepthAspect) {
     auto format = FindSupportedDepthStencilFormat(gpu());
 
     VkImageObj color_image(m_device);
-    color_image.Init(64, 64, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    color_image.Init(64, 64, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     VkImageViewCreateInfo civ_ci = vku::InitStructHelper();
     civ_ci.image = color_image.handle();
@@ -6084,7 +6079,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
 
     const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
@@ -6145,7 +6140,7 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
 
     const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
@@ -6181,7 +6176,7 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
 
     VkImageObj image(m_device);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
-    image.Init(128, 128, 1, VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_USAGE_STORAGE_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6227,11 +6222,11 @@ TEST_F(NegativeImage, BlitColorToDepth) {
     RETURN_IF_SKIP(Init());
 
     VkImageObj color_image(m_device);
-    color_image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    color_image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     VkImageObj depth_image(m_device);
-    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), depth_format, &format_properties);
@@ -6291,7 +6286,7 @@ TEST_F(NegativeImage, ResolveDepthImage) {
     image1.init(&image_ci);
 
     VkImageObj image2(m_device);
-    image2.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image2.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageResolve region;
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};

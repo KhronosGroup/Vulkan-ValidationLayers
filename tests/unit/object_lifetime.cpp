@@ -581,7 +581,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
 
     // Create image to update the descriptor with
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
@@ -637,7 +637,7 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     InitRenderTarget();
 
     VkImageObj image(m_device);
-    image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view = image.CreateView();
 
@@ -935,7 +935,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
@@ -1070,7 +1070,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();

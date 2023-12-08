@@ -68,7 +68,7 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
@@ -163,7 +163,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
@@ -248,7 +248,7 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
@@ -377,7 +377,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};

@@ -548,8 +548,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
         // imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT
         VkImageObj image_multi_planar2(m_device);
         image_multi_planar2.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                 VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL, 0);
+                                 VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         image_multi_planar2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
         copy_to_image.dstImage = image_multi_planar2;
@@ -575,8 +574,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
         // VK_IMAGE_ASPECT_PLANE_2_BIT
         VkImageObj image_multi_planar3(m_device);
         image_multi_planar3.Init(128, 128, 1, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
-                                 VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL, 0);
+                                 VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_to_image.dstImage = image_multi_planar3;
@@ -1087,11 +1085,9 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
         VkImageObj image_multi_twoplane1(m_device);
         VkImageObj image_multi_twoplane2(m_device);
         image_multi_twoplane1.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                   VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL, 0);
+                                   VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         image_multi_twoplane2.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                   VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL, 0);
+                                   VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         image_multi_twoplane1.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         image_multi_twoplane2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
@@ -1114,11 +1110,9 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
         VkImageObj image_multi_threeplane1(m_device);
         VkImageObj image_multi_threeplane2(m_device);
         image_multi_threeplane1.Init(128, 128, 1, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
-                                     VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                     VK_IMAGE_TILING_OPTIMAL, 0);
+                                     VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         image_multi_threeplane2.Init(128, 128, 1, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
-                                     VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                     VK_IMAGE_TILING_OPTIMAL, 0);
+                                     VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         image_multi_threeplane1.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         image_multi_threeplane2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

@@ -2548,7 +2548,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-pNext-06782"});
 
     VkImageObj image_obj(m_device);
-    image_obj.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image_obj.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image_obj.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;

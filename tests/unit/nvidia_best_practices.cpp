@@ -991,7 +991,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
     };
 
     VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();

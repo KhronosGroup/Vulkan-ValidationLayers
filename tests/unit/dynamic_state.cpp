@@ -170,8 +170,7 @@ TEST_F(NegativeDynamicState, DepthBoundsNotBound) {
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageObj depth_image(m_device);
-    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                     VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     InitRenderTarget(1, &depth_image_view.handle());
@@ -199,8 +198,7 @@ TEST_F(NegativeDynamicState, StencilReadNotBound) {
     RETURN_IF_SKIP(Init());
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageObj depth_image(m_device);
-    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                     VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     InitRenderTarget(1, &depth_image_view.handle());
@@ -228,8 +226,7 @@ TEST_F(NegativeDynamicState, StencilWriteNotBound) {
     RETURN_IF_SKIP(Init());
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageObj depth_image(m_device);
-    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                     VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     InitRenderTarget(1, &depth_image_view.handle());
@@ -257,8 +254,7 @@ TEST_F(NegativeDynamicState, StencilRefNotBound) {
     RETURN_IF_SKIP(Init());
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     VkImageObj depth_image(m_device);
-    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                     VK_IMAGE_TILING_OPTIMAL, 0);
+    depth_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     InitRenderTarget(1, &depth_image_view.handle());
@@ -3012,7 +3008,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     ASSERT_TRUE(depth_image.initialized());
 
     VkImageObj color_image(m_device);
-    color_image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    color_image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(color_image.initialized());
 
     VkAttachmentDescription descriptions[2] = {
@@ -3786,7 +3782,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
-                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_LINEAR);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -3847,7 +3843,7 @@ TEST_F(NegativeDynamicState, DepthBoundsTestEnableState) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
-                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -5110,7 +5106,7 @@ TEST_F(NegativeDynamicState, MissingColorAttachmentBlendBit) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32u, 32u, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32u, 32u, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     VkClearValue clear_value;
@@ -5517,7 +5513,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     VkFormat format = FindSupportedDepthStencilFormat(gpu());
 
     VkImageObj image(m_device);
-    image.Init(32u, 32u, 1u, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32u, 32u, 1u, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     RenderPassSingleSubpass rp(*this);

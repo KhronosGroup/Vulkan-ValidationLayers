@@ -31,7 +31,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
     rp.CreateRenderPass();
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
 
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
@@ -128,8 +128,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
     RETURN_IF_SKIP(Init());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                         VK_IMAGE_TILING_OPTIMAL);
+    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -270,7 +269,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
 
     vk::BeginCommandBuffer(secondary_command_buffer, &command_buffer_begin_info);
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -494,7 +493,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
 
     // A compatible framebuffer.
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
@@ -735,7 +734,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     InitRenderTarget();
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(image.create_info().arrayLayers == 1);
     ASSERT_TRUE(image.initialized());
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -769,7 +768,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_TRUE(image.create_info().arrayLayers == 1);
     ASSERT_TRUE(image.initialized());
     const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -1171,7 +1170,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
 
     VkFormat format = VK_FORMAT_R32G32B32A32_SINT;
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -1241,7 +1240,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
 
     VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -1276,7 +1275,7 @@ TEST_F(PositiveCommand, CopyBufferToRemaingImageLayers) {
     vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy2 region = vku::InitStructHelper();
     region.bufferOffset = 0u;

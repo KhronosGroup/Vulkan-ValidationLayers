@@ -794,7 +794,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     vkt::Sampler sampler(*m_device, sampler_info);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.Layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     OneOffDescriptorSet descriptor_set(m_device,
                                        {

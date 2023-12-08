@@ -326,7 +326,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     // 4) That sampled image descriptors have required layouts -- create images to update the descriptor with
     VkImageObj image(m_device);
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view = image.CreateView();
 
@@ -373,7 +373,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
                                        });
 
     VkImageObj image_obj(m_device);
-    image_obj.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image_obj.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     ASSERT_TRUE(image_obj.initialized());
     VkImage image = image_obj.image();
 
@@ -884,7 +884,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     // Create images to update the descriptor with
     VkImageObj image(m_device);
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
@@ -982,7 +982,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     // Create image, view, and sampler
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     auto image_view_create_info = image.BasicViewCreatInfo();
@@ -1100,8 +1100,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     const VkImageLayout stencil_descriptor_layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
     const VkImageAspectFlags depth_stencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     if (ds_test_support) {
-        image_ds.Init(32, 32, 1, format_ds, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                      VK_IMAGE_TILING_OPTIMAL, 0);
+        image_ds.Init(32, 32, 1, format_ds, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         ASSERT_TRUE(image_ds.initialized());
         auto ds_view_ci = image_ds.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT);
         vkt::ImageView depth_view(*m_device, ds_view_ci);
@@ -1128,7 +1127,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
 
     // Create image to update the descriptor with
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
 
     vkt::ImageView view = image.CreateView();
@@ -2771,7 +2770,7 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
     RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -3041,8 +3040,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
     VkImageObj depth_image(m_device);
     depth_image.Init(64, 64, 1, depth_format,
-                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                     VK_IMAGE_TILING_OPTIMAL);
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView depth_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -4584,7 +4582,7 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView view = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -4680,7 +4678,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
 
     const VkFormat combined_image_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    image.Init(1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view = image.CreateView();
 
@@ -4794,7 +4792,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view = image.CreateView();
 

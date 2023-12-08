@@ -53,7 +53,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     // Create an "exclusive" image owned by the graphics queue.
     VkImageObj image(m_device);
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
     ASSERT_TRUE(image.initialized());
     auto image_subres = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
     auto image_barrier = image.image_memory_barrier(0, 0, image.Layout(), image.Layout(), image_subres);
@@ -95,9 +95,9 @@ TEST_F(PositiveImage, UncompressedToCompressedImageCopy) {
     VkImageObj comp_10x10b_40x40t_image(m_device);  // Size = 40 * 40 * 4  = 6400
 
     uncomp_10x10t_image.Init(10, 10, 1, VK_FORMAT_R16G16B16A16_UINT,
-                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     comp_10x10b_40x40t_image.Init(40, 40, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     if (!uncomp_10x10t_image.initialized() || !comp_10x10b_40x40t_image.initialized()) {
         GTEST_SKIP() << "Unable to initialize surfaces - UncompressedToCompressedImageCopy";
@@ -228,7 +228,7 @@ TEST_F(PositiveImage, BasicUsage) {
 
     // Verify that we can create a view with usage INPUT_ATTACHMENT
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     ASSERT_TRUE(image.initialized());
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
@@ -264,31 +264,31 @@ TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
 
     {
         VkImageObj img_color(m_device);
-        img_color.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_color.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         ASSERT_TRUE(img_color.initialized());
 
         VkImageObj img_ds1(m_device);
-        img_ds1.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_ds1.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         ASSERT_TRUE(img_ds1.initialized());
 
         VkImageObj img_ds2(m_device);
-        img_ds2.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_ds2.Init(128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
         ASSERT_TRUE(img_ds2.initialized());
 
         VkImageObj img_xfer_src(m_device);
-        img_xfer_src.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_xfer_src.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
         ASSERT_TRUE(img_xfer_src.initialized());
 
         VkImageObj img_xfer_dst(m_device);
-        img_xfer_dst.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_xfer_dst.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         ASSERT_TRUE(img_xfer_dst.initialized());
 
         VkImageObj img_sampled(m_device);
-        img_sampled.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_sampled.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
         ASSERT_TRUE(img_sampled.initialized());
 
         VkImageObj img_input(m_device);
-        img_input.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+        img_input.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         ASSERT_TRUE(img_input.initialized());
 
         const struct {
@@ -1165,7 +1165,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     image_3d.Init(image_ci_3d);
     ASSERT_TRUE(image_3d.initialized());
 
-    other_image.Init(kWidth, kHeight, 1, format, usage, VK_IMAGE_TILING_OPTIMAL, 0);
+    other_image.Init(kWidth, kHeight, 1, format, usage);
     ASSERT_TRUE(other_image.initialized());
 
     // The image view is a 2D slice of the 3D image at depth = 4, which we request by

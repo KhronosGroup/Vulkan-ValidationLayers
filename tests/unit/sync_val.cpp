@@ -1478,7 +1478,7 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1514,7 +1514,7 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     InitRenderTarget();
 
     VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1554,7 +1554,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1606,7 +1606,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -2240,12 +2240,9 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     VkImageObj image_ds(m_device);
     VkImageObj image_dp(m_device);
     VkImageObj image_st(m_device);
-    image_ds.Init(16, 16, 1, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                  VK_IMAGE_TILING_OPTIMAL);
-    image_dp.Init(16, 16, 1, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                  VK_IMAGE_TILING_OPTIMAL);
-    image_st.Init(16, 16, 1, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                  VK_IMAGE_TILING_OPTIMAL);
+    image_ds.Init(16, 16, 1, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image_dp.Init(16, 16, 1, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_st.Init(16, 16, 1, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView image_view_ds = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::ImageView image_view_dp = image_dp.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::ImageView image_view_st = image_st.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);

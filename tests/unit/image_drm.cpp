@@ -239,7 +239,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     }
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(32, 32, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     vkt::SamplerYcbcrConversion conversion(*m_device, mp_format);
     auto conversion_info = conversion.ConversionInfo();

@@ -343,7 +343,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     pipe.CreateComputePipeline();
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -394,7 +394,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
 
     // "64-bit integer atomic support is guaranteed for optimally tiled images with the VK_FORMAT_R64_UINT"
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -536,7 +536,7 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
 
     // "64-bit integer atomic support is guaranteed for optimally tiled images with the VK_FORMAT_R64_UINT"
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,

@@ -183,7 +183,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ImageInputAttachmentLayout) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
     VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
     image_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
