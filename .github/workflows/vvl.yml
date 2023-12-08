@@ -198,7 +198,7 @@ jobs:
           run: ctest --output-on-failure -C Debug
 
   iOS:
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
