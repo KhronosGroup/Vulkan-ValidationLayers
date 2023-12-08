@@ -583,6 +583,8 @@ class Image : public internal::NonDispHandle<VkImage> {
     void init(const Device &dev, const VkImageCreateInfo &info) { init(dev, info, 0); }
     void init_no_mem(const Device &dev, const VkImageCreateInfo &info);
 
+    VkImage image() const { return handle(); }
+
     // get the internal memory
     const DeviceMemory &memory() const { return internal_mem_; }
     DeviceMemory &memory() { return internal_mem_; }
@@ -601,18 +603,15 @@ class Image : public internal::NonDispHandle<VkImage> {
     VkSubresourceLayout subresource_layout(const VkImageSubresource &subres) const;
     VkSubresourceLayout subresource_layout(const VkImageSubresourceLayers &subres) const;
 
-    bool transparent() const;
-    bool copyable() const { return (format_features_ & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT); }
-
     VkImageAspectFlags aspect_mask() const { return aspect_mask(create_info_.format); }
 
-    VkImageSubresourceRange subresource_range() const { return subresource_range(create_info_, aspect_mask()); }
     VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
 
     VkExtent3D extent() const { return create_info_.extent; }
+    uint32_t width() const { return create_info_.extent.width; }
+    uint32_t height() const { return create_info_.extent.height; }
     VkFormat format() const { return create_info_.format; }
     VkImageUsageFlags usage() const { return create_info_.usage; }
-    VkSharingMode sharing_mode() const { return create_info_.sharingMode; }
     VkImageMemoryBarrier image_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkImageLayout old_layout,
                                               VkImageLayout new_layout, const VkImageSubresourceRange &range,
                                               uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,

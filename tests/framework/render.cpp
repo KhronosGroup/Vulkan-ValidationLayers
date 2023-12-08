@@ -1151,7 +1151,8 @@ void VkImageObj::ImageMemoryBarrier(vkt::CommandBuffer *cmd_buf, VkImageAspectFl
                                     VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages,
                                     uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     // clang-format on
-    const VkImageSubresourceRange subresourceRange = subresource_range(aspect, 0, m_mipLevels, 0, m_arrayLayers);
+    const VkImageSubresourceRange subresourceRange =
+        subresource_range(aspect, 0, create_info().mipLevels, 0, create_info().arrayLayers);
     VkImageMemoryBarrier barrier;
     barrier = image_memory_barrier(output_mask, input_mask, Layout(), image_layout, subresourceRange, srcQueueFamilyIndex,
                                    dstQueueFamilyIndex);
@@ -1365,10 +1366,6 @@ void VkImageObj::InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryProp
     VkImageCreateInfo imageCreateInfo = create_info;
     imageCreateInfo.tiling = tiling;
 
-    m_format = imageCreateInfo.format;
-    m_mipLevels = imageCreateInfo.mipLevels;
-    m_arrayLayers = imageCreateInfo.arrayLayers;
-
     Layout(imageCreateInfo.initialLayout);
     if (memory)
         vkt::Image::init(*m_device, imageCreateInfo, reqs);
@@ -1437,9 +1434,6 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     Layout(create_info->initialLayout);
 
     vkt::Image::init(*m_device, *create_info, 0);
-    m_format = create_info->format;
-    m_mipLevels = create_info->mipLevels;
-    m_arrayLayers = create_info->arrayLayers;
 
     VkImageAspectFlags image_aspect = 0;
     if (vkuFormatIsDepthAndStencil(create_info->format)) {
@@ -1457,120 +1451,4 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
 void VkImageObj::init_no_mem(const vkt::Device &dev, const VkImageCreateInfo &info) {
     vkt::Image::init_no_mem(dev, info);
     Layout(info.initialLayout);
-    m_format = info.format;
-    m_mipLevels = info.mipLevels;
-    m_arrayLayers = info.arrayLayers;
-}
-
-VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
-    VkImageLayout src_image_layout, dest_image_layout;
-
-    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buf(m_device, &pool);
-
-    /* Build command buffer to copy staging texture to usable texture */
-    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-    /* TODO: Can we determine image aspect from image object? */
-    src_image_layout = src_image.Layout();
-    src_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-    dest_image_layout = (this->Layout() == VK_IMAGE_LAYOUT_UNDEFINED) ? VK_IMAGE_LAYOUT_GENERAL : this->Layout();
-    this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-    VkImageCopy copy_region = {};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.srcOffset.x = 0;
-    copy_region.srcOffset.y = 0;
-    copy_region.srcOffset.z = 0;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.mipLevel = 0;
-    copy_region.dstSubresource.layerCount = 1;
-    copy_region.dstOffset.x = 0;
-    copy_region.dstOffset.y = 0;
-    copy_region.dstOffset.z = 0;
-    copy_region.extent = src_image.extent();
-
-    vk::CmdCopyImage(cmd_buf.handle(), src_image.handle(), src_image.Layout(), handle(), Layout(), 1, &copy_region);
-
-    src_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, src_image_layout);
-
-    this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, dest_image_layout);
-
-    cmd_buf.end();
-
-    cmd_buf.QueueCommandBuffer();
-
-    return VK_SUCCESS;
-}
-
-// Same as CopyImage, but in the opposite direction
-VkResult VkImageObj::CopyImageOut(VkImageObj &dst_image) {
-    VkImageLayout src_image_layout, dest_image_layout;
-
-    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buf(m_device, &pool);
-
-    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-    src_image_layout = this->Layout();
-    this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-    dest_image_layout = (dst_image.Layout() == VK_IMAGE_LAYOUT_UNDEFINED) ? VK_IMAGE_LAYOUT_GENERAL : dst_image.Layout();
-    dst_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-    VkImageCopy copy_region = {};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.srcOffset.x = 0;
-    copy_region.srcOffset.y = 0;
-    copy_region.srcOffset.z = 0;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.mipLevel = 0;
-    copy_region.dstSubresource.layerCount = 1;
-    copy_region.dstOffset.x = 0;
-    copy_region.dstOffset.y = 0;
-    copy_region.dstOffset.z = 0;
-    copy_region.extent = dst_image.extent();
-
-    vk::CmdCopyImage(cmd_buf.handle(), handle(), Layout(), dst_image.handle(), dst_image.Layout(), 1, &copy_region);
-
-    this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, src_image_layout);
-
-    dst_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, dest_image_layout);
-
-    cmd_buf.end();
-
-    cmd_buf.QueueCommandBuffer();
-
-    return VK_SUCCESS;
-}
-
-// Return 16x16 pixel block
-std::array<std::array<uint32_t, 16>, 16> VkImageObj::Read() {
-    VkImageObj stagingImage(m_device);
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    stagingImage.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                      VK_IMAGE_TILING_LINEAR, reqs);
-    stagingImage.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    VkSubresourceLayout layout = stagingImage.subresource_layout(subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0));
-    CopyImageOut(stagingImage);
-    void *data = stagingImage.MapMemory();
-    std::array<std::array<uint32_t, 16>, 16> m = {};
-    if (data) {
-        for (uint32_t y = 0; y < stagingImage.extent().height; y++) {
-            uint32_t *row = (uint32_t *)((char *)data + layout.rowPitch * y);
-            for (uint32_t x = 0; x < stagingImage.extent().width; x++) m[y][x] = row[x];
-        }
-    }
-    stagingImage.UnmapMemory();
-    return m;
 }
