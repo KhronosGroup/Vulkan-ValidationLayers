@@ -638,21 +638,6 @@ void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &de
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 
-// Helpers for the tests below
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, VkPipelineStageFlags src_stages,
-                              VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
-                              const VkImageMemoryBarrier *img_barrier);
-
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
-                              const VkImageMemoryBarrier2KHR *img_barrier);
-
-void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
-                            VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
-                            const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier);
-
-void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
-                            const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier);
-
 VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits = nullptr);
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,

@@ -199,3 +199,67 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     }
     context_->Reset();
 }
+
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, VkPipelineStageFlags src_stages,
+                              VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
+                              const VkImageMemoryBarrier *img_barrier) {
+    cb->begin();
+    uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
+    uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
+    vk::CmdPipelineBarrier(cb->handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
+                           img_barrier);
+    cb->end();
+    cb->QueueCommandBuffer();  // Implicitly waits
+}
+
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
+                            VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
+                            const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier) {
+    ValidOwnershipTransferOp(monitor, cb_from, src_stages, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, buf_barrier, img_barrier);
+    ValidOwnershipTransferOp(monitor, cb_to, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, dst_stages, buf_barrier, img_barrier);
+}
+
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::CommandBuffer *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
+                              const VkImageMemoryBarrier2KHR *img_barrier) {
+    cb->begin();
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
+    dep_info.pBufferMemoryBarriers = buf_barrier;
+    dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
+    dep_info.pImageMemoryBarriers = img_barrier;
+    vk::CmdPipelineBarrier2KHR(cb->handle(), &dep_info);
+    cb->end();
+    cb->QueueCommandBuffer();  // Implicitly waits
+}
+
+void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::CommandBuffer *cb_from, vkt::CommandBuffer *cb_to,
+                            const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier) {
+    VkBufferMemoryBarrier2KHR fixup_buf_barrier;
+    VkImageMemoryBarrier2KHR fixup_img_barrier;
+    if (buf_barrier) {
+        fixup_buf_barrier = *buf_barrier;
+        fixup_buf_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE_KHR;
+        fixup_buf_barrier.dstAccessMask = 0;
+    }
+    if (img_barrier) {
+        fixup_img_barrier = *img_barrier;
+        fixup_img_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE_KHR;
+        fixup_img_barrier.dstAccessMask = 0;
+    }
+
+    ValidOwnershipTransferOp(monitor, cb_from, buf_barrier ? &fixup_buf_barrier : nullptr,
+                             img_barrier ? &fixup_img_barrier : nullptr);
+
+    if (buf_barrier) {
+        fixup_buf_barrier = *buf_barrier;
+        fixup_buf_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE_KHR;
+        fixup_buf_barrier.srcAccessMask = 0;
+    }
+    if (img_barrier) {
+        fixup_img_barrier = *img_barrier;
+        fixup_img_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE_KHR;
+        fixup_img_barrier.srcAccessMask = 0;
+    }
+    ValidOwnershipTransferOp(monitor, cb_to, buf_barrier ? &fixup_buf_barrier : nullptr,
+                             img_barrier ? &fixup_img_barrier : nullptr);
+}
