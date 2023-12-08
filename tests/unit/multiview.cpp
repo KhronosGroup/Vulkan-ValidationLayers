@@ -935,8 +935,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     // Create image view
     VkImageObj image(m_device);
-    auto ici2d = image.ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                         VK_IMAGE_TILING_OPTIMAL, 0);
+    auto ici2d = image.ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.Init(ici2d);
     ASSERT_TRUE(image.initialized());
 

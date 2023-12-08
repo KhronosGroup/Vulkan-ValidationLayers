@@ -903,7 +903,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view_pass = image.CreateView();
@@ -1008,7 +1008,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view_pass_a = image.CreateView();
@@ -1093,7 +1093,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView image_view = image.CreateView();
@@ -1162,7 +1162,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView image_view = image.CreateView();
@@ -1266,7 +1266,7 @@ TEST_F(NegativeSampler, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view_pass = image.CreateView();
@@ -1362,7 +1362,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCopyObject) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view_pass = image.CreateView();

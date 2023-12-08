@@ -851,7 +851,7 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), format, formatProps);
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     VkImageObj image(m_device);
     image.Init(image_ci);
     vkt::ImageView image_view = image.CreateView();

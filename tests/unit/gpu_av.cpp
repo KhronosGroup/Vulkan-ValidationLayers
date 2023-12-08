@@ -3336,7 +3336,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_InvalidAtomicStorageOperation) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT;
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;  // The format doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT to
                                                        // cause DesiredFailure. VK_FORMAT_R32_UINT is right format.
-    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, image_format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, image_format, usage);
 
     if (ImageFormatIsSupported(instance(), gpu(), image_ci, VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
         GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT not supported.";
@@ -3527,7 +3527,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view_pass = image.CreateView();
@@ -3648,7 +3648,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesCopyObject) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView view_pass = image.CreateView();
@@ -3732,7 +3732,7 @@ TEST_F(VkGpuAssistedLayerTest, UnnormalizedCoordinatesSeparateSamplerSharedSampl
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
     vkt::ImageView image_view = image.CreateView();

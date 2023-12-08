@@ -928,7 +928,7 @@ TEST_F(PositiveImage, CopyImageSubresource) {
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 2, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 2, 5, format, usage);
     image.InitNoLayout(image_ci);
     ASSERT_TRUE(image.initialized());
 
@@ -1018,7 +1018,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     VkImageObj image(m_device);
     auto usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage);
     image.Init(image_ci);
     ASSERT_TRUE(image.initialized());
 

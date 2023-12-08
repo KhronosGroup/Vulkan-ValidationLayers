@@ -583,7 +583,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
     image_a.Init(image_ci);
     ASSERT_TRUE(image_a.initialized());
 
@@ -804,7 +804,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
     image_a.Init(image_ci);
     ASSERT_TRUE(image_a.initialized());
 
@@ -918,7 +918,7 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     VkImageObj image_a(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
     // Verify format
     bool supported = ImageFormatIsSupported(instance(), gpu(), image_ci,
                                             VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
@@ -1228,7 +1228,7 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
     image_a.Init(image_ci);
     image_b.Init(image_ci);
 
@@ -1356,7 +1356,7 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
     image_a.Init(image_ci);
     image_b.Init(image_ci);
 
@@ -1417,7 +1417,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(m_width, m_height, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_ci = VkImageObj::ImageCreateInfo2D(m_width, m_height, 1, 1, format, usage);
     image_a.Init(image_ci);
     image_b.Init(image_ci);
 
@@ -1662,7 +1662,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_c_a(m_device), image_c_b(m_device);
-    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
     image_c_a.Init(image_c_ci);
     image_c_b.Init(image_c_ci);
 
@@ -1670,7 +1670,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     VkImageUsageFlags image_usage_storage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkImageObj image_s_a(m_device), image_s_b(m_device);
-    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
     image_s_a.Init(image_s_ci);
     image_s_b.Init(image_s_ci);
     image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -2107,7 +2107,7 @@ TEST_F(NegativeSyncVal, CmdClear) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device), image_b(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image_a.Init(image_ci);
     image_b.Init(image_ci);
 
@@ -2143,7 +2143,7 @@ TEST_F(NegativeSyncVal, CmdClear) {
     // CmdClearDepthStencilImage
     format = FindSupportedDepthStencilFormat(gpu());
     VkImageObj image_ds_a(m_device), image_ds_b(m_device);
-    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image_ds_a.Init(image_ci);
     image_ds_b.Init(image_ci);
 
@@ -2396,7 +2396,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     VkImageUsageFlags usage_input = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_color(m_device), image_input(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, format, usage_color, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, format, usage_color);
     image_color.Init(image_ci);
     image_ci.usage = usage_input;
     image_input.Init(image_ci);
@@ -2489,7 +2489,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     VkImageUsageFlags usage_color = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageUsageFlags usage_ds = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     VkImageObj image_color(m_device), image_color2(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, color_format, usage_color, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, color_format, usage_color);
     image_color.Init(image_ci);
     image_color2.Init(image_ci);
     VkImageObj image_ds(m_device);
@@ -2671,7 +2671,7 @@ struct CreateRenderPassHelper {
           input_attach_desc(DefaultInputAttachDesc()) {}
 
     void InitImageAndView() {
-        auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, usage_input, VK_IMAGE_TILING_OPTIMAL);
+        auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, usage_input);
         image_input->InitNoLayout(image_ci);
         image_ci.usage = usage_color;
         image_color->InitNoLayout(image_ci);
@@ -3601,7 +3601,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
     image_a.Init(image_ci);
     ASSERT_TRUE(image_a.initialized());
 
@@ -4007,14 +4007,14 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj sampled_image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     sampled_image.Init(image_ci);
     auto sampled_view = std::make_unique<vkt::ImageView>();
     auto imageview_ci = sampled_image.BasicViewCreatInfo();
     sampled_view->init(*m_device, imageview_ci);
 
     VkImageObj combined_image(m_device);
-    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     combined_image.Init(image_ci);
     imageview_ci = combined_image.BasicViewCreatInfo();
     auto combined_view = std::make_unique<vkt::ImageView>();
@@ -4368,7 +4368,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_c_a(m_device), image_c_b(m_device);
-    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
     image_c_a.Init(image_c_ci);
     image_c_b.Init(image_c_ci);
 
@@ -4376,7 +4376,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     VkImageUsageFlags image_usage_storage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkImageObj image_s_a(m_device), image_s_b(m_device);
-    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
     image_s_a.Init(image_s_ci);
     image_s_b.Init(image_s_ci);
     image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -5170,7 +5170,7 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
 
     VkImageObj image_a(m_device);
     image_a.Init(image_ci);

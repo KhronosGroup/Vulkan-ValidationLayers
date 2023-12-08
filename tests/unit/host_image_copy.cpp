@@ -22,8 +22,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 1, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageFormatProperties img_prop = {};
@@ -77,8 +76,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
     copy_from_image.srcImageLayout = layout;
 
     {
-        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                                  VK_IMAGE_TILING_OPTIMAL);
+        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         // Missing transfer usage
         VkImageObj image_no_transfer(m_device);
         image_no_transfer.Init(image_ci_no_transfer);
@@ -684,8 +682,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 1, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageFormatProperties img_prop = {};
@@ -794,8 +791,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     }
 
     {
-        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                                  VK_IMAGE_TILING_OPTIMAL);
+        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         // Missing transfer usage
         VkImageObj image_no_transfer1(m_device);
         VkImageObj image_no_transfer2(m_device);
@@ -1211,8 +1207,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 1, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageFormatProperties img_prop = {};
@@ -1226,8 +1221,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
     transition_info.subresourceRange = range;
 
     {
-        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                                  VK_IMAGE_TILING_OPTIMAL);
+        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         // Missing transfer usage
         VkImageObj image_no_transfer(m_device);
         image_no_transfer.Init(image_ci_no_transfer);
@@ -1301,7 +1295,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
         VkDeviceMemory plane_0_memory;
         VkDeviceMemory plane_1_memory;
         auto image_ci_multi_planar = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+                                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         // Need a multi planar, disjoint image
         image_ci_multi_planar.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         image_ci_multi_planar.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
@@ -1438,8 +1432,7 @@ TEST_F(NegativeHostImageCopy, Features) {
 
     VkPhysicalDeviceHostImageCopyFeaturesEXT host_copy_features = vku::InitStructHelper();
     RETURN_IF_SKIP(InitState(nullptr, &host_copy_features));
-    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT);
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
                                                                  image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
@@ -1515,8 +1508,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 4, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1590,8 +1582,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     constexpr uint32_t width = 32;
     constexpr uint32_t height = 32;
     auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format,
-                                                  VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+                                                  VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 

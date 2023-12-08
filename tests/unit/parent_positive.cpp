@@ -31,8 +31,7 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
 
     VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     VkImageObj image(m_second_device);
-    auto image_ci =
-        VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.Init(image_ci);
     vkt::ImageView image_view = image.CreateView();
 

@@ -295,9 +295,9 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     // (test would not fail if layer count used to do validation was 4)
     VkImageObj render_target(m_device);
     assert(!m_renderTargets.empty());
-    const auto render_target_ci = VkImageObj::ImageCreateInfo2D(
-        m_renderTargets[0]->width(), m_renderTargets[0]->height(), m_renderTargets[0]->create_info().mipLevels, 4,
-        m_renderTargets[0]->format(), m_renderTargets[0]->usage(), VK_IMAGE_TILING_OPTIMAL);
+    const auto render_target_ci = VkImageObj::ImageCreateInfo2D(m_renderTargets[0]->width(), m_renderTargets[0]->height(),
+                                                                m_renderTargets[0]->create_info().mipLevels, 4,
+                                                                m_renderTargets[0]->format(), m_renderTargets[0]->usage());
     render_target.Init(render_target_ci, 0);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = render_target.handle();

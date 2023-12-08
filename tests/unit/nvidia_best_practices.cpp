@@ -621,8 +621,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     VkImageObj image(m_device);
     // 3 array layers
     image.Init(image.ImageCreateInfo2D(32, 32, 1, 3, depth_format,
-                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                       VK_IMAGE_TILING_OPTIMAL, 0));
+                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();

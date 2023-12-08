@@ -110,8 +110,7 @@ TEST_F(NegativeParent, BindImage) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.Init(image_ci);
 
     VkMemoryRequirements mem_reqs;
@@ -143,8 +142,7 @@ TEST_F(NegativeParent, ImageView) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.Init(image_ci);
 
     VkImageView image_view;
@@ -236,8 +234,7 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     vkt::Framebuffer fb(*m_device, fb_info);
 
     VkImageObj image(m_second_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.Init(image_ci);
     vkt::ImageView image_view = image.CreateView();
 
