@@ -421,7 +421,7 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
-    cbii.framebuffer = m_framebuffer;
+    cbii.framebuffer = framebuffer();
     cbii.occlusionQueryEnable = VK_TRUE;
     cbii.queryFlags = VK_QUERY_CONTROL_PRECISE_BIT;
 

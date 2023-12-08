@@ -2412,7 +2412,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptor
     VkClearValue clear_values[2] = {m_renderPassClearValues[0], m_renderPassClearValues[0]};
 
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = m_framebuffer;
+    rpbi.framebuffer = framebuffer();
     rpbi.renderPass = render_pass.handle();
     rpbi.renderArea.extent.width = width;
     rpbi.renderArea.extent.height = height;

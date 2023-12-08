@@ -73,7 +73,7 @@ class VkRenderFramework : public VkTestFramework {
     vkt::Device *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu() const;
     VkRenderPass renderPass() const { return m_renderPass; }
-    VkFramebuffer framebuffer() const { return m_framebuffer; }
+    VkFramebuffer framebuffer() const { return m_framebuffer->handle(); }
     ErrorMonitor &Monitor();
     const VkPhysicalDeviceProperties &physDevProps() const;
 
@@ -189,7 +189,6 @@ class VkRenderFramework : public VkTestFramework {
     vkt::CommandPool *m_commandPool;
     vkt::CommandBuffer *m_commandBuffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
-    VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
 
     // WSI items
     SurfaceContext m_surface_context{};
@@ -231,6 +230,7 @@ class VkRenderFramework : public VkTestFramework {
 
   private:
     // TODO - move to own helper logic
+    vkt::Framebuffer *m_framebuffer;
     std::vector<VkAttachmentDescription> m_renderPass_attachments;
     std::vector<VkSubpassDescription> m_renderPass_subpasses;
     std::vector<VkSubpassDependency> m_renderPass_dependencies;

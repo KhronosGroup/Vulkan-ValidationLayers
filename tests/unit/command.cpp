@@ -4473,7 +4473,7 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
     VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper();
     cmdbuff_ii.renderPass = m_renderPass;
     cmdbuff_ii.subpass = 0;
-    cmdbuff_ii.framebuffer = m_framebuffer;
+    cmdbuff_ii.framebuffer = framebuffer();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &cmdbuff_ii;
@@ -4577,7 +4577,7 @@ TEST_F(NegativeCommand, RenderPassScopeSecondaryCmdBuffer) {
         nullptr,  // pNext
         m_renderPass,
         0,  // subpass
-        m_framebuffer,
+        framebuffer(),
     };
     const VkCommandBufferBeginInfo cmdbuff_bi_tmpl = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                                                       nullptr,  // pNext
@@ -4599,9 +4599,9 @@ TEST_F(NegativeCommand, RenderPassScopeSecondaryCmdBuffer) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_inside_rp.handle());
     m_errorMonitor->VerifyFound();
 
-    VkRenderPassBeginInfo rp_bi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {32u, 32u}},
-                                             static_cast<uint32_t>(m_renderPassClearValues.size()), m_renderPassClearValues.data());
+    VkRenderPassBeginInfo rp_bi = vku::InitStruct<VkRenderPassBeginInfo>(
+        nullptr, m_renderPass, framebuffer(), VkRect2D{{0, 0}, {32u, 32u}}, static_cast<uint32_t>(m_renderPassClearValues.size()),
+        m_renderPassClearValues.data());
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00096");
@@ -4623,7 +4623,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     vkt::CommandBuffer secondary_command_buffer(*m_device, command_buffer_allocate_info);
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_inheritance_info.renderPass = m_renderPass;
-    command_buffer_inheritance_info.framebuffer = m_framebuffer;
+    command_buffer_inheritance_info.framebuffer = framebuffer();
 
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     command_buffer_begin_info.flags =
@@ -5876,7 +5876,7 @@ TEST_F(NegativeCommand, RenderPassContentsWhenCallingCmdExecuteCommandsWithBegin
         nullptr,  // pNext
         m_renderPass,
         0,  // subpass
-        m_framebuffer,
+        framebuffer(),
     };
 
     VkCommandBufferBeginInfo cmdbuff__bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -5888,9 +5888,9 @@ TEST_F(NegativeCommand, RenderPassContentsWhenCallingCmdExecuteCommandsWithBegin
 
     m_commandBuffer->begin();
 
-    VkRenderPassBeginInfo rp_bi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {32u, 32u}},
-                                             static_cast<uint32_t>(m_renderPassClearValues.size()), m_renderPassClearValues.data());
+    VkRenderPassBeginInfo rp_bi = vku::InitStruct<VkRenderPassBeginInfo>(
+        nullptr, m_renderPass, framebuffer(), VkRect2D{{0, 0}, {32u, 32u}}, static_cast<uint32_t>(m_renderPassClearValues.size()),
+        m_renderPassClearValues.data());
     m_commandBuffer->BeginRenderPass(rp_bi);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");

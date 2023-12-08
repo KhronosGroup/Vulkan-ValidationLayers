@@ -2966,9 +2966,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     TEST_DESCRIPTION("Test invalid cases of VK_EXT_sample_location");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(sample_locations_props);
@@ -3005,34 +3003,25 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     image_create_info.format = depth_format;
     VkImageObj depth_image(m_device);
     depth_image.init(&image_create_info);
-    ASSERT_TRUE(depth_image.initialized());
 
     VkImageObj color_image(m_device);
     color_image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(color_image.initialized());
 
-    VkAttachmentDescription descriptions[2] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {0, depth_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL}};
-    VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkAttachmentReference depth_stencil_ref = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-    VkSubpassDescription subpass = {
-        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &color_ref, nullptr, &depth_stencil_ref, 0, nullptr};
-    auto rp_info = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 2u, descriptions, 1u, &subpass, 0u, nullptr);
-    vk::CreateRenderPass(m_device->device(), &rp_info, NULL, &m_renderPass);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(depth_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddDepthStencilAttachment(1);
+    rp.CreateRenderPass();
 
     // Create a framebuffer
     vkt::ImageView color_view = color_image.CreateView();
     vkt::ImageView depth_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     const std::array<VkImageView, 2> attachments = {color_view, depth_view};
 
-    auto fb_info = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, m_renderPass, static_cast<uint32_t>(attachments.size()),
-                                                            attachments.data(), 128u, 128u, 1u);
-    vk::CreateFramebuffer(m_device->handle(), &fb_info, nullptr, &m_framebuffer);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), static_cast<uint32_t>(attachments.size()), attachments.data(), 128, 128);
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
@@ -3069,6 +3058,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
         CreatePipelineHelper pipe(*this);
         pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
         pipe.InitState();
+        pipe.gp_ci_.renderPass = rp.Handle();
         pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
 
         // Set invalid grid size width
@@ -3126,11 +3116,12 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     dynamic_pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
     dynamic_pipe.InitState();
+    dynamic_pipe.gp_ci_.renderPass = rp.Handle();
     dynamic_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     dynamic_pipe.CreateGraphicsPipeline();
 
     auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.Handle(), fb.handle(), VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     m_commandBuffer->begin();

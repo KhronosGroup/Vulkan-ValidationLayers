@@ -228,21 +228,13 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
-    framebufferCreateInfo.width = m_width;
-    framebufferCreateInfo.height = m_height;
-    framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = m_renderPass;
-    framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &imageView.handle();
-
-    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &m_framebuffer);
+    vkt::Framebuffer fb(*m_device, m_renderPass, 1, &imageView.handle(), m_width, m_height);
 
     VkClearValue clear{};
     clear.color = m_clear_color;
     m_renderPassClearValues.emplace_back(clear);
     m_renderPassBeginInfo.renderPass = m_renderPass;
-    m_renderPassBeginInfo.framebuffer = m_framebuffer;
+    m_renderPassBeginInfo.framebuffer = fb.handle();
     m_renderPassBeginInfo.renderArea.extent.width = m_width;
     m_renderPassBeginInfo.renderArea.extent.height = m_height;
     m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();

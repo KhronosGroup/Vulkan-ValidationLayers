@@ -47,13 +47,13 @@ VkRenderFramework::VkRenderFramework()
       m_commandPool(VK_NULL_HANDLE),
       m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
-      m_framebuffer(VK_NULL_HANDLE),
       m_addRenderPassSelfDependency(false),
       m_width(256),   // default window width
       m_height(256),  // default window height
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
       m_depth_stencil_fmt(VK_FORMAT_UNDEFINED),
-      m_depthStencil(nullptr) {
+      m_depthStencil(nullptr),
+      m_framebuffer(nullptr) {
     m_renderPassBeginInfo = vku::InitStructHelper();
 
     // clear the back buffer to dark grey
@@ -518,8 +518,8 @@ void VkRenderFramework::ShutdownFramework() {
     m_commandBuffer = nullptr;
     delete m_commandPool;
     m_commandPool = nullptr;
-    if (m_framebuffer) vk::DestroyFramebuffer(device(), m_framebuffer, NULL);
-    m_framebuffer = VK_NULL_HANDLE;
+    delete m_framebuffer;
+    m_framebuffer = nullptr;
     if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, NULL);
     m_renderPass = VK_NULL_HANDLE;
 
@@ -1056,20 +1056,12 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     }
 
     vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
-    // Create Framebuffer and RenderPass with color attachments and any
-    // depth/stencil attachment
-    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = m_renderPass;
-    fb_info.attachmentCount = m_framebuffer_attachments.size();
-    fb_info.pAttachments = m_framebuffer_attachments.data();
-    fb_info.width = m_width;
-    fb_info.height = m_height;
-    fb_info.layers = 1;
 
-    vk::CreateFramebuffer(device(), &fb_info, NULL, &m_framebuffer);
+    m_framebuffer = new vkt::Framebuffer(*m_device, m_renderPass, m_framebuffer_attachments.size(),
+                                         m_framebuffer_attachments.data(), m_width, m_height);
 
     m_renderPassBeginInfo.renderPass = m_renderPass;
-    m_renderPassBeginInfo.framebuffer = m_framebuffer;
+    m_renderPassBeginInfo.framebuffer = m_framebuffer->handle();
     m_renderPassBeginInfo.renderArea.extent.width = m_width;
     m_renderPassBeginInfo.renderArea.extent.height = m_height;
     m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
@@ -1112,8 +1104,8 @@ VkImageView VkRenderFramework::GetDynamicRenderTarget() const {
 void VkRenderFramework::DestroyRenderTarget() {
     vk::DestroyRenderPass(device(), m_renderPass, nullptr);
     m_renderPass = VK_NULL_HANDLE;
-    vk::DestroyFramebuffer(device(), m_framebuffer, nullptr);
-    m_framebuffer = VK_NULL_HANDLE;
+    delete m_framebuffer;
+    m_framebuffer = nullptr;
 }
 
 VkImageObj::VkImageObj(vkt::Device *dev) : m_device(dev) {}

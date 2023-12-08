@@ -1607,7 +1607,7 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
 
     m_commandBuffer->begin();
     VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = m_framebuffer;
+    rpbi.framebuffer = framebuffer();
     rpbi.renderPass = rp.Handle();
     rpbi.renderArea.extent = {1, 1};
     m_commandBuffer->BeginRenderPass(rpbi);
@@ -2374,7 +2374,7 @@ TEST_F(NegativeRenderPass, RenderArea) {
 
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
     rpbinfo.renderPass = m_renderPass;
-    rpbinfo.framebuffer = m_framebuffer;
+    rpbinfo.framebuffer = framebuffer();
     rpbinfo.renderArea.extent.width = m_width;
     rpbinfo.renderArea.extent.height = m_height;
     rpbinfo.renderArea.offset.x = -32;
@@ -2432,7 +2432,7 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
 
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper(&device_group_render_pass_begin_info);
     rpbinfo.renderPass = m_renderPass;
-    rpbinfo.framebuffer = m_framebuffer;
+    rpbinfo.framebuffer = framebuffer();
     rpbinfo.renderArea.extent.width = m_width;
     rpbinfo.renderArea.extent.height = m_height;
     rpbinfo.renderArea.offset.x = -32;
