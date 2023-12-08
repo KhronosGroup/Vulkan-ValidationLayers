@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/thread_helper.h"
 
 #if GTEST_IS_THREADSAFE
 TEST_F(NegativeThreading, CommandBufferCollision) {
