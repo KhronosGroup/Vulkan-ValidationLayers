@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/external_memory_sync.h"
 #include "generated/vk_extension_helper.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR

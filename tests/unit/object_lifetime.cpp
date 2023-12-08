@@ -17,6 +17,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/external_memory_sync.h"
 
 // Validation of dispatchable handles is not performed until VVL's chassis will be
 // able to do this validation (if ever) instead of crashing (which is also an option).
