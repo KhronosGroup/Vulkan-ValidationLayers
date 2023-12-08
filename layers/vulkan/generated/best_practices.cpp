@@ -1618,6 +1618,34 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKH
     }
 }
 
+void BestPractices::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t* pTimeDomainCount,
+                                                                               VkTimeDomainKHR* pTimeDomains,
+                                                                               const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount,
+                                                                                       pTimeDomains, record_obj);
+
+    if (record_obj.result > VK_SUCCESS) {
+        LogPositiveSuccessCode(record_obj);
+        return;
+    }
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                             uint64_t* pTimestamps, uint64_t* pMaxDeviation,
+                                                             const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
+                                                                     pMaxDeviation, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
 void BestPractices::PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance,
                                                                const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator,
@@ -2058,30 +2086,16 @@ void BestPractices::PostCallRecordGetMemoryHostPointerPropertiesEXT(VkDevice dev
 
 void BestPractices::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                                uint32_t* pTimeDomainCount,
-                                                                               VkTimeDomainEXT* pTimeDomains,
+                                                                               VkTimeDomainKHR* pTimeDomains,
                                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount,
-                                                                                       pTimeDomains, record_obj);
-
-    if (record_obj.result > VK_SUCCESS) {
-        LogPositiveSuccessCode(record_obj);
-        return;
-    }
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains, record_obj);
 }
 
 void BestPractices::PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                             const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                              uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps,
-                                                                     pMaxDeviation, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, record_obj);
 }
 
 void BestPractices::PostCallRecordInitializePerformanceApiINTEL(VkDevice device,

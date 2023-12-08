@@ -4031,6 +4031,20 @@ void ThreadSafety::PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, 
     FinishReadObject(image, record_obj.location);
 }
 
+void ThreadSafety::PreCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                           const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation,
+                                                           const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void ThreadSafety::PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                            uint64_t* pTimestamps, uint64_t* pMaxDeviation,
+                                                            const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void ThreadSafety::PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance,
                                                              const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator,
@@ -5291,17 +5305,17 @@ void ThreadSafety::PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
 }
 
 void ThreadSafety::PreCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                           const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                           const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                            uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                            const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
+    PreCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, record_obj);
 }
 
 void ThreadSafety::PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                            const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                             uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                             const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
+    PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, record_obj);
 }
 
 void ThreadSafety::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,

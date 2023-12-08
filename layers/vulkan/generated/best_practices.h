@@ -551,6 +551,14 @@ void PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDev
                                                                    VkCooperativeMatrixPropertiesKHR* pProperties,
                                                                    const RecordObject& record_obj) override;
 
+void PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
+                                                                VkTimeDomainKHR* pTimeDomains,
+                                                                const RecordObject& record_obj) override;
+
+void PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                              uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
+
 void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
                                                 const RecordObject& record_obj) override;
@@ -715,11 +723,11 @@ void PostCallRecordGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternal
                                                      const RecordObject& record_obj) override;
 
 void PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
-                                                                VkTimeDomainEXT* pTimeDomains,
+                                                                VkTimeDomainKHR* pTimeDomains,
                                                                 const RecordObject& record_obj) override;
 
 void PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                              const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                               uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
 
 void PostCallRecordInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
@@ -1090,6 +1098,8 @@ const vvl::unordered_map<std::string, DeprecationData> deprecated_extensions = {
     {"VK_EXT_descriptor_indexing", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_shader_viewport_index_layer", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_global_priority", {kExtPromoted, "VK_KHR_global_priority"}},
+    {"VK_EXT_calibrated_timestamps", {kExtPromoted, "VK_KHR_calibrated_timestamps"}},
+    {"VK_EXT_vertex_attribute_divisor", {kExtPromoted, "VK_KHR_vertex_attribute_divisor"}},
     {"VK_EXT_pipeline_creation_feedback", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_NV_fragment_shader_barycentric", {kExtPromoted, "VK_KHR_fragment_shader_barycentric"}},
     {"VK_EXT_scalar_block_layout", {kExtPromoted, "VK_VERSION_1_2"}},

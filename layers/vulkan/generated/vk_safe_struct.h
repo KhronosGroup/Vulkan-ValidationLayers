@@ -7354,6 +7354,89 @@ struct safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR {
         return reinterpret_cast<VkPhysicalDeviceCooperativeMatrixPropertiesKHR const*>(this);
     }
 };
+struct safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t maxVertexAttribDivisor;
+    VkBool32 supportsNonZeroFirstInstance;
+
+    safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR(const VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* in_struct,
+                                                             PNextCopyState* copy_state = {}, bool copy_pnext = true);
+    safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR(
+        const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR& operator=(
+        const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR();
+    ~safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR();
+    void initialize(const VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR*>(this);
+    }
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR const*>(this);
+    }
+};
+struct safe_VkPipelineVertexInputDivisorStateCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext{};
+    uint32_t vertexBindingDivisorCount;
+    const VkVertexInputBindingDivisorDescriptionKHR* pVertexBindingDivisors{};
+
+    safe_VkPipelineVertexInputDivisorStateCreateInfoKHR(const VkPipelineVertexInputDivisorStateCreateInfoKHR* in_struct,
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
+    safe_VkPipelineVertexInputDivisorStateCreateInfoKHR(const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR& copy_src);
+    safe_VkPipelineVertexInputDivisorStateCreateInfoKHR& operator=(
+        const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR& copy_src);
+    safe_VkPipelineVertexInputDivisorStateCreateInfoKHR();
+    ~safe_VkPipelineVertexInputDivisorStateCreateInfoKHR();
+    void initialize(const VkPipelineVertexInputDivisorStateCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR* copy_src, PNextCopyState* copy_state = {});
+    VkPipelineVertexInputDivisorStateCreateInfoKHR* ptr() {
+        return reinterpret_cast<VkPipelineVertexInputDivisorStateCreateInfoKHR*>(this);
+    }
+    VkPipelineVertexInputDivisorStateCreateInfoKHR const* ptr() const {
+        return reinterpret_cast<VkPipelineVertexInputDivisorStateCreateInfoKHR const*>(this);
+    }
+};
+struct safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 vertexAttributeInstanceRateDivisor;
+    VkBool32 vertexAttributeInstanceRateZeroDivisor;
+
+    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR(const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* in_struct,
+                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
+    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR(const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR& operator=(
+        const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR();
+    ~safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR();
+    void initialize(const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR*>(this);
+    }
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR const*>(this);
+    }
+};
+struct safe_VkCalibratedTimestampInfoKHR {
+    VkStructureType sType;
+    const void* pNext{};
+    VkTimeDomainKHR timeDomain;
+
+    safe_VkCalibratedTimestampInfoKHR(const VkCalibratedTimestampInfoKHR* in_struct, PNextCopyState* copy_state = {},
+                                      bool copy_pnext = true);
+    safe_VkCalibratedTimestampInfoKHR(const safe_VkCalibratedTimestampInfoKHR& copy_src);
+    safe_VkCalibratedTimestampInfoKHR& operator=(const safe_VkCalibratedTimestampInfoKHR& copy_src);
+    safe_VkCalibratedTimestampInfoKHR();
+    ~safe_VkCalibratedTimestampInfoKHR();
+    void initialize(const VkCalibratedTimestampInfoKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkCalibratedTimestampInfoKHR* copy_src, PNextCopyState* copy_state = {});
+    VkCalibratedTimestampInfoKHR* ptr() { return reinterpret_cast<VkCalibratedTimestampInfoKHR*>(this); }
+    VkCalibratedTimestampInfoKHR const* ptr() const { return reinterpret_cast<VkCalibratedTimestampInfoKHR const*>(this); }
+};
 struct safe_VkDebugReportCallbackCreateInfoEXT {
     VkStructureType sType;
     const void* pNext{};
@@ -10338,22 +10421,6 @@ struct safe_VkPipelineCompilerControlCreateInfoAMD {
         return reinterpret_cast<VkPipelineCompilerControlCreateInfoAMD const*>(this);
     }
 };
-struct safe_VkCalibratedTimestampInfoEXT {
-    VkStructureType sType;
-    const void* pNext{};
-    VkTimeDomainEXT timeDomain;
-
-    safe_VkCalibratedTimestampInfoEXT(const VkCalibratedTimestampInfoEXT* in_struct, PNextCopyState* copy_state = {},
-                                      bool copy_pnext = true);
-    safe_VkCalibratedTimestampInfoEXT(const safe_VkCalibratedTimestampInfoEXT& copy_src);
-    safe_VkCalibratedTimestampInfoEXT& operator=(const safe_VkCalibratedTimestampInfoEXT& copy_src);
-    safe_VkCalibratedTimestampInfoEXT();
-    ~safe_VkCalibratedTimestampInfoEXT();
-    void initialize(const VkCalibratedTimestampInfoEXT* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkCalibratedTimestampInfoEXT* copy_src, PNextCopyState* copy_state = {});
-    VkCalibratedTimestampInfoEXT* ptr() { return reinterpret_cast<VkCalibratedTimestampInfoEXT*>(this); }
-    VkCalibratedTimestampInfoEXT const* ptr() const { return reinterpret_cast<VkCalibratedTimestampInfoEXT const*>(this); }
-};
 struct safe_VkPhysicalDeviceShaderCorePropertiesAMD {
     VkStructureType sType;
     void* pNext{};
@@ -10423,50 +10490,6 @@ struct safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT {
     }
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT const* ptr() const {
         return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT const*>(this);
-    }
-};
-struct safe_VkPipelineVertexInputDivisorStateCreateInfoEXT {
-    VkStructureType sType;
-    const void* pNext{};
-    uint32_t vertexBindingDivisorCount;
-    const VkVertexInputBindingDivisorDescriptionEXT* pVertexBindingDivisors{};
-
-    safe_VkPipelineVertexInputDivisorStateCreateInfoEXT(const VkPipelineVertexInputDivisorStateCreateInfoEXT* in_struct,
-                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
-    safe_VkPipelineVertexInputDivisorStateCreateInfoEXT(const safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& copy_src);
-    safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& operator=(
-        const safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& copy_src);
-    safe_VkPipelineVertexInputDivisorStateCreateInfoEXT();
-    ~safe_VkPipelineVertexInputDivisorStateCreateInfoEXT();
-    void initialize(const VkPipelineVertexInputDivisorStateCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkPipelineVertexInputDivisorStateCreateInfoEXT* copy_src, PNextCopyState* copy_state = {});
-    VkPipelineVertexInputDivisorStateCreateInfoEXT* ptr() {
-        return reinterpret_cast<VkPipelineVertexInputDivisorStateCreateInfoEXT*>(this);
-    }
-    VkPipelineVertexInputDivisorStateCreateInfoEXT const* ptr() const {
-        return reinterpret_cast<VkPipelineVertexInputDivisorStateCreateInfoEXT const*>(this);
-    }
-};
-struct safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT {
-    VkStructureType sType;
-    void* pNext{};
-    VkBool32 vertexAttributeInstanceRateDivisor;
-    VkBool32 vertexAttributeInstanceRateZeroDivisor;
-
-    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT(const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* in_struct,
-                                                           PNextCopyState* copy_state = {}, bool copy_pnext = true);
-    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT(const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& copy_src);
-    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& operator=(
-        const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& copy_src);
-    safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT();
-    ~safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT();
-    void initialize(const VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* copy_src, PNextCopyState* copy_state = {});
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT* ptr() {
-        return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT*>(this);
-    }
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT const* ptr() const {
-        return reinterpret_cast<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT const*>(this);
     }
 };
 #ifdef VK_USE_PLATFORM_GGP

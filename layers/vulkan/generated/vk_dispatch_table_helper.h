@@ -760,6 +760,16 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixProp
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties) {
     return VK_SUCCESS;
 }
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
+                                                                                       uint32_t* pTimeDomainCount,
+                                                                                       VkTimeDomainKHR* pTimeDomains) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                                     const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                                     uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDebugReportCallbackEXT(VkInstance instance,
                                                                        const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                                        const VkAllocationCallbacks* pAllocator,
@@ -1086,11 +1096,11 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdWriteBufferMarkerAMD(VkCommandBuffer co
                                                               VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                                        uint32_t* pTimeDomainCount,
-                                                                                       VkTimeDomainEXT* pTimeDomains) {
+                                                                                       VkTimeDomainKHR* pTimeDomains) {
     return VK_SUCCESS;
 }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                                     const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                                     const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                                      uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
     return VK_SUCCESS;
 }
@@ -1934,6 +1944,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkGetRenderingAreaGranularityKHR", {"VK_KHR_maintenance5"}},
     {"vkGetDeviceImageSubresourceLayoutKHR", {"VK_KHR_maintenance5"}},
     {"vkGetImageSubresourceLayout2KHR", {"VK_KHR_maintenance5"}},
+    {"vkGetCalibratedTimestampsKHR", {"VK_KHR_calibrated_timestamps"}},
     {"vkDebugMarkerSetObjectTagEXT", {"VK_EXT_debug_marker"}},
     {"vkDebugMarkerSetObjectNameEXT", {"VK_EXT_debug_marker"}},
     {"vkCmdDebugMarkerBeginEXT", {"VK_EXT_debug_marker"}},
@@ -3100,6 +3111,10 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gpa(device, "vkGetImageSubresourceLayout2KHR");
     if (table->GetImageSubresourceLayout2KHR == nullptr) {
         table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)StubGetImageSubresourceLayout2KHR;
+    }
+    table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)gpa(device, "vkGetCalibratedTimestampsKHR");
+    if (table->GetCalibratedTimestampsKHR == nullptr) {
+        table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)StubGetCalibratedTimestampsKHR;
     }
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gpa(device, "vkDebugMarkerSetObjectTagEXT");
     if (table->DebugMarkerSetObjectTagEXT == nullptr) {
@@ -4703,6 +4718,12 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->GetPhysicalDeviceCooperativeMatrixPropertiesKHR == nullptr) {
         table->GetPhysicalDeviceCooperativeMatrixPropertiesKHR =
             (PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR)StubGetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+    }
+    table->GetPhysicalDeviceCalibrateableTimeDomainsKHR =
+        (PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR)gpa(instance, "vkGetPhysicalDeviceCalibrateableTimeDomainsKHR");
+    if (table->GetPhysicalDeviceCalibrateableTimeDomainsKHR == nullptr) {
+        table->GetPhysicalDeviceCalibrateableTimeDomainsKHR =
+            (PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR)StubGetPhysicalDeviceCalibrateableTimeDomainsKHR;
     }
     table->CreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)gpa(instance, "vkCreateDebugReportCallbackEXT");
     if (table->CreateDebugReportCallbackEXT == nullptr) {

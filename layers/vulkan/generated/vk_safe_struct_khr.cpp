@@ -9550,6 +9550,261 @@ void safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::initialize(
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR(
+    const VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
+    bool copy_pnext)
+    : sType(in_struct->sType),
+      maxVertexAttribDivisor(in_struct->maxVertexAttribDivisor),
+      supportsNonZeroFirstInstance(in_struct->supportsNonZeroFirstInstance) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_KHR),
+      pNext(nullptr),
+      maxVertexAttribDivisor(),
+      supportsNonZeroFirstInstance() {}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR(
+    const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR& copy_src) {
+    sType = copy_src.sType;
+    maxVertexAttribDivisor = copy_src.maxVertexAttribDivisor;
+    supportsNonZeroFirstInstance = copy_src.supportsNonZeroFirstInstance;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR& safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::operator=(
+    const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxVertexAttribDivisor = copy_src.maxVertexAttribDivisor;
+    supportsNonZeroFirstInstance = copy_src.supportsNonZeroFirstInstance;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::~safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::initialize(
+    const VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxVertexAttribDivisor = in_struct->maxVertexAttribDivisor;
+    supportsNonZeroFirstInstance = in_struct->supportsNonZeroFirstInstance;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR::initialize(
+    const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    maxVertexAttribDivisor = copy_src->maxVertexAttribDivisor;
+    supportsNonZeroFirstInstance = copy_src->supportsNonZeroFirstInstance;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::safe_VkPipelineVertexInputDivisorStateCreateInfoKHR(
+    const VkPipelineVertexInputDivisorStateCreateInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), vertexBindingDivisorCount(in_struct->vertexBindingDivisorCount), pVertexBindingDivisors(nullptr) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+    if (in_struct->pVertexBindingDivisors) {
+        pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionKHR[in_struct->vertexBindingDivisorCount];
+        memcpy((void*)pVertexBindingDivisors, (void*)in_struct->pVertexBindingDivisors,
+               sizeof(VkVertexInputBindingDivisorDescriptionKHR) * in_struct->vertexBindingDivisorCount);
+    }
+}
+
+safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::safe_VkPipelineVertexInputDivisorStateCreateInfoKHR()
+    : sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_KHR),
+      pNext(nullptr),
+      vertexBindingDivisorCount(),
+      pVertexBindingDivisors(nullptr) {}
+
+safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::safe_VkPipelineVertexInputDivisorStateCreateInfoKHR(
+    const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR& copy_src) {
+    sType = copy_src.sType;
+    vertexBindingDivisorCount = copy_src.vertexBindingDivisorCount;
+    pVertexBindingDivisors = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    if (copy_src.pVertexBindingDivisors) {
+        pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionKHR[copy_src.vertexBindingDivisorCount];
+        memcpy((void*)pVertexBindingDivisors, (void*)copy_src.pVertexBindingDivisors,
+               sizeof(VkVertexInputBindingDivisorDescriptionKHR) * copy_src.vertexBindingDivisorCount);
+    }
+}
+
+safe_VkPipelineVertexInputDivisorStateCreateInfoKHR& safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::operator=(
+    const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR& copy_src) {
+    if (&copy_src == this) return *this;
+
+    if (pVertexBindingDivisors) delete[] pVertexBindingDivisors;
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    vertexBindingDivisorCount = copy_src.vertexBindingDivisorCount;
+    pVertexBindingDivisors = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    if (copy_src.pVertexBindingDivisors) {
+        pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionKHR[copy_src.vertexBindingDivisorCount];
+        memcpy((void*)pVertexBindingDivisors, (void*)copy_src.pVertexBindingDivisors,
+               sizeof(VkVertexInputBindingDivisorDescriptionKHR) * copy_src.vertexBindingDivisorCount);
+    }
+
+    return *this;
+}
+
+safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::~safe_VkPipelineVertexInputDivisorStateCreateInfoKHR() {
+    if (pVertexBindingDivisors) delete[] pVertexBindingDivisors;
+    FreePnextChain(pNext);
+}
+
+void safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::initialize(
+    const VkPipelineVertexInputDivisorStateCreateInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    if (pVertexBindingDivisors) delete[] pVertexBindingDivisors;
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    vertexBindingDivisorCount = in_struct->vertexBindingDivisorCount;
+    pVertexBindingDivisors = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
+    if (in_struct->pVertexBindingDivisors) {
+        pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionKHR[in_struct->vertexBindingDivisorCount];
+        memcpy((void*)pVertexBindingDivisors, (void*)in_struct->pVertexBindingDivisors,
+               sizeof(VkVertexInputBindingDivisorDescriptionKHR) * in_struct->vertexBindingDivisorCount);
+    }
+}
+
+void safe_VkPipelineVertexInputDivisorStateCreateInfoKHR::initialize(
+    const safe_VkPipelineVertexInputDivisorStateCreateInfoKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    vertexBindingDivisorCount = copy_src->vertexBindingDivisorCount;
+    pVertexBindingDivisors = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+
+    if (copy_src->pVertexBindingDivisors) {
+        pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionKHR[copy_src->vertexBindingDivisorCount];
+        memcpy((void*)pVertexBindingDivisors, (void*)copy_src->pVertexBindingDivisors,
+               sizeof(VkVertexInputBindingDivisorDescriptionKHR) * copy_src->vertexBindingDivisorCount);
+    }
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR(
+    const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
+    bool copy_pnext)
+    : sType(in_struct->sType),
+      vertexAttributeInstanceRateDivisor(in_struct->vertexAttributeInstanceRateDivisor),
+      vertexAttributeInstanceRateZeroDivisor(in_struct->vertexAttributeInstanceRateZeroDivisor) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR),
+      pNext(nullptr),
+      vertexAttributeInstanceRateDivisor(),
+      vertexAttributeInstanceRateZeroDivisor() {}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR(
+    const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR& copy_src) {
+    sType = copy_src.sType;
+    vertexAttributeInstanceRateDivisor = copy_src.vertexAttributeInstanceRateDivisor;
+    vertexAttributeInstanceRateZeroDivisor = copy_src.vertexAttributeInstanceRateZeroDivisor;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR& safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::operator=(
+    const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    vertexAttributeInstanceRateDivisor = copy_src.vertexAttributeInstanceRateDivisor;
+    vertexAttributeInstanceRateZeroDivisor = copy_src.vertexAttributeInstanceRateZeroDivisor;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::~safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::initialize(
+    const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    vertexAttributeInstanceRateDivisor = in_struct->vertexAttributeInstanceRateDivisor;
+    vertexAttributeInstanceRateZeroDivisor = in_struct->vertexAttributeInstanceRateZeroDivisor;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::initialize(
+    const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    vertexAttributeInstanceRateDivisor = copy_src->vertexAttributeInstanceRateDivisor;
+    vertexAttributeInstanceRateZeroDivisor = copy_src->vertexAttributeInstanceRateZeroDivisor;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCalibratedTimestampInfoKHR::safe_VkCalibratedTimestampInfoKHR(const VkCalibratedTimestampInfoKHR* in_struct,
+                                                                     [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), timeDomain(in_struct->timeDomain) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkCalibratedTimestampInfoKHR::safe_VkCalibratedTimestampInfoKHR()
+    : sType(VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_KHR), pNext(nullptr), timeDomain() {}
+
+safe_VkCalibratedTimestampInfoKHR::safe_VkCalibratedTimestampInfoKHR(const safe_VkCalibratedTimestampInfoKHR& copy_src) {
+    sType = copy_src.sType;
+    timeDomain = copy_src.timeDomain;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCalibratedTimestampInfoKHR& safe_VkCalibratedTimestampInfoKHR::operator=(const safe_VkCalibratedTimestampInfoKHR& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    timeDomain = copy_src.timeDomain;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCalibratedTimestampInfoKHR::~safe_VkCalibratedTimestampInfoKHR() { FreePnextChain(pNext); }
+
+void safe_VkCalibratedTimestampInfoKHR::initialize(const VkCalibratedTimestampInfoKHR* in_struct,
+                                                   [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    timeDomain = in_struct->timeDomain;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkCalibratedTimestampInfoKHR::initialize(const safe_VkCalibratedTimestampInfoKHR* copy_src,
+                                                   [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    timeDomain = copy_src->timeDomain;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR(const VkDeviceOrHostAddressConstKHR* in_struct,
                                                                        PNextCopyState*) {
     initialize(in_struct);

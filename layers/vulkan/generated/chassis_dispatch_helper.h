@@ -873,6 +873,9 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetImageSubresourceLayout2KHR,
     InterceptIdPreCallRecordGetImageSubresourceLayout2KHR,
     InterceptIdPostCallRecordGetImageSubresourceLayout2KHR,
+    InterceptIdPreCallValidateGetCalibratedTimestampsKHR,
+    InterceptIdPreCallRecordGetCalibratedTimestampsKHR,
+    InterceptIdPostCallRecordGetCalibratedTimestampsKHR,
     InterceptIdPreCallValidateDebugMarkerSetObjectTagEXT,
     InterceptIdPreCallRecordDebugMarkerSetObjectTagEXT,
     InterceptIdPostCallRecordDebugMarkerSetObjectTagEXT,
@@ -2586,6 +2589,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetImageSubresourceLayout2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetImageSubresourceLayout2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetImageSubresourceLayout2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetCalibratedTimestampsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetCalibratedTimestampsKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetCalibratedTimestampsKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordDebugMarkerSetObjectTagEXT);

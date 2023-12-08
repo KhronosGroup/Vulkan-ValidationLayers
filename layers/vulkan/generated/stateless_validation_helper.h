@@ -951,6 +951,12 @@ bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                     VkCooperativeMatrixPropertiesKHR* pProperties,
                                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
+                                                                 VkTimeDomainKHR* pTimeDomains,
+                                                                 const ErrorObject& error_obj) const override;
+bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                               uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
                                                  const ErrorObject& error_obj) const override;
@@ -1217,10 +1223,10 @@ bool PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPip
                                             VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
-                                                                 VkTimeDomainEXT* pTimeDomains,
+                                                                 VkTimeDomainKHR* pTimeDomains,
                                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                               const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                                uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
                                        const ErrorObject& error_obj) const override;

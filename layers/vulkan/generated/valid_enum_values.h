@@ -70,6 +70,7 @@ template<> std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamV
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const;
+template<> std::vector<VkTimeDomainKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkRasterizationOrderAMD> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkShaderInfoTypeAMD> ValidationObject::ValidParamValues() const;
@@ -91,7 +92,6 @@ template<> std::vector<VkGeometryTypeKHR> ValidationObject::ValidParamValues() c
 template<> std::vector<VkAccelerationStructureTypeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkCopyAccelerationStructureModeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkAccelerationStructureMemoryRequirementsTypeNV> ValidationObject::ValidParamValues() const;
-template<> std::vector<VkTimeDomainEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkMemoryOverallocationBehaviorAMD> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkPerformanceConfigurationTypeINTEL> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkQueryPoolSamplingModeINTEL> ValidationObject::ValidParamValues() const;

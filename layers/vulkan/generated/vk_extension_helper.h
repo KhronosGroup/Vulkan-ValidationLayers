@@ -480,6 +480,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_maintenance5{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
+    ExtEnabled vk_khr_vertex_attribute_divisor{kNotEnabled};
+    ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
     ExtEnabled vk_img_filter_cubic{kNotEnabled};
@@ -1083,6 +1085,13 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_cooperative_matrix,
                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_vertex_attribute_divisor,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_calibrated_timestamps,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
             {VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
             {VK_IMG_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})},
@@ -2007,6 +2016,8 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_MAINTENANCE_5_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
     VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME,
+    VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
+    VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
     VK_NV_GLSL_SHADER_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
     VK_IMG_FILTER_CUBIC_EXTENSION_NAME,

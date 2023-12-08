@@ -650,6 +650,11 @@ void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const
                                            VkSubresourceLayout2KHR* pLayout);
 VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                  VkCooperativeMatrixPropertiesKHR* pProperties);
+VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
+                                                              VkTimeDomainKHR* pTimeDomains);
+VkResult DispatchGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                            uint64_t* pMaxDeviation);
 VkResult DispatchCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback);
 void DispatchDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
@@ -839,9 +844,9 @@ VkResult DispatchGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMe
 void DispatchCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer,
                                      VkDeviceSize dstOffset, uint32_t marker);
 VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
-                                                              VkTimeDomainEXT* pTimeDomains);
+                                                              VkTimeDomainKHR* pTimeDomains);
 VkResult DispatchGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                            const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                             uint64_t* pMaxDeviation);
 void DispatchCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
 void DispatchCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,

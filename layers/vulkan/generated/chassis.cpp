@@ -9366,6 +9366,63 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
+                                                                            uint32_t* pTimeDomainCount,
+                                                                            VkTimeDomainKHR* pTimeDomains) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount,
+                                                                                       pTimeDomains, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR);
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
+                                                                             record_obj);
+    }
+    VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains);
+    record_obj.result = result;
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
+                                                                              record_obj);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                          const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                          uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetCalibratedTimestampsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetCalibratedTimestampsKHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
+                                                                     pMaxDeviation, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    RecordObject record_obj(vvl::Func::vkGetCalibratedTimestampsKHR);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetCalibratedTimestampsKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                           record_obj);
+    }
+    VkResult result = DispatchGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
+    record_obj.result = result;
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetCalibratedTimestampsKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                            record_obj);
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
@@ -11565,7 +11622,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                             uint32_t* pTimeDomainCount,
-                                                                            VkTimeDomainEXT* pTimeDomains) {
+                                                                            VkTimeDomainKHR* pTimeDomains) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
@@ -11593,7 +11650,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                          const VkCalibratedTimestampInfoEXT* pTimestampInfos,
+                                                          const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -17186,6 +17243,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetDeviceImageSubresourceLayoutKHR", {kFuncTypeDev, (void*)GetDeviceImageSubresourceLayoutKHR}},
     {"vkGetImageSubresourceLayout2KHR", {kFuncTypeDev, (void*)GetImageSubresourceLayout2KHR}},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesKHR}},
+    {"vkGetPhysicalDeviceCalibrateableTimeDomainsKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceCalibrateableTimeDomainsKHR}},
+    {"vkGetCalibratedTimestampsKHR", {kFuncTypeDev, (void*)GetCalibratedTimestampsKHR}},
     {"vkCreateDebugReportCallbackEXT", {kFuncTypeInst, (void*)CreateDebugReportCallbackEXT}},
     {"vkDestroyDebugReportCallbackEXT", {kFuncTypeInst, (void*)DestroyDebugReportCallbackEXT}},
     {"vkDebugReportMessageEXT", {kFuncTypeInst, (void*)DebugReportMessageEXT}},

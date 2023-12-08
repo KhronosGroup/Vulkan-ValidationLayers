@@ -5065,6 +5065,27 @@ VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevic
     return result;
 }
 
+VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
+                                                              VkTimeDomainKHR* pTimeDomains) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceCalibrateableTimeDomainsKHR(
+        physicalDevice, pTimeDomainCount, pTimeDomains);
+
+    return result;
+}
+
+VkResult DispatchGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                            uint64_t* pMaxDeviation) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    VkResult result = layer_data->device_dispatch_table.GetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos,
+                                                                                   pTimestamps, pMaxDeviation);
+
+    return result;
+}
+
 VkResult DispatchCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
@@ -6249,7 +6270,7 @@ void DispatchCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineSt
 }
 
 VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
-                                                              VkTimeDomainEXT* pTimeDomains) {
+                                                              VkTimeDomainKHR* pTimeDomains) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
 
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceCalibrateableTimeDomainsEXT(
@@ -6259,7 +6280,7 @@ VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice p
 }
 
 VkResult DispatchGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                            const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                             uint64_t* pMaxDeviation) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 

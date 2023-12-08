@@ -2097,6 +2097,14 @@ void PreCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, 
 void PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                  VkSubresourceLayout2KHR* pLayout, const RecordObject& record_obj) override;
 
+void PreCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                             uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
+
+void PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                              uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
+
 void PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
                                                const RecordObject& record_obj) override;
@@ -2709,11 +2717,11 @@ void PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipe
                                            VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
 
 void PreCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                             const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                              uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
 
 void PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                              const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                               uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
 
 void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,

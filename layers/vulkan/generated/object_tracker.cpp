@@ -4203,6 +4203,12 @@ bool ObjectLifetimes::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice devi
 // vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-physicalDevice-parameter"
 
+// vkGetPhysicalDeviceCalibrateableTimeDomainsKHR:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
+
+// vkGetCalibratedTimestampsKHR:
+// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+
 // vkCreateDebugReportCallbackEXT:
 // Checked by chassis: instance: "VUID-vkCreateDebugReportCallbackEXT-instance-parameter"
 
@@ -5329,10 +5335,10 @@ bool ObjectLifetimes::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer com
 }
 
 // vkGetPhysicalDeviceCalibrateableTimeDomainsEXT:
-// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsEXT-physicalDevice-parameter"
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
 
 // vkGetCalibratedTimestampsEXT:
-// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsEXT-device-parameter"
+// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
 
 // vkCmdDrawMeshTasksNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDrawMeshTasksNV-commandBuffer-parameter"
