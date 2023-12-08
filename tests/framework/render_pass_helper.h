@@ -53,6 +53,7 @@ class RenderPassSingleSubpass {
     void AddResolveAttachment(uint32_t index);
     void AddDepthStencilAttachment(uint32_t index);
 
+    void AddSubpassDependency(VkSubpassDependency dependency);
     void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                               VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                               VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,

@@ -53,10 +53,6 @@ VkRenderFramework::VkRenderFramework()
       m_height(256),  // default window height
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
       m_depth_stencil_fmt(VK_FORMAT_UNDEFINED),
-      m_depth_stencil_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
-      m_load_op_clear(true),
-      m_depth_clear_color(1.0),
-      m_stencil_clear_color(0),
       m_depthStencil(nullptr) {
     m_renderPassBeginInfo = vku::InitStructHelper();
 
@@ -935,18 +931,16 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     VkAttachmentDescription att = {};
     att.format = m_render_target_fmt;
     att.samples = VK_SAMPLE_COUNT_1_BIT;
-    att.loadOp = m_load_op_clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+    att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    const bool has_color_layout = m_color_layout != VK_IMAGE_LAYOUT_UNDEFINED;
-    const auto color_layout = has_color_layout ? m_color_layout : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    att.initialLayout = m_load_op_clear ? VK_IMAGE_LAYOUT_UNDEFINED : color_layout;
-    att.finalLayout = color_layout;
+    att.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    att.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference ref = {};
-    ref.layout = color_layout;
+    ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     m_renderPassClearValues.clear();
     VkClearValue clear = {};
@@ -997,22 +991,22 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     VkAttachmentReference ds_reference;
     if (dsBinding) {
         att.format = m_depth_stencil_fmt;
-        att.loadOp = (m_load_op_clear) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+        att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        att.stencilLoadOp = (m_load_op_clear) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+        att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-        att.initialLayout = m_depth_stencil_layout;
-        att.finalLayout = m_depth_stencil_layout;
+        att.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        att.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         m_renderPass_attachments.push_back(att);
 
-        clear.depthStencil.depth = m_depth_clear_color;
-        clear.depthStencil.stencil = m_stencil_clear_color;
+        clear.depthStencil.depth = 1.0;
+        clear.depthStencil.stencil = VK_FORMAT_UNDEFINED;
         m_renderPassClearValues.push_back(clear);
 
         m_framebuffer_attachments.push_back(*dsBinding);
 
         ds_reference.attachment = targets;
-        ds_reference.layout = m_depth_stencil_layout;
+        ds_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         subpass.pDepthStencilAttachment = &ds_reference;
     } else {
         subpass.pDepthStencilAttachment = NULL;
@@ -1051,12 +1045,6 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         // Must include dep_by_region bit when src & dst both include framebuffer-space stages
         subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    }
-
-    if (m_additionalSubpassDependencies.size()) {
-        m_renderPass_dependencies.reserve(m_additionalSubpassDependencies.size() + m_renderPass_dependencies.size());
-        m_renderPass_dependencies.insert(m_renderPass_dependencies.end(), m_additionalSubpassDependencies.begin(),
-                                         m_additionalSubpassDependencies.end());
     }
 
     if (m_renderPass_dependencies.size()) {
