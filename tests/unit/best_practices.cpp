@@ -15,6 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/thread_helper.h"
 #include "best_practices/best_practices_error_enums.h"
@@ -743,8 +744,24 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
-    m_load_op_clear = false;  // Force LOAD_OP_LOAD
-    InitRenderTarget();
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    // need full clear
+    render_pass_begin_info.renderArea.extent.width = m_width;
+    render_pass_begin_info.renderArea.extent.height = m_height;
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
 
@@ -756,7 +773,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-inefficient-clear");
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -778,22 +795,33 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     InitState();
 
-    m_load_op_clear = false;  // Force LOAD_OP_LOAD
-    InitRenderTarget();
-
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-redundant-store");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-redundant-clear");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-inefficient-clear");
 
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+
     CreatePipelineHelper pipe_masked(*this);
     pipe_masked.InitState();
+    pipe_masked.gp_ci_.renderPass = rp.Handle();
     pipe_masked.cb_attachments_[0].colorWriteMask = 0;
     pipe_masked.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_writes(*this);
     pipe_writes.InitState();
+    pipe_writes.gp_ci_.renderPass = rp.Handle();
     pipe_writes.cb_attachments_[0].colorWriteMask = 0xf;
     pipe_writes.CreateGraphicsPipeline();
 
@@ -808,8 +836,15 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     color_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    // need full clear
+    render_pass_begin_info.renderArea.extent.width = m_width;
+    render_pass_begin_info.renderArea.extent.height = m_height;
+
     // Plain clear after load.
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
     {
@@ -819,7 +854,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_commandBuffer->EndRenderPass();
 
     // Test that a masked write is ignored before clear
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_masked.pipeline_);
@@ -830,7 +865,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_commandBuffer->EndRenderPass();
 
     // Test that an actual write will not trigger the clear warning
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
     {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_writes.pipeline_);
         vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
@@ -844,7 +879,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
     begin_info.pInheritanceInfo = &inherit_info;
     inherit_info.subpass = 0;
-    inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
+    inherit_info.renderPass = rp.Handle();
 
     vkt::CommandBuffer secondary_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary_draw_masked(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -867,7 +902,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     secondary_draw_write.end();
 
     // Plain clear after load.
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
     {
@@ -877,7 +912,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_commandBuffer->EndRenderPass();
 
     // Test that a masked write is ignored before clear
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     {
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_masked.handle());
@@ -887,7 +922,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_commandBuffer->EndRenderPass();
 
     // Test that an actual write will not trigger the clear warning
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     {
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_write.handle());
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());

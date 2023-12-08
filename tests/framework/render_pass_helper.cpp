@@ -82,6 +82,11 @@ void RenderPassSingleSubpass::AddDepthStencilAttachment(uint32_t index) {
     subpass_description_.pDepthStencilAttachment = &ds_attachments_;
 }
 
+void RenderPassSingleSubpass::AddSubpassDependency(VkSubpassDependency dependency) {
+    subpass_dependency_ = dependency;
+    rp_create_info_.dependencyCount = 1;
+}
+
 void RenderPassSingleSubpass::AddSubpassDependency(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                                    VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
                                                    VkDependencyFlags dependencyFlags) {

@@ -14,6 +14,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 const char* kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
 
@@ -247,8 +248,23 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     InitState();
 
-    m_load_op_clear = false;  // Force LOAD_OP_LOAD
-    InitRenderTarget();
+    VkImageObj image(m_device);
+    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.framebuffer = fb.handle();
+    render_pass_begin_info.renderArea.extent.width = 1;
+    render_pass_begin_info.renderArea.extent.height = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
@@ -256,7 +272,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     // NOTE: VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT should be set for all tests in this file because
     // otherwise UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit will be triggered.
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1409,9 +1425,6 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     InitState();
 
-    m_load_op_clear = false;  // Force LOAD_OP_LOAD
-    InitRenderTarget();
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-RenderPass-blitimage-loadopload");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
@@ -1541,7 +1554,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
 
     auto ds = CreateImage(ds_format, m_width, m_height, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-    m_load_op_clear = true;
     m_depth_stencil_fmt = ds_format;
     auto ds_view = ds->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(1, &ds_view.handle());

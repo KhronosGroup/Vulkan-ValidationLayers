@@ -201,22 +201,14 @@ class VkRenderFramework : public VkTestFramework {
     VkPresentModeKHR m_surface_non_shared_present_mode{};
     VkCompositeAlphaFlagBitsKHR m_surface_composite_alpha{};
 
-    std::vector<VkViewport> m_viewports;
-    std::vector<VkRect2D> m_scissors;
     bool m_addRenderPassSelfDependency;
-    std::vector<VkSubpassDependency> m_additionalSubpassDependencies;
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
     std::vector<std::unique_ptr<VkImageObj>> m_renderTargets;
     uint32_t m_width, m_height;
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
-    VkImageLayout m_depth_stencil_layout;
-    VkImageLayout m_color_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkClearColorValue m_clear_color;
-    bool m_load_op_clear;
-    float m_depth_clear_color;
-    uint32_t m_stencil_clear_color;
     VkImageObj *m_depthStencil;
     // first graphics queue, used must often, don't overwrite, use Device class
     VkQueue m_default_queue;
