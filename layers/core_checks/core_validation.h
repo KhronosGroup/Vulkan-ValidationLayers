@@ -846,8 +846,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool VerifyImageLayoutSubresource(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                       const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout,
-                                      VkImageLayout optimal_layout, const Location& image_loc, const char* invalid_layout_vuid,
-                                      const char* mismatch_layout_vuid) const;
+                                      const Location& image_loc, const char* vuid) const;
 
     bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
