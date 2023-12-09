@@ -98,8 +98,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
 
 bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                               const VkImageSubresourceLayers &subresource_layers, VkImageLayout explicit_layout,
-                                              VkImageLayout optimal_layout, const Location &loc, const char *invalid_layout_vuid,
-                                              const char *mismatch_layout_vuid) const {
+                                              const Location &loc, const char *vuid) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
 
@@ -108,28 +107,8 @@ bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state
     VkImageSubresourceRange normalized_isr = image_state.NormalizeSubresourceRange(range);
     auto range_factory = [&normalized_isr](const ImageSubresourceLayoutMap &map) { return map.RangeGen(normalized_isr); };
     bool unused_error = false;
-    skip |= VerifyImageLayoutRange(cb_state, image_state, normalized_isr.aspectMask, explicit_layout, range_factory, loc,
-                                   mismatch_layout_vuid, &unused_error);
-
-    // If optimal_layout is not UNDEFINED, check that layout matches optimal for this case
-    if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout) &&
-        (VK_IMAGE_LAYOUT_GENERAL != explicit_layout)) {
-        if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
-            if (image_state.shared_presentable) {
-                if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                    skip |= LogError(invalid_layout_vuid, objlist, loc,
-                                     "Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
-                                     string_VkImageLayout(optimal_layout));
-                }
-            }
-        } else {
-            const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-            skip |= LogError(
-                invalid_layout_vuid, objlist, loc, "Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.",
-                FormatHandle(image_state).c_str(), string_VkImageLayout(explicit_layout), string_VkImageLayout(optimal_layout));
-        }
-    }
+    skip |= VerifyImageLayoutRange(cb_state, image_state, normalized_isr.aspectMask, explicit_layout, range_factory, loc, vuid,
+                                   &unused_error);
     return skip;
 }
 

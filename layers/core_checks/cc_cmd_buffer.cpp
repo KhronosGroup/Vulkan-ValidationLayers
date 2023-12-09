@@ -1734,9 +1734,14 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
     if (image_state) {
+        if (imageLayout != VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV && imageLayout != VK_IMAGE_LAYOUT_GENERAL) {
+            const LogObjectList objlist(cb_state->commandBuffer(), image_state->Handle());
+            skip |=
+                LogError("VUID-vkCmdBindShadingRateImageNV-imageLayout-02063", objlist, error_obj.location.dot(Field::imageView),
+                         "(%s) layout is %s.", FormatHandle(image_state->Handle()).c_str(), string_VkImageLayout(imageLayout));
+        }
         skip |= VerifyImageLayoutSubresource(*cb_state, *image_state, subresource, imageLayout,
-                                             VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, error_obj.location.dot(Field::imageView),
-                                             "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                                             error_obj.location.dot(Field::imageView),
                                              "VUID-vkCmdBindShadingRateImageNV-imageView-02062");
     }
 
