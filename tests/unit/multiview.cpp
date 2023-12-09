@@ -111,13 +111,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     clear_rect.rect.extent.width = 32;
     clear_rect.rect.extent.height = 32;
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = framebuffer.handle();
-    render_pass_begin_info.renderArea.extent.width = 32;
-    render_pass_begin_info.renderArea.extent.height = 32;
-
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-baseArrayLayer-00018");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
     clear_rect.layerCount = 2;
@@ -660,19 +654,13 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = framebuffer.handle();
-    render_pass_begin_info.renderArea.extent.width = 32;
-    render_pass_begin_info.renderArea.extent.height = 32;
-
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-04128");

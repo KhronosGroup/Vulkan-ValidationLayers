@@ -3120,12 +3120,10 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     dynamic_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     dynamic_pipe.CreateGraphicsPipeline();
 
-    auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.Handle(), fb.handle(), VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp_begin);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 128, 128);
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dynamic_pipe.pipeline_);
 
@@ -5233,13 +5231,8 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamples) {
     pipe.gp_ci_.renderPass = render_pass.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = render_pass.handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
-    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle(), 32, 32);
     vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
@@ -5397,16 +5390,6 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
-    VkClearValue clear_value;
-    clear_value.color = {{0, 0, 0, 0}};
-
-    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = rp.Handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
-    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
-    render_pass_bi.clearValueCount = 1u;
-    render_pass_bi.pClearValues = &clear_value;
-
     VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
 
@@ -5427,8 +5410,11 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
 
     VkSampleMask sample_mask = 1u;
 
+    VkClearValue clear_value;
+    clear_value.color = {{0, 0, 0, 0}};
+
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     vk::CmdSetSampleMaskEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT, &sample_mask);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
@@ -5519,13 +5505,6 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     VkClearValue clear_value;
     clear_value.depthStencil = {1.0f, 0u};
 
-    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = rp.Handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
-    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
-    render_pass_bi.clearValueCount = 1u;
-    render_pass_bi.pClearValues = &clear_value;
-
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
@@ -5541,7 +5520,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     sample_locations_info.pSampleLocations = &sample_location;
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     vk::CmdSetSampleLocationsEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);

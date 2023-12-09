@@ -1129,13 +1129,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.renderPass = rp.handle();
-    rpbi.framebuffer = fb.handle();
-    rpbi.renderArea.offset = {0, 0};
-    rpbi.renderArea.extent = {32, 32};
-
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-None-02349");
     m_commandBuffer->NextSubpass();

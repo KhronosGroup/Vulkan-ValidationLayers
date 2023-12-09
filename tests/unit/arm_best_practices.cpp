@@ -260,19 +260,13 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
 
     // NOTE: VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT should be set for all tests in this file because
     // otherwise UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit will be triggered.
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     m_errorMonitor->VerifyFound();
 }
@@ -1103,12 +1097,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = renderpasses[0];
-    render_pass_begin_info.framebuffer = framebuffers[0];
-    render_pass_begin_info.clearValueCount = 3;
-    render_pass_begin_info.pClearValues = clear_values;
-
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
@@ -1119,7 +1107,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     vk::CmdClearColorImage(m_commandBuffer->handle(), image0->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
                            &subresource_range);
 
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(renderpasses[0], framebuffers[0], 1, 1, 3, clear_values);
 
     VkViewport viewport;
     viewport.x = 0.0f;
@@ -1208,12 +1196,6 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.handle();
-    render_pass_begin_info.framebuffer = fb;
-    render_pass_begin_info.clearValueCount = 3;
-    render_pass_begin_info.pClearValues = clear_values;
-
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
@@ -1224,7 +1206,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     vk::CmdClearColorImage(m_commandBuffer->handle(), image->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1,
                            &subresource_range);
 
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb, 1, 1, 3, clear_values);
 
     VkViewport viewport;
     viewport.x = 0.0f;
@@ -1354,12 +1336,6 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.handle();
-    render_pass_begin_info.framebuffer = framebuffers[0];
-    render_pass_begin_info.clearValueCount = 3;
-    render_pass_begin_info.pClearValues = clear_values;
-
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
@@ -1371,7 +1347,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
                            &subresource_range);
 
     // Trigger a read on the image.
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.handle(), framebuffers[0], 1, 1, 3, clear_values);
     {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                   graphics_pipeline.pipeline_layout_.handle(), 0, 1, &descriptor_set, 0, nullptr);
@@ -1390,8 +1366,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     m_commandBuffer->EndRenderPass();
 
     // Now, LOAD_OP_LOAD, which should not trigger since we already read the image.
-    render_pass_begin_info.framebuffer = framebuffers[1];
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.handle(), framebuffers[1], 1, 1, 3, clear_values);
     {
         VkViewport viewport;
         viewport.x = 0.0f;
@@ -1519,11 +1494,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     auto imageView = images[1]->CreateView();
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle(), WIDTH, HEIGHT);
 
-    VkRenderPassBeginInfo rpbi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {WIDTH, HEIGHT}}, 0u, nullptr);
-
     // subtest 1: bind in the wrong subpass
-    m_commandBuffer->BeginRenderPass(rpbi);
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb.handle(), WIDTH, HEIGHT);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 

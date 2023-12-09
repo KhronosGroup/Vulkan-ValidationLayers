@@ -1228,9 +1228,6 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     pipe.gp_ci_.renderPass = render_pass.handle();
     pipe.CreateGraphicsPipeline();
 
-    auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, render_pass.handle(), framebuffer.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
-
     m_commandBuffer->begin();
 
     VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
@@ -1256,7 +1253,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     // Valid because outside renderpass
     vk::CmdPipelineBarrier2KHR(*m_commandBuffer, &dependency_info);
 
-    m_commandBuffer->BeginRenderPass(rp_begin);
+    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle(), 32, 32);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-image-09374");
     barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;

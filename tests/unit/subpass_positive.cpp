@@ -60,11 +60,6 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
 
-    VkRenderPassBeginInfo render_pass_begin = vku::InitStructHelper();
-    render_pass_begin.renderPass = render_pass;
-    render_pass_begin.framebuffer = framebuffer;
-    render_pass_begin.renderArea = VkRect2D{{0, 0}, {32, 32}};
-
     // VkImageMemoryBarrier
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -90,7 +85,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
 
     // Test vkCmdPipelineBarrier subpass barrier
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(*m_commandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
     vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &barrier);
@@ -99,7 +94,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
 
     // Test vkCmdPipelineBarrier2 subpass barrier
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(*m_commandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
     vk::CmdPipelineBarrier2(*m_commandBuffer, &dependency_info);
     vk::CmdEndRenderPass(*m_commandBuffer);
     m_commandBuffer->end();
@@ -147,11 +142,6 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
 
-    VkRenderPassBeginInfo render_pass_begin = vku::InitStructHelper();
-    render_pass_begin.renderPass = render_pass;
-    render_pass_begin.framebuffer = framebuffer;
-    render_pass_begin.renderArea = VkRect2D{{0, 0}, {32, 32}};
-
     // VkImageMemoryBarrier
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -180,7 +170,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
         vkt::Event event(*m_device);
         m_commandBuffer->begin();
         vk::CmdSetEvent(*m_commandBuffer, event, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-        vk::CmdBeginRenderPass(*m_commandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+        m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
         vk::CmdWaitEvents(*m_commandBuffer, 1, &event.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
         vk::CmdEndRenderPass(*m_commandBuffer);
@@ -193,7 +183,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
         vkt::Event event2(*m_device);
         m_commandBuffer->begin();
         vk::CmdSetEvent2(*m_commandBuffer, event2, &dependency_info);
-        vk::CmdBeginRenderPass(*m_commandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+        m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
         vk::CmdWaitEvents2(*m_commandBuffer, 1, &event2.handle(), &dependency_info);
         vk::CmdEndRenderPass(*m_commandBuffer);
         m_commandBuffer->end();

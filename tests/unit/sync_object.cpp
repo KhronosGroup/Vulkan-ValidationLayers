@@ -56,10 +56,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     vkt::Framebuffer fb_noselfdep(*m_device, rp_noselfdep.handle(), 1, &imageView.handle());
 
     m_commandBuffer->begin();
-    VkRenderPassBeginInfo rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp_noselfdep.handle(), fb_noselfdep.handle(),
-                                                                      VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
-
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp_noselfdep.handle(), fb_noselfdep.handle(), 32, 32);
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -69,9 +66,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
 
-    rpbi.renderPass = rp.handle();
-    rpbi.framebuffer = fb.handle();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -312,14 +307,8 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test("");
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     // Can't send buffer memory barrier during a render pass
     m_commandBuffer->EndRenderPass();
@@ -852,14 +841,8 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test("");
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     // Can't send buffer memory barrier during a render pass
     m_commandBuffer->EndRenderPass();

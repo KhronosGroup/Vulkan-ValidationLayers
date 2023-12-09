@@ -756,13 +756,6 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    // need full clear
-    render_pass_begin_info.renderArea.extent.width = m_width;
-    render_pass_begin_info.renderArea.extent.height = m_height;
-
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
 
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
@@ -773,7 +766,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-inefficient-clear");
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), m_width, m_height);
 
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1773,24 +1766,12 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 1.0f);
 
     // Begin first renderpass
-    VkRenderPassBeginInfo begin_info = vku::InitStructHelper();
-    begin_info.clearValueCount = 1;
-    begin_info.pClearValues = &cv;
-    begin_info.renderPass = rp1.handle();
-    begin_info.renderArea.extent.width = w;
-    begin_info.renderArea.extent.height = h;
-    begin_info.framebuffer = fb.handle();
-
-    m_commandBuffer->BeginRenderPass(begin_info);
+    m_commandBuffer->BeginRenderPass(rp1.handle(), fb.handle(), w, h, 1, &cv);
 
     m_commandBuffer->EndRenderPass();
 
     // Begin second renderpass
-    begin_info.clearValueCount = 0;
-    begin_info.pClearValues = nullptr;
-    begin_info.renderPass = rp2.handle();
-
-    m_commandBuffer->BeginRenderPass(begin_info);
+    m_commandBuffer->BeginRenderPass(rp2.handle(), fb.handle(), w, h, 0, nullptr);
 
     m_commandBuffer->EndRenderPass();
 

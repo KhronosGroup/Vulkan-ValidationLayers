@@ -604,14 +604,10 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     vkt::Framebuffer fb1(*m_device, rp1.handle(), 1, &view.handle(), 1, 1);
     vkt::Framebuffer fb2(*m_device, rp2.handle(), 1, &view.handle(), 1, 1);
 
-    VkRenderPassBeginInfo rpbi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp1.handle(), fb1.handle(), VkRect2D{{0, 0}, {1u, 1u}}, 0u, nullptr);
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp1.handle(), fb1.handle());
     m_commandBuffer->EndRenderPass();
-    rpbi.framebuffer = fb2.handle();
-    rpbi.renderPass = rp2.handle();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp2.handle(), fb2.handle());
     m_commandBuffer->EndRenderPass();
 
     const VkImageMemoryBarrier present_transition =
@@ -922,11 +918,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
 
     vkt::CommandBuffer cmdbuff(DeviceObj(), m_commandPool);
     cmdbuff.begin();
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.renderPass = render_pass.handle();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderArea = {{0, 0}, {1, 1}};
-    cmdbuff.BeginRenderPass(rpbi);
+    cmdbuff.BeginRenderPass(render_pass.handle(), framebuffer.handle());
 
     vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 }

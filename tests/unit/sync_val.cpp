@@ -1456,14 +1456,8 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, rt_image_0.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_to_copy);
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);  // This fails so the driver call is skip and no end is valid
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());  // This fails so the driver call is skip and no end is valid
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
@@ -1481,7 +1475,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
                      &region_to_copy);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);  // This fails so the driver call is skip and no end is valid
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());  // This fails so the driver call is skip and no end is valid
     m_errorMonitor->VerifyFound();
 
     // A global execution barrier that the implict external dependency can chain with should work...
@@ -1490,7 +1484,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
 
     // With the barrier above, the layout transition has a chained execution sync operation, and the default
     // implict VkSubpassDependency safes the load op clear vs. the layout transition...
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
     m_commandBuffer->EndRenderPass();
 }
 
@@ -1533,15 +1527,9 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
                            nullptr, 0, nullptr, 0, nullptr);
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
     m_errorMonitor->VerifyFound();
 }
 
@@ -1574,14 +1562,8 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.extent = {m_width, m_height, 1};
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     // Initiate attachment store
     m_commandBuffer->EndRenderPass();
@@ -4272,14 +4254,6 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
 
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, framebuffer_attachments);
 
-    VkRenderPassBeginInfo rp_bi = vku::InitStructHelper();
-    rp_bi.renderPass = render_pass.handle();
-    rp_bi.framebuffer = framebuffer.handle();
-    rp_bi.renderArea.extent.width = 32;
-    rp_bi.renderArea.extent.height = 32;
-    rp_bi.clearValueCount = 1;
-    rp_bi.pClearValues = &clear_value;
-
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     ds_ci.depthTestEnable = VK_FALSE;
     ds_ci.depthWriteEnable = VK_FALSE;
@@ -4294,7 +4268,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp_bi);
+    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
