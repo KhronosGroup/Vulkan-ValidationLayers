@@ -979,6 +979,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     static VkCommandBufferAllocateInfo create_info(VkCommandPool const &pool);
 
     void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+    void BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t render_area_width = 1, uint32_t render_area_height = 1,
+                         uint32_t clear_count = 0, VkClearValue *clear_values = nullptr);
     void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void EndRenderPass();
     void BeginRendering(const VkRenderingInfoKHR &renderingInfo);

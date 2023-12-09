@@ -3777,14 +3777,6 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = rp.Handle();
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-    rpbi.clearValueCount = 1;
-    rpbi.pClearValues = m_renderPassClearValues.data();
-
     char const *fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 x;
@@ -3832,7 +3824,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06537");
 
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
@@ -3892,14 +3884,6 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = rp.Handle();
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-    rpbi.clearValueCount = 1;
-    rpbi.pClearValues = m_renderPassClearValues.data();
-
     char const *fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
@@ -3946,7 +3930,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09000");
 
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
@@ -4008,14 +3992,6 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = rp.Handle();
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-    rpbi.clearValueCount = 1;
-    rpbi.pClearValues = m_renderPassClearValues.data();
-
     char const *fsSource = R"glsl(
             #version 450
             layout(set = 0, binding = 0, rgba8) writeonly uniform image2D image1;
@@ -4075,7 +4051,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set_storage_image.set_, 0, nullptr);

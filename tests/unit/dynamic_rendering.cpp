@@ -6121,10 +6121,7 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
 
     m_commandBuffer->begin();
 
-    VkRenderPassBeginInfo rpbi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
-
-    m_commandBuffer->BeginRenderPass(rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRendering-None-06161");
     m_commandBuffer->EndRendering();
     m_errorMonitor->VerifyFound();

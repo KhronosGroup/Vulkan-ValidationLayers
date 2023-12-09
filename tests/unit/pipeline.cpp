@@ -501,14 +501,8 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     pipeline_2.gp_ci_.renderPass = renderpass.handle();
     pipeline_2.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
-    rpbinfo.renderPass = renderpass.handle();
-    rpbinfo.framebuffer = framebuffer;
-    rpbinfo.renderArea.extent.width = fb_width;
-    rpbinfo.renderArea.extent.height = fb_height;
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_commandBuffer->BeginRenderPass(renderpass.handle(), framebuffer, fb_width, fb_height);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.Handle());
 

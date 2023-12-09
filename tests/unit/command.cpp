@@ -5886,11 +5886,8 @@ TEST_F(NegativeCommand, RenderPassContentsWhenCallingCmdExecuteCommandsWithBegin
     secondary.end();
 
     m_commandBuffer->begin();
-
-    VkRenderPassBeginInfo rp_bi = vku::InitStruct<VkRenderPassBeginInfo>(
-        nullptr, m_renderPass, framebuffer(), VkRect2D{{0, 0}, {32u, 32u}}, static_cast<uint32_t>(m_renderPassClearValues.size()),
-        m_renderPassClearValues.data());
-    m_commandBuffer->BeginRenderPass(rp_bi);
+    m_commandBuffer->BeginRenderPass(m_renderPass, framebuffer(), 32, 32, m_renderPassClearValues.size(),
+                                     m_renderPassClearValues.data());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
@@ -6513,14 +6510,9 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_dynamic_pipe.CreateGraphicsPipeline(false);
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = framebuffer.handle();
-    render_pass_begin_info.renderArea.extent.width = 32;
-    render_pass_begin_info.renderArea.extent.height = 32;
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe.pipeline_);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06886");
@@ -7346,15 +7338,8 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         clear_rect.baseArrayLayer = 0u;
         clear_rect.layerCount = 1u;
 
-        VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-        render_pass_begin_info.renderPass = rp.Handle();
-        render_pass_begin_info.framebuffer = framebuffer.handle();
-        render_pass_begin_info.renderArea = {{0, 0}, {32, 32}};
-        render_pass_begin_info.clearValueCount = 1u;
-        render_pass_begin_info.pClearValues = &clear_value;
-
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
         if (missing_depth) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07884");
         } else {

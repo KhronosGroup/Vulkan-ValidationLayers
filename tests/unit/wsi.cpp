@@ -3482,12 +3482,6 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
-    rpbinfo.renderPass = rp.handle();
-    rpbinfo.framebuffer = fb.handle();
-    rpbinfo.renderArea.extent.width = 1;
-    rpbinfo.renderArea.extent.height = 1;
-
     VkSwapchainKHR oldSwapchain = m_swapchain;
     swapchain_create_info.oldSwapchain = m_swapchain;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
@@ -3495,7 +3489,7 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-framebuffer-parameter");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_commandBuffer->BeginRenderPass(rp.handle(), fb.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }

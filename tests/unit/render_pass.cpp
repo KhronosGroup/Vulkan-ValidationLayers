@@ -1606,11 +1606,7 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     rp.CreateRenderPass();
 
     m_commandBuffer->begin();
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer();
-    rpbi.renderPass = rp.Handle();
-    rpbi.renderArea.extent = {1, 1};
-    m_commandBuffer->BeginRenderPass(rpbi);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer());
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
@@ -1971,11 +1967,6 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     // Create a framebuffer with rp1
     vkt::Framebuffer fb(*m_device, rp1.handle(), 1u, &iv.handle(), 128, 128);
 
-    VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
-    rp_begin.renderPass = rp1.handle();
-    rp_begin.framebuffer = fb.handle();
-    rp_begin.renderArea = {{0, 0}, {128, 128}};
-
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
@@ -1989,7 +1980,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp1.handle(), fb.handle(), 128, 128);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
@@ -2033,13 +2024,8 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-framebuffer-parameter");
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.renderPass = rp.Handle();
-    rpbi.framebuffer = fb.handle();
-    rpbi.renderArea = {{0, 0}, {32, 32}};
-
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
     // Don't call vk::CmdEndRenderPass; as the begin has been "skipped" based on the error condition
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -2627,14 +2613,6 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = rp.Handle();
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-    rpbi.clearValueCount = 1;
-    rpbi.pClearValues = m_renderPassClearValues.data();
-
     char const *fsSource = R"glsl(
             #version 450
             layout(set = 0, binding = 0) uniform sampler2D depth;
@@ -2681,7 +2659,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
@@ -3422,24 +3400,15 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
     clear_values[0].color = {{0, 0, 0, 0}};
     clear_values[1].color = {{0, 0, 0, 0}};
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = render_pass2.handle();
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-    rpbi.clearValueCount = 2;
-    rpbi.pClearValues = clear_values;
-
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    rpbi.renderPass = render_pass3.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -3519,23 +3488,14 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     clear_values[0].color = {{0, 0, 0, 0}};
     clear_values[1].color = {{0, 0, 0, 0}};
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = render_pass2.handle();
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-    rpbi.clearValueCount = 2;
-    rpbi.pClearValues = clear_values;
-
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    rpbi.renderPass = render_pass3.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -3600,14 +3560,6 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
     clear_values[0].color = {{0, 0, 0, 0}};
     clear_values[1].color = {{0, 0, 0, 0}};
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer.handle();
-    rpbi.renderPass = render_pass2.handle();
-    rpbi.renderArea.extent.width = 32;
-    rpbi.renderArea.extent.height = 32;
-    rpbi.clearValueCount = 2;
-    rpbi.pClearValues = clear_values;
-
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.gp_ci_.renderPass = render_pass2.handle();
@@ -3616,11 +3568,10 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    rpbi.renderPass = render_pass1.handle();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass1.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
@@ -4278,13 +4229,6 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     VkClearValue clear_value;
     clear_value.color = {{0, 0, 0, 0}};
 
-    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = rp.Handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
-    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
-    render_pass_bi.clearValueCount = 1u;
-    render_pass_bi.pClearValues = &clear_value;
-
     VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
     image_memory_barrier.srcAccessMask = VK_ACCESS_NONE;
     image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -4297,7 +4241,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass-initialLayout-00900");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_bi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }

@@ -1758,13 +1758,8 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
 
     vkt::QueryPool query_pool(*m_device, qpci);
 
-    VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
-    rp_begin.renderPass = render_pass.handle();
-    rp_begin.framebuffer = framebuffer.handle();
-    rp_begin.renderArea.extent = {64, 64};
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp_begin);
+    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle(), 64, 64);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-query-00808");
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
     m_errorMonitor->VerifyFound();
@@ -2215,13 +2210,8 @@ TEST_F(NegativeQuery, MultiviewEndQuery) {
 
     vkt::QueryPool query_pool(*m_device, qpci);
 
-    VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
-    rp_begin.renderPass = render_pass.handle();
-    rp_begin.framebuffer = framebuffer.handle();
-    rp_begin.renderArea.extent = {64, 64};
-
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp_begin);
+    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle(), 64, 64);
 
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
 
@@ -2238,7 +2228,7 @@ TEST_F(NegativeQuery, MultiviewEndQuery) {
     if (indexed_queries) {
         m_commandBuffer->reset();
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(rp_begin);
+        m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer.handle(), 64, 64);
         vk::CmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 1, 0, 0);
         m_commandBuffer->NextSubpass();
 

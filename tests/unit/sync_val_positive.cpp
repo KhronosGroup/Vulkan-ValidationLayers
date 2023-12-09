@@ -107,12 +107,6 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     fbci.layers = layers;
     vkt::Framebuffer framebuffer(*m_device, fbci);
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer;
-    rpbi.renderPass = render_pass;
-    rpbi.renderArea.extent.width = width;
-    rpbi.renderArea.extent.height = height;
-
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = render_pass;
     pipe.InitState();
@@ -136,7 +130,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     // Write 1: Copy to render target's layer 0
     vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, rt, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vk::CmdBeginRenderPass(*m_commandBuffer, &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(render_pass, framebuffer, width, height);
     // Write 2: Clear render target's layer 1
     vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
     vk::CmdEndRenderPass(*m_commandBuffer);

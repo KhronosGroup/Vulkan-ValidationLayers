@@ -1417,18 +1417,8 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     clear_value.color.float32[2] = 0.25f;
     clear_value.color.float32[3] = 0.0f;
 
-    VkRenderPassBeginInfo beginInfo = vku::InitStructHelper();
-    beginInfo.renderPass = rp.Handle();
-    beginInfo.framebuffer = framebuffer.handle();
-    beginInfo.renderArea.extent.width = 32;
-    beginInfo.renderArea.extent.height = 32;
-    beginInfo.renderArea.offset.x = 0;
-    beginInfo.renderArea.offset.y = 0;
-    beginInfo.clearValueCount = 1;
-    beginInfo.pClearValues = &clear_value;
-
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

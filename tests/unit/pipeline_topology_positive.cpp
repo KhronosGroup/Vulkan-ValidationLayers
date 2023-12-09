@@ -462,18 +462,9 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.renderPass = m_renderPass;
-    rpbi.framebuffer = framebuffer();
-    rpbi.renderArea.offset.x = 0;
-    rpbi.renderArea.offset.y = 0;
-    rpbi.renderArea.extent.width = 32;
-    rpbi.renderArea.extent.height = 32;
-    rpbi.clearValueCount = static_cast<uint32_t>(m_renderPassClearValues.size());
-    rpbi.pClearValues = m_renderPassClearValues.data();
-
     m_commandBuffer->begin();
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    m_commandBuffer->BeginRenderPass(renderPass(), framebuffer(), 32, 32, m_renderPassClearValues.size(),
+                                     m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRenderPass();

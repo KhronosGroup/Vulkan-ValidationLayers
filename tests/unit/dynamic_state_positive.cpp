@@ -349,15 +349,9 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
 
@@ -400,15 +394,9 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
-    render_pass_begin_info.framebuffer = fb.handle();
-    render_pass_begin_info.renderArea.extent.width = 1;
-    render_pass_begin_info.renderArea.extent.height = 1;
-
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
     vk::CmdSetDepthWriteEnableEXT(m_commandBuffer->handle(), VK_TRUE);
