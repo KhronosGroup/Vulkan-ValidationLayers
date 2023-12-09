@@ -1458,16 +1458,6 @@ TEST_F(NegativeImage, ImageLayout) {
     copy_region.extent.height = 1;
     copy_region.extent.depth = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
-    m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_errorMonitor->VerifyFound();
-    // The first call hits the expected WARNING and skips the call down the chain, so call a second time to call down chain and
-    // update layer state
-    m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
-    m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     // Now cause error due to src image layout changing
@@ -1483,13 +1473,10 @@ TEST_F(NegativeImage, ImageLayout) {
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-    // Now verify same checks for dst
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-    m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
+
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_errorMonitor->VerifyFound();
+
     // Now cause error due to src image layout changing
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImageLayout-00133");
     m_errorMonitor->SetUnexpectedError(
@@ -1521,15 +1508,7 @@ TEST_F(NegativeImage, ImageLayout) {
                                                 VK_IMAGE_LAYOUT_GENERAL,
                                                 1,
                                                 &copy_region2};
-        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                             "layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
-        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
-        m_errorMonitor->VerifyFound();
-        // The first call hits the expected WARNING and skips the call down the chain, so call a second time to call down chain and
-        // update layer state
-        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
-        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
+
         vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         // Now cause error due to src image layout changing
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImageLayout-00128");
@@ -1544,13 +1523,11 @@ TEST_F(NegativeImage, ImageLayout) {
             "VK_IMAGE_LAYOUT_GENERAL.");
         vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
+
         // Now verify same checks for dst
-        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                             "layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
         copy_image_info2.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
         vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
-        m_errorMonitor->VerifyFound();
+
         // Now cause error due to src image layout changing
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstImageLayout-00133");
         m_errorMonitor->SetUnexpectedError(
@@ -1820,14 +1797,12 @@ TEST_F(NegativeImage, CopyImageMemory) {
                                                 1,
                                                 &copy_region2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-07966");
-        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
         m_errorMonitor->SetUnexpectedError("doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL.");
         vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
         copy_image_info2.srcImage = image.handle();
         copy_image_info2.dstImage = image_no_mem.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstImage-07966");
-        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
         m_errorMonitor->SetUnexpectedError("doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL..");
         vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();

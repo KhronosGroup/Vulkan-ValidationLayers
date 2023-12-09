@@ -112,16 +112,9 @@ bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state
                                    mismatch_layout_vuid, &unused_error);
 
     // If optimal_layout is not UNDEFINED, check that layout matches optimal for this case
-    if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout)) {
-        if (VK_IMAGE_LAYOUT_GENERAL == explicit_layout) {
-            if (image_state.createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
-                // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
-                const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                skip |= LogPerformanceWarning("WARNING-ImageLayout-General", objlist, loc,
-                                              "For optimal performance %s layout should be %s instead of GENERAL.",
-                                              FormatHandle(image_state).c_str(), string_VkImageLayout(optimal_layout));
-            }
-        } else if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
+    if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout) &&
+        (VK_IMAGE_LAYOUT_GENERAL != explicit_layout)) {
+        if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (image_state.shared_presentable) {
                 if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
                     const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
