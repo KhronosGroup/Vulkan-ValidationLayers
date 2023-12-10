@@ -19,6 +19,8 @@
  */
 #include "state_tracker/cmd_buffer_state.h"
 
+#include "generated/dynamic_state_helper.h"
+
 namespace vvl {
 
 CommandPool::CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -148,6 +150,7 @@ void CommandBuffer::ResetCBState() {
     trashedScissorCount = false;
     usedDynamicViewportCount = false;
     usedDynamicScissorCount = false;
+    dirtyStaticState = false;
 
     active_render_pass_begin_info = safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
@@ -1331,6 +1334,10 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     CBDynamicFlags state_bits;
     state_bits.set(state);
     RecordStateCmd(command, state_bits);
+    vvl::Pipeline *pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (pipeline && !pipeline->IsDynamic(ConvertToDynamicState(state))) {
+        dirtyStaticState = true;
+    }
 }
 
 void CommandBuffer::RecordStateCmd(Func command, CBDynamicFlags const &state_bits) {

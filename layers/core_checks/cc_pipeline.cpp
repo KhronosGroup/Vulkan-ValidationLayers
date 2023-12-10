@@ -25,6 +25,20 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
+bool CoreChecks::IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t subminor) const {
+    // If VK_KHR_driver_properties is not enabled then conformance version will not be set
+    if (phys_dev_props_core12.conformanceVersion.major == 0) {
+        return false;
+    }
+    if (phys_dev_props_core12.conformanceVersion.major != major) {
+        return phys_dev_props_core12.conformanceVersion.major < major;
+    }
+    if (phys_dev_props_core12.conformanceVersion.minor != minor) {
+        return phys_dev_props_core12.conformanceVersion.minor < minor;
+    }
+    return phys_dev_props_core12.conformanceVersion.subminor < subminor;
+}
+
 bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2KHR flags, const Location &loc, const char *vuid) const {
     bool skip = false;
     if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {
@@ -354,6 +368,21 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                         }
                     }
                 }
+            }
+
+            if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && cb_state->GetCurrentPipeline(pipelineBindPoint) &&
+                pipeline == cb_state->GetCurrentPipeline(pipelineBindPoint)->pipeline() && cb_state->dirtyStaticState &&
+                IsBeforeCtsVersion(1, 3, 8)) {
+                const LogObjectList objlist(commandBuffer, pipeline);
+                // This catches a bug in some drivers with conformance version lower than 1.3.8
+                // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3675
+                // https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/4642
+                skip |= LogError(
+                    "UNASSIGNED-vkCmdBindPipeline-Pipeline-Rebind", objlist, error_obj.location,
+                    "The pipeline being bound (%s) is the same as the currently bound pipeline and between the calls, a "
+                    "dynamic state was set which is static in this pipeline. This might not work correctly on drivers with "
+                    "conformance version lower than 1.3.8.0.",
+                    FormatHandle(pipeline).c_str());
             }
         } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             if (!cb_state->unprotected) {

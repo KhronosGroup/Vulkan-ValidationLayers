@@ -75,6 +75,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
             } CBDynamicState;
 
             using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATE_STATUS_NUM>;
+            VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state);
             CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
             const char* DynamicStateToString(CBDynamicState dynamic_state);
             std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
@@ -86,7 +87,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
         out.append('''
             #include "core_checks/core_validation.h"
 
-            static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
+            VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
                 switch (dynamic_state) {
             ''')
         for field in self.vk.enums['VkDynamicState'].fields:
