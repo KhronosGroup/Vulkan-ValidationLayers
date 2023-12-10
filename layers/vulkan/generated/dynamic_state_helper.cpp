@@ -23,7 +23,7 @@
 
 #include "core_checks/core_validation.h"
 
-static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
+VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
     switch (dynamic_state) {
         case CB_DYNAMIC_STATE_VIEWPORT:
             return VK_DYNAMIC_STATE_VIEWPORT;

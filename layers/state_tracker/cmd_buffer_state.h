@@ -375,9 +375,12 @@ class CommandBuffer : public REFCOUNTED_NODE {
     bool trashedViewportCount;
     bool trashedScissorCount;
 
-    // True iff any draw command recorded to this command buffer consumes dynamic viewport/scissor with count state.
+    // True if any draw command recorded to this command buffer consumes dynamic viewport/scissor with count state.
     bool usedDynamicViewportCount;
     bool usedDynamicScissorCount;
+
+    // Track if any dynamic state is set that is static in the currently bound pipeline
+    bool dirtyStaticState;
 
     uint32_t initial_device_mask;
 

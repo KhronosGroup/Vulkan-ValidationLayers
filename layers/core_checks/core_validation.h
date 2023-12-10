@@ -553,6 +553,9 @@ class CoreChecks : public ValidationStateTracker {
 
     bool FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const;
 
+    // Checks conformance version if VK_KHR_driver_properties is enabled
+    bool IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t subminor) const;
+
     template <typename TransferBarrier>
     bool ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer& cb_state,
                                            QFOTransferCBScoreboards<TransferBarrier>* scoreboards,

@@ -763,8 +763,15 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         }
 
         // VkPhysicalDeviceVulkan12Properties
-        //
-        // Can ingnore VkPhysicalDeviceDriverProperties as it has no validation purpose
+
+        if (dev_ext.vk_khr_driver_properties) {
+            VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_driver_properties, &driver_properties);
+            phys_dev_props_core12.driverID = driver_properties.driverID;
+            memcpy(phys_dev_props_core12.driverName, driver_properties.driverName, VK_MAX_DRIVER_NAME_SIZE);
+            memcpy(phys_dev_props_core12.driverInfo, driver_properties.driverName, VK_MAX_DRIVER_INFO_SIZE);
+            phys_dev_props_core12.conformanceVersion = driver_properties.conformanceVersion;
+        }
 
         if (dev_ext.vk_ext_descriptor_indexing) {
             VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_prop = vku::InitStructHelper();
@@ -2188,6 +2195,8 @@ void ValidationStateTracker::PostCallRecordCmdBindPipeline(VkCommandBuffer comma
             }
         }
     }
+
+    cb_state->dirtyStaticState = false;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
