@@ -33,7 +33,6 @@ const char *SETTING_VALIDATE_BEST_PRACTICES_AMD = "validate_best_practices_amd";
 const char *SETTING_VALIDATE_BEST_PRACTICES_IMG = "validate_best_practices_img";
 const char *SETTING_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_nvidia";
 const char *SETTING_VALIDATE_SYNC = "validate_sync";
-const char *SETTING_VALIDATE_SYNC_QUEUE_SUBMIT = "sync_queue_submit";
 const char *SETTING_VALIDATE_GPU_BASED = "validate_gpu_based";
 const char *SETTING_RESERVE_BINDING_SLOT = "reserve_binding_slot";
 
@@ -49,6 +48,7 @@ const char *SETTING_UNIQUE_HANDLES = "unique_handles";
 const char *SETTING_OBJECT_LIFETIME = "object_lifetime";
 const char *SETTING_CHECK_SHADERS = "check_shaders";
 const char *SETTING_CHECK_SHADERS_CACHING = "check_shaders_caching";
+const char *SETTING_VALIDATE_SYNC_QUEUE_SUBMIT = "sync_queue_submit";
 
 const char *SETTING_MESSAGE_ID_FILTER = "message_id_filter";
 const char *SETTING_CUSTOM_STYPE_LIST = "custom_stype_list";
@@ -77,6 +77,9 @@ void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDis
             break;
         case VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION:
             disable_data[image_layout_validation] = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT:
+            disable_data[sync_validation_queue_submit] = true;
             break;
         default:
             assert(true);
@@ -136,9 +139,6 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
             enable_data[vendor_specific_amd] = true;
             enable_data[vendor_specific_img] = true;
             enable_data[vendor_specific_nvidia] = true;
-            break;
-        case VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT:
-            enable_data[sync_validation_queue_submit] = true;
             break;
         default:
             assert(true);
@@ -449,8 +449,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_nvidia,
                              SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
-        SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation_queue_submit,
-                             SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
 
         if (vkuHasLayerSetting(layer_setting_set, SETTING_VALIDATE_GPU_BASED)) {
             std::string setting_value;
@@ -477,6 +475,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+        SetValidationSetting(layer_setting_set, settings_data->disables, sync_validation_queue_submit,
+                             SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);

@@ -24,11 +24,11 @@ Synchronization Validation settings are managed by configuring the Validation La
 
 Synchronization Validation settings can also be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
 
-The alpha release of QueueSubmit time validation can be enabled using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html), or by adding:
+Queue submit time validation can be disabled using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html), or by adding:
 
-`VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT`
+`VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT`
 
-to the "Enables" as documented in [VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details). ***NOTE*:** changes to configuration of this feature between alpha, and full release should be expected.
+to the "Disables" as documented in [VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details).
 
 
 ## Synchronization Validation Functionality
@@ -100,6 +100,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - QueueSubmit/QueueSubmit2 time hazard detection
 - Semaphore (binary only) and Fence synchronization operations/effects
 - Device and Queue WaitIdle support
+- Dynamic Rendering support
 
 ### Known Limitations
 

@@ -27,18 +27,8 @@ void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
         features_.disabledValidationFeatureCount = 0;
     }
 
-    // Optionally enable syncval submit validation
-    static const char *kEnableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
-    static const VkLayerSettingEXT settings[] = {
-        {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, kEnableQueuSubmitSyncValidation}};
-    // The pNext of qs_settings is modified by InitFramework that's why it can't
-    // be static (should be separate instance per stack frame). Also we show
-    // explicitly that it's not const (InitFramework casts const pNext to non-const).
-    VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                             static_cast<uint32_t>(std::size(settings)), settings};
-    if (enable_queue_submit_validation) {
-        features_.pNext = &qs_settings;
-    }
+    // QueueSubmit Validation *always* on (default behavior)
+
     InitFramework(&features_);
 }
 

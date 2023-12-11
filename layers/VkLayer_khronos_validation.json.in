@@ -686,8 +686,8 @@
                                     "label": "QueueSubmit Synchronization Validation",
                                     "description": "Enable synchronization validation between submitted command buffers when Synchronization Validation is enabled. This option will increase the synchronization performance cost.",
                                     "type": "BOOL",
-                                    "default": false,
-                                    "status": "ALPHA",
+                                    "default": true,
+                                    "status": "STABLE",
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
@@ -1270,6 +1270,12 @@
                             "view": "ADVANCED"
                         },
                         {
+                            "key": "VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
+                            "label": "QueueSubmit Synchronization Validation",
+                            "description": "Check synchronization validation between submitted command buffers when Synchronization Validation is enabled.",
+                            "view": "ADVANCED"
+                        },
+                        {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT",
                             "label": "Shader Validation Caching",
                             "description": "Disable caching of shader validation results.",
@@ -1299,12 +1305,6 @@
                                 "MACOS",
                                 "ANDROID"
                             ]
-                        },
-                        {
-                            "key": "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
-                            "label": "QueueSubmit Synchronization Validation",
-                            "description": "Enable synchronization validation between submitted command buffers when Synchronization Validation is enabled.",
-                            "status": "ALPHA"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",
