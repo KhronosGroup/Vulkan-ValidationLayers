@@ -1023,8 +1023,7 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestamps) {
     TEST_DESCRIPTION("Basic usage of vkGetCalibratedTimestampsEXT.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
@@ -1043,4 +1042,29 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestamps) {
     uint64_t timestamps[2];
     uint64_t max_deviation;
     vk::GetCalibratedTimestampsEXT(device(), 2, timestamp_infos, timestamps, &max_deviation);
+}
+
+TEST_F(VkPositiveLayerTest, GetCalibratedTimestampsKHR) {
+    TEST_DESCRIPTION("Basic usage of vkGetCalibratedTimestampsKHR.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t count = 0;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, nullptr);
+    if (count < 2) {
+        GTEST_SKIP() << "only 1 TimeDomain supported";
+    }
+    std::vector<VkTimeDomainKHR> time_domains(count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, time_domains.data());
+
+    VkCalibratedTimestampInfoKHR timestamp_infos[2];
+    timestamp_infos[0] = vku::InitStructHelper();
+    timestamp_infos[0].timeDomain = time_domains[0];
+    timestamp_infos[1] = vku::InitStructHelper();
+    timestamp_infos[1].timeDomain = time_domains[1];
+
+    uint64_t timestamps[2];
+    uint64_t max_deviation;
+    vk::GetCalibratedTimestampsKHR(device(), 2, timestamp_infos, timestamps, &max_deviation);
 }

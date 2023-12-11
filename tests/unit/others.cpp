@@ -2851,8 +2851,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
     TEST_DESCRIPTION("vkGetCalibratedTimestampsEXT with duplicated timeDomain.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
@@ -2872,12 +2871,35 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicateKHR) {
+    TEST_DESCRIPTION("vkGetCalibratedTimestampsKHR with duplicated timeDomain.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t count = 0;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, nullptr);
+    std::vector<VkTimeDomainEXT> time_domains(count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, time_domains.data());
+
+    VkCalibratedTimestampInfoEXT timestamp_infos[2];
+    timestamp_infos[0] = vku::InitStructHelper();
+    timestamp_infos[0].timeDomain = time_domains[0];
+    timestamp_infos[1] = vku::InitStructHelper();
+    timestamp_infos[1].timeDomain = time_domains[0];
+
+    uint64_t timestamps[2];
+    uint64_t max_deviation;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246");
+    vk::GetCalibratedTimestampsKHR(device(), 2, timestamp_infos, timestamps, &max_deviation);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
     TEST_DESCRIPTION("vkGetCalibratedTimestampsEXT with invalid timeDomain.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);

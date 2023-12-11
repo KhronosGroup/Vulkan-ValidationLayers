@@ -803,16 +803,27 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint
                                                            const VkCalibratedTimestampInfoEXT *pTimestampInfos,
                                                            uint64_t *pTimestamps, uint64_t *pMaxDeviation,
                                                            const ErrorObject &error_obj) const {
+    return PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                     error_obj);
+}
+
+bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                           const VkCalibratedTimestampInfoKHR *pTimestampInfos,
+                                                           uint64_t *pTimestamps, uint64_t *pMaxDeviation,
+                                                           const ErrorObject &error_obj) const {
     bool skip = false;
 
+    auto query_function = (error_obj.location.function == Func::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR)
+                              ? DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR
+                              : DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT;
     uint32_t count = 0;
-    DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_device, &count, nullptr);
-    std::vector<VkTimeDomainEXT> valid_time_domains(count);
-    DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_device, &count, valid_time_domains.data());
+    query_function(physical_device, &count, nullptr);
+    std::vector<VkTimeDomainKHR> valid_time_domains(count);
+    query_function(physical_device, &count, valid_time_domains.data());
 
-    vvl::unordered_map<VkTimeDomainEXT, uint32_t> time_domain_map;
+    vvl::unordered_map<VkTimeDomainKHR, uint32_t> time_domain_map;
     for (uint32_t i = 0; i < timestampCount; i++) {
-        const VkTimeDomainEXT time_domain = pTimestampInfos[i].timeDomain;
+        const VkTimeDomainKHR time_domain = pTimestampInfos[i].timeDomain;
         auto it = time_domain_map.find(time_domain);
         if (it != time_domain_map.end()) {
             skip |= LogError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246", device,
