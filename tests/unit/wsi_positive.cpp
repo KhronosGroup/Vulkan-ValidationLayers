@@ -1208,3 +1208,27 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 }
+
+TEST_F(PositiveWsi, RegisterDisplayEvent) {
+    TEST_DESCRIPTION("Call vkRegisterDisplayEventEXT");
+    AddRequiredExtensions(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t prop_count = 0;
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
+    if (prop_count == 0) {
+        GTEST_SKIP() << "No VkDisplayKHR properties to query";
+    }
+
+    std::vector<VkDisplayPropertiesKHR> display_props{prop_count};
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
+    VkDisplayKHR display = display_props[0].display;
+
+    VkDisplayEventInfoEXT event_info = vku::InitStructHelper();
+    event_info.displayEvent = VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT;
+    VkFence fence;
+
+    vk::RegisterDisplayEventEXT(device(), display, &event_info, nullptr, &fence);
+
+    vk::DestroyFence(device(), fence, nullptr);
+}
