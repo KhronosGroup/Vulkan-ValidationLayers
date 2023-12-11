@@ -4125,10 +4125,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
         GTEST_SKIP() << "Test requires a queue family with no support for result status queries";
     }
 
-    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
-    create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
-    create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer cb(m_device, &cmd_pool);
@@ -4221,10 +4218,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     VideoContext context(DeviceObj(), config);
     context.CreateAndBindSessionMemory();
 
-    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
-    create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
-    create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
@@ -4250,10 +4244,7 @@ TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
-    create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
-    create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
 
     uint32_t status;
     VkQueryResultFlags flags;
@@ -4278,10 +4269,7 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
-    create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
-    create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
 
     VkQueryResultFlags flags;
 

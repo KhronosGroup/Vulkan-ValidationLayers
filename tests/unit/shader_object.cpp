@@ -6637,11 +6637,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
     const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
-    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-    query_pool_ci.queryCount = 1;
-    query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
-
-    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());

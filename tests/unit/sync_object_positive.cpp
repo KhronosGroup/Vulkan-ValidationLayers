@@ -1808,10 +1808,7 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     ts_fence.init(*m_device, fence_info);
     VkFence fence_handle = ts_fence.handle();
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     VkCommandBuffer command_buffer[2];
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();

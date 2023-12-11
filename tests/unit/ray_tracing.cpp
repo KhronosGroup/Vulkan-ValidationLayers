@@ -1461,12 +1461,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
     if (khr_acceleration_structure) {
         auto cmd_begin_query = [this, ext_transform_feedback](VkQueryType query_type, auto vuid_begin_query,
                                                               auto vuid_begin_query_indexed) {
-            VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-            query_pool_ci.queryCount = 1;
-
-            query_pool_ci.queryType = query_type;
-            vkt::QueryPool query_pool(*m_device, query_pool_ci);
-            ASSERT_TRUE(query_pool.initialized());
+            vkt::QueryPool query_pool(*m_device, query_type, 1);
 
             m_commandBuffer->begin();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid_begin_query);
@@ -1494,11 +1489,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
         }
     }
     if (nv_ray_tracing) {
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-        query_pool_ci.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV, 1);
 
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04729");
@@ -3149,12 +3140,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
         as_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-
-        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
         m_commandBuffer->begin();
         as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -3192,12 +3178,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
         vkt::as::BuildGeometryInfoKHR as_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-
-        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
         m_commandBuffer->begin();
 
@@ -3236,12 +3217,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-
-        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
         m_commandBuffer->begin();
         blas_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -3264,12 +3240,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         // missing flag
         // blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-
-        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
         m_commandBuffer->begin();
         blas_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -3293,12 +3264,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-
-        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
         m_commandBuffer->begin();
         blas_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -3326,12 +3292,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         vkt::as::BuildGeometryInfoKHR blas_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-        VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-        query_pool_ci.queryCount = 1;
-
-        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vkt::QueryPool query_pool(*m_device, query_pool_ci);
-        ASSERT_TRUE(query_pool.initialized());
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
         m_commandBuffer->begin();
 

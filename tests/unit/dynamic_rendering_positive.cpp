@@ -156,12 +156,7 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
-    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
-    qpci.queryCount = 2;
-
-    vkt::QueryPool query_pool;
-    query_pool.init(*m_device, qpci);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
     m_commandBuffer->begin();
 

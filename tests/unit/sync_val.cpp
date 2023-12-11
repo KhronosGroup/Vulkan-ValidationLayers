@@ -2192,10 +2192,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -3889,11 +3886,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
     m_errorMonitor->VerifyFound();
 
     if (timestamp) {
-        VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
-        qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
-        qpci.queryCount = 1;
-
-        vkt::QueryPool query_pool(*m_device, qpci);
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");
         vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
