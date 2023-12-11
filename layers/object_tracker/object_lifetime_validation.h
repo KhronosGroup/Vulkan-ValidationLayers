@@ -104,6 +104,7 @@ class ObjectLifetimes : public ValidationObject {
     void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level,
                                const Location &loc);
     void AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc);
+    void AllocateDisplayKHR(VkPhysicalDevice physical_device, VkDisplayKHR display, const Location &loc);
     void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location &loc);
     void DestroyLeakedInstanceObjects();
     void DestroyLeakedDeviceObjects();

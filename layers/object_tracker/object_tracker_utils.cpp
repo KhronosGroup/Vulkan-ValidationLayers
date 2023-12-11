@@ -57,9 +57,20 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
         const auto lifetimes = other_device_data.second->GetValidationObject<ObjectLifetimes>();
         if (lifetimes && lifetimes != this && lifetimes->TracksObject(object_handle, object_type)) {
             other_lifetimes = lifetimes;
+
+            // Sometimes (calls such as vkRegisterDisplayEventEXT) interact with both the device and physical device
+            if (parent_type == kVulkanObjectTypePhysicalDevice) {
+                auto iter = other_lifetimes->object_map[object_type].find(object_handle);
+                if (iter != other_lifetimes->object_map[object_type].end()) {
+                    if (iter->second->parent_object == HandleToUint64(physical_device)) {
+                        return skip;
+                    }
+                }
+            }
             break;
         }
     }
+
     // Object was not found anywhere
     if (!other_lifetimes) {
         return LogError(invalid_handle_vuid, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
@@ -69,6 +80,7 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
     if (wrong_parent_vuid == kVUIDUndefined) {
         return skip;
     }
+
     // Object found on another device
     LogObjectList objlist;
     std::string handle_str;
@@ -988,14 +1000,28 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhy
     return skip;
 }
 
+void ObjectLifetimes::AllocateDisplayKHR(VkPhysicalDevice physical_device, VkDisplayKHR display, const Location &loc) {
+    auto iter = object_map[kVulkanObjectTypeDisplayKHR].find(HandleToUint64(display));
+    if (iter == object_map[kVulkanObjectTypeDisplayKHR].end()) {
+        auto new_obj_node = std::make_shared<ObjTrackState>();
+        new_obj_node->status = OBJSTATUS_NONE;
+        new_obj_node->object_type = kVulkanObjectTypeDisplayKHR;
+        new_obj_node->handle = HandleToUint64(display);
+        new_obj_node->parent_object = HandleToUint64(physical_device);
+        InsertObject(object_map[kVulkanObjectTypeDisplayKHR], display, kVulkanObjectTypeDisplayKHR, loc, new_obj_node);
+        num_objects[kVulkanObjectTypeDisplayKHR]++;
+        num_total_objects++;
+    }
+}
+
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                           VkDisplayPropertiesKHR *pProperties,
                                                                           const RecordObject &record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr,
-                         record_obj.location.dot(Field::pProperties, i).dot(Field::display));
+            AllocateDisplayKHR(physicalDevice, pProperties[i].display,
+                               record_obj.location.dot(Field::pProperties, i).dot(Field::display));
         }
     }
 }
@@ -1041,8 +1067,9 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhy
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr,
-                         record_obj.location.dot(Field::pProperties, index).dot(Field::displayProperties).dot(Field::display));
+            AllocateDisplayKHR(
+                physicalDevice, pProperties[index].displayProperties.display,
+                record_obj.location.dot(Field::pProperties, index).dot(Field::displayProperties).dot(Field::display));
         }
     }
 }
@@ -1081,8 +1108,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(V
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(pProperties[index].currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr,
-                         record_obj.location.dot(Field::pProperties, index).dot(Field::currentDisplay));
+            AllocateDisplayKHR(physicalDevice, pProperties[index].currentDisplay,
+                               record_obj.location.dot(Field::pProperties, index).dot(Field::currentDisplay));
         }
     }
 }
@@ -1094,8 +1121,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(
-                pProperties[index].displayPlaneProperties.currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr,
+            AllocateDisplayKHR(
+                physicalDevice, pProperties[index].displayPlaneProperties.currentDisplay,
                 record_obj.location.dot(Field::pProperties, index).dot(Field::displayPlaneProperties).dot(Field::currentDisplay));
         }
     }

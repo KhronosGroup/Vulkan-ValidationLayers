@@ -499,8 +499,7 @@ TEST_F(NegativeParent, Instance_DebugReportCallback) {
 TEST_F(NegativeParent, PhysicalDevice_Display) {
     TEST_DESCRIPTION("VkDisplayKHR from a different physical device in vkGetDisplayModePropertiesKHR");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -533,11 +532,49 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeParent, PhysicalDevice_RegisterDisplayEvent) {
+    TEST_DESCRIPTION("VkDisplayKHR from a different physical device in vkRegisterDisplayEventEXT");
+    AddRequiredExtensions(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
+    Instance instance2;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
+
+    VkPhysicalDevice instance2_gpu = VK_NULL_HANDLE;
+    {
+        uint32_t gpu_count = 0;
+        vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
+        ASSERT_GT(gpu_count, 0);
+        std::vector<VkPhysicalDevice> physical_devices(gpu_count);
+        vk::EnumeratePhysicalDevices(instance2, &gpu_count, physical_devices.data());
+        instance2_gpu = physical_devices[0];
+    }
+    VkDisplayKHR display = VK_NULL_HANDLE;
+    {
+        uint32_t display_count = 0;
+        ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, nullptr));
+        if (display_count == 0) {
+            GTEST_SKIP() << "No VkDisplayKHR displays found";
+        }
+        std::vector<VkDisplayPropertiesKHR> display_props{display_count};
+        ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, display_props.data()));
+        display = display_props[0].display;
+    }
+
+    VkDisplayEventInfoEXT event_info = vku::InitStructHelper();
+    event_info.displayEvent = VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT;
+    VkFence fence;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkRegisterDisplayEventEXT-commonparent");
+    vk::RegisterDisplayEventEXT(device(), display, &event_info, nullptr, &fence);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     TEST_DESCRIPTION("VkDisplayModeKHR from a different physical device in vkGetDisplayPlaneCapabilitiesKHR");
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
@@ -568,16 +605,12 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     }
     VkDisplayModeKHR display_mode = VK_NULL_HANDLE;
     {
-        uint32_t mode_count = 0;
-        ASSERT_EQ(VK_SUCCESS, vk::GetDisplayModePropertiesKHR(instance2_gpu, display, &mode_count, nullptr));
-        if (mode_count == 0) {
-            GTEST_SKIP() << "No display modes found";
-        }
-        std::vector<VkDisplayModePropertiesKHR> display_modes(mode_count);
-        ASSERT_EQ(VK_SUCCESS, vk::GetDisplayModePropertiesKHR(instance2_gpu, display, &mode_count, display_modes.data()));
-        display_mode = display_modes[0].displayMode;
+        VkDisplayModeParametersKHR display_mode_parameters = {{32, 32}, 30};
+        VkDisplayModeCreateInfoKHR display_mode_info = vku::InitStructHelper();
+        display_mode_info.parameters = display_mode_parameters;
+        vk::CreateDisplayModeKHR(instance2_gpu, display, &display_mode_info, nullptr, &display_mode);
         if (display_mode == VK_NULL_HANDLE) {
-            GTEST_SKIP() << "Null display mode";
+            GTEST_SKIP() << "Can't create a VkDisplayMode";
         }
     }
     // display mode from a different physical device
