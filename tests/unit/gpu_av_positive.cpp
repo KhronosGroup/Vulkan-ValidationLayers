@@ -150,22 +150,35 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
         }
     )glsl";
 
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
     OneOffDescriptorSet descriptor_set_0(m_device,
                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
                                          VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
+
+    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
+    pipeline_info.flags = 0;
+    pipeline_info.layout = pipeline_layout.handle();
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+    pipeline_info.stage = cs.GetStageCreateInfo();
+
+    VkPipeline pipeline;
+    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_ci.size = 262144;
+    vkt::Buffer buffer_0(*m_device, buffer_ci);
+    vkt::Buffer buffer_1(*m_device, buffer_ci);
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set_0.layout_});
     pipe.InitState();
     pipe.CreateComputePipeline();
-
-    VkBufferUsageFlags buffer_usage =
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    uint32_t buffer_size = 262144;
-    vkt::Buffer buffer_0(*m_device, buffer_size, buffer_usage);
-    vkt::Buffer buffer_1(*m_device, buffer_size, buffer_usage);
 
     VkWriteDescriptorSet descriptor_writes[2];
     descriptor_writes[0] = vku::InitStructHelper();
@@ -183,8 +196,8 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     descriptor_writes[1].pBufferInfo = &buffer_info_1;
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 2,
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 2,
                                 descriptor_writes);
 
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -196,6 +209,8 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
 
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
+
+    vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
 
 TEST_F(PositiveGpuAV, BufferDeviceAddress) {
@@ -759,4 +774,69 @@ TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
+}
+
+TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
+    TEST_DESCRIPTION(
+        "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
+        "unbound.");
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+    if (DeviceValidationVersion() != VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
+    }
+
+    char const *fs_source = R"glsl(
+        #version 450
+        layout (set = 1, binding = 0) uniform sampler2D samplerColor;
+        layout(location = 0) out vec4 color;
+        void main() {
+           color = texture(samplerColor, gl_FragCoord.xy);
+           color += texture(samplerColor, gl_FragCoord.wz);
+        }
+    )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView imageView = image.CreateView();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
+    descriptor_set.UpdateDescriptorSets();
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkt::Buffer indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }

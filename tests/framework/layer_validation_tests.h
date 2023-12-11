@@ -262,14 +262,18 @@ class GpuAVTest : public virtual VkLayerTest {
     VkValidationFeaturesEXT GetGpuAvValidationFeatures();
 };
 
-class NegativeGpuAV : public GpuAVTest {
+class NegativeGpuAV : public GpuAVTest {};
+class PositiveGpuAV : public GpuAVTest {};
+
+class NegativeGpuAVBufferDeviceAddress : public GpuAVTest {};
+class NegativeGpuAVDescriptorIndexing : public GpuAVTest {};
+class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
+class NegativeGpuAVOOB : public GpuAVTest {
   public:
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                               VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error,
                               bool shader_objects = false);
 };
-
-class PositiveGpuAV : public GpuAVTest {};
 
 class NegativeDebugPrintf : public VkLayerTest {
   public:
