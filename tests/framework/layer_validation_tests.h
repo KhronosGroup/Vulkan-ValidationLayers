@@ -255,18 +255,21 @@ class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
 };
 class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
-class VkGpuAssistedLayerTest : public virtual VkLayerTest {
+class GpuAVTest : public virtual VkLayerTest {
   public:
     void InitGpuAvFramework(void *p_next = nullptr);
 
     VkValidationFeaturesEXT GetGpuAvValidationFeatures();
-    void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
-                              VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error, bool shader_objects = false);
-
-  protected:
 };
 
-class PositiveGpuAssistedLayer : public VkGpuAssistedLayerTest {};
+class NegativeGpuAV : public GpuAVTest {
+  public:
+    void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                              VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error,
+                              bool shader_objects = false);
+};
+
+class PositiveGpuAV : public GpuAVTest {};
 
 class NegativeDebugPrintf : public VkLayerTest {
   public:
@@ -479,9 +482,9 @@ class PositiveRayTracingPipeline : public RayTracingPipelineTest {};
 class NegativeRayTracingPipelineNV : public NegativeRayTracingPipeline {};
 class PositiveRayTracingPipelineNV : public PositiveRayTracingPipeline {};
 
-class GpuAssistedRayTracingTest : public VkGpuAssistedLayerTest, public RayTracingTest {};
-class NegativeGpuAssistedRayTracing : public GpuAssistedRayTracingTest {};
-class NegativeGpuAssistedRayTracingNV : public NegativeGpuAssistedRayTracing {};
+class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
+class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
+class NegativeGpuAVRayTracingNV : public NegativeGpuAVRayTracing {};
 
 class RenderPassTest : public VkLayerTest {};
 class NegativeRenderPass : public RenderPassTest {};

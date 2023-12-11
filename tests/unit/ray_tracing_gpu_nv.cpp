@@ -18,7 +18,7 @@
 #include "../framework/gpu_av_helper.h"
 #include "../framework/shader_helper.h"
 
-TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInvalidHandle) {
+TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationInvalidHandle) {
     TEST_DESCRIPTION(
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
@@ -98,7 +98,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBottomLevelNotYetBuilt) {
+TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLevelNotYetBuilt) {
     TEST_DESCRIPTION(
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
@@ -187,7 +187,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBottomLevelDestroyed) {
+TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLevelDestroyed) {
     TEST_DESCRIPTION(
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
@@ -297,7 +297,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRestoresState) {
+TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationRestoresState) {
     TEST_DESCRIPTION("Validate that acceleration structure gpu validation correctly restores compute state.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

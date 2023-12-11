@@ -17,14 +17,14 @@
 #include "../framework/shader_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-TEST_F(NegativeGpuAssistedRayTracing, ArrayOOBRayTracingShaders) {
+TEST_F(NegativeGpuAVRayTracing, ArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
         "ray tracing shaders using gpu assited validation.");
     OOBRayTracingShadersTestBody(true);
 }
 
-TEST_F(NegativeGpuAssistedRayTracing, CmdTraceRaysIndirectKHR) {
+TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirectKHR) {
     TEST_DESCRIPTION("Invalid parameters used in vkCmdTraceRaysIndirectKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

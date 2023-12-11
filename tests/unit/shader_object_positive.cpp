@@ -1170,9 +1170,9 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     m_commandBuffer->end();
 }
 
-class PositiveGpuAssistedShaderObject : public PositiveShaderObject, public PositiveGpuAssistedLayer {};
+class PositiveGpuAVShaderObject : public PositiveShaderObject, public PositiveGpuAV {};
 
-TEST_F(PositiveGpuAssistedShaderObject, SelectInstrumentedShaders) {
+TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
