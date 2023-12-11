@@ -374,6 +374,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
                 VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
                 VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
+                VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
             } ValidationCheckDisables;
 
             typedef enum ValidationCheckEnables {
@@ -382,7 +383,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
                 VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA,
                 VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
-                VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
             } ValidationCheckEnables;
 
             typedef enum VkValidationFeatureEnable {
@@ -404,6 +404,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 handle_wrapping,
                 shader_validation,
                 shader_validation_caching,
+                sync_validation_queue_submit,
                 // Insert new disables above this line
                 kMaxDisableFlags,
             } DisableFlags;
@@ -418,7 +419,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 vendor_specific_nvidia,
                 debug_printf_validation,
                 sync_validation,
-                sync_validation_queue_submit,
                 // Insert new enables above this line
                 kMaxEnableFlags,
             } EnableFlags;
