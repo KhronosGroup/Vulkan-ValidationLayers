@@ -26,9 +26,9 @@ static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSIS
 static const std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
                                            VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
-// All VkGpuAssistedLayerTest should use this for setup as a single access point to more easily toggle which validation features are
+// All GpuAVTest should use this for setup as a single access point to more easily toggle which validation features are
 // enabled/disabled
-VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetGpuAvValidationFeatures() {
+VkValidationFeaturesEXT GpuAVTest::GetGpuAvValidationFeatures() {
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = size32(gpu_av_enables);
@@ -40,7 +40,18 @@ VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetGpuAvValidationFeatures() {
     return features;
 }
 
-TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
+// This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
+void GpuAVTest::InitGpuAvFramework(void *p_next) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    validation_features.pNext = p_next;
+    RETURN_IF_SKIP(InitFramework(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+}
+
+TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -133,7 +144,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
 
-TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
+TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdPushDescriptorSetKHR instead of vkUpdateDescriptorSets");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -226,7 +237,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
 
-TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
+TEST_F(PositiveGpuAV, BufferDeviceAddress) {
     TEST_DESCRIPTION("Makes sure that writing to a buffer that was created after command buffer record doesn't get OOB error");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -332,7 +343,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
 
 // Regression test for semaphore timeout with GPU-AV enabled:
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
-TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
+TEST_F(PositiveGpuAV, GetCounterFromSignaledSemaphoreAfterSubmit) {
     TEST_DESCRIPTION("Get counter value from the semaphore signaled by queue submit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -361,7 +372,7 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
 }
 
-TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
+TEST_F(PositiveGpuAV, MutableBuffer) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -485,7 +496,7 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
 
-TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
+TEST_F(PositiveGpuAV, MaxDescriptorsClamp) {
     TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -498,7 +509,7 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
     ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
 
-TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
+TEST_F(PositiveGpuAV, MaxDescriptorsClamp13) {
     TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -512,7 +523,7 @@ TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
     ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, vk12_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
 
-TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
+TEST_F(PositiveGpuAV, UnInitImage) {
     TEST_DESCRIPTION("Make sure there's not a crash if the sampler of a combined image sampler is initialized by the image isn't.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -691,7 +702,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuValidationUnInitImage) {
     return;
 }
 
-TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
+TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("Use a bad vertex shader, but don't select it for validation and make sure we don't get a buffer oob warning");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     const VkBool32 value = true;
@@ -756,7 +767,7 @@ TEST_F(PositiveGpuAssistedLayer, SelectInstrumentedShaders) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
-TEST_F(PositiveGpuAssistedLayer, BindingPartiallyBound) {
+TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);

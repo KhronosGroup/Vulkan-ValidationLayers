@@ -16,18 +16,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-// This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
-void VkGpuAssistedLayerTest::InitGpuAvFramework(void *p_next) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    validation_features.pNext = p_next;
-    RETURN_IF_SKIP(InitFramework(&validation_features));
-    if (!CanEnableGpuAV(*this)) {
-        GTEST_SKIP() << "Requirements for GPU-AV are not met";
-    }
-}
-
-TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
+TEST_F(NegativeGpuAV, ArrayOOBGraphicsShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
@@ -485,7 +474,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     return;
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
+TEST_F(NegativeGpuAV, ArrayEarlyDelete) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection descriptors where resources have been deleted while in use.");
 
@@ -669,7 +658,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlyDelete) {
     return;
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
+TEST_F(NegativeGpuAV, ArrayEarlySamplerDelete) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection descriptors where resources have been deleted while in use.");
 
@@ -852,7 +841,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayEarlySamplerDelete) {
     return;
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
+TEST_F(NegativeGpuAV, RobustBufferOOB) {
     TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -930,7 +919,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
 }
 
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6980
-TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
+TEST_F(NegativeGpuAV, DISABLED_BufferOOB) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -1097,9 +1086,9 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferOOB) {
     }
 }
 
-void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
-                                                  VkDescriptorType descriptor_type, const char *fragment_shader,
-                                                  const char *expected_error, bool shader_objects) {
+void NegativeGpuAV::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                                         VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error,
+                                         bool shader_objects) {
     if (shader_objects) {
         AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -1210,7 +1199,7 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     }
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
+TEST_F(NegativeGpuAV, DrawTimeShaderUniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
     char const *fsSource = R"glsl(
         #version 450
@@ -1229,7 +1218,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
                          "Descriptor size is 4 and highest byte accessed was 7");
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
+TEST_F(NegativeGpuAV, DrawTimeShaderStorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
 
     char const *fsSource = R"glsl(
@@ -1249,7 +1238,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
                          "Descriptor size is 4 and highest byte accessed was 7");
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
+TEST_F(NegativeGpuAV, DrawTimeShaderUniformBufferTooSmallArray) {
     TEST_DESCRIPTION(
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses array in block "
         "definition.");
@@ -1274,7 +1263,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
                          "Descriptor size is 64 and highest byte accessed was 67");
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
+TEST_F(NegativeGpuAV, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
     TEST_DESCRIPTION(
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
         "definition.");
@@ -1301,7 +1290,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4983
-TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferDeviceAddressOOB) {
+TEST_F(NegativeGpuAV, DISABLED_BufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -1550,7 +1539,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_GpuBufferDeviceAddressOOB) {
     }
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
+TEST_F(NegativeGpuAV, DrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);  // instead of enabling feature
@@ -1679,7 +1668,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     }
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
+TEST_F(NegativeGpuAV, DrawIndexedIndirectCountDeviceLimitSubmit2) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit using vkQueueSubmit2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1747,7 +1736,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
+TEST_F(NegativeGpuAV, DrawIndirectCount) {
     TEST_DESCRIPTION("GPU validation: Validate Draw*IndirectCount countBuffer contents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -1923,7 +1912,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     }
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuDrawMeshIndirect) {
+TEST_F(NegativeGpuAV, DrawMeshIndirect) {
     TEST_DESCRIPTION("GPU validation: Validate DrawMeshTasksIndirect* DrawBuffer contents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -2089,7 +2078,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawMeshIndirect) {
     draw_buffer.memory().unmap();
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
+TEST_F(NegativeGpuAV, DrawIndirectFirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -2162,7 +2151,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
+TEST_F(NegativeGpuAV, ValidationInlineUniformBlockAndMiscGpu) {
     TEST_DESCRIPTION(
         "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
         "and verify pipeline recovery");
@@ -2388,7 +2377,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
+TEST_F(NegativeGpuAV, ValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
     RETURN_IF_SKIP(InitGpuAvFramework());
 
@@ -2410,7 +2399,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, ValidationFeatures) {
+TEST_F(NegativeGpuAV, ValidationFeatures) {
     TEST_DESCRIPTION("Validate Validation Features");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
@@ -2435,7 +2424,7 @@ TEST_F(VkGpuAssistedLayerTest, ValidationFeatures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
+TEST_F(NegativeGpuAV, DrawingWithUnboundUnusedSet) {
     TEST_DESCRIPTION(
         "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
         "unbound.");
@@ -2500,7 +2489,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
+TEST_F(NegativeGpuAV, DispatchIndirectWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     RETURN_IF_SKIP(InitGpuAvFramework());
 
@@ -2594,7 +2583,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
+TEST_F(NegativeGpuAV, BufferOOBGPL) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -2756,7 +2745,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     }
 }
 
-TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
+TEST_F(NegativeGpuAV, BufferOOBGPLIndependentSets) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -2937,7 +2926,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     }
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderObjectUniformBufferTooSmall) {
+TEST_F(NegativeGpuAV, DrawTimeShaderObjectUniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
     char const *fsSource = R"glsl(
         #version 450
@@ -2955,7 +2944,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderObjectUniformBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7", true);
 }
 
-TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
+TEST_F(NegativeGpuAV, DispatchIndirectWorkgroupSizeShaderObjects) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -3051,7 +3040,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, SelectInstrumentedShaders) {
+TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     const VkBool32 value = true;
@@ -3133,7 +3122,7 @@ TEST_F(VkGpuAssistedLayerTest, SelectInstrumentedShaders) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, ImageArrayDynamicIndexing) {
+TEST_F(NegativeGpuAV, ImageArrayDynamicIndexing) {
     TEST_DESCRIPTION("GPU validation: test that only dynamically used indices are validated");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -3317,7 +3306,7 @@ TEST_F(VkGpuAssistedLayerTest, ImageArrayDynamicIndexing) {
 
 // TODO the SPIRV-Tools instrumentation doesn't work for this shader
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
-TEST_F(VkGpuAssistedLayerTest, DISABLED_InvalidAtomicStorageOperation) {
+TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
     TEST_DESCRIPTION(
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");
@@ -3443,7 +3432,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_InvalidAtomicStorageOperation) {
 
 // TODO: The SPIRV-Tools instrumentation doesn't work correctly for this shader
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
-TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
+TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpInBoundsAccessChain");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3570,7 +3559,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
 
 // TODO: The SPIRV-Tools instrumentation doesn't work correctly for this shader
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
-TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesCopyObject) {
+TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesCopyObject) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpCopyObject");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3683,7 +3672,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_UnnormalizedCoordinatesCopyObject) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkGpuAssistedLayerTest, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
+TEST_F(NegativeGpuAV, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     TEST_DESCRIPTION("Doesn't use COMBINED_IMAGE_SAMPLER, but multiple OpLoad share Sampler OpVariable");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3813,7 +3802,7 @@ TEST_F(VkGpuAssistedLayerTest, UnnormalizedCoordinatesSeparateSamplerSharedSampl
 }
 
 // TODO - Indexing is not being recognized by GPU-AV
-TEST_F(VkGpuAssistedLayerTest, DISABLED_YcbcrDrawFetchIndexed) {
+TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
     TEST_DESCRIPTION("Do OpImageFetch on a Ycbcr COMBINED_IMAGE_SAMPLER.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -3908,7 +3897,7 @@ TEST_F(VkGpuAssistedLayerTest, DISABLED_YcbcrDrawFetchIndexed) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkGpuAssistedLayerTest, UpdateAfterBind) {
+TEST_F(NegativeGpuAV, UpdateAfterBind) {
     TEST_DESCRIPTION("Exercise errors for updating a descriptor set after it is bound.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -4045,14 +4034,14 @@ TEST_F(VkGpuAssistedLayerTest, UpdateAfterBind) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[1], 0, NULL);
 
     m_commandBuffer->end();
-    
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind) {
+TEST_F(NegativeGpuAV, DrawTimeImageViewTypeMismatchWithPipelineUpdateAfterBind) {
     TEST_DESCRIPTION(
         "Test that an error is produced when an image view type does not match the dimensionality declared in the shader");
 
