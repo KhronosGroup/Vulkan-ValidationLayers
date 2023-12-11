@@ -5763,10 +5763,7 @@ TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
-    qpci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
-    qpci.queryCount = 1;
-    vkt::QueryPool pg_query_pool(*m_device, qpci);
+    vkt::QueryPool pg_query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

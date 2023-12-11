@@ -1641,10 +1641,7 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_create_info.queryCount = 5;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 5);
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 5);
 
@@ -1888,10 +1885,7 @@ TEST_F(VkLayerTest, ValidateStride) {
 
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_ci.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);

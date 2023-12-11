@@ -23,6 +23,46 @@ bool QueryTest::HasZeroTimestampValidBits() {
     return (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0);
 }
 
+TEST_F(PositiveQuery, OutsideRenderPass) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    if (!m_device->phy().features().pipelineStatisticsQuery) {
+        GTEST_SKIP() << "Test requires (unsupported) pipelineStatisticsQuery";
+    }
+
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+    vkt::QueryPool query_pool(*m_device, qpci);
+
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->EndRenderPass();
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveQuery, InsideRenderPass) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    if (!m_device->phy().features().pipelineStatisticsQuery) {
+        GTEST_SKIP() << "Test requires (unsupported) pipelineStatisticsQuery";
+    }
+
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+    vkt::QueryPool query_pool(*m_device, qpci);
+
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 #if defined(VVL_ENABLE_TSAN)
     // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
@@ -32,10 +72,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
     RETURN_IF_SKIP(Init());
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     VkCommandBuffer command_buffer[2];
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
@@ -92,12 +129,7 @@ TEST_F(PositiveQuery, BasicQuery) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, bci, mem_props);
 
-    VkQueryPoolCreateInfo query_pool_info = vku::InitStructHelper();
-    query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_info.flags = 0;
-    query_pool_info.queryCount = 2;
-    query_pool_info.pipelineStatistics = 0;
-    vkt::QueryPool query_pool(*m_device, query_pool_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -163,12 +195,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 
     constexpr uint32_t query_count = 2;
 
-    VkQueryPoolCreateInfo query_pool_info = vku::InitStructHelper();
-    query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_info.flags = 0;
-    query_pool_info.queryCount = query_count;
-    query_pool_info.pipelineStatistics = 0;
-
+    VkQueryPoolCreateInfo query_pool_info = vkt::QueryPool::create_info(VK_QUERY_TYPE_OCCLUSION, query_count);
     VkQueryPool query_pool;
     vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
 
@@ -227,10 +254,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer primary_buffer(m_device, &command_pool);
@@ -286,10 +310,7 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -350,10 +371,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
@@ -393,10 +411,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
-    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_ci.queryCount = 2;
-    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
 
     m_commandBuffer->begin();
     vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
@@ -412,10 +427,7 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     }
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
-    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
-    qpci.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, qpci);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 

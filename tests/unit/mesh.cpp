@@ -1438,15 +1438,8 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    VkQueryPoolCreateInfo xfb_query_pool_ci = vku::InitStructHelper();
-    xfb_query_pool_ci.queryType = VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT;
-    xfb_query_pool_ci.queryCount = 1;
-    vkt::QueryPool xfb_query_pool(*m_device, xfb_query_pool_ci);
-
-    VkQueryPoolCreateInfo pg_query_pool_ci = vku::InitStructHelper();
-    pg_query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
-    pg_query_pool_ci.queryCount = 1;
-    vkt::QueryPool pg_query_pool(*m_device, pg_query_pool_ci);
+    vkt::QueryPool xfb_query_pool(*m_device, VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 1);
+    vkt::QueryPool pg_query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

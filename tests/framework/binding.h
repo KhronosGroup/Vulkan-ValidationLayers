@@ -431,6 +431,10 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
   public:
     QueryPool() = default;
     QueryPool(const Device &dev, const VkQueryPoolCreateInfo &info) { init(dev, info); }
+    QueryPool(const Device &dev, VkQueryType query_type, uint32_t query_count) {
+        VkQueryPoolCreateInfo info = create_info(query_type, query_count);
+        init(dev, info);
+    }
     ~QueryPool() noexcept;
     void destroy() noexcept;
 

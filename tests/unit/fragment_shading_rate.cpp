@@ -2494,10 +2494,7 @@ TEST_F(NegativeFragmentShadingRate, StageUsage) {
     sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     const vkt::Event event(*m_device);
     const vkt::Event event2(*m_device);
 
@@ -2526,10 +2523,7 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     const vkt::Event event(*m_device);
     const vkt::Event event2(*m_device);
 

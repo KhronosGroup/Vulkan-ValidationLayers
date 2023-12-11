@@ -900,10 +900,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
-    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
-    qpci.queryCount = 2;
-    vkt::QueryPool query_pool(*m_device, qpci);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 2);
