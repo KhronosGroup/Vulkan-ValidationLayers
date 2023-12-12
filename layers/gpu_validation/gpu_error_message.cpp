@@ -455,31 +455,14 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
 bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources &cmd_resources,
-                                                  uint32_t operation_index, uint32_t *const debug_output_buffer,
+                                                  uint32_t operation_index, uint32_t *debug_record,
                                                   const std::vector<DescSetState> &descriptor_sets, const Location &loc) {
-    const uint32_t total_words = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
+   
     bool oob_access;
-    // A zero here means that the shader instrumentation didn't write anything.
-    // If you have nothing to say, don't say it here.
-    if (0 == total_words) {
-        return false;
-    }
-    // The second word in the debug output buffer is the number of words that would have
-    // been written by the shader instrumentation, if there was enough room in the buffer we provided.
-    // The number of words actually written by the shaders is determined by the size of the buffer
-    // we provide via the descriptor. So, we process only the number of words that can fit in the
-    // buffer.
-    // Each "report" written by the shader instrumentation is considered a "record". This function
-    // is hard-coded to process only one record because it expects the buffer to be large enough to
-    // hold only one record. If there is a desire to process more than one record, this function needs
-    // to be modified to loop over records and the buffer size increased.
-
     VkShaderModule shader_module_handle = VK_NULL_HANDLE;
     VkPipeline pipeline_handle = VK_NULL_HANDLE;
     VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
     vvl::span<const uint32_t> pgm;
-    // The first record starts at this offset after the total_words.
-    const uint32_t *debug_record = &debug_output_buffer[spvtools::kDebugOutputDataOffset];
     // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
     // by the instrumented shader.
     auto it = shader_map.find(debug_record[glsl::kInstCommonOutShaderId]);
@@ -514,57 +497,25 @@ bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, Vk
                      stage_message.c_str(), filename_message.c_str(), source_message.c_str());
         }
     }
-
-    if (error_found) {
-        // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
-        const uint32_t words_to_clear = std::min(total_words, output_buffer_size - spvtools::kDebugOutputDataOffset);
-        debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
-        memset(&debug_output_buffer[spvtools::kDebugOutputDataOffset], 0, sizeof(uint32_t) * words_to_clear);
-    }
-
     return error_found;
 }
 
-void gpuav::CommandResources::LogErrorIfAny(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                            const uint32_t operation_index) {
-    uint32_t *debug_output_buffer = nullptr;
-    VkResult result =
-        vmaMapMemory(validator.vmaAllocator, output_mem_block.allocation, reinterpret_cast<void **>(&debug_output_buffer));
-    if (result == VK_SUCCESS) {
-        const uint32_t total_words = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
-        // A zero here means that the shader instrumentation didn't write anything.
-        if (total_words != 0) {
-            uint32_t *debug_record = &debug_output_buffer[spvtools::kDebugOutputDataOffset];
-            const LogObjectList objlist(queue, cmd_buffer);
-            LogValidationMessage(validator, queue, cmd_buffer, debug_record, operation_index, objlist);
-        }
-        debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
-        vmaUnmapMemory(validator.vmaAllocator, output_mem_block.allocation);
-    }
-}
-
 bool gpuav::CommandResources::LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                                   const uint32_t *debug_record, const uint32_t operation_index,
+                                                   uint32_t *debug_record, const uint32_t operation_index,
                                                    const LogObjectList &objlist) {
     bool error_logged = false;
-    uint32_t *data = nullptr;
-    VkResult result = vmaMapMemory(validator.vmaAllocator, output_mem_block.allocation, reinterpret_cast<void **>(&data));
-    if (result == VK_SUCCESS) {
-        const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
-        const Location loc(command);
-        error_logged =
-            validator.AnalyzeAndGenerateMessages(cmd_buffer, queue, *this, operation_index, data,
-                                                 di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), loc);
-        vmaUnmapMemory(validator.vmaAllocator, output_mem_block.allocation);
-        return error_logged;
-    }
+    const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
+    const Location loc(command);
+    error_logged =
+        validator.AnalyzeAndGenerateMessages(cmd_buffer, queue, *this, operation_index, debug_record,
+                                             di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), loc);
 
     return error_logged;
 }
 
 bool gpuav::PreDrawResources::LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                               const uint32_t *debug_record, const uint32_t operation_index,
-                                               const LogObjectList &objlist) {
+                                                   uint32_t *debug_record, const uint32_t operation_index,
+                                                   const LogObjectList &objlist) {
     if (CommandResources::LogValidationMessage(validator, queue, cmd_buffer, debug_record, operation_index, objlist)) {
         return true;
     }
@@ -681,8 +632,8 @@ bool gpuav::PreDrawResources::LogValidationMessage(gpuav::Validator &validator, 
 }
 
 bool gpuav::PreDispatchResources::LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                                   const uint32_t *debug_record, const uint32_t operation_index,
-                                                   const LogObjectList &objlist) {
+                                                       uint32_t *debug_record, const uint32_t operation_index,
+                                                       const LogObjectList &objlist) {
     if (CommandResources::LogValidationMessage(validator, queue, cmd_buffer, debug_record, operation_index, objlist)) {
         return true;
     }
@@ -722,8 +673,8 @@ bool gpuav::PreDispatchResources::LogValidationMessage(gpuav::Validator &validat
 }
 
 bool gpuav::PreTraceRaysResources::LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                                    const uint32_t *debug_record, const uint32_t operation_index,
-                                                    const LogObjectList &objlist) {
+                                                        uint32_t *debug_record, const uint32_t operation_index,
+                                                        const LogObjectList &objlist) {
     if (CommandResources::LogValidationMessage(validator, queue, cmd_buffer, debug_record, operation_index, objlist)) {
         return true;
     }
