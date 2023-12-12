@@ -10,6 +10,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
+
 #include <type_traits>
 
 #include "utils/cast_utils.h"
@@ -17,6 +18,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/queue_submit_context.h"
 #include <utils/vk_layer_utils.h>
 
 class NegativeSyncVal : public VkSyncValTest {};
@@ -4539,277 +4541,8 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     m_commandBuffer->end();
 }
 
-struct QSTestContext {
-    vkt::Device* dev;
-    uint32_t q_fam = ~0U;
-    VkQueue q0 = VK_NULL_HANDLE;
-    VkQueue q1 = VK_NULL_HANDLE;
-
-    vkt::Buffer buffer_a;
-    vkt::Buffer buffer_b;
-    vkt::Buffer buffer_c;
-
-    VkBufferCopy full_buffer;
-    VkBufferCopy first_half;
-    VkBufferCopy second_half;
-    VkBufferCopy first_to_second;
-    VkBufferCopy second_to_first;
-    vkt::CommandPool pool;
-
-    vkt::CommandBuffer cba;
-    vkt::CommandBuffer cbb;
-    vkt::CommandBuffer cbc;
-
-    VkCommandBuffer h_cba = VK_NULL_HANDLE;
-    VkCommandBuffer h_cbb = VK_NULL_HANDLE;
-    VkCommandBuffer h_cbc = VK_NULL_HANDLE;
-
-    vkt::Semaphore semaphore;
-    vkt::Event event;
-
-    vkt::CommandBuffer* current_cb = nullptr;
-
-    QSTestContext(vkt::Device* device, vkt::Queue* force_q0 = nullptr, vkt::Queue* force_q1 = nullptr);
-    VkCommandBuffer InitFromPool(vkt::CommandBuffer& cb_obj);
-    bool Valid() const { return q1 != VK_NULL_HANDLE; }
-
-    void Begin(vkt::CommandBuffer& cb);
-    void BeginA() { Begin(cba); }
-    void BeginB() { Begin(cbb); }
-    void BeginC() { Begin(cbc); }
-
-    void End();
-    void Copy(vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region) {
-        vk::CmdCopyBuffer(current_cb->handle(), from.handle(), to.handle(), 1, &copy_region);
-    }
-    void Copy(vkt::Buffer& from, vkt::Buffer& to) { Copy(from, to, full_buffer); }
-    void CopyAToB() { Copy(buffer_a, buffer_b); }
-    void CopyAToC() { Copy(buffer_a, buffer_c); }
-
-    void CopyBToA() { Copy(buffer_b, buffer_a); }
-    void CopyBToC() { Copy(buffer_b, buffer_c); }
-
-    void CopyCToA() { Copy(buffer_c, buffer_a); }
-    void CopyCToB() { Copy(buffer_c, buffer_b); }
-
-    void CopyGeneral(const VkImageObj& from, const VkImageObj& to, const VkImageCopy& region) {
-        vk::CmdCopyImage(current_cb->handle(), from.handle(), VK_IMAGE_LAYOUT_GENERAL, to.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                         &region);
-    };
-
-    VkBufferMemoryBarrier InitBufferBarrier(const vkt::Buffer& buffer, VkAccessFlags src, VkAccessFlags dst);
-    VkBufferMemoryBarrier InitBufferBarrierRAW(const vkt::Buffer& buffer);
-    VkBufferMemoryBarrier InitBufferBarrierWAR(const vkt::Buffer& buffer);
-    void TransferBarrierWAR(const vkt::Buffer& buffer);
-    void TransferBarrierRAW(const vkt::Buffer& buffer);
-    void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
-
-    void Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
-                VkFence fence = VK_NULL_HANDLE);
-
-    // X == Submit 2 but since we already have numeric overloads for the queues X -> eXtension version
-    void SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
-                 VkPipelineStageFlags signal_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkFence fence = VK_NULL_HANDLE);
-
-    void Submit0(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
-                 VkFence fence = VK_NULL_HANDLE) {
-        Submit(q0, cb, wait, wait_mask, signal, fence);
-    }
-    void Submit0Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
-    void Submit0Signal(vkt::CommandBuffer& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
-
-    void Submit1(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
-                 VkFence fence = VK_NULL_HANDLE) {
-        Submit(q1, cb, wait, wait_mask, signal, fence);
-    }
-    void Submit1Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
-    void Submit1Signal(vkt::CommandBuffer& cb, VkPipelineStageFlags signal_mask) {
-        Submit1(cb, VK_NULL_HANDLE, 0U, semaphore.handle());
-    }
-    void SetEvent(VkPipelineStageFlags src_mask) { event.cmd_set(*current_cb, src_mask); }
-    void WaitEventBufferTransfer(vkt::Buffer& buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask) {
-        std::vector<VkBufferMemoryBarrier> buffer_barriers(1, InitBufferBarrierWAR(buffer));
-        event.cmd_wait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
-                       std::vector<VkImageMemoryBarrier>());
-    }
-
-    void ResetEvent(VkPipelineStageFlags src_mask) { event.cmd_reset(*current_cb, src_mask); }
-
-    void QueueWait(VkQueue q) { vk::QueueWaitIdle(q); }
-    void QueueWait0() { QueueWait(q0); }
-    void QueueWait1() { QueueWait(q1); }
-    void DeviceWait() { vk::DeviceWaitIdle(dev->handle()); }
-
-    void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region);
-    void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to) { RecordCopy(cb, from, to, full_buffer); }
-};
-
-QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Queue* force_q1)
-    : dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {
-    if (force_q0) {
-        q0 = force_q0->handle();
-        q_fam = force_q0->get_family_index();
-        if (force_q1) {
-            // The object has some assumptions that the queues are from the the same family, so enforce this here
-            if (force_q1->get_family_index() == q_fam) {
-                q1 = force_q1->handle();
-            }
-        } else {
-            q1 = q0;  // Allow the two queues to be the same and valid if forced
-        }
-    } else {
-        const auto& queues = device->dma_queues();
-
-        const uint32_t q_count = static_cast<uint32_t>(queues.size());
-        for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {
-            const auto* q0_entry = queues[q0_index];
-            q0 = q0_entry->handle();
-            q_fam = q0_entry->get_family_index();
-            for (uint32_t q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
-                const auto* q1_entry = queues[q1_index];
-                if (q_fam == q1_entry->get_family_index()) {
-                    q1 = q1_entry->handle();
-                    break;
-                }
-            }
-            if (Valid()) {
-                break;
-            }
-        }
-    }
-
-    if (!Valid()) return;
-
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_a.init(*device, 256, transfer_usage, mem_prop);
-    buffer_b.init(*device, 256, transfer_usage, mem_prop);
-    buffer_c.init(*device, 256, transfer_usage, mem_prop);
-
-    VkDeviceSize size = 256;
-    VkDeviceSize half_size = size / 2;
-    full_buffer = {0, 0, size};
-    first_half = {0, 0, half_size};
-    second_half = {half_size, half_size, half_size};
-    first_to_second = {0, half_size, half_size};
-    second_to_first = {half_size, 0, half_size};
-
-    pool.init(*device, vkt::CommandPool::create_info(q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    h_cba = InitFromPool(cba);
-    h_cbb = InitFromPool(cbb);
-    h_cbc = InitFromPool(cbc);
-
-    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
-    semaphore.init(*device, semaphore_ci);
-
-    VkEventCreateInfo eci = vku::InitStructHelper();
-    event.init(*device, eci);
-}
-
-VkCommandBuffer QSTestContext::InitFromPool(vkt::CommandBuffer& cb_obj) {
-    cb_obj.Init(dev, &pool);
-    return cb_obj.handle();
-}
-
-void QSTestContext::Begin(vkt::CommandBuffer& cb) {
-    VkCommandBufferBeginInfo info = vku::InitStructHelper();
-    info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    info.pInheritanceInfo = nullptr;
-
-    cb.reset();
-    cb.begin(&info);
-    current_cb = &cb;
-}
-
-void QSTestContext::End() {
-    current_cb->end();
-    current_cb = nullptr;
-}
-
-VkBufferMemoryBarrier QSTestContext::InitBufferBarrier(const vkt::Buffer& buffer, VkAccessFlags src, VkAccessFlags dst) {
-    VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
-    buffer_barrier.srcAccessMask = src;
-    buffer_barrier.dstAccessMask = dst;
-    buffer_barrier.buffer = buffer.handle();
-    buffer_barrier.offset = 0;
-    buffer_barrier.size = 256;
-    return buffer_barrier;
-}
-
-VkBufferMemoryBarrier QSTestContext::InitBufferBarrierRAW(const vkt::Buffer& buffer) {
-    return InitBufferBarrier(buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
-}
-
-VkBufferMemoryBarrier QSTestContext::InitBufferBarrierWAR(const vkt::Buffer& buffer) {
-    return InitBufferBarrier(buffer, VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
-}
-
-void QSTestContext::TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier) {
-    vk::CmdPipelineBarrier(current_cb->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &buffer_barrier, 0, nullptr);
-}
-
-void QSTestContext::TransferBarrierWAR(const vkt::Buffer& buffer) { TransferBarrier(InitBufferBarrierWAR(buffer)); }
-void QSTestContext::TransferBarrierRAW(const vkt::Buffer& buffer) { TransferBarrier(InitBufferBarrierRAW(buffer)); }
-
-void QSTestContext::Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
-                           VkFence fence) {
-    VkSubmitInfo submit1 = vku::InitStructHelper();
-    submit1.commandBufferCount = 1;
-    VkCommandBuffer h_cb = cb.handle();
-    submit1.pCommandBuffers = &h_cb;
-    if (wait != VK_NULL_HANDLE) {
-        submit1.waitSemaphoreCount = 1;
-        submit1.pWaitSemaphores = &wait;
-        submit1.pWaitDstStageMask = &wait_mask;
-    }
-    if (signal != VK_NULL_HANDLE) {
-        submit1.signalSemaphoreCount = 1;
-        submit1.pSignalSemaphores = &signal;
-    }
-    vk::QueueSubmit(q, 1, &submit1, fence);
-}
-
-void QSTestContext::SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
-                            VkPipelineStageFlags signal_mask, VkFence fence) {
-    VkSubmitInfo2 submit1 = vku::InitStructHelper();
-    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-
-    cb_info.commandBuffer = cb.handle();
-    submit1.commandBufferInfoCount = 1;
-    submit1.pCommandBufferInfos = &cb_info;
-
-    if (wait != VK_NULL_HANDLE) {
-        wait_info.semaphore = wait;
-        wait_info.stageMask = wait_mask;
-        submit1.waitSemaphoreInfoCount = 1;
-        submit1.pWaitSemaphoreInfos = &wait_info;
-    }
-    if (signal != VK_NULL_HANDLE) {
-        signal_info.semaphore = signal;
-        signal_info.stageMask = signal_mask;
-        submit1.signalSemaphoreInfoCount = 1;
-        submit1.pSignalSemaphoreInfos = &signal_info;
-    }
-
-    vk::QueueSubmit2(q, 1, &submit1, fence);
-}
-
-void QSTestContext::RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region) {
-    Begin(cb);
-    Copy(from, to, copy_region);
-    End();
-}
-
 TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
@@ -4869,7 +4602,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
 
 TEST_F(NegativeSyncVal, QSSubmit2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -4902,7 +4635,7 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
@@ -4942,7 +4675,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device, m_device->graphics_queues()[0]);
@@ -4992,7 +4725,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device);
@@ -5076,7 +4809,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferEvents) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     QSTestContext test(m_device);
@@ -5180,7 +4913,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
 
 TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -5239,7 +4972,7 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
 }
 
 TEST_F(NegativeSyncVal, QSRenderPass) {
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     CreateRenderPassHelper rp_helper(m_device);
@@ -5380,7 +5113,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
@@ -5559,7 +5292,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     TEST_DESCRIPTION("Present does not specify semaphore to wait for submit.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitSyncValFramework(true));
+    RETURN_IF_SKIP(InitSyncValFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -5632,7 +5365,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
 TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     TEST_DESCRIPTION("Present does not specify semaphore to wait for submit.");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitSyncValFramework(true));
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
