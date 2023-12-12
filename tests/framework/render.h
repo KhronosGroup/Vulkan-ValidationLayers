@@ -74,6 +74,7 @@ class VkRenderFramework : public VkTestFramework {
     VkPhysicalDevice gpu() const;
     VkRenderPass renderPass() const { return m_renderPass; }
     VkFramebuffer framebuffer() const { return m_framebuffer->handle(); }
+    VkQueue DefaultQueue() const { return m_default_queue->handle(); }
     ErrorMonitor &Monitor();
     const VkPhysicalDeviceProperties &physDevProps() const;
 
@@ -150,9 +151,6 @@ class VkRenderFramework : public VkTestFramework {
         return spv;
     }
 
-    void DeviceWaitIdle() { m_device->wait(); }
-    void QueueWaitIdle() { vk::QueueWaitIdle(m_default_queue); }
-
     void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg) {
         m_errorMonitor->SetDesiredFailureMsg(msgFlags, msg);
     };
@@ -209,7 +207,7 @@ class VkRenderFramework : public VkTestFramework {
     VkClearColorValue m_clear_color;
     VkImageObj *m_depthStencil;
     // first graphics queue, used must often, don't overwrite, use Device class
-    VkQueue m_default_queue;
+    vkt::Queue *m_default_queue;
 
     // Requested extensions to enable at device creation time
     std::vector<const char *> m_required_extensions;

@@ -1012,11 +1012,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
         m_commandBuffer->end();
 
-        VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        submit.commandBufferCount = 1;
-        submit.pCommandBuffers = &m_commandBuffer->handle();
-        vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer);
+        m_default_queue->wait();
     };
 
     const auto start_and_end_renderpass = [&](vkt::CommandBuffer& command_buffer) {
@@ -1123,12 +1120,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-
-    VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -1222,12 +1215,8 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-
-    VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
 
@@ -1382,12 +1371,8 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
-
-    VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 
     for (auto fb : framebuffers) {
         vk::DestroyFramebuffer(device(), fb, nullptr);
@@ -1499,11 +1484,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
 }

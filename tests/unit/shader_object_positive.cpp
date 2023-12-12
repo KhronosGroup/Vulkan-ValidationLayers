@@ -476,13 +476,8 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copyRegion);
 
     m_commandBuffer->end();
-
-    VkCommandBuffer commandBufferHandle = m_commandBuffer->handle();
-    VkSubmitInfo submitInfo = vku::InitStructHelper();
-    submitInfo.commandBufferCount = 1u;
-    submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
@@ -643,13 +638,8 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     vk::CmdEndRenderingKHR(m_commandBuffer->handle());
 
     m_commandBuffer->end();
-
-    VkCommandBuffer commandBufferHandle = m_commandBuffer->handle();
-    VkSubmitInfo submitInfo = vku::InitStructHelper();
-    submitInfo.commandBufferCount = 1u;
-    submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveShaderObject, ComputeShader) {
@@ -730,13 +720,8 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
 
     m_commandBuffer->end();
-
-    VkCommandBuffer commandBufferHandle = m_commandBuffer->handle();
-    VkSubmitInfo submitInfo = vku::InitStructHelper();
-    submitInfo.commandBufferCount = 1u;
-    submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
@@ -864,13 +849,8 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     vk::CmdEndRenderingKHR(m_commandBuffer->handle());
 
     m_commandBuffer->end();
-
-    VkCommandBuffer commandBufferHandle = m_commandBuffer->handle();
-    VkSubmitInfo submitInfo = vku::InitStructHelper();
-    submitInfo.commandBufferCount = 1u;
-    submitInfo.pCommandBuffers = &commandBufferHandle;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveShaderObject, FailCreateShaders) {
@@ -1267,7 +1247,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     // Should get a warning since shader was instrumented
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-vkCmdDraw-None-08613");
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 
     vert_create_info.pNext = nullptr;
@@ -1285,7 +1265,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     // Should not get a warning since shader was not instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveShaderObject, MultiplePushConstants) {

@@ -955,7 +955,7 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Comma
     cmd_buffer.end();
 
     cmd_buffer.QueueCommandBuffer();
-    vk::DeviceWaitIdle(device);
+    device.wait();
 
     cmd_buffer.begin();
     // Build Top Level Acceleration Structure
@@ -965,7 +965,7 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Comma
     cmd_buffer.end();
 
     cmd_buffer.QueueCommandBuffer();
-    vk::DeviceWaitIdle(device);
+    device.wait();
 
     return top_level_accel_struct;
 }

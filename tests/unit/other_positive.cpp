@@ -574,7 +574,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
 
     // Get Metal Device and Metal Command Queue in 1 call
     {
-        const VkQueue queue = m_default_queue;
+        const VkQueue queue = m_default_queue->handle();
 
         VkExportMetalCommandQueueInfoEXT queueInfo = vku::InitStructHelper();
         queueInfo.queue = queue;

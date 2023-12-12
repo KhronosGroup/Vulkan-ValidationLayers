@@ -591,7 +591,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     submitInfo.pWaitSemaphores = &semaphore;
     submitInfo.pWaitDstStageMask = &stageFlags;
     submitInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitSemaphores-parameter");
@@ -601,13 +601,13 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Set a null pointer for pWaitSemaphores
     submitInfo.pWaitSemaphores = nullptr;
     submitInfo.pWaitDstStageMask = &stageFlags;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
     submitInfo.pWaitSemaphores = &semaphore;
     submitInfo.pWaitDstStageMask = nullptr;
-    vk::QueueSubmit(m_default_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateRenderPass-pCreateInfo-parameter");
@@ -1073,7 +1073,7 @@ TEST_F(VkLayerTest, InvalidStructSType) {
     // Expected to trigger an error with
     // StatelessValidation::ValidateStructTypeArray
     VkSubmitInfo submit_info = {};
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1153,7 +1153,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_flags;
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1685,7 +1685,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
     // Signal the semaphore so the next test can wait on it.
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
@@ -1694,11 +1694,11 @@ TEST_F(VkLayerTest, StageMaskHost) {
     submit_info.pWaitDstStageMask = &stage_flags;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Need to ensure semaphore is not in use before the test ends and it gets destroyed
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
@@ -1707,12 +1707,8 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     RETURN_IF_SKIP(Init());
     // never record m_commandBuffer
 
-    VkSubmitInfo si = vku::InitStructHelper();
-    si.commandBufferCount = 1;
-    si.pCommandBuffers = &m_commandBuffer->handle();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
-    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
@@ -1722,7 +1718,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     // m_commandBuffer->end();
 
     // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00072");
-    // vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+    // vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
     // m_errorMonitor->VerifyFound();
 }
 
@@ -1892,11 +1888,8 @@ TEST_F(VkLayerTest, ValidateStride) {
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     char data_space;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02828");
@@ -2566,7 +2559,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     VkExportMetalObjectsInfoEXT export_metal_objects_info = vku::InitStructHelper();
     VkExportMetalDeviceInfoEXT metal_device_info = vku::InitStructHelper();
     VkExportMetalCommandQueueInfoEXT metal_command_queue_info = vku::InitStructHelper();
-    metal_command_queue_info.queue = m_default_queue;
+    metal_command_queue_info.queue = m_default_queue->handle();
     export_metal_objects_info.pNext = &metal_device_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06791");
     vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
@@ -2982,7 +2975,7 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1u;
     submit_info.pSignalSemaphores = &semaphore.handle();
-    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
 
     submit_info.signalSemaphoreCount = 0u;
     submit_info.waitSemaphoreCount = 1u;
@@ -2990,7 +2983,7 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
     submit_info.pWaitDstStageMask = &stage;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-07949");
-    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     vkt::Event event(*m_device);
@@ -3026,7 +3019,7 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
 
     m_commandBuffer->end();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(VkLayerTest, ExtensionXmlDependsLogic) {

@@ -343,10 +343,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         }
     }
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
     for (const auto &iter : tests) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
         VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
@@ -401,8 +397,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         data[0] = iter.index;
         buffer0.memory().unmap();
 
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_errorMonitor->VerifyFound();
         delete gs;
         delete tcs;
@@ -460,16 +456,16 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         data[0] = 5;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08114");
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_errorMonitor->VerifyFound();
         // Out of Bounds
         data = (uint32_t *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_errorMonitor->VerifyFound();
         vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
     }
@@ -617,10 +613,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout_variable, &descriptor_set_variable, 1,
                      "(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed."});
 
-    VkSubmitInfo submit_info = vku::InitStruct<VkSubmitInfo>();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
     for (const auto &iter : tests) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
         VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
@@ -652,8 +644,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
         // resource destruction while a submission is blocked on a semaphore as well.
         image.destroy();
 
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_errorMonitor->VerifyFound();
     }
     return;
@@ -799,10 +791,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout_variable, &descriptor_set_variable, 1,
                      "(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed."});
 
-    VkSubmitInfo submit_info = vku::InitStruct<VkSubmitInfo>();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
     for (const auto &iter : tests) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
         VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
@@ -834,8 +822,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
         // resource destruction while a submission is blocked on a semaphore as well.
         sampler.destroy();
 
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_errorMonitor->VerifyFound();
     }
     return;
@@ -988,10 +976,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
     tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout_variable, &descriptor_set_variable, 35,
                      "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL--instead, current layout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL."});
 
-    VkSubmitInfo submit_info = vku::InitStruct<VkSubmitInfo>();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
     for (const auto &iter : tests) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
         VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
@@ -1017,8 +1001,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
         data[0] = iter.index;
         buffer0.memory().unmap();
 
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(*m_commandBuffer, false);
+        m_default_queue->wait();
         m_errorMonitor->VerifyFound();
     }
     return;
@@ -1142,10 +1126,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
     // Make both bindings valid before binding to the command buffer
     vk::UpdateDescriptorSets(m_device->device(), 2, &descriptor_write[0], 0, NULL);
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
     m_commandBuffer->begin();
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds, 0,
@@ -1162,8 +1142,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1239,11 +1219,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBindImageViewTypeMismatch) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewType-07752");
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }

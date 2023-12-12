@@ -575,7 +575,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     si.signalSemaphoreCount = 1;
     si.pSignalSemaphores = &binary_sem.handle();
 
-    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
 
     binary_sem.export_handle(fd_handle, handle_type);
 
@@ -586,7 +586,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
 
     import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreType) {
@@ -624,7 +624,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreType) {
     si.signalSemaphoreCount = 1;
     si.pSignalSemaphores = &binary_sem.handle();
 
-    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
 
     int fd_handle = -1;
     binary_sem.export_handle(fd_handle, handle_type);
@@ -635,7 +635,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreType) {
     import_semaphore.import_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeExternalMemorySync, TemporaryFence) {
@@ -682,18 +682,18 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     vk::ResetFences(m_device->device(), 1, &import_fence.handle());
 
     // Signal the previously imported fence twice, the second signal should produce a validation error
-    vk::QueueSubmit(m_default_queue, 0, nullptr, import_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00064");
-    vk::QueueSubmit(m_default_queue, 0, nullptr, import_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 
     // Signal without reseting
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00063");
-    vk::QueueSubmit(m_default_queue, 0, nullptr, import_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeExternalMemorySync, Fence) {
@@ -821,7 +821,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdFence) {
     export_fence.export_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueSubmit(m_default_queue, 0, nullptr, export_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, export_fence.handle());
 
     export_fence.export_handle(fd_handle, handle_type);
 
@@ -891,7 +891,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     si[3] = si[1];
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-03238");
-    vk::QueueSubmit(m_default_queue, si.size(), si.data(), VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), si.size(), si.data(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     auto index = m_device->graphics_queue_node_index_;
@@ -907,12 +907,12 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
         bi[2] = bi[0];
         bi[3] = bi[1];
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueBindSparse-pWaitSemaphores-03245");
-        vk::QueueBindSparse(m_default_queue, bi.size(), bi.data(), VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
     // Cleanup
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeExternalMemorySync, Semaphore) {
@@ -1388,7 +1388,7 @@ TEST_F(NegativeExternalMemorySync, D3D12FenceSubmitInfo) {
         const VkSubmitInfo submit_info = vku::InitStructHelper(&d3d12_fence_submit_info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkD3D12FenceSubmitInfoKHR-waitSemaphoreValuesCount-00079");
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
     // VkD3D12FenceSubmitInfoKHR::signalSemaphoreCount == 0 is different from VkSubmitInfo::signalSemaphoreCount == 1
@@ -1399,7 +1399,7 @@ TEST_F(NegativeExternalMemorySync, D3D12FenceSubmitInfo) {
         submit_info.pSignalSemaphores = &semaphore.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkD3D12FenceSubmitInfoKHR-signalSemaphoreValuesCount-00080");
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 }

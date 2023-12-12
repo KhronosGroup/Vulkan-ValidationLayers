@@ -510,7 +510,7 @@ void VkRenderFramework::ShutdownFramework() {
     if (!instance_) return;
 
     if (m_device && m_device->device() != VK_NULL_HANDLE) {
-        vk::DeviceWaitIdle(device());
+        m_device->wait();
     }
 
     delete m_commandBuffer;
@@ -654,7 +654,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
     }
 
-    m_default_queue = m_device->graphics_queues()[0]->handle();
+    m_default_queue = m_device->graphics_queues()[0];
 
     m_depthStencil = new VkImageObj(m_device);
 
@@ -907,7 +907,7 @@ std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR 
 
 void VkRenderFramework::DestroySwapchain() {
     if (m_device && m_device->device() != VK_NULL_HANDLE) {
-        vk::DeviceWaitIdle(device());
+        m_device->wait();
         if (m_swapchain != VK_NULL_HANDLE) {
             vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
             m_swapchain = VK_NULL_HANDLE;

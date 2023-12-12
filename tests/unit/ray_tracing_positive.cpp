@@ -86,7 +86,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     m_commandBuffer->end();
 
     m_commandBuffer->QueueCommandBuffer();
-    vk::DeviceWaitIdle(*m_device);
+    m_device->wait();
 
     m_commandBuffer->begin();
     // Build Top Level Acceleration Structure
@@ -96,7 +96,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     m_commandBuffer->end();
 
     m_commandBuffer->QueueCommandBuffer();
-    vk::DeviceWaitIdle(*m_device);
+    m_device->wait();
 }
 
 TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
@@ -239,7 +239,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
 
     m_commandBuffer->QueueCommandBuffer(true);
 
-    vk::DeviceWaitIdle(m_device->handle());
+    m_device->wait();
 
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
@@ -432,13 +432,13 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::DeviceWaitIdle(m_device->handle());
+    m_device->wait();
 
     m_commandBuffer->begin();
     vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::DeviceWaitIdle(m_device->handle());
+    m_device->wait();
 }
 
 TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
@@ -502,7 +502,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->end();
 
         m_commandBuffer->QueueCommandBuffer();
-        vk::DeviceWaitIdle(m_device->handle());
+        m_device->wait();
     }
 }
 
@@ -586,13 +586,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
-
-        // Submit command buffer
-        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_0.handle();
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_0);
+        m_default_queue->submit(cmd_buffer_frame_0, fence_frame_0);
     }
 
     // Frame 1
@@ -626,13 +620,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
-
-        // Submit command buffer
-        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_1.handle();
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_1);
+        m_default_queue->submit(cmd_buffer_frame_1, fence_frame_1);
     }
 
     // Frame 2
@@ -681,13 +669,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
-
-        // Submit command buffer
-        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_2.handle();
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_2);
+        m_default_queue->submit(cmd_buffer_frame_2, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
@@ -754,13 +736,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_0.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_0.end();
-
-        // Submit command buffer
-        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_0.handle();
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_0);
+        m_default_queue->submit(cmd_buffer_frame_0, fence_frame_0);
     }
 
     // Frame 1
@@ -782,13 +758,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_1.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_1.end();
-
-        // Submit command buffer
-        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_1.handle();
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_1);
+        m_default_queue->submit(cmd_buffer_frame_1, fence_frame_1);
     }
 
     // Frame 2
@@ -812,13 +782,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         vk::CmdPipelineBarrier(cmd_buffer_frame_2.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         cmd_buffer_frame_2.end();
-
-        // Submit command buffer
-        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_2.handle();
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buffer_handle;
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, fence_frame_2);
+        m_default_queue->submit(cmd_buffer_frame_2, fence_frame_2);
     }
 
     fence_frame_1.wait(kWaitTimeout);
@@ -852,5 +816,5 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::DeviceWaitIdle(*m_device);
+    m_device->wait();
 }

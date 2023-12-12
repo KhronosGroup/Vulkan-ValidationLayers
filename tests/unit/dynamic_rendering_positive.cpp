@@ -354,13 +354,10 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     cb2.EndRendering();
     cb2.end();
 
-    std::array<VkCommandBuffer, 3> cbs = {m_commandBuffer->handle(), cb1.handle(), cb2.handle()};
-    VkSubmitInfo submit = vku::InitStructHelper();
-    submit.commandBufferCount = static_cast<uint32_t>(cbs.size());
-    submit.pCommandBuffers = cbs.data();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-
-    vk::QueueWaitIdle(m_default_queue);
+    vkt::Fence fence;
+    std::vector<const vkt::CommandBuffer*> cbs = {m_commandBuffer, &cb1, &cb2};
+    m_default_queue->submit(cbs, fence);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
@@ -699,14 +696,8 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
 
     m_commandBuffer->end();
-
-    // Submit
-    VkSubmitInfo submit = vku::InitStructHelper();
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
@@ -780,14 +771,10 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     cb.EndRendering();
     cb.end();
 
-    // Submit
-    std::array<VkCommandBuffer, 2> cbs = {m_commandBuffer->handle(), cb.handle()};
-    VkSubmitInfo submit = vku::InitStructHelper();
-    submit.commandBufferCount = static_cast<uint32_t>(cbs.size());
-    submit.pCommandBuffers = cbs.data();
-    vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE);
-
-    vk::QueueWaitIdle(m_default_queue);
+    vkt::Fence fence;
+    std::vector<const vkt::CommandBuffer*> cbs = {m_commandBuffer, &cb};
+    m_default_queue->submit(cbs, fence);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {

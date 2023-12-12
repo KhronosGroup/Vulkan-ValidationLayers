@@ -107,10 +107,10 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
         submit_info[1].signalSemaphoreCount = 0;
         submit_info[1].pSignalSemaphores = nullptr;
 
-        vk::QueueSubmit(m_default_queue, 2, &submit_info[0], VK_NULL_HANDLE);
+        vk::QueueSubmit(m_default_queue->handle(), 2, &submit_info[0], VK_NULL_HANDLE);
     }
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
 }
@@ -149,12 +149,8 @@ TEST_F(PositiveQuery, BasicQuery) {
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
     uint64_t samples_passed[4];
     vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
@@ -165,14 +161,14 @@ TEST_F(PositiveQuery, BasicQuery) {
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
     vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
     m_commandBuffer->begin();
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
@@ -220,10 +216,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
                                 query_flags);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
 
     VkResult res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, query_count, sizeof_samples_passed,
                                            samples_passed.data(), sample_stride, query_flags);
@@ -235,10 +228,10 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
         //
         // i.e. You don't have to wait for an idle queue to destroy the query pool.
         vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->wait();
     } else {
         // some devices (pixel 7) will return VK_NOT_READY
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->wait();
         vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
     }
 }
@@ -378,10 +371,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool.handle(), 0);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
 
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
@@ -390,7 +380,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
         res = vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, 4, 0);
     } while (res != VK_SUCCESS);
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
@@ -512,11 +502,8 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u);
         m_commandBuffer->end();
 
-        auto submit_info = vku::InitStruct<VkSubmitInfo>();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &m_commandBuffer->handle();
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::DeviceWaitIdle(*m_device);
+        m_default_queue->submit(*m_commandBuffer);
+        m_device->wait();
     }
 
     vkt::CommandBuffer cmd_buffer(m_device, m_commandPool);
@@ -545,8 +532,8 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         auto submit_info = vku::InitStruct<VkSubmitInfo>(&performance_query_submit_info);
         submit_info.commandBufferCount = 1u;
         submit_info.pCommandBuffers = &cmd_buffer.handle();
-        vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
-        vk::DeviceWaitIdle(*m_device);
+        vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
+        m_device->wait();
     }
 
     vk::ReleaseProfilingLockKHR(*m_device);

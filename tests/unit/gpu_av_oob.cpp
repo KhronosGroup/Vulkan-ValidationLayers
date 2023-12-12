@@ -220,7 +220,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_Basic) {
         } else {
             m_errorMonitor->VerifyFound();
         }
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->wait();
     }
 
     if (multi_draw && multi_draw_features.multiDraw) {
@@ -639,7 +639,7 @@ TEST_F(NegativeGpuAVOOB, GPL) {
         } else {
             m_errorMonitor->VerifyFound();
         }
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->wait();
     }
 }
 
@@ -819,6 +819,6 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
         } else {
             m_errorMonitor->VerifyFound();
         }
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->wait();
     }
 }

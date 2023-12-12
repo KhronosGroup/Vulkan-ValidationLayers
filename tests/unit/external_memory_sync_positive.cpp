@@ -318,7 +318,7 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
     si.signalSemaphoreCount = 1;
     si.pSignalSemaphores = &binary_sem.handle();
 
-    vk::QueueSubmit(m_default_queue, 1, &si, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
 
     int fd_handle = -1;
     binary_sem.export_handle(fd_handle, handle_type);
@@ -326,5 +326,5 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
     vkt::Semaphore import_semaphore(*m_device);
     import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }

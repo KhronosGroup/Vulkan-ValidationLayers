@@ -184,7 +184,7 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirectKHR) {
     m_commandBuffer->QueueCommandBuffer(true);
     m_errorMonitor->VerifyFound();
 
-    vk::DeviceWaitIdle(m_device->handle());
+    m_device->wait();
 
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
