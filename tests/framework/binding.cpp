@@ -750,11 +750,6 @@ VkSubresourceLayout Image::subresource_layout(const VkImageSubresourceLayers &su
     return data;
 }
 
-bool Image::transparent() const {
-    return (create_info_.tiling == VK_IMAGE_TILING_LINEAR && create_info_.samples == VK_SAMPLE_COUNT_1_BIT &&
-            !(create_info_.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)));
-}
-
 VkImageAspectFlags Image::aspect_mask(VkFormat format) {
     VkImageAspectFlags image_aspect;
     if (vkuFormatIsDepthAndStencil(format)) {

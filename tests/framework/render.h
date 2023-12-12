@@ -283,29 +283,13 @@ class VkImageObj : public vkt::Image {
 
     void InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags reqs = 0, bool memory = true);
 
-    //    void clear( CommandBuffer*, uint32_t[4] );
-
     void Layout(VkImageLayout const layout) { m_descriptorImageInfo.imageLayout = layout; }
-
-    VkDeviceMemory Memory() const { return Image::memory().handle(); }
-
-    void *MapMemory() { return Image::memory().map(); }
-
-    void UnmapMemory() { Image::memory().unmap(); }
 
     void ImageMemoryBarrier(vkt::CommandBuffer *cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
                             VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                             uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
-
-    VkResult CopyImage(VkImageObj &src_image);
-
-    VkResult CopyImageOut(VkImageObj &dst_image);
-
-    std::array<std::array<uint32_t, 16>, 16> Read();
-
-    VkImage image() const { return handle(); }
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const {
         VkImageViewCreateInfo ci = vku::InitStructHelper();
@@ -338,17 +322,12 @@ class VkImageObj : public vkt::Image {
 
     void SetLayout(vkt::CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
     void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
-    void SetLayout(VkImageLayout image_layout) { SetLayout(aspect_mask(), image_layout); };
+    void SetLayout(VkImageLayout image_layout) { SetLayout(aspect_mask(format()), image_layout); };
 
     VkImageLayout Layout() const { return m_descriptorImageInfo.imageLayout; }
-    uint32_t width() const { return extent().width; }
-    uint32_t height() const { return extent().height; }
     vkt::Device *device() const { return m_device; }
 
   protected:
     vkt::Device *m_device = nullptr;
-    VkFormat m_format = VK_FORMAT_UNDEFINED;
-    uint32_t m_mipLevels = 0;
-    uint32_t m_arrayLayers = 0;
     VkDescriptorImageInfo m_descriptorImageInfo = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL};
 };
