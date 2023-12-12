@@ -15,10 +15,11 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/thread_helper.h"
+#include "../framework/queue_submit_context.h"
 
 class PositiveSyncVal : public VkSyncValTest {};
 
-void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
+void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
     // Enable synchronization validation
     features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 
@@ -27,8 +28,18 @@ void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
         features_.disabledValidationFeatureCount = 0;
     }
 
-    // QueueSubmit Validation *always* on (default behavior)
-
+    // Optionally disable syncval submit validation
+    static const char *kDisableQueuSubmitSyncValidation[] = {"VALIDATION_CHECK_DISABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
+    static const VkLayerSettingEXT settings[] = {
+        {OBJECT_LAYER_NAME, "disables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, kDisableQueuSubmitSyncValidation}};
+    // The pNext of qs_settings is modified by InitFramework that's why it can't
+    // be static (should be separate instance per stack frame). Also we show
+    // explicitly that it's not const (InitFramework casts const pNext to non-const).
+    VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+                                             static_cast<uint32_t>(std::size(settings)), settings};
+    if (disable_queue_submit_validation) {
+        features_.pNext = &qs_settings;
+    }
     InitFramework(&features_);
 }
 
@@ -399,7 +410,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitSyncValFramework(true));
+    RETURN_IF_SKIP(InitSyncValFramework());
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     sync2_features.synchronization2 = VK_TRUE;
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
@@ -480,7 +491,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
 TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitSyncValFramework(true));
+    RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -865,4 +876,27 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_default_queue);
+}
+
+TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
+    RETURN_IF_SKIP(InitSyncValFramework(true));  // Disable QueueSubmit validation
+    RETURN_IF_SKIP(InitState());
+
+    QSTestContext test(m_device, m_device->graphics_queues()[0]);
+    if (!test.Valid()) {
+        GTEST_SKIP() << "Test requires a valid queue object.";
+    }
+
+    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
+    test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
+
+    VkSubmitInfo submit1 = vku::InitStructHelper();
+    submit1.commandBufferCount = 2;
+    VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
+    submit1.pCommandBuffers = two_cbs;
+
+    // This should be a hazard if we didn't disable it at InitSyncValFramework time
+    vk::QueueSubmit(test.q0, 1, &submit1, VK_NULL_HANDLE);
+
+    test.DeviceWait();
 }
