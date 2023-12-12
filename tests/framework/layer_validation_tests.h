@@ -265,7 +265,13 @@ class GpuAVTest : public virtual VkLayerTest {
 class NegativeGpuAV : public GpuAVTest {};
 class PositiveGpuAV : public GpuAVTest {};
 
-class NegativeGpuAVBufferDeviceAddress : public GpuAVTest {};
+class GpuAVBufferDeviceAddressTest : public GpuAVTest {
+  public:
+    void InitGpuVUBufferDeviceAddress(void *p_next = nullptr);
+};
+class NegativeGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
+class PositiveGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
+
 class NegativeGpuAVDescriptorIndexing : public GpuAVTest {};
 class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
 class NegativeGpuAVOOB : public GpuAVTest {
