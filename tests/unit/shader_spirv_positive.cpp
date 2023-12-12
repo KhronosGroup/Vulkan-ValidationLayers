@@ -611,11 +611,8 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     // Make sure spec constants were updated correctly
     void *pData;

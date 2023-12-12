@@ -1462,21 +1462,21 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     signal_submit_info.pSignalSemaphores = &semaphore_handle;
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "UNASSIGNED-BestPractices-SemaphoreCount");
-    vk::QueueSubmit(m_default_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &signal_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     signal_submit_info.signalSemaphoreCount = 1;
-    vk::QueueSubmit(m_default_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &signal_submit_info, VK_NULL_HANDLE);
 
     VkSubmitInfo wait_submit_info = vku::InitStructHelper();
     wait_submit_info.waitSemaphoreCount = 0;
     wait_submit_info.pWaitSemaphores = &semaphore_handle;
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "UNASSIGNED-BestPractices-SemaphoreCount");
-    vk::QueueSubmit(m_default_queue, 1, &wait_submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &wait_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
@@ -1777,21 +1777,15 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
 
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
-    // Setup finished
-
     // TEST :
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad);
 
     // This should give a warning
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
 
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
@@ -2222,12 +2216,8 @@ TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1u;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
-    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     uint32_t data = 0u;
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-QueryPool-Unavailable");

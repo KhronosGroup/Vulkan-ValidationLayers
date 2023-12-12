@@ -749,11 +749,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     m_commandBuffer->end();
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
     vk::DestroyBuffer(device(), ibo.handle(), nullptr);
@@ -771,7 +767,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     vk::DestroyAccelerationStructureNV(device(), bot_level_as.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
@@ -854,13 +850,8 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vk::CmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         src_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     m_commandBuffer->end();
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1u;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-
-    vk::QueueSubmit(m_default_queue, 1u, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording");

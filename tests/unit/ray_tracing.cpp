@@ -60,7 +60,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         GTEST_SKIP() << "Did not find required ray tracing properties";
     }
 
-    VkQueue ray_tracing_queue = m_default_queue;
+    vkt::Queue *ray_tracing_queue = m_default_queue;
     uint32_t ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
@@ -69,7 +69,7 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     if (compute_only_queue_family_index) {
         const auto &compute_only_queues = m_device->queue_family_queues(compute_only_queue_family_index.value());
         if (!compute_only_queues.empty()) {
-            ray_tracing_queue = compute_only_queues[0]->handle();
+            ray_tracing_queue = compute_only_queues[0].get();
             ray_tracing_queue_family_index = compute_only_queue_family_index.value();
         }
     }
@@ -184,11 +184,8 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     ray_tracing_command_buffer.end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &ray_tracing_command_buffer.handle();
-    vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(ray_tracing_queue);
+    ray_tracing_queue->submit(ray_tracing_command_buffer);
+    ray_tracing_queue->wait();
 
     VkImageObj image(m_device);
     image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR);
@@ -813,8 +810,8 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         mapped_storage_buffer_data[11] = 0;
         storage_buffer.memory().unmap();
 
-        vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(ray_tracing_queue);
+        ray_tracing_queue->submit(ray_tracing_command_buffer);
+        ray_tracing_queue->wait();
         m_errorMonitor->VerifyFound();
 
         if (gpu_assisted) {
@@ -2926,11 +2923,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     m_commandBuffer->begin();
     build_geometry_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
 
     // This test used to destroy buffers used for building the acceleration structure,
     // to see if there life span was correctly tracked.
@@ -2941,7 +2934,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     vk::DestroyAccelerationStructureKHR(m_device->handle(), build_geometry_info.GetDstAS()->handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
@@ -3611,5 +3604,5 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::DeviceWaitIdle(*m_device);
+    m_device->wait();
 }

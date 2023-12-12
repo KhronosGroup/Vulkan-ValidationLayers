@@ -84,10 +84,10 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     bindSparseInfo.imageOpaqueBindCount = 1;
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
-    vk::QueueBindSparse(m_default_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue->handle(), 1, &bindSparseInfo, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSparseImage, BindFreeMemory) {
@@ -145,13 +145,13 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
     // Bind to the memory
-    vk::QueueBindSparse(m_default_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue->handle(), 1, &bindSparseInfo, VK_NULL_HANDLE);
 
     // Bind back to NULL
     bind.memory = VK_NULL_HANDLE;
-    vk::QueueBindSparse(m_default_queue, 1, &bindSparseInfo, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue->handle(), 1, &bindSparseInfo, VK_NULL_HANDLE);
 
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 
     // Free the memory, then use the image in a new command buffer
     memory.destroy();
@@ -176,14 +176,9 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vk::CmdClearColorImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     m_commandBuffer->end();
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-
+    m_default_queue->submit(*m_commandBuffer);
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSparseImage, BindMetadata) {
@@ -260,10 +255,10 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     bind_info.imageOpaqueBindCount = 1;
     bind_info.pImageOpaqueBinds = &opaque_bind_info;
 
-    vk::QueueBindSparse(m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
+    vk::QueueBindSparse(m_default_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSparseImage, OpImageSparse) {

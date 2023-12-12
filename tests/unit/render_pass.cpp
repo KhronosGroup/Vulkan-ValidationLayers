@@ -1610,17 +1610,14 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyRenderPass-renderPass-00873");
     vk::DestroyRenderPass(m_device->device(), rp.Handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     // Wait for queue to complete so we can safely destroy rp
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
     m_errorMonitor->SetUnexpectedError("If renderPass is not VK_NULL_HANDLE, renderPass must be a valid VkRenderPass handle");
     m_errorMonitor->SetUnexpectedError("Was it created? Has it already been destroyed?");
 }

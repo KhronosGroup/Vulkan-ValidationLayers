@@ -250,7 +250,7 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Format> &formats() const { return formats_; }
 
     // vkDeviceWaitIdle()
-    void wait();
+    void wait() const;
 
     // vkWaitForFences()
     VkResult wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);

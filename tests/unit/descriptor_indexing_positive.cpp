@@ -235,8 +235,8 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->wait();
 
     vk::DestroyBuffer(device(), buffer2, nullptr);
     vk::DestroyBuffer(device(), buffer3, nullptr);
@@ -350,8 +350,8 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    vk::QueueSubmit2KHR(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->wait();
 
     vk::DestroyBuffer(device(), buffer3, nullptr);
 

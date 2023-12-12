@@ -1100,21 +1100,16 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
     vkt::CommandBuffer command_buffer1(*m_device, allocate_info);
     vkt::CommandBuffer command_buffer2(*m_device, allocate_info);
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                              "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit");
 
-        submit_info.pCommandBuffers = &command_buffer0.handle();
-
         command_buffer0.begin(&begin_info);
         command_buffer0.end();
 
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_default_queue->submit(command_buffer0, false);
         m_device->wait();
 
         vk::BeginCommandBuffer(command_buffer0.handle(), &begin_info);
@@ -1124,13 +1119,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                              "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit");
 
-        submit_info.pCommandBuffers = &command_buffer1.handle();
-
         command_buffer1.begin(&begin_info);
         command_buffer1.end();
 
         for (int i = 0; i < 2; ++i) {
-            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+            m_default_queue->submit(command_buffer1, false);
             m_device->wait();
         }
 
@@ -1142,12 +1135,10 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                              "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit");
 
-        submit_info.pCommandBuffers = &command_buffer2.handle();
-
         command_buffer2.begin(&begin_info);
         command_buffer2.end();
 
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_default_queue->submit(command_buffer2, false);
         m_device->wait();
 
         vk::BeginCommandBuffer(command_buffer2.handle(), &begin_info);

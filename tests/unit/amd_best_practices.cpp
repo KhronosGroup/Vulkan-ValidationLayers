@@ -672,7 +672,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
                                          "UNASSIGNED-BestPractices-Submission-ReduceNumberOfSubmissions");
     m_errorMonitor->SetUnexpectedError("VUID-VkPresentInfoKHR-pImageIndices-01430");
 
-    vk::QueuePresentKHR(m_default_queue, &present_info);
+    vk::QueuePresentKHR(m_default_queue->handle(), &present_info);
 
     m_errorMonitor->VerifyFound();
 }

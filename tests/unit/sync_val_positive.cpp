@@ -136,7 +136,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     vk::CmdEndRenderPass(*m_commandBuffer);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 // Image transition ensures that image data is made visible and available when necessary.
@@ -475,7 +475,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     submit.pCommandBufferInfos = &command_buffer_info;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -483,8 +483,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue->handle(), &present));
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
@@ -535,7 +535,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -543,8 +543,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue, &present));
-    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(m_default_queue));
+    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue->handle(), &present));
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
@@ -716,11 +716,8 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
@@ -792,11 +789,8 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
@@ -870,9 +864,6 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }

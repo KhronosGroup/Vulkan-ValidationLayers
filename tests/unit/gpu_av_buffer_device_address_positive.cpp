@@ -93,9 +93,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Basic) {
     data[1] = 4;
     buffer0.memory().unmap();
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }

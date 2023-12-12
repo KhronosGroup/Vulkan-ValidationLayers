@@ -204,11 +204,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
                      &copyRegion);
     m_commandBuffer->end();
 
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
@@ -409,12 +406,8 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    auto submit_info = vku::InitStruct<VkSubmitInfo>();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {

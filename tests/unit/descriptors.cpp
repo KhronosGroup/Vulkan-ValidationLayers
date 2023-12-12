@@ -478,11 +478,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
     }
     // buffer2 just went out of scope and was destroyed
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 }
 
@@ -536,12 +532,9 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
     // Destroy buffer should invalidate the cmd buffer, causing error on submit
 
     // Attempt to submit cmd buffer
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Invalid VkBuffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 }
 
@@ -754,12 +747,10 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
     // This first submit should be successful
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
 
     // Now destroy imageview and reset cmdBuffer
     tmp_view.destroy();
@@ -792,10 +783,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     tmp_sampler.destroy();
     // Attempt to submit cmd buffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
-    submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 
     // Now re-update descriptor with valid sampler and delete image
@@ -817,10 +805,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     tmp_image.destroy();
 
     // Attempt to submit cmd buffer
-    submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
     // Now update descriptor to be valid, but then update and free descriptor
     img_info.imageView = view2.handle();
@@ -839,7 +824,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
 
     // Immediately try to update the descriptor set in the active command buffer - failure expected
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-None-03047");
@@ -853,7 +838,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     // Try again once the queue is idle - should succeed w/o error
     // TODO - though the particular error above doesn't re-occur, there are other 'unexpecteds' still to clean up
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
     m_errorMonitor->SetUnexpectedError(
         "pDescriptorSets must be a valid pointer to an array of descriptorSetCount VkDescriptorSet handles, each element of which "
         "must either be a valid handle or VK_NULL_HANDLE");
@@ -861,11 +846,8 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &descriptorSet);
 
     // Attempt to submit cmd buffer containing the freed descriptor set
-    submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1014,10 +996,6 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
 
     vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &cmd_buf.handle();
-
     enum TestType {
         kInternal,  // Image layout mismatch is *within* a given command buffer
         kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
@@ -1047,8 +1025,8 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
                 cmd_buf.end();
-                vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-                vk::QueueWaitIdle(m_default_queue);
+                m_default_queue->submit(cmd_buf);
+                m_default_queue->wait();
                 cmd_buf.begin();
             }
 
@@ -1080,8 +1058,8 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
                     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
                 }
             }
-            vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-            vk::QueueWaitIdle(m_default_queue);
+            m_default_queue->submit(cmd_buf, false);
+            m_default_queue->wait();
             if (positive_test || (test_type == kInternal)) {
             } else {
                 m_errorMonitor->VerifyFound();
@@ -1156,15 +1134,12 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put pool in-flight
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->submit(*m_commandBuffer);
     // Reset pool while in-flight, causing error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetDescriptorPool-descriptorPool-00313");
     vk::ResetDescriptorPool(m_device->device(), descriptor_set.pool_, 0);
     m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {

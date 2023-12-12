@@ -359,7 +359,7 @@ VkFormatProperties Device::format_properties(VkFormat format) {
     return data;
 }
 
-void Device::wait() { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
+void Device::wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
 
 VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);

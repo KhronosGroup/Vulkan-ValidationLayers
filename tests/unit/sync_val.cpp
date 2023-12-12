@@ -376,7 +376,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         end_render(command_buffer);
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        test.QueueWaitIdle();
+        vk::QueueWaitIdle(test.DefaultQueue());
     }
 
     // RAW hazard: clear render target then copy from it.
@@ -408,7 +408,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        test.QueueWaitIdle();
+        vk::QueueWaitIdle(test.DefaultQueue());
     }
 
     // RAW hazard: two regions with a single pixel overlap, otherwise the same as the previous scenario.
@@ -441,7 +441,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        test.QueueWaitIdle();
+        vk::QueueWaitIdle(test.DefaultQueue());
     }
 
     // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no errors.
@@ -471,7 +471,7 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         end_render(command_buffer);
         command_buffer.end();
         command_buffer.QueueCommandBuffer();
-        test.QueueWaitIdle();
+        vk::QueueWaitIdle(test.DefaultQueue());
     }
 }
 
@@ -4162,7 +4162,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
@@ -5300,7 +5300,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     submit2.commandBufferCount = 2;
     submit2.pCommandBuffers = two_cbs;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::QueueSubmit(m_default_queue, 1, &submit2, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_device->wait();  // quiesce the system for the next subtest
@@ -5348,7 +5348,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     cb1.end();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::QueueSubmit(m_default_queue, 1, &submit2, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_device->wait();  // and quiesce the system
@@ -5392,7 +5392,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     std::vector<bool> image_used(images.size(), false);
 
     const VkCommandBuffer cb = m_commandBuffer->handle();
-    const VkQueue q = m_default_queue;
+    const VkQueue q = m_default_queue->handle();
     const VkDevice dev = m_device->handle();
 
     VkFenceCreateInfo fence_ci = vku::InitStructHelper();
@@ -5614,7 +5614,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     submit.pCommandBufferInfos = &command_buffer_info;
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit2(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
@@ -5624,7 +5624,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     present.pImageIndices = &image_index;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    vk::QueuePresentKHR(m_default_queue, &present);
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }
@@ -5672,7 +5672,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &submit_semaphore.handle();
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue, 1, &submit, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
@@ -5682,7 +5682,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     present.pImageIndices = &image_index;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    vk::QueuePresentKHR(m_default_queue, &present);
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
     m_errorMonitor->VerifyFound();
     m_device->wait();
 }

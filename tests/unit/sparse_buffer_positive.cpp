@@ -99,10 +99,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
@@ -184,10 +184,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->wait();
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
@@ -247,9 +247,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     bind_info.signalSemaphoreCount = 1;
     bind_info.pSignalSemaphores = &semaphore.handle();
 
-    VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
+    vkt::Queue* sparse_queue = m_device->graphics_queues()[sparse_index.value()];
     vkt::Fence sparse_queue_fence(*m_device);
-    vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
+    vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
@@ -266,11 +266,11 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
-    vk::QueueWaitIdle(sparse_queue);
+    m_default_queue->wait();
+    sparse_queue->wait();
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
@@ -327,9 +327,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     bind_info.signalSemaphoreCount = 1;
     bind_info.pSignalSemaphores = &semaphore.handle();
 
-    VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
+    vkt::Queue* sparse_queue = m_device->graphics_queues()[sparse_index.value()];
     vkt::Fence sparse_queue_fence(*m_device);
-    vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
+    vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
@@ -351,9 +351,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
-    vk::QueueWaitIdle(m_default_queue);
-    vk::QueueWaitIdle(sparse_queue);
+    m_default_queue->wait();
+    sparse_queue->wait();
 }

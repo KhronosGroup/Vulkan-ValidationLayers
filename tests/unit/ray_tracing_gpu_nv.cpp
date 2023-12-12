@@ -89,12 +89,8 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationInvalidHan
 
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer.handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(command_buffer, false);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -178,12 +174,8 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
 
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer.handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(command_buffer, false);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -243,12 +235,8 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
         vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                             destroyed_bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
         command_buffer.end();
-
-        VkSubmitInfo submit_info = vku::InitStructHelper();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &command_buffer.handle();
-        vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(m_default_queue);
+        m_default_queue->submit(command_buffer);
+        m_default_queue->wait();
 
         // vk::DestroyAccelerationStructureNV called on destroyed_bot_level_as during destruction.
     }
@@ -288,12 +276,8 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
 
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer.handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(command_buffer, false);
+    m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
 
@@ -488,12 +472,8 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationRestoresSt
 
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer.handle();
-    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::QueueWaitIdle(m_default_queue);
+    m_default_queue->submit(command_buffer, false);
+    m_default_queue->wait();
 
     m_errorMonitor->VerifyFound();
 
