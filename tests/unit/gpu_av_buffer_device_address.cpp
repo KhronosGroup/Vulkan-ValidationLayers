@@ -272,3 +272,137 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerDescriptor) {
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, StorageBufferOOB) {
+    TEST_DESCRIPTION("Make suree OOB is still checked when result is from a BufferDeviceAddress");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+
+        struct Test {
+            float a;
+        };
+
+        layout(buffer_reference, std430, buffer_reference_align = 16) buffer TestBuffer {
+            Test test;
+        };
+
+        Test GetTest(uint64_t ptr) {
+            return TestBuffer(ptr).test;
+        }
+
+        // 12 bytes large
+        layout(set = 0, binding = 0) buffer foo {
+            TestBuffer data;
+            float x;
+        } in_buffer;
+
+        void main() {
+            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 16, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    // too small
+    vkt::Buffer in_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress block_ptr = block_buffer.address();
+
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08613");
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
+TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_UVec3Array) {
+    TEST_DESCRIPTION("Do a OpLoad through a padded struct PhysicalStorageBuffer");
+    SetTargetApiVersion(VK_API_VERSION_1_2);  // need to use 12Feature struct
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(buffer_reference, std430, scalar) readonly buffer IndexBuffer {
+            uvec3 indices[]; // array stride is 12 in scalar
+        };
+
+        layout(set = 0, binding = 0) uniform foo {
+            IndexBuffer data;
+            int nReads;
+        } in_buffer;
+
+        void main() {
+            uvec3 readvec;
+            for (int i=0; i < in_buffer.nReads; ++i) {
+                readvec = in_buffer.data.indices[i];
+            }
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    // Hold only 3 indices
+    vkt::Buffer block_buffer(*m_device, 36, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, mem_props, &allocate_flag_info);
+
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    VkDeviceAddress block_ptr = block_buffer.address();
+    const uint32_t n_reads = 4;  // uvec3[0] to uvec3[3]
+
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
+    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
+    in_buffer.memory().unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
