@@ -23,11 +23,15 @@ FeatureRequirements::~FeatureRequirements() {
 }
 
 void FeatureRequirements::AddRequiredFeature(APIVersion api_version, vkt::Feature feature) {
-    SetFeature(api_version, feature, VK_TRUE);
+    FeatureAndName f = SetFeature(api_version, feature, VK_TRUE);
+    *f.feature = VK_TRUE;
+    required_features_.emplace_back(f);
 }
 
 void FeatureRequirements::AddDisabledFeature(APIVersion api_version, vkt::Feature feature) {
-    SetFeature(api_version, feature, VK_FALSE);
+    FeatureAndName f = SetFeature(api_version, feature, VK_FALSE);
+    *f.feature = VK_FALSE;
+    disabled_features_.emplace_back(f.feature);
 }
 
 vkt::FeatureAndName FeatureRequirements::SetFeature(APIVersion api_version, vkt::Feature feature, VkBool32 value) {
@@ -334,14 +338,6 @@ vkt::FeatureAndName FeatureRequirements::SetFeature(APIVersion api_version, vkt:
         }
         default:
             FeatureAndName f = vkt::AddFeature(api_version, feature, &feature_chain_);
-            if (value == VK_TRUE) {
-                *f.feature = VK_TRUE;
-                required_features_.emplace_back(f);
-                return f;
-            } else {
-                *f.feature = VK_FALSE;
-                disabled_features_.emplace_back(f.feature);
-            }
             return f;
     }
 }
