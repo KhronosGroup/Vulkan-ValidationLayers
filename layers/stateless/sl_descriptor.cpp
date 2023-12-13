@@ -664,17 +664,10 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
             (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
             (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             if (descriptor_writes.pImageInfo == nullptr) {
-                if (!isPushDescriptor) {
-                    skip |= LogError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493", device,
-                                     writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
-                                     string_VkDescriptorType(descriptor_type));
-                } else if ((descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
-                           (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
-                           (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-                    skip |= LogError("VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494", device,
-                                     writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
-                                     string_VkDescriptorType(descriptor_type));
-                }
+                const char *vuid = isPushDescriptor ? "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494"
+                                                    : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
+                skip |= LogError(vuid, device, writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
+                                 string_VkDescriptorType(descriptor_type));
             } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
                 for (uint32_t descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
                     skip |= ValidateRangedEnum(writes_loc.dot(Field::pImageInfo, descriptor_index).dot(Field::imageLayout),
