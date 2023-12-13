@@ -5250,3 +5250,31 @@ TEST_F(NegativeDescriptors, DescriptorTypeNotInPool) {
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, PushDescriptorWithoutInfo) {
+    TEST_DESCRIPTION("Push a descriptor without providing any info structs in VkWriteDescriptorSet");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       },
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    m_commandBuffer->begin();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494");
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
