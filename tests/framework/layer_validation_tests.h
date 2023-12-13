@@ -274,7 +274,7 @@ class PositiveGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
 
 class GpuAVDescriptorIndexingTest : public GpuAVTest {
   public:
-    void InitGpuVUDescriptorIndexing(void *p_next = nullptr);
+    void InitGpuVUDescriptorIndexing();
 };
 class NegativeGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
 class PositiveGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
