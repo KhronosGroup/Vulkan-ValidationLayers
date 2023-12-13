@@ -19,15 +19,11 @@ TEST_F(PositiveMesh, BasicUsage) {
     TEST_DESCRIPTION("Test basic VK_EXT_mesh_shader.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (mesh_shader_features.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "Mesh shader feature not supported";
-    }
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
+
     InitRenderTarget();
 
     const char *mesh_source = R"glsl(
@@ -160,7 +156,7 @@ TEST_F(PositiveMesh, PointSize) {
     helper.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveMesh, TaskAndMeshShader) {
+TEST_F(PositiveMesh, TaskAndMeshShaderNV) {
     TEST_DESCRIPTION("Test task and mesh shader");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

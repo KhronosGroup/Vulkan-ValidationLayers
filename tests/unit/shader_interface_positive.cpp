@@ -335,10 +335,9 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance_4_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance_4_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance_4_features));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
+
     InitRenderTarget();
 
     char const *vsSource = R"glsl(

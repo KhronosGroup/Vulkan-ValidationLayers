@@ -189,13 +189,12 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     TEST_DESCRIPTION("Signal semaphore on the host and wait on the host");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitSyncValFramework());
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
         // Mock does not support proper ordering of events, e.g. wait can return before signal
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 10'000;
 
@@ -244,13 +243,12 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     TEST_DESCRIPTION("Singal semaphore on the host and regularly read semaphore payload value");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitSyncValFramework());
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
         // Mock does not support precise semaphore counter reporting
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 1'000;
 
@@ -290,13 +288,12 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     TEST_DESCRIPTION("Read semaphore counter value from multiple threads");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitSyncValFramework());
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
         // Mock does not support precise semaphore counter reporting
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 15'000;
 

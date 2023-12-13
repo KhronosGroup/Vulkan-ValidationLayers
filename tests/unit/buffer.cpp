@@ -394,18 +394,12 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
 TEST_F(NegativeBuffer, TexelBufferAlignment) {
     TEST_DESCRIPTION("Test VK_EXT_texel_buffer_alignment.");
     AddRequiredExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(texel_buffer_alignment_features);
-    if (texel_buffer_alignment_features.texelBufferAlignment != VK_TRUE) {
-        GTEST_SKIP() << "texelBufferAlignment feature not supported";
-    }
+    AddRequiredFeature(vkt::Feature::texelBufferAlignment);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(align_props);
 
-    RETURN_IF_SKIP(InitState(nullptr, &texel_buffer_alignment_features));
     InitRenderTarget();
 
     const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
@@ -634,10 +628,8 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
 
     InitRenderTarget();
     const uint32_t buffer_size = 32;
@@ -668,11 +660,8 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     TEST_DESCRIPTION("Submit bad size binding the index buffer using vkCmdBindIndexBuffer2KHR");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const uint32_t buffer_size = 32;
@@ -698,11 +687,8 @@ TEST_F(NegativeBuffer, BufferUsageFlags2) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with bad flags.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -736,11 +722,8 @@ TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are not a subset of the Buffer.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
@@ -960,14 +943,8 @@ TEST_F(NegativeBuffer, MaxBufferSize) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance4_features);
-    if (!maintenance4_features.maintenance4) {
-        GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance4_features));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMaintenance4Properties maintenance4_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(maintenance4_properties);

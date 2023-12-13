@@ -2572,16 +2572,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM rasterization_order_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(rasterization_order_features);
-
-    rasterization_order_features.rasterizationOrderColorAttachmentAccess = 0;
-    rasterization_order_features.rasterizationOrderDepthAttachmentAccess = 0;
-    rasterization_order_features.rasterizationOrderStencilAttachmentAccess = 0;
-
-    RETURN_IF_SKIP(InitState(nullptr, &rasterization_order_features));
+    RETURN_IF_SKIP(Init());
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     VkPipelineColorBlendAttachmentState cb_as = {};
@@ -3076,10 +3067,8 @@ TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormats) {
     TEST_DESCRIPTION("Create pipeline with invalid pipeline rendering formats");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
 
     VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
     pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT;
@@ -3176,19 +3165,9 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 
     AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT msrtss_features = vku::InitStructHelper();
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper(&msrtss_features);
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!msrtss_features.multisampledRenderToSingleSampled) {
-        GTEST_SKIP() << "Test requires (unsupported) multisampledRenderToSingleSampled";
-    }
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -3289,18 +3268,9 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusued_attachment_features =
-        vku::InitStructHelper(&dynamic_rendering_features);
-    GetPhysicalDeviceFeatures2(unusued_attachment_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "dynamicRendering not supported";
-    }
-    if (!unusued_attachment_features.dynamicRenderingUnusedAttachments) {
-        GTEST_SKIP() << "dynamicRenderingUnusedAttachments not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &unusued_attachment_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingUnusedAttachments);
+    RETURN_IF_SKIP(Init());
 
     VkFormat undefined = VK_FORMAT_UNDEFINED;
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3426,18 +3396,10 @@ TEST_F(NegativePipeline, MissingPipelineViewportState) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT eds2_features = vku::InitStructHelper(&eds_features);
-    GetPhysicalDeviceFeatures2(eds2_features);
-    if (!eds_features.extendedDynamicState) {
-        GTEST_SKIP() << "extendedDynamicState not supported";
-    }
-    if (!eds2_features.extendedDynamicState2) {
-        GTEST_SKIP() << "extendedDynamicState2 not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &eds2_features));
-    RETURN_IF_SKIP(InitRenderTarget());
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     {
         CreatePipelineHelper pipe(*this);
@@ -3477,10 +3439,8 @@ TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormatWithoutFragmentState)
     TEST_DESCRIPTION("Create pipeline with invalid pipeline rendering formats");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
 
     VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
     pipeline_rendering_ci.stencilAttachmentFormat = VK_FORMAT_D16_UNORM;

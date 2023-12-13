@@ -178,10 +178,8 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance4FeaturesKHR maint4features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maint4features);
-    RETURN_IF_SKIP(InitState(nullptr, &maint4features));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const std::string vs_src = R"asm(
@@ -477,16 +475,8 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Verify each vkCmdSet command
@@ -525,14 +515,8 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
@@ -568,12 +552,8 @@ TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
-
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *source = R"glsl(

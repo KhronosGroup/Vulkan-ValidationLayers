@@ -989,10 +989,8 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -1037,10 +1035,8 @@ TEST_F(NegativeRayTracing, BarrierSync2AccessAccelerationStructureRayQueryDisabl
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;

@@ -379,10 +379,8 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     TEST_DESCRIPTION("Copy mutable descriptors.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
@@ -718,11 +716,8 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image1(m_device);
     VkImageObj image2(m_device);
@@ -974,10 +969,8 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
         "Attempt to update descriptor sets for buffers that do not have correct usage bits sets with VkBufferUsageFlagBits2KHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
 
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
     VkFormatProperties format_properties;

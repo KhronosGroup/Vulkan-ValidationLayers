@@ -596,10 +596,10 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
                                   const VkCommandPoolCreateFlags flags) {
     if (!features && !create_device_pnext) {
         if (feature_requirements_.HasFeatures2()) {
-            if (vk::GetPhysicalDeviceFeatures2) {
-                vk::GetPhysicalDeviceFeatures2(gpu(), feature_requirements_.GetFeatures2());
-            } else {
+            if (vk::GetPhysicalDeviceFeatures2KHR) {
                 vk::GetPhysicalDeviceFeatures2KHR(gpu(), feature_requirements_.GetFeatures2());
+            } else {
+                vk::GetPhysicalDeviceFeatures2(gpu(), feature_requirements_.GetFeatures2());
             }
         } else {
             GetPhysicalDeviceFeatures(feature_requirements_.GetFeatures());

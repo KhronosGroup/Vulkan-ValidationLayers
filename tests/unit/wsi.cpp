@@ -505,17 +505,8 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(timeline_semaphore_props);
-    if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD and profiles the value might be zero'ed and cause false errors
-        GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
@@ -541,19 +532,8 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(timeline_semaphore_props);
-    if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD and profiles the value might be zero'ed and cause false errors
-        GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
-
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
@@ -1640,17 +1620,9 @@ TEST_F(NegativeWsi, PresentIdWait) {
     AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePresentIdFeaturesKHR present_id_features = vku::InitStructHelper();
-    VkPhysicalDevicePresentWaitFeaturesKHR present_wait_features = vku::InitStructHelper(&present_id_features);
-    GetPhysicalDeviceFeatures2(present_wait_features);
-
-    if (!present_id_features.presentId || !present_wait_features.presentWait) {
-        GTEST_SKIP() << "presentWait feature is not available, skipping test.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &present_wait_features));
+    AddRequiredFeature(vkt::Feature::presentId);
+    AddRequiredFeature(vkt::Feature::presentWait);
+    RETURN_IF_SKIP(Init());
 
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
@@ -2972,19 +2944,7 @@ TEST_F(NegativeWsi, SurfaceQueryImageCompressionControlWithoutExtension) {
 
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceImageCompressionControlFeaturesEXT image_compression_control = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(image_compression_control);
-
-    if (image_compression_control.imageCompressionControl) {
-        // disable imageCompressionControl feature;
-        image_compression_control.imageCompressionControl = VK_FALSE;
-        RETURN_IF_SKIP(InitState(nullptr, &image_compression_control));
-    } else {
-        RETURN_IF_SKIP(InitState());
-    }
-
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }

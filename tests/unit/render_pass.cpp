@@ -770,12 +770,9 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsF
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_depth_stencil_layouts_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features));
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
     const VkFormat stencil_format = VK_FORMAT_S8_UINT;
@@ -1347,11 +1344,8 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);  // Because TestRenderPassBegin relies on it
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_depth_stencil_layouts_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features));
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
 
     // Closure to create a render pass with just a depth/stencil image used as an input attachment (not a depth attachment!).
     // This image purposely has not VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.
@@ -1422,10 +1416,8 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
     TEST_DESCRIPTION("Test that separate stencil initial/final layouts match up with the usage bits in framebuffer attachment");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_depth_stencil_layouts_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features));
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
 
     // Closure to create a render pass with just a depth/stencil image with specified format.
     // The layout is set to have more or less components than what this format has, triggering an error.
@@ -2870,22 +2862,15 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT ms_render_to_single_sampled_features =
-        vku::InitStructHelper(&dynamic_rendering_features);
-    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features =
-        vku::InitStructHelper(&ms_render_to_single_sampled_features);
-    GetPhysicalDeviceFeatures2(imageless_features);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
 
     bool imageless_fb_supported = IsExtensionsEnabled(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
     VkPhysicalDeviceVulkan12Properties vulkan_12_features = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(vulkan_12_features);
-
-    ms_render_to_single_sampled_features.multisampledRenderToSingleSampled = true;
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
     InitRenderTarget();
 
     VkAttachmentReference2 attachmentRef = vku::InitStructHelper();
@@ -3810,12 +3795,9 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
     const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features));
 
     std::array<VkAttachmentDescription, 3> attachments = {{
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE,
@@ -4043,13 +4025,8 @@ TEST_F(NegativeRenderPass, ZeroRenderArea) {
 TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionDSLayout) {
     TEST_DESCRIPTION("Invalid final layout for ds attachment");
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_depth_stencil_layouts_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    if (!separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
-        GTEST_SKIP() << "separateDepthStencilLayouts not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &separate_depth_stencil_layouts_features));
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 

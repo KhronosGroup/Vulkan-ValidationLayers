@@ -341,8 +341,6 @@ class PositiveDescriptorBuffer : public DescriptorBufferTest {};
 
 class DescriptorIndexingTest : public VkLayerTest {
   public:
-    void InitBasicDescriptorIndexing(void *pNextFeatures = nullptr);
-    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features;
     void ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings);
 };
 class NegativeDescriptorIndexing : public DescriptorIndexingTest {};
@@ -394,7 +392,7 @@ class PositiveGeometryTessellation : public VkLayerTest {};
 
 class GraphicsLibraryTest : public VkLayerTest {
   public:
-    void InitBasicGraphicsLibrary(void *pNextFeatures = nullptr);
+    void InitBasicGraphicsLibrary();
 };
 class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
 class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
@@ -421,7 +419,7 @@ class PositiveImage : public ImageTest {};
 
 class ImageDrmTest : public VkLayerTest {
   public:
-    void InitBasicImageDrm(void *pNextFeatures = nullptr);
+    void InitBasicImageDrm();
     std::vector<uint64_t> GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count = 1);
 };
 class NegativeImageDrm : public ImageDrmTest {};
@@ -584,7 +582,7 @@ class PositiveSyncObject : public SyncObjectTest {};
 
 class NegativeTransformFeedback : public VkLayerTest {
   public:
-    void InitBasicTransformFeedback(void *pNextFeatures = nullptr);
+    void InitBasicTransformFeedback();
 };
 
 class PositiveTooling : public VkLayerTest {};

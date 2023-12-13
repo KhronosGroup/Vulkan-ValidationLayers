@@ -213,10 +213,8 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit2KHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
 
@@ -259,10 +257,8 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
 TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
     InitRenderTarget();
@@ -846,13 +842,8 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
 
 TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multi_draw_features);
-    if (!multi_draw_features.multiDraw) {
-        GTEST_SKIP() << "Test requires (unsupported) multiDraw";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &multi_draw_features));
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkMultiDrawInfoEXT multi_draws[3] = {};
@@ -4639,14 +4630,11 @@ TEST_F(NegativeCommand, MultiDraw) {
     TEST_DESCRIPTION("Test validation of multi_draw extension");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multi_draw_features);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multi_draw_properties);
-
-    RETURN_IF_SKIP(InitState(nullptr, &multi_draw_features));
     InitRenderTarget();
 
     VkMultiDrawInfoEXT multi_draws[3] = {};
@@ -4728,11 +4716,9 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
-    GetPhysicalDeviceFeatures2(multi_draw_features);
-    RETURN_IF_SKIP(InitState(nullptr, &multi_draw_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -4770,11 +4756,9 @@ TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
-    GetPhysicalDeviceFeatures2(multi_draw_features);
-    RETURN_IF_SKIP(InitState(nullptr, &multi_draw_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -4806,11 +4790,9 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper(&maintenance5_features);
-    GetPhysicalDeviceFeatures2(multi_draw_features);
-    RETURN_IF_SKIP(InitState(nullptr, &multi_draw_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);

@@ -16,17 +16,10 @@
 #include "../framework/descriptor_helper.h"
 #include "generated/vk_extension_helper.h"
 
-void GraphicsLibraryTest::InitBasicGraphicsLibrary(void *pNextFeatures) {
+void GraphicsLibraryTest::InitBasicGraphicsLibrary() {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(pNextFeatures);
-    GetPhysicalDeviceFeatures2(gpl_features);
-    if (!gpl_features.graphicsPipelineLibrary) {
-        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &gpl_features));
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(Init());
 }
 
 TEST_F(PositiveGraphicsLibrary, VertexInput) {
@@ -339,20 +332,12 @@ TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&extended_dynamic_state3_features));
-
-    if (!m_device->phy().features().dualSrcBlend) {
-        GTEST_SKIP() << "dualSrcBlend feature is not available";
-    }
-
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
-        !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation ||
-        !extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask ||
-        !extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced) {
-        GTEST_SKIP() << "DynamicState3 features not supported";
-    }
-
+    AddRequiredFeature(vkt::Feature::dualSrcBlend);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -627,14 +612,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     TEST_DESCRIPTION("set VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT in Fragment Output");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dyn_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state3_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
-
-    if (!dyn_state3_features.extendedDynamicState3AlphaToOneEnable) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToOneEnable";
-    }
 
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
@@ -707,14 +687,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     TEST_DESCRIPTION("set VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT in Fragment Shader");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dyn_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state3_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
-
-    if (!dyn_state3_features.extendedDynamicState3AlphaToOneEnable) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToOneEnable";
-    }
 
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
@@ -902,12 +877,8 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -980,12 +951,8 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -1089,12 +1056,8 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     TEST_DESCRIPTION("Create a GPL with depth state");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dyn_state2_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dyn_state2_features));
-
-    if (!dyn_state2_features.extendedDynamicState2) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2";
-    }
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -1199,12 +1162,8 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and no fragment output state");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -1361,11 +1320,9 @@ TEST_F(PositiveGraphicsLibrary, DepthStencilStateIgnored) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features =
-        vku::InitStructHelper(&extended_dynamic_state_features);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -1393,26 +1350,14 @@ TEST_F(PositiveGraphicsLibrary, ColorBlendStateIgnored) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
-        vku::InitStructHelper(&extended_dynamic_state2_features);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features =
-        vku::InitStructHelper(&extended_dynamic_state3_features);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2LogicOp);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
-
-    if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
-        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
-        GTEST_SKIP() << "extendedDynamicState3ColorBlendEnable not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
-        GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
-        GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
-    }
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;

@@ -22,11 +22,8 @@ TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
 
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         GTEST_SKIP() << "Device does not support the required geometry shader features";
@@ -61,16 +58,10 @@ TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(eds_features);
-    if (!eds_features.extendedDynamicState) {
-        GTEST_SKIP() << "extendedDynamicState not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &eds_features));
-    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
-        GTEST_SKIP() << "Device does not support the required geometry shader features";
-    }
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static const char *gsSource = R"glsl(

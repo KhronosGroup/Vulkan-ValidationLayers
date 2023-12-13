@@ -18,14 +18,8 @@
 
 void DynamicStateTest::InitBasicExtendedDynamicState() {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
 }
 
 void DynamicStateTest::InitBasicExtendedDynamicState3(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT &features) {
@@ -67,16 +61,8 @@ TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
-    }
-    // Ensure multiViewport feature is *not* enabled for this device
-    features2.features.multiViewport = 0;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -202,12 +188,9 @@ TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper(&maintenance5_features);
-    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
 
     m_commandBuffer->begin();
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -411,14 +394,8 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
-    if (!extended_dynamic_state2_features.extendedDynamicState2) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state2_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -837,10 +814,8 @@ TEST_F(PositiveDynamicState, ViewportStateIgnored) {
     TEST_DESCRIPTION("Ignore null pViewportState");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -898,14 +873,8 @@ TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
 TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     TEST_DESCRIPTION("Dynamically set depthBoundsTestEnable and not call vkCmdSetDepthBounds before the draw");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    RETURN_IF_SKIP(InitState(nullptr, &extended_dynamic_state_features));
-
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "extendedDynamicState no supported";
-    }
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
 
     // Need to set format framework uses for InitRenderTarget
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());

@@ -21,15 +21,9 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     TEST_DESCRIPTION("Create performance query without support");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(performance_features);
-    if (!performance_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Performance query pools are not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -102,14 +96,8 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(performance_features);
-    if (!performance_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Performance query pools are not supported.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -265,16 +253,9 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(performance_features);
-    if (!performance_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Performance query pools are not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -364,16 +345,8 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(performance_features);
-    if (!performance_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Performance query pools are not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -519,15 +492,10 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     // Vulkan 1.1 is a dependency of VK_KHR_video_queue, but both the version and the extension
     // is optional from the point of view of this test case
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_features = vku::InitStructHelper(&host_query_reset_features);
-    GetPhysicalDeviceFeatures2(performance_features);
-    if (!performance_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Performance query pools are not supported.";
-    }
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR doesn't match up with profile queues";
     }
@@ -535,7 +503,6 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     VkPhysicalDevicePerformanceQueryPropertiesKHR perf_query_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(perf_query_props);
 
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -778,17 +745,9 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_features = vku::InitStructHelper(&host_query_reset_features);
-    GetPhysicalDeviceFeatures2(performance_features);
-    if (!performance_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Performance query pools are not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &performance_features));
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -916,13 +875,9 @@ TEST_F(NegativeQuery, HostResetFirstQuery) {
     TEST_DESCRIPTION("Bad firstQuery in vkResetQueryPoolEXT");
 
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(host_query_reset_features);
-    RETURN_IF_SKIP(InitState(nullptr, &host_query_reset_features));
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    RETURN_IF_SKIP(Init());
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
@@ -935,11 +890,8 @@ TEST_F(NegativeQuery, HostResetBadRange) {
     TEST_DESCRIPTION("Bad range in vkResetQueryPoolEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(host_query_reset_features);
-    RETURN_IF_SKIP(InitState(nullptr, &host_query_reset_features));
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    RETURN_IF_SKIP(Init());
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
@@ -952,11 +904,8 @@ TEST_F(NegativeQuery, HostResetQueryPool) {
     TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(host_query_reset_features);
-    RETURN_IF_SKIP(InitState(nullptr, &host_query_reset_features));
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    RETURN_IF_SKIP(Init());
 
     // Create and destroy a query pool.
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
@@ -2153,13 +2102,8 @@ TEST_F(NegativeQuery, WriteTimestampWithoutQueryPool) {
     TEST_DESCRIPTION("call vkCmdWriteTimestamp(2) with queryPool being invalid.");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features synchronization2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(synchronization2);
-    if (synchronization2.synchronization2 == VK_FALSE) {
-        GTEST_SKIP() << "synchronization2 feature is not available";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &synchronization2));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
@@ -2509,16 +2453,11 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (!mesh_shader_features.meshShaderQueries) {
-        GTEST_SKIP() << "Mesh shader queries are not supported.";
-    }
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::meshShaderQueries);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -2583,13 +2522,8 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
 
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multiview_features);
-    if (!multiview_features.multiview) {
-        GTEST_SKIP() << "multivew not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &multiview_features));
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();

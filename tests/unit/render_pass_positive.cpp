@@ -1199,11 +1199,8 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(separate_features);
-    RETURN_IF_SKIP(InitState(nullptr, &separate_features));
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
 
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
     VkFormatProperties props;

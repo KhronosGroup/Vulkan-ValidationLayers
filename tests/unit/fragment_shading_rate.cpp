@@ -1363,16 +1363,8 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(fsr_features);
-
-    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
-        GTEST_SKIP() << "requires attachmentFragmentShadingRate feature";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &fsr_features));
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     const VkFormat format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);

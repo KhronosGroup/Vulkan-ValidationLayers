@@ -20,17 +20,9 @@ TEST_F(PositiveAtomic, ImageInt64) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
-    if (features2.features.shaderInt64 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
-        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
+    RETURN_IF_SKIP(Init());
 
     // clang-format off
     std::string cs_image_base = R"glsl(
@@ -91,20 +83,11 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
-    if (!features2.features.shaderInt64) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    } else if (!features2.features.sparseBinding) {
-        GTEST_SKIP() << "sparseBinding feature not supported";
-    } else if (!image_atomic_int64_features.shaderImageInt64Atomics) {
-        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
-    } else if (!image_atomic_int64_features.sparseImageInt64Atomics) {
-        GTEST_SKIP() << "sparseImageInt64Atomics feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
+    AddRequiredFeature(vkt::Feature::sparseImageInt64Atomics);
+    RETURN_IF_SKIP(Init());
 
     const char *cs_source = R"glsl(
         #version 450
@@ -686,15 +669,8 @@ TEST_F(PositiveAtomic, Float2) {
 TEST_F(PositiveAtomic, PhysicalPointer) {
     TEST_DESCRIPTION("Make sure atomic validation handles if from a OpConvertUToPtr (physical pointer)");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (!features12.bufferDeviceAddress) {
-        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
 
     const char *spv_source = R"(
                OpCapability Int64

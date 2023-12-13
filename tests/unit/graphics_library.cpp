@@ -211,13 +211,8 @@ TEST_F(NegativeGraphicsLibrary, MissingDSState) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -238,13 +233,8 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -317,11 +307,9 @@ TEST_F(NegativeGraphicsLibrary, DepthStencilStateIgnored) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features =
-        vku::InitStructHelper(&extended_dynamic_state_features);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -351,12 +339,8 @@ TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&dynamic_rendering_features));
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -917,13 +901,8 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    VkPhysicalDeviceDescriptorBufferFeaturesEXT db_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&db_features));
-
-    if (!db_features.descriptorBuffer) {
-        GTEST_SKIP() << "VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBuffer not supported";
-    }
-
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     CreatePipelineHelper vertex_input_lib(*this);
@@ -1267,8 +1246,8 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
     TEST_DESCRIPTION("VK_KHR_pipeline_executable_properties with GPL");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
-    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR executable_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&executable_features));
+    AddRequiredFeature(vkt::Feature::pipelineExecutableInfo);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     {
@@ -1471,17 +1450,9 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);  // Pipeline cache control needed
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
-    VkPhysicalDevicePipelineCreationCacheControlFeatures pipeline_cache_control_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_id_features =
-        vku::InitStructHelper(&pipeline_cache_control_features);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary(&shader_module_id_features));
-
-    if (!pipeline_cache_control_features.pipelineCreationCacheControl) {
-        GTEST_SKIP() << "pipelineCreationCacheControl not supported";
-    } else if (!shader_module_id_features.shaderModuleIdentifier) {
-        GTEST_SKIP() << "shaderModuleIdentifier not supported";
-    }
-
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();

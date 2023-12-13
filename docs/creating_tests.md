@@ -54,6 +54,7 @@ Here is an example of adding `VK_KHR_sampler_ycbcr_conversion` with all the exte
 ```cpp
 // Setup extensions, including dependent instance and device extensions. This call should be made before any call to InitFramework
 AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+AddRequiredFeature(vkt::Feature:: samplerYcbcrConversion);
 
 // Among other things, this will create the VkInstance and VkPhysicalDevice that will be used for the test.
 // Also will check that all extensions and their dependencies were enabled successfully

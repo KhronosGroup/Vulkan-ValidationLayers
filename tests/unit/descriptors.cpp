@@ -1840,10 +1840,8 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {
         "Attempt to update descriptor sets for buffers that do not have correct usage bits sets with VkBufferUsageFlagBits2KHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
 
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
     VkFormatProperties format_properties;
@@ -2708,14 +2706,8 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
 
 TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(inline_uniform_block_features);
-    if (!inline_uniform_block_features.inlineUniformBlock) {
-        GTEST_SKIP() << "inlineUniformBlock not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &inline_uniform_block_features));
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
@@ -3126,10 +3118,8 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -3181,10 +3171,8 @@ TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
     TEST_DESCRIPTION("Create mutable descriptor pools with partial overlap.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize pool_sizes[2] = {};
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
@@ -3245,10 +3233,8 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -3388,10 +3374,8 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
     TEST_DESCRIPTION("Write mutable descriptor set with invalid type.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutdesc_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutdesc_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutdesc_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -3473,11 +3457,8 @@ TEST_F(NegativeDescriptors, MutableDescriptors) {
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -3542,10 +3523,8 @@ TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutdesc_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutdesc_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutdesc_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
@@ -3610,11 +3589,8 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -4095,10 +4071,8 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
     TEST_DESCRIPTION("Create invalid descriptor set layout.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -4135,10 +4109,8 @@ TEST_F(NegativeDescriptors, BindingDescriptorSetFromHostOnlyPool) {
         "Try to bind a descriptor set that was allocated from a pool with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutdesc_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutdesc_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutdesc_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -4184,10 +4156,8 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
     TEST_DESCRIPTION("Copy mutable descriptors.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
 
@@ -4475,10 +4445,8 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     TEST_DESCRIPTION("Validate updating mutable descriptors.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
@@ -4573,14 +4541,9 @@ TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutInlineUniformBlockFlags) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceInlineUniformBlockFeatures inline_uniform_block_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(inline_uniform_block_features);
-    inline_uniform_block_features.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_FALSE;
-    if (!inline_uniform_block_features.inlineUniformBlock) {
-        GTEST_SKIP() << "inlineUniformBlock not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &inline_uniform_block_features));
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    AddDisabledFeature(vkt::Feature::descriptorBindingInlineUniformBlockUpdateAfterBind);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding binding;
     binding.binding = 0u;
@@ -5031,14 +4994,8 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(indexing_features);
-    if (indexing_features.descriptorBindingVariableDescriptorCount == VK_FALSE) {
-        GTEST_SKIP() << "descriptorBindingVariableDescriptorCount feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &indexing_features));
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding bindings[2];
     bindings[0].binding = 0u;

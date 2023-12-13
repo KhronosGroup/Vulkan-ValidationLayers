@@ -210,12 +210,10 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
 TEST_F(PositiveGpuAV, GetCounterFromSignaledSemaphoreAfterSubmit) {
     TEST_DESCRIPTION("Get counter value from the semaphore signaled by queue submit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features = vku::InitStructHelper(&sync2_features);
-    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    RETURN_IF_SKIP(InitState(nullptr, &timeline_semaphore_features));
+    RETURN_IF_SKIP(InitState());
 
     VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -239,11 +237,9 @@ TEST_F(PositiveGpuAV, GetCounterFromSignaledSemaphoreAfterSubmit) {
 TEST_F(PositiveGpuAV, MutableBuffer) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mutable_descriptor_type_features));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};

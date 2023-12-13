@@ -40,10 +40,9 @@ void NegativeDebugPrintf::InitDebugPrintfFramework() {
 TEST_F(NegativeDebugPrintf, BasicCompute) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDraw);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multi_draw_features);
-    RETURN_IF_SKIP(InitState(nullptr, &multi_draw_features));
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
 
