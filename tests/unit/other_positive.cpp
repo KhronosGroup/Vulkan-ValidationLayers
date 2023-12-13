@@ -318,24 +318,6 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
     vk::GetPhysicalDeviceProperties2(gpu(), &props);
 }
 
-TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
-    TEST_DESCRIPTION("Use vkResetQueryPoolEXT normally");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(host_query_reset_features);
-    RETURN_IF_SKIP(InitState(nullptr, &host_query_reset_features));
-
-    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_pool_create_info.queryCount = 1;
-    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
-    vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
-}
-
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
     TEST_DESCRIPTION("Use first queue family and one queue without first querying with vkGetPhysicalDeviceQueueFamilyProperties");
 

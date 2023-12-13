@@ -1018,11 +1018,8 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
     TEST_DESCRIPTION("Validate setLayout flags in create pipeline layout.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mut_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(mut_features);
-    RETURN_IF_SKIP(InitState(nullptr, &mut_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = 0;

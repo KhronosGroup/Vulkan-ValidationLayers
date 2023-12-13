@@ -13,17 +13,11 @@
 
 #include "../framework/layer_validation_tests.h"
 
-void ImageDrmTest::InitBasicImageDrm(void *pNextFeatures) {
+void ImageDrmTest::InitBasicImageDrm() {
     SetTargetApiVersion(VK_API_VERSION_1_2);  // required extension added here
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
-    GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features11));
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 }
 
 std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {

@@ -799,10 +799,8 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     // The synchronization and access scopes instead are defined by the parameters of VkMemoryBarrier2.
     SetTargetApiVersion(VK_API_VERSION_1_2);  // VK_KHR_create_renderpass2
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkAttachmentReference2 attach_ref = vku::InitStructHelper();

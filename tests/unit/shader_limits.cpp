@@ -317,19 +317,11 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
 TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     TEST_DESCRIPTION("Have an offset that is over maxComputeSharedMemorySize");
 
+    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
-
-    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR explicit_layout_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(explicit_layout_features);
-    RETURN_IF_SKIP(InitState(nullptr, &explicit_layout_features));
-
-    if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
-        GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::workgroupMemoryExplicitLayout);
+    RETURN_IF_SKIP(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
 

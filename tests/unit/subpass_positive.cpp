@@ -21,10 +21,8 @@
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     const VkAttachmentDescription attachment = {0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,
@@ -103,10 +101,8 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
 TEST_F(PositiveSubpass, SubpassWithEventWait) {
     TEST_DESCRIPTION("Subpass waits for the event set outside of this subpass");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     const VkAttachmentDescription attachment = {0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,

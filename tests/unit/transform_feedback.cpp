@@ -51,17 +51,10 @@ static const char *kXfbVsSource = R"asm(
                OpFunctionEnd
         )asm";
 
-void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) {
+void NegativeTransformFeedback::InitBasicTransformFeedback() {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT tf_features = vku::InitStructHelper(pNextFeatures);
-    GetPhysicalDeviceFeatures2(tf_features);
-    if (tf_features.transformFeedback == VK_FALSE) {
-        GTEST_SKIP() << "transformFeedback not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &tf_features));
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(Init());
 }
 
 TEST_F(NegativeTransformFeedback, FeatureEnabled) {
@@ -1044,15 +1037,9 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(transform_feedback_features);
-    if (!transform_feedback_features.geometryStreams) {
-        GTEST_SKIP() << "geometryStreams not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &transform_feedback_features));
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props = vku::InitStructHelper();

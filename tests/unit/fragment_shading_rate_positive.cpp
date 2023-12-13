@@ -16,15 +16,9 @@ TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR shading_rate_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(shading_rate_features);
-    if (shading_rate_features.attachmentFragmentShadingRate == VK_FALSE) {
-        GTEST_SKIP() << "Test requires (unsupported) attachmentFragmentShadingRate";
-    }
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper(&shading_rate_features);
-    sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     const vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     const vkt::Event event(*m_device);
@@ -42,15 +36,10 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     TEST_DESCRIPTION("Test pipeline barrier with VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR stage");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(fsr_features);
-    if (fsr_features.attachmentFragmentShadingRate == VK_FALSE) {
-        GTEST_SKIP() << "Test requires (unsupported) attachmentFragmentShadingRate";
-    }
-    fsr_features.pipelineFragmentShadingRate = VK_FALSE;
-    fsr_features.primitiveFragmentShadingRate = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &fsr_features));
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddDisabledFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     VkImageFormatProperties format_props = {};
     VkResult result = vk::GetPhysicalDeviceImageFormatProperties(

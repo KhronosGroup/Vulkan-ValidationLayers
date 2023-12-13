@@ -694,14 +694,8 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceImageCompressionControlFeaturesEXT image_compression_control = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(image_compression_control);
-    if (!image_compression_control.imageCompressionControl) {
-        GTEST_SKIP() << "Test requires (unsupported) imageCompressionControl, skipping";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &image_compression_control));
+    AddRequiredFeature(vkt::Feature::imageCompressionControl);
+    RETURN_IF_SKIP(Init());
 
     // Query possible image format with vkGetPhysicalDeviceImageFormatProperties2KHR
     VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
@@ -808,16 +802,8 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    {
-        VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT slice_feature = vku::InitStructHelper();
-        GetPhysicalDeviceFeatures2(slice_feature);
-        if (slice_feature.imageSlicedViewOf3D == VK_FALSE) {
-            GTEST_SKIP() << "Test requires (unsupported) imageSlicedViewOf3D";
-        }
-        InitState(nullptr, &slice_feature);
-    }
+    AddRequiredFeature(vkt::Feature::imageSlicedViewOf3D);
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     VkImageCreateInfo ci = vku::InitStructHelper();
@@ -1315,10 +1301,9 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
 TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+    ;
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
     if (!FormatFeaturesAreSupported(gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,

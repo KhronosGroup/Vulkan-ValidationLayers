@@ -2185,14 +2185,9 @@ TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
     TEST_DESCRIPTION("Create pipeline with VK_NULL_HANDLE render pass and no VkPipelineRenderingCreateInfo in pNext chain");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -2335,17 +2330,10 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::storagePushConstant8);
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    VkPhysicalDevice8BitStorageFeatures storage_8_bit_features = vku::InitStructHelper();
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16int8_features = vku::InitStructHelper(&storage_8_bit_features);
-    GetPhysicalDeviceFeatures2(float16int8_features);
-    if (!float16int8_features.shaderInt8) {
-        GTEST_SKIP() << "shaderInt8 not supported";
-    }
-    if (!storage_8_bit_features.storagePushConstant8) {
-        GTEST_SKIP() << "storagePushConstant8 not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &float16int8_features));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     char const *const vsSource = R"glsl(

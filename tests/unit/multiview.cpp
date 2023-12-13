@@ -1043,13 +1043,8 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multiview_features);
-    if (!multiview_features.multiview) {
-        GTEST_SKIP() << "multiview not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &multiview_features));
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMultiviewProperties render_pass_multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
@@ -1075,13 +1070,8 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multiview_features);
-    if (!multiview_features.multiview) {
-        GTEST_SKIP() << "multiview not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &multiview_features));
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMultiviewProperties render_pass_multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
@@ -1108,13 +1098,8 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(multiview_features);
-    if (!multiview_features.multiview) {
-        GTEST_SKIP() << "multiview not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &multiview_features));
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMultiviewProperties render_pass_multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
