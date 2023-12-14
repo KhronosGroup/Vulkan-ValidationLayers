@@ -88,6 +88,26 @@ std::optional<SemOp> vvl::Semaphore::LastOp(const std::function<bool(const SemOp
     return result;
 }
 
+std::optional<vvl::SubmissionLocator> vvl::Semaphore::GetLastBinarySignalSubmission() const {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
+    auto guard = ReadLock();
+    if (timeline_.empty()) {
+        return {};
+    }
+    const auto &timepoint = timeline_.rbegin()->second;
+    const auto &signal_op = timepoint.signal_op;
+    // Binary wait without a signal is not a valid semaphore state (part of binary semaphore validation).
+    // Return an empty locator in this case.
+    if (!signal_op.has_value()) {
+        return {};
+    }
+    // Also skip signals that are not associated with a queue (e.g. swapchain acquire semaphore signaling).
+    if (signal_op->queue == nullptr) {
+        return {};
+    }
+    return vvl::SubmissionLocator{signal_op->queue, signal_op->seq};
+}
+
 bool vvl::Semaphore::CanBinaryBeSignaled() const {
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto guard = ReadLock();

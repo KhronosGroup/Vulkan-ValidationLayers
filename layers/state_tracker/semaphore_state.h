@@ -29,6 +29,7 @@ class ValidationStateTracker;
 namespace vvl {
 
 class Queue;
+struct SubmissionLocator;
 
 class Semaphore : public REFCOUNTED_NODE {
   public:
@@ -171,6 +172,9 @@ class Semaphore : public REFCOUNTED_NODE {
 
     // look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
+
+    // Returns queue submission associated with the last binary signal.
+    std::optional<SubmissionLocator> GetLastBinarySignalSubmission() const;
 
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
