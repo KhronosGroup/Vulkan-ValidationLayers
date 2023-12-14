@@ -185,6 +185,10 @@ struct DrawDispatchVuid {
     const char* external_format_resolve_09368 = kVUIDUndefined;
     const char* external_format_resolve_09369 = kVUIDUndefined;
     const char* external_format_resolve_09372 = kVUIDUndefined;
+    const char* external_format_resolve_09366 = kVUIDUndefined;
+    const char* external_format_resolve_09367 = kVUIDUndefined;
+    const char* external_format_resolve_09370 = kVUIDUndefined;
+    const char* external_format_resolve_09371 = kVUIDUndefined;
     const char* set_rasterizer_discard_enable_08639 = kVUIDUndefined;
     const char* set_depth_bias_enable_08640 = kVUIDUndefined;
     const char* set_logic_op_08641 = kVUIDUndefined;
