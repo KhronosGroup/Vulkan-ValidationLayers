@@ -488,15 +488,20 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
                              string_VkImageCreateFlags(create_info->flags).c_str());
         }
 
-        // only SAMPLED is allowed, but format_resolve allowed INPUT as well
-        if (0 != (~VK_IMAGE_USAGE_SAMPLED_BIT & create_info->usage)) {
-            if (((VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT & create_info->usage) == VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) ||
-                !enabled_features.externalFormatResolve) {
-                skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
-                                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
-                                 "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
-                                 string_VkImageUsageFlags(create_info->usage).c_str());
-            }
+        if (0 != (~(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &
+                  create_info->usage)) {
+            skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
+                             create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
+                             "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
+                             string_VkImageUsageFlags(create_info->usage).c_str());
+        } else if (!enabled_features.externalFormatResolve &&
+                   ((VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & create_info->usage)) {
+            skip |= LogError(
+                "VUID-VkImageCreateInfo-pNext-09457", device,
+                create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
+                "(%" PRIu64
+                ") is non-zero, but usage is %s (without externalFormatResolve, only VK_IMAGE_USAGE_SAMPLED_BIT is allowed).",
+                ext_fmt_android->externalFormat, string_VkImageUsageFlags(create_info->usage).c_str());
         }
 
         if (VK_IMAGE_TILING_OPTIMAL != create_info->tiling) {
