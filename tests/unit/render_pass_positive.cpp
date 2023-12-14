@@ -769,44 +769,21 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
 
     vkt::ImageView ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    // Create depth stencil attachment
-    VkAttachmentDescriptionStencilLayoutKHR attachment_desc_stencil_layout = vku::InitStructHelper();
+    VkAttachmentDescriptionStencilLayout attachment_desc_stencil_layout = vku::InitStructHelper();
     attachment_desc_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachment_desc_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-    VkAttachmentDescription2 ds_attachment_desc = vku::InitStructHelper(&attachment_desc_stencil_layout);
-    ds_attachment_desc.format = ds_format;
-    ds_attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    ds_attachment_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    ds_attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    ds_attachment_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    ds_attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    VkAttachmentReferenceStencilLayoutKHR attachment_ref_stencil_layout = vku::InitStructHelper();
+
+    VkAttachmentReferenceStencilLayout attachment_ref_stencil_layout = vku::InitStructHelper();
     attachment_ref_stencil_layout.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-    VkAttachmentReference2 ds_attachment_ref = vku::InitStructHelper(&attachment_ref_stencil_layout);
-    ds_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-    // Create render pass
-    VkSubpassDescription2 subpass = vku::InitStructHelper();
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.pDepthStencilAttachment = &ds_attachment_ref;
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+    rp.SetAttachmentDescriptionPNext(0, &attachment_desc_stencil_layout);
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, 0, &attachment_ref_stencil_layout);
+    rp.AddDepthStencilAttachment(0);
+    rp.CreateRenderPass();
 
-    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1;
-    render_pass_ci.pSubpasses = &subpass;
-    render_pass_ci.attachmentCount = 1;
-    render_pass_ci.pAttachments = &ds_attachment_desc;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-
-    // Create framebuffer
-    VkFramebufferCreateInfo fci = vku::InitStructHelper();
-    fci.renderPass = render_pass.handle();
-    fci.attachmentCount = 1;
-    fci.pAttachments = &ds_view.handle();
-    fci.width = ds_image.width();
-    fci.height = ds_image.height();
-    fci.layers = 1;
-    vkt::Framebuffer fb(*m_device, fci);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &ds_view.handle(), ds_image.width(), ds_image.height());
 
     // Use helper to create graphics pipeline
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
@@ -817,11 +794,11 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     CreatePipelineHelper helper(*this);
     helper.InitState();
     helper.gp_ci_.pDepthStencilState = &ds_state;
-    helper.gp_ci_.renderPass = render_pass.handle();
+    helper.gp_ci_.renderPass = rp.Handle();
     helper.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass.handle(), fb.handle(), fci.width, fci.height);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), ds_image.width(), ds_image.height());
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
     // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
     // and used in the validation code, 06887 would trigger with the following draw call

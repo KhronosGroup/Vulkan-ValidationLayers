@@ -13,6 +13,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/android_hardware_buffer.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
@@ -66,43 +67,16 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     external_format.externalFormat = ahb.GetExternalFormat(*m_device, &format_resolve_prop);
 
     // index 0 = color | index 1 = resolve
-    VkAttachmentDescription2 attachment_desc[2];
-    attachment_desc[0] = vku::InitStructHelper(&external_format);
-    attachment_desc[0].format = format_resolve_prop.colorAttachmentFormat;
-    attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    attachment_desc[1] = attachment_desc[0];
-    attachment_desc[1].format = VK_FORMAT_UNDEFINED;
-
-    VkAttachmentReference2 color_attachment_ref = vku::InitStructHelper();
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    color_attachment_ref.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    color_attachment_ref.attachment = 0;
-
-    VkAttachmentReference2 resolve_attachment_ref = vku::InitStructHelper();
-    resolve_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    resolve_attachment_ref.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolve_attachment_ref.attachment = 1;
-
-    VkSubpassDescription2 subpass = vku::InitStructHelper();
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pResolveAttachments = &resolve_attachment_ref;
-
-    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.attachmentCount = 2;
-    render_pass_ci.pAttachments = attachment_desc;
-    render_pass_ci.subpassCount = 1;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format_resolve_prop.colorAttachmentFormat);
+    rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
+    rp.SetAttachmentDescriptionPNext(0, &external_format);
+    rp.SetAttachmentDescriptionPNext(1, &external_format);
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddColorAttachment(0);
+    rp.AddResolveAttachment(1);
+    rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -148,12 +122,12 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
-    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 2, attachments);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.gp_ci_.pNext = &external_format;
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -176,43 +150,16 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     external_format.externalFormat = ahb.GetExternalFormat(*m_device, &format_resolve_prop);
 
     // index 0 = color | index 1 = resolve
-    VkAttachmentDescription2 attachment_desc[2];
-    attachment_desc[0] = vku::InitStructHelper(&external_format);
-    attachment_desc[0].format = format_resolve_prop.colorAttachmentFormat;
-    attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    attachment_desc[1] = attachment_desc[0];
-    attachment_desc[1].format = VK_FORMAT_UNDEFINED;
-
-    VkAttachmentReference2 color_attachment_ref = vku::InitStructHelper();
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    color_attachment_ref.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    color_attachment_ref.attachment = 0;
-
-    VkAttachmentReference2 resolve_attachment_ref = vku::InitStructHelper();
-    resolve_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    resolve_attachment_ref.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolve_attachment_ref.attachment = 1;
-
-    VkSubpassDescription2 subpass = vku::InitStructHelper();
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pResolveAttachments = &resolve_attachment_ref;
-
-    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.attachmentCount = 2;
-    render_pass_ci.pAttachments = attachment_desc;
-    render_pass_ci.subpassCount = 1;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format_resolve_prop.colorAttachmentFormat);
+    rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
+    rp.SetAttachmentDescriptionPNext(0, &external_format);
+    rp.SetAttachmentDescriptionPNext(1, &external_format);
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddColorAttachment(0);
+    rp.AddResolveAttachment(1);
+    rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -281,7 +228,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     fb_ci.height = 32;
     fb_ci.layers = 1;
     fb_ci.attachmentCount = 2;
-    fb_ci.renderPass = render_pass.handle();
+    fb_ci.renderPass = rp.Handle();
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkFramebufferCreateInfo-flags-03201");
     vkt::Framebuffer framebuffer(*m_device, fb_ci);
 
@@ -293,7 +240,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     render_pass_attachment_bi.pAttachments = attachments;
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper(&render_pass_attachment_bi);
-    render_pass_bi.renderPass = render_pass.handle();
+    render_pass_bi.renderPass = rp.Handle();
     render_pass_bi.framebuffer = framebuffer.handle();
     render_pass_bi.renderArea.extent = {1, 1};
     render_pass_bi.clearValueCount = 1;

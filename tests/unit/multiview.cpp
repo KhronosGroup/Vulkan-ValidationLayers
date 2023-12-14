@@ -1122,45 +1122,22 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     TEST_DESCRIPTION("Create graphics pipeline using multiview features which are not enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddDisabledFeature(vkt::Feature::multiviewTessellationShader);
+    AddDisabledFeature(vkt::Feature::multiviewGeometryShader);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM);
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(0);
+    rp.SetViewMask(0x3u);
+    rp.CreateRenderPass();
 
-    if (!multiview_features.multiview) {
-        GTEST_SKIP() << "Multiview support is required";
-    }
-
-    multiview_features.multiviewTessellationShader = VK_FALSE;
-    multiview_features.multiviewGeometryShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    VkAttachmentReference2 color_attachment = vku::InitStructHelper();
-    color_attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentDescription2 description = vku::InitStructHelper();
-    description.samples = VK_SAMPLE_COUNT_1_BIT;
-    description.format = VK_FORMAT_B8G8R8A8_UNORM;
-    description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription2 subpass = vku::InitStructHelper();
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.viewMask = 0x3u;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment;
-
-    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &description;
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, rpci);
-    ASSERT_TRUE(render_pass.initialized());
-
-    if (features2.features.tessellationShader) {
+    // tessellationShader
+    {
         char const *tcsSource = R"glsl(
         #version 450
         layout(vertices=3) out;
@@ -1187,7 +1164,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
         CreatePipelineHelper pipe(*this);
-        pipe.gp_ci_.renderPass = render_pass.handle();
+        pipe.gp_ci_.renderPass = rp.Handle();
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
         pipe.gp_ci_.pTessellationState = &tsci;
@@ -1200,7 +1177,8 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
-    if (features2.features.geometryShader) {
+    // geometryShader
+    {
         static char const *gsSource = R"glsl(
         #version 450
         layout (points) in;
@@ -1216,7 +1194,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.gp_ci_.renderPass = render_pass.handle();
+        pipe.gp_ci_.renderPass = rp.Handle();
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};

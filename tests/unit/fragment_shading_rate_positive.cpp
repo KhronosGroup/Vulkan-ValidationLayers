@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature enabled");
@@ -78,54 +79,25 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper(&fsr_features);
-    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
-    if (multiview_features.multiview == VK_FALSE) {
-        GTEST_SKIP() << "multiview feature not supported";
-        return;
-    }
-    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
-        GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::attachmentFragmentShadingRate not supported.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    VkAttachmentReference2 attach = vku::InitStructHelper();
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
-    attach.attachment = 0;
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
-    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = vku::InitStructHelper();
-    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
-    fsr_attachment.pFragmentShadingRateAttachment = &attach;
-
-    VkSubpassDescription2 subpass = vku::InitStructHelper(&fsr_attachment);
-    subpass.viewMask = 0x2;
-
-    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
-    attach_desc.format = VK_FORMAT_R8_UINT;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass rp(*m_device, rpci);
-    ASSERT_TRUE(rp.initialized());
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.SetViewMask(0x2);
+    rp.CreateRenderPass();
 
     VkImageObj image(m_device);
     image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vkt::ImageView imageView = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.handle(), 1, &imageView.handle(),
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle(),
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
     ASSERT_TRUE(framebuffer.initialized());
