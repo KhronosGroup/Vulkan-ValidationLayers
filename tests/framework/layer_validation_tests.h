@@ -312,7 +312,7 @@ class PositiveAndroidHardwareBuffer : public AndroidHardwareBufferTest {};
 
 class AndroidExternalResolveTest : public VkLayerTest {
   public:
-    void InitBasicAndroidExternalResolve(void *pNextFeatures = nullptr);
+    void InitBasicAndroidExternalResolve();
     bool nullColorAttachmentWithExternalFormatResolve;
 };
 class NegativeAndroidExternalResolve : public AndroidExternalResolveTest {};

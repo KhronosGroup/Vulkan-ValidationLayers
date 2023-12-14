@@ -85,6 +85,11 @@ TEST_F(NegativeAndroidHardwareBuffer, ImageCreate) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02397");
     vk::CreateImage(device(), &ici, NULL, &img);
     m_errorMonitor->VerifyFound();
+
+    ici.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-09457");
+    vk::CreateImage(device(), &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     // external format while tiline other than OPTIMAL
@@ -693,12 +698,8 @@ TEST_F(NegativeAndroidHardwareBuffer, CreateYCbCrSampler) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Enable Ycbcr Conversion Features
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper();
-    ycbcr_features.samplerYcbcrConversion = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &ycbcr_features));
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
     VkSamplerYcbcrConversionCreateInfo sycci = vku::InitStructHelper();
