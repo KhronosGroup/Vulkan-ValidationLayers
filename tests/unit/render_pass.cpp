@@ -1361,44 +1361,28 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
 
         vkt::ImageView input_view = input_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-        // Create the render pass attachment...
         VkAttachmentDescriptionStencilLayout stencil_layout = vku::InitStructHelper();
         stencil_layout.stencilInitialLayout = stencil_initial_layout;
         stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_GENERAL;
-        VkAttachmentDescription2 depth_stencil_attachment_desc = vku::InitStructHelper(&stencil_layout);
-        depth_stencil_attachment_desc.format = depth_stencil_format;
-        depth_stencil_attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-        depth_stencil_attachment_desc.initialLayout = depth_initial_layout;  // This will trigger errors
-        depth_stencil_attachment_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-        // ... and a reference to it...
         VkAttachmentReferenceStencilLayoutKHR stencil_ref = vku::InitStructHelper();
         stencil_ref.stencilLayout = VK_IMAGE_LAYOUT_GENERAL;
-        VkAttachmentReference2 input_attachment_ref = vku::InitStructHelper(&stencil_ref);
-        input_attachment_ref.attachment = 0;
-        input_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-        input_attachment_ref.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
-        // ... which is used in the one subpass.
-        VkSubpassDescription2 subpass_desc = vku::InitStructHelper();
-        subpass_desc.inputAttachmentCount = 1;
-        subpass_desc.pInputAttachments = &input_attachment_ref;
-
-        // Create render pass and framebuffer
-        VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
-        rpci.attachmentCount = 1;
-        rpci.pAttachments = &depth_stencil_attachment_desc;
-        rpci.subpassCount = 1;
-        rpci.pSubpasses = &subpass_desc;
-        vkt::RenderPass rp(*m_device, rpci);
+        RenderPass2SingleSubpass rp(*this);
+        rp.AddAttachmentDescription(depth_stencil_format, depth_initial_layout, VK_IMAGE_LAYOUT_GENERAL);
+        rp.SetAttachmentDescriptionPNext(0, &stencil_layout);
+        rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                                  &stencil_ref);
+        rp.AddInputAttachment(0);
+        rp.CreateRenderPass();
 
         const uint32_t fb_width = input_image.width();
         const uint32_t fb_height = input_image.height();
-        vkt::Framebuffer fb(*m_device, rp, 1, &input_view.handle(), fb_width, fb_height);
+        vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &input_view.handle(), fb_width, fb_height);
 
         // Begin render pass and trigger errors
         VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
-        rp_begin.renderPass = rp;
+        rp_begin.renderPass = rp.Handle();
         rp_begin.framebuffer = fb;
         rp_begin.renderArea.extent = {fb_width, fb_height};
 
@@ -1626,42 +1610,14 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     uint32_t attachmentHeight = 512;
     VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
 
-    VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
-    // Depth/stencil attachment
-    attachmentDescriptions[0] = vku::InitStructHelper();
-    attachmentDescriptions[0].format = attachmentFormat;
-    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // Depth/stencil resolve attachment
-    attachmentDescriptions[1] = vku::InitStructHelper();
-    attachmentDescriptions[1].format = attachmentFormat;
-    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentReference2 depthStencilAttachmentReference = vku::InitStructHelper();
-    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthStencilAttachmentReference.attachment = 0;
-    VkAttachmentReference2 depthStencilResolveAttachmentReference = vku::InitStructHelper();
-    depthStencilResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthStencilResolveAttachmentReference.attachment = 1;
-    VkSubpassDescriptionDepthStencilResolveKHR subpassDescriptionDepthStencilResolve = vku::InitStructHelper();
-    subpassDescriptionDepthStencilResolve.pDepthStencilResolveAttachment = &depthStencilResolveAttachmentReference;
-    subpassDescriptionDepthStencilResolve.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
-    subpassDescriptionDepthStencilResolve.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
-    VkSubpassDescription2 subpassDescription = vku::InitStructHelper(&subpassDescriptionDepthStencilResolve);
-    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
-
-    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
-    rpci.attachmentCount = 2;
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpassDescription;
-    rpci.pAttachments = attachmentDescriptions;
-    vkt::RenderPass rp(*m_device, rpci);
-    ASSERT_TRUE(rp.initialized());
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachmentFormat, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
+    rp.AddAttachmentDescription(attachmentFormat, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilResolveAttachment(1, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
+    rp.CreateRenderPass();
 
     // Depth resolve attachment, mismatched image usage
     // Try creating Framebuffer with images, but with invalid image create usage flags
@@ -1696,7 +1652,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00880");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02634");
-    vkt::Framebuffer framebuffer(*m_device, rp.handle(), 2, image_views, attachmentWidth, attachmentHeight);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, image_views, attachmentWidth, attachmentHeight);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2453,53 +2409,21 @@ TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
-    VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
-    // Depth/stencil attachment
-    attachmentDescriptions[0] = vku::InitStructHelper();
-    attachmentDescriptions[0].format = VK_FORMAT_R8_UNORM;
-    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachmentDescriptions[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attachmentDescriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // Depth/stencil resolve attachment
-    attachmentDescriptions[1] = vku::InitStructHelper();
-    attachmentDescriptions[1].format = ds_format;
-    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachmentDescriptions[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attachmentDescriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8_UNORM, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil
+    rp.AddAttachmentDescription(ds_format, VK_SAMPLE_COUNT_4_BIT);           // Depth/stencil resolve
+    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(1);
+    rp.AddDepthStencilResolveAttachment(0, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
 
-    VkAttachmentReference2KHR depthStencilAttachmentReference = vku::InitStructHelper();
-    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthStencilAttachmentReference.attachment = 1;
-
-    VkAttachmentReference2KHR depthStencilResolveAttachmentReference = vku::InitStructHelper();
-    depthStencilResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthStencilResolveAttachmentReference.attachment = 0;
-
-    VkSubpassDescriptionDepthStencilResolveKHR subpassDescriptionDepthStencilResolve = vku::InitStructHelper();
-    subpassDescriptionDepthStencilResolve.pDepthStencilResolveAttachment = &depthStencilResolveAttachmentReference;
-    subpassDescriptionDepthStencilResolve.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-    subpassDescriptionDepthStencilResolve.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-
-    VkSubpassDescription2 subpassDescription = vku::InitStructHelper(&subpassDescriptionDepthStencilResolve);
-    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
-
-    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpassDescription;
-    rpci.attachmentCount = 2;
-    rpci.pAttachments = attachmentDescriptions;
-
-    VkRenderPass render_pass;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651");
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, nullptr, &render_pass);
+    rp.CreateRenderPass();
     m_errorMonitor->VerifyFound();
 }
 
