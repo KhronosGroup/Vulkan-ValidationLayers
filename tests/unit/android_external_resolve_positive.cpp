@@ -17,22 +17,12 @@
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
-void AndroidExternalResolveTest::InitBasicAndroidExternalResolve(void* pNextFeatures) {
+void AndroidExternalResolveTest::InitBasicAndroidExternalResolve() {
     SetTargetApiVersion(VK_API_VERSION_1_2); // for RenderPass2
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper(pNextFeatures);
-    VkPhysicalDeviceExternalFormatResolveFeaturesANDROID external_format_resolve_features = vku::InitStructHelper(&features11);
-    GetPhysicalDeviceFeatures2(external_format_resolve_features);
-    if (external_format_resolve_features.externalFormatResolve == VK_FALSE) {
-        GTEST_SKIP() << "Test requires (unsupported) externalFormatResolve";
-    }
-    if (features11.samplerYcbcrConversion == VK_FALSE) {
-        GTEST_SKIP() << "Test requires (unsupported) samplerYcbcrConversion";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &external_format_resolve_features));
+    AddRequiredFeature(vkt::Feature::externalFormatResolve);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID external_format_resolve_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(external_format_resolve_props);
@@ -132,8 +122,9 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
 }
 
 TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
-    VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&imageless_framebuffer));
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -254,8 +245,8 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
 
 TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicAndroidExternalResolve(&dynamic_rendering_features));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
 
     if (nullColorAttachmentWithExternalFormatResolve) {
         GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
@@ -311,7 +302,6 @@ TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     ivci.format = VK_FORMAT_UNDEFINED;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     const vkt::ImageView resolve_view(*m_device, ivci);
-
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_view.handle();
