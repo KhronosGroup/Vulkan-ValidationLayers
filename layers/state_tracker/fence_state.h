@@ -28,6 +28,24 @@ class ValidationStateTracker;
 namespace vvl {
 
 class Queue;
+class Swapchain;
+
+// References a specific submission on the given queue.
+struct SubmissionLocator {
+    Queue *queue = nullptr;
+    uint64_t seq = kU64Max;
+};
+
+// present-based sync is when a fence from AcquireNextImage is used to synchronize
+// with submissions presented in one of the previous frames.
+// More common scheme is to use QueueSubmit fence for frame synchronization.
+struct PresentSync {
+    // Queue submissions that will be notified when WaitForFences is called.
+    small_vector<SubmissionLocator, 2, uint32_t> submissions;
+
+    // Swapchain associated with this PresentSync.
+    std::shared_ptr<vvl::Swapchain> swapchain;
+};
 
 class Fence : public REFCOUNTED_NODE {
   public:
@@ -50,6 +68,9 @@ class Fence : public REFCOUNTED_NODE {
     VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
 
     bool EnqueueSignal(Queue *queue_state, uint64_t next_seq);
+
+    void SetPresentSync(const PresentSync &present_sync);
+    bool IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const;
 
     // Notify the queue that the fence has signalled and then wait for the queue
     // to update state.
@@ -85,6 +106,7 @@ class Fence : public REFCOUNTED_NODE {
     mutable std::shared_mutex lock_;
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
+    PresentSync present_sync_;
     ValidationStateTracker &dev_data_;
 };
 
