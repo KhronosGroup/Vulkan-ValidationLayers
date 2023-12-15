@@ -58,6 +58,7 @@ struct ValidateEndQueryVuids {
     const char* vuid_active_queries = kVUIDUndefined;
     const char* vuid_protected_cb = kVUIDUndefined;
     const char* vuid_multiview_query = kVUIDUndefined;
+    const char* vuid_inside_renderpass_07007 = kVUIDUndefined;
 };
 
 struct SubresourceRangeErrorCodes {
@@ -425,8 +426,8 @@ class CoreChecks : public ValidationStateTracker {
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
                             uint32_t index, const Location& loc, const ValidateBeginQueryVuids* vuids) const;
-    bool ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, uint32_t index, const Location& loc,
-                             const ValidateEndQueryVuids* vuids) const;
+    bool ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t slot, uint32_t index,
+                             const Location& loc, const ValidateEndQueryVuids* vuids) const;
 
     bool ValidateCmdDrawInstance(const vvl::CommandBuffer& cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                  const Location& loc) const;

@@ -773,6 +773,14 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
         skip |= LogError(vuid, objlist, error_obj.location, "transform feedback is active.");
     }
 
+    for (const auto &query : cb_state.renderPassQueries) {
+        vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-07005" : "VUID-vkCmdEndRenderPass-None-07004";
+        const LogObjectList objlist(commandBuffer, rp_state.renderPass(), query.pool);
+        skip |= LogError(vuid, objlist, error_obj.location,
+                         "query %" PRIu32 " from %s was began in subpass %" PRIu32 " but never ended.", query.slot,
+                         FormatHandle(query.pool).c_str(), query.subpass);
+    }
+
     return skip;
 }
 
@@ -3862,6 +3870,12 @@ bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, c
     if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
         skip |= LogError("VUID-vkCmdEndRendering-commandBuffer-06162", commandBuffer, error_obj.location,
                          "in a render pass instance that was not begun in this command buffer.");
+    }
+    for (const auto &query : cb_state->renderPassQueries) {
+        const LogObjectList objlist(commandBuffer, query.pool);
+        skip |= LogError(" VUID-vkCmdEndRendering-None-06999", objlist, error_obj.location,
+                         "query %" PRIu32 " from %s was began in the render pass, but never ended.", query.slot,
+                         FormatHandle(query.pool).c_str());
     }
     return skip;
 }

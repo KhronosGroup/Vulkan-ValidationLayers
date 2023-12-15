@@ -162,6 +162,7 @@ void CommandBuffer::ResetCBState() {
     writeEventsBeforeWait.clear();
     activeQueries.clear();
     startedQueries.clear();
+    renderPassQueries.clear();
     image_layout_map.clear();
     aliased_image_layout_map.clear();
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
@@ -359,6 +360,9 @@ void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
         return false;
     });
     updatedQueries.insert(query_obj);
+    if (query_obj.inside_render_pass) {
+        renderPassQueries.insert(query_obj);
+    }
 }
 
 void CommandBuffer::EndQuery(const QueryObject &query_obj) {
@@ -368,6 +372,9 @@ void CommandBuffer::EndQuery(const QueryObject &query_obj) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
     updatedQueries.insert(query_obj);
+    if (query_obj.inside_render_pass) {
+        renderPassQueries.erase(query_obj);
+    }
 }
 
 bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
@@ -408,7 +415,6 @@ void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint3
 void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
-        resetQueries.insert(query_obj);
         updatedQueries.insert(query_obj);
     }
 
@@ -487,6 +493,7 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     active_render_pass_begin_info = safe_VkRenderPassBeginInfo(pRenderPassBegin);
     SetActiveSubpass(0);
     activeSubpassContents = contents;
+    renderPassQueries.clear();
 
     // Connect this RP to cmdBuffer
     if (!dev_data->disabled[command_buffer_state]) {
@@ -558,6 +565,7 @@ void CommandBuffer::EndRenderPass(Func command) {
 void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(command);
     activeRenderPass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
+    renderPassQueries.clear();
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {

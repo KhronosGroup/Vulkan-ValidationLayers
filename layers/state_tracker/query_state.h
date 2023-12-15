@@ -96,13 +96,14 @@ class QueryPool : public BASE_NODE {
 };
 }  // namespace vvl
 
+// Represents a single Query inside a QueryPool
 struct QueryObject {
     VkQueryPool pool;
     uint32_t slot;  // use 'slot' as alias to 'query' parameter to help reduce confusing namespace
     uint32_t perf_pass;
-    VkQueryControlFlags control_flags;
 
-    // These next five fields are *not* used in hash or comparison, they are effectively a data payload
+    // These below fields are *not* used in hash or comparison, they are effectively a data payload
+    VkQueryControlFlags control_flags;
     mutable uint32_t active_query_index;
     uint32_t last_activatable_query_index;
     uint32_t index;  // must be zero if !indexed
@@ -110,7 +111,9 @@ struct QueryObject {
     // Command index in the command buffer where the end of the query was
     // recorded (equal to the number of commands in the command buffer before
     // the end of the query).
-    uint64_t end_command_index;
+    uint64_t end_command_index = 0;
+    bool inside_render_pass = false;
+    uint32_t subpass = 0;
 
     QueryObject(VkQueryPool pool_, uint32_t slot_, VkQueryControlFlags control_flags_ = 0, uint32_t perf_pass_ = 0,
                 bool indexed_ = false, uint32_t index_ = 0)
@@ -121,8 +124,7 @@ struct QueryObject {
           active_query_index(slot_),
           last_activatable_query_index(slot_),
           index(index_),
-          indexed(indexed_),
-          end_command_index(0) {}
+          indexed(indexed_) {}
 
     // This is needed because vvl::CommandBuffer::BeginQuery() and EndQuery() need to make a copy to update
     QueryObject(const QueryObject &obj, uint32_t perf_pass_)
@@ -134,7 +136,10 @@ struct QueryObject {
           last_activatable_query_index(obj.last_activatable_query_index),
           index(obj.index),
           indexed(obj.indexed),
-          end_command_index(obj.end_command_index) {}
+          end_command_index(obj.end_command_index),
+          inside_render_pass(obj.inside_render_pass),
+          subpass(obj.subpass) {}
+
     bool operator<(const QueryObject &rhs) const {
         return (pool == rhs.pool) ? ((slot == rhs.slot) ? (perf_pass < rhs.perf_pass) : (slot < rhs.slot)) : pool < rhs.pool;
     }
