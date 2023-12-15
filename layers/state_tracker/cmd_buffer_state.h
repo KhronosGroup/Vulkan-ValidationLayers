@@ -413,8 +413,8 @@ class CommandBuffer : public REFCOUNTED_NODE {
     std::vector<VkEvent> events;
     vvl::unordered_set<QueryObject> activeQueries;
     vvl::unordered_set<QueryObject> startedQueries;
-    vvl::unordered_set<QueryObject> resetQueries;
     vvl::unordered_set<QueryObject> updatedQueries;
+    vvl::unordered_set<QueryObject> renderPassQueries;
     CommandBufferImageLayoutMap image_layout_map;
     CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
