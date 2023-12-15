@@ -203,6 +203,151 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
         "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228");
 }
 
+TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
+    TEST_DESCRIPTION("Test VUIDs added with VK_KHR_vertex_attribute_divisor extension.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pdvad_props);
+
+    VkVertexInputBindingDivisorDescriptionKHR vibdd = {};
+    VkPipelineVertexInputDivisorStateCreateInfoKHR pvids_ci = vku::InitStructHelper();
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    if (pdvad_props.maxVertexAttribDivisor < pvids_ci.vertexBindingDivisorCount) {
+        GTEST_SKIP() << "This device does not support vertexBindingDivisors";
+    }
+
+    using std::vector;
+    struct TestCase {
+        uint32_t div_binding;
+        uint32_t div_divisor;
+        uint32_t desc_binding;
+        VkVertexInputRate desc_rate;
+        vector<std::string> vuids;
+    };
+
+    // clang-format off
+    vector<TestCase> test_cases = {
+        {   0,
+            1,
+            0,
+            VK_VERTEX_INPUT_RATE_VERTEX,
+            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
+        },
+        {   dev_limits.maxVertexInputBindings + 1,
+            1,
+            0,
+            VK_VERTEX_INPUT_RATE_INSTANCE,
+            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-binding-01869",
+             "VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
+        }
+    };
+
+    if (vvl::kU32Max != pdvad_props.maxVertexAttribDivisor) {  // Can't test overflow if maxVAD is UINT32_MAX
+        test_cases.push_back(
+            {   0,
+                pdvad_props.maxVertexAttribDivisor + 1,
+                0,
+                VK_VERTEX_INPUT_RATE_INSTANCE,
+                {"VUID-VkVertexInputBindingDivisorDescriptionKHR-divisor-01870"}
+            } );
+    }
+    // clang-format on
+
+    for (const auto &test_case : test_cases) {
+        const auto bad_divisor_state = [&test_case, &vibdd, &pvids_ci, &vibd](CreatePipelineHelper &helper) {
+            vibdd.binding = test_case.div_binding;
+            vibdd.divisor = test_case.div_divisor;
+            vibd.binding = test_case.desc_binding;
+            vibd.inputRate = test_case.desc_rate;
+            helper.vi_ci_.pNext = &pvids_ci;
+            helper.vi_ci_.vertexBindingDescriptionCount = 1;
+            helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+        };
+        CreatePipelineHelper::OneshotTest(*this, bad_divisor_state, kErrorBit, test_case.vuids);
+    }
+}
+
+TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
+    TEST_DESCRIPTION("Test instance divisor feature disabled for VK_KHR_vertex_attribute_divisor extension.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    AddDisabledFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pdvad_props);
+
+    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    vibdd.binding = 0;
+    vibdd.divisor = 2;
+    VkPipelineVertexInputDivisorStateCreateInfoKHR pvids_ci = vku::InitStructHelper();
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.binding = vibdd.binding;
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    if (pdvad_props.maxVertexAttribDivisor < pvids_ci.vertexBindingDivisorCount) {
+        GTEST_SKIP() << "This device does not support vertexBindingDivisors";
+    }
+
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pNext = &pvids_ci;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+    };
+    CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
+                                      "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateDivisor-02229");
+}
+
+TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
+    TEST_DESCRIPTION("Test instanceRateZero feature of VK_KHR_vertex_attribute_divisor extension.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    AddDisabledFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkVertexInputBindingDivisorDescriptionKHR vibdd = {};
+    vibdd.binding = 0;
+    vibdd.divisor = 0;
+    VkPipelineVertexInputDivisorStateCreateInfoKHR pvids_ci = vku::InitStructHelper();
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.binding = vibdd.binding;
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pNext = &pvids_ci;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, instance_rate, kErrorBit,
+        "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228");
+}
+
 TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputBindingDescription-binding-00618: binding must be less than "
@@ -1117,4 +1262,108 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 7
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeVertexInput, UnsupportedDivisor) {
+    TEST_DESCRIPTION("Test drawing with unsupported combination of vertex divisor and first instance");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pdvad_props);
+
+    if (pdvad_props.supportsNonZeroFirstInstance) {
+        GTEST_SKIP() << "Test requires supportsNonZeroFirstInstance to be VK_FALSE";
+    }
+
+    VkVertexInputBindingDivisorDescriptionKHR vertex_binding_divisor;
+    vertex_binding_divisor.binding = 0u;
+    vertex_binding_divisor.divisor = 2u;
+
+    VkPipelineVertexInputDivisorStateCreateInfoKHR vertex_input_divisor_state = vku::InitStructHelper();
+    vertex_input_divisor_state.vertexBindingDivisorCount = 1u;
+    vertex_input_divisor_state.pVertexBindingDivisors = &vertex_binding_divisor;
+
+    if (pdvad_props.maxVertexAttribDivisor < vertex_input_divisor_state.vertexBindingDivisorCount) {
+        GTEST_SKIP() << "This device does not support vertexBindingDivisors";
+    }
+
+    VkVertexInputBindingDescription input_vertex_binding_description;
+    input_vertex_binding_description.binding = 0u;
+    input_vertex_binding_description.stride = 32u;
+    input_vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.vi_ci_.pNext = &vertex_input_divisor_state;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1u;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_vertex_binding_description;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1027u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pNext-09461");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 1u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, UnsupportedDynamicStateDivisor) {
+    TEST_DESCRIPTION("Test drawing with unsupported combination of vertex divisor and first instance");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pdvad_props);
+
+    if (pdvad_props.supportsNonZeroFirstInstance) {
+        GTEST_SKIP() << "Test requires supportsNonZeroFirstInstance to be VK_FALSE";
+    }
+
+    VkVertexInputBindingDescription2EXT vertex_input_binding_description = vku::InitStructHelper();
+    vertex_input_binding_description.binding = 0u;
+    vertex_input_binding_description.stride = 32u;
+    vertex_input_binding_description.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    vertex_input_binding_description.divisor = 2u;
+
+    if (pdvad_props.maxVertexAttribDivisor < vertex_input_binding_description.divisor) {
+        GTEST_SKIP() << "This device does not support vertexBindingDivisors";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1u, &vertex_input_binding_description, 0u, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09462");
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 1u);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
