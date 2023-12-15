@@ -879,8 +879,14 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_mesh_shader, &phys_dev_props->mesh_shader_props_ext);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_inline_uniform_block,
                                    &phys_dev_props->inline_uniform_block_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_vertex_attribute_divisor,
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_vertex_attribute_divisor,
                                    &phys_dev_props->vtx_attrib_divisor_props);
+    if (!IsExtEnabled(dev_ext.vk_khr_vertex_attribute_divisor)) {
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
+        GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_vertex_attribute_divisor, &vtx_attrib_divisor_props_ext);
+        phys_dev_props->vtx_attrib_divisor_props = vku::InitStructHelper();
+        phys_dev_props->vtx_attrib_divisor_props.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
+    }
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props_nv);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_ray_tracing_pipeline, &phys_dev_props->ray_tracing_props_khr);
@@ -4929,6 +4935,10 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
         status_flags.set(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
     cb_state->RecordStateCmd(record_obj.location.function, status_flags);
+    cb_state->dynamic_state_value.vertex_binding_descriptions.resize(vertexBindingDescriptionCount);
+    for (uint32_t i = 0; i < vertexBindingDescriptionCount; ++i) {
+        cb_state->dynamic_state_value.vertex_binding_descriptions[i] = pVertexBindingDescriptions[i];
+    }
     cb_state->dynamic_state_value.vertex_attribute_descriptions.resize(vertexAttributeDescriptionCount);
     for (uint32_t i = 0; i < vertexAttributeDescriptionCount; ++i) {
         cb_state->dynamic_state_value.vertex_attribute_descriptions[i] = pVertexAttributeDescriptions[i];

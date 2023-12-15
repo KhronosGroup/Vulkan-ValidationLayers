@@ -319,6 +319,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         rasterization_samples_09211              = "VUID-vkCmdDraw-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-07481";
+        vertex_input_09461                       = "VUID-vkCmdDraw-pNext-09461";
+        vertex_input_09462                       = "VUID-vkCmdDraw-None-09462";
     }
 };
 
@@ -620,6 +622,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         rasterization_samples_09211              = "VUID-vkCmdDrawMultiEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMultiEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
+        vertex_input_09461                       = "VUID-vkCmdDrawMultiEXT-pNext-09461";
+        vertex_input_09462                       = "VUID-vkCmdDrawMultiEXT-None-09462";
     }
 };
 
@@ -922,6 +926,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         rasterization_samples_09211              = "VUID-vkCmdDrawIndexed-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexed-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-07481";
+        vertex_input_09461                       = "VUID-vkCmdDrawIndexed-pNext-09461";
+        vertex_input_09462                       = "VUID-vkCmdDrawIndexed-None-09462";
     }
 };
 
@@ -1224,6 +1230,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         rasterization_samples_09211              = "VUID-vkCmdDrawMultiIndexedEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMultiIndexedEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
+        vertex_input_09461                       = "VUID-vkCmdDrawMultiIndexedEXT-pNext-09461";
+        vertex_input_09462                       = "VUID-vkCmdDrawMultiIndexedEXT-None-09462";
     }
 };
 

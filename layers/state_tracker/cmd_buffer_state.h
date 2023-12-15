@@ -280,6 +280,7 @@ class CommandBuffer : public RefcountedStateObject {
         std::vector<VkColorComponentFlags> color_write_masks;        // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
 
         // VK_DYNAMIC_STATE_VERTEX_INPUT_EXT
+        std::vector<VkVertexInputBindingDescription2EXT> vertex_binding_descriptions;
         std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descriptions;
 
         // VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT
@@ -331,6 +332,7 @@ class CommandBuffer : public RefcountedStateObject {
             color_blend_advanced_attachments.reset();
             color_blend_equations.clear();
             color_write_masks.clear();
+            vertex_binding_descriptions.clear();
             vertex_attribute_descriptions.clear();
             viewport_w_scalings.clear();
             exclusive_scissor_enables.clear();
