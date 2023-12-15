@@ -3141,8 +3141,8 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
             // using VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
             if (device_features.sparseResidencyImage3D) {
                 VkImageObj sparse_image(m_device);
-                image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-                m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-00987");
+                image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
+                                 VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
                 m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
                 sparse_image.Init(image_ci, 0, false);
                 sparse_image_view_ci.image = sparse_image.handle();

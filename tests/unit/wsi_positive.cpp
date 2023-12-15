@@ -45,12 +45,8 @@ TEST_F(PositiveWsi, CreateWaylandSurface) {
     GTEST_SKIP() << "test not supported on platform";
 #else
     AddSurfaceExtension();
-
+    AddRequiredExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-
-    if (!IsExtensionsEnabled(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)) {
-        GTEST_SKIP() << VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME << " extension not supported.";
-    }
 
     wl_display *display = nullptr;
     wl_registry *registry = nullptr;
@@ -116,12 +112,8 @@ TEST_F(PositiveWsi, CreateXcbSurface) {
     GTEST_SKIP() << "test not supported on platform";
 #else
     AddSurfaceExtension();
-
+    AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-
-    if (!IsExtensionsEnabled(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
-        GTEST_SKIP() << VK_KHR_XCB_SURFACE_EXTENSION_NAME << " not supported.";
-    }
 
     xcb_connection_t *xcb_connection = xcb_connect(nullptr, nullptr);
     ASSERT_TRUE(xcb_connection);
@@ -151,12 +143,8 @@ TEST_F(PositiveWsi, CreateX11Surface) {
     GTEST_SKIP() << "test not supported on platform";
 #else
     AddSurfaceExtension();
-
+    AddRequiredExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-
-    if (!IsExtensionsEnabled(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
-        GTEST_SKIP() << VK_KHR_XLIB_SURFACE_EXTENSION_NAME << " not supported.";
-    }
 
     if (std::getenv("DISPLAY") == nullptr) {
         GTEST_SKIP() << "Test requires working display\n";

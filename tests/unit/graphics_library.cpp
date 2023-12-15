@@ -1125,6 +1125,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         const std::array shaders = {vs_stage.stage_ci, tcs_stage.stage_ci};
         pre_raster_lib.InitPreRasterLibInfoFromContainer(shaders);
         pre_raster_lib.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
