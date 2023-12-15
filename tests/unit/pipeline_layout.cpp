@@ -117,7 +117,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
+TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed per-stage limits");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -425,7 +425,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
 }
 
-TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
+TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed limits");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

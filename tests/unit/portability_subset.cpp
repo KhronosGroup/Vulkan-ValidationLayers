@@ -623,3 +623,27 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
+    TEST_DESCRIPTION("Validate creating instances with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR.");
+
+    auto ici = GetInstanceCreateInfo();
+    ici.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    ici.enabledExtensionCount = 1;
+
+    VkInstance local_instance;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-flags-06559");
+    vk::CreateInstance(&ici, nullptr, &local_instance);
+    m_errorMonitor->VerifyFound();
+
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+                                                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+        ici.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
+        ici.ppEnabledExtensionNames = enabled_extensions.data();
+
+        ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
+        vk::DestroyInstance(local_instance, nullptr);
+    }
+}

@@ -3674,3 +3674,94 @@ TEST_F(NegativeSyncObject, WaitEventRenderPassHostBit) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeSyncObject, StageMaskHost) {
+    TEST_DESCRIPTION("Test invalid usage of VK_PIPELINE_STAGE_HOST_BIT.");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Event event(*m_device);
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-01149");
+    vk::CmdSetEvent(m_commandBuffer->handle(), event.handle(), VK_PIPELINE_STAGE_HOST_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent-stageMask-01153");
+    vk::CmdResetEvent(m_commandBuffer->handle(), event.handle(), VK_PIPELINE_STAGE_HOST_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    vkt::Semaphore semaphore(*m_device);
+    ASSERT_TRUE(semaphore.initialized());
+
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_HOST_BIT;
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+
+    // Signal the semaphore so the next test can wait on it.
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.pWaitDstStageMask = &stage_flags;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Need to ensure semaphore is not in use before the test ends and it gets destroyed
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeSyncObject, ResetEventThenSet) {
+    TEST_DESCRIPTION("Reset an event then set it after the reset has been submitted.");
+
+    RETURN_IF_SKIP(Init());
+    VkEventCreateInfo event_create_info = vku::InitStructHelper();
+    vkt::Event event(*m_device, event_create_info);
+
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
+    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    vkt::CommandPool command_pool(*m_device, pool_create_info);
+
+    VkCommandBuffer command_buffer;
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
+    command_buffer_allocate_info.commandPool = command_pool.handle();
+    command_buffer_allocate_info.commandBufferCount = 1;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
+
+    VkQueue queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
+
+    {
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+        vk::BeginCommandBuffer(command_buffer, &begin_info);
+
+        vk::CmdResetEvent(command_buffer, event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        vk::EndCommandBuffer(command_buffer);
+    }
+    {
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &command_buffer;
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.pSignalSemaphores = nullptr;
+        vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    }
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkSetEvent-QueueForwardProgress");
+        vk::SetEvent(m_device->device(), event.handle());
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::QueueWaitIdle(queue);
+
+    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
+}

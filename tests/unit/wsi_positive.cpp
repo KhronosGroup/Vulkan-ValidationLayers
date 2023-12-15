@@ -956,21 +956,17 @@ TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 }
 
-TEST_F(VkPositiveLayerTest, InitSwapchain) {
+TEST_F(PositiveWsi, InitSwapchain) {
     TEST_DESCRIPTION("Make sure InitSwapchain is not producing anying invalid usage");
-
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (InitSwapchain()) {
         DestroySwapchain();
     }
 }
 
-TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
+TEST_F(PositiveWsi, DestroySwapchainWithBoundImages) {
     TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
 
     AddSurfaceExtension();
@@ -1219,4 +1215,47 @@ TEST_F(PositiveWsi, RegisterDisplayEvent) {
     vk::RegisterDisplayEventEXT(device(), display, &event_info, nullptr, &fence);
 
     vk::DestroyFence(device(), fence, nullptr);
+}
+
+TEST_F(PositiveWsi, SurfacelessQueryTest) {
+    TEST_DESCRIPTION("Ensure affected API calls can be made with surfacless query extension");
+
+    AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "VK_GOOGLE_surfaceless_query not supported on desktop";
+    }
+
+    // Use the VK_GOOGLE_surfaceless_query extension to query the available formats and
+    // colorspaces by using a VK_NULL_HANDLE for the VkSurfaceKHR handle.
+    uint32_t count;
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
+    std::vector<VkSurfaceFormatKHR> surface_formats(count);
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, surface_formats.data());
+
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, present_modes.data());
+}
+
+TEST_F(PositiveWsi, PhysicalDeviceSurfaceSupport) {
+    TEST_DESCRIPTION("Test if physical device supports surface.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+
+    RETURN_IF_SKIP(InitFramework());
+
+    RETURN_IF_SKIP(InitState());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), 0, m_surface, &supported);
+
+    if (supported) {
+        uint32_t count;
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &count, nullptr);
+    }
 }

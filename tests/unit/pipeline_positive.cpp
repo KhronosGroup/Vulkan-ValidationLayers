@@ -195,7 +195,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
+TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
@@ -973,7 +973,7 @@ TEST_F(PositivePipeline, ShaderTileImage) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
+TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);

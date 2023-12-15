@@ -2484,3 +2484,41 @@ TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07991");
 }
+
+TEST_F(NegativeShaderSpirv, InvalidExtension) {
+    TEST_DESCRIPTION("Use an invalid SPIR-V extension in OpExtension.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+
+    InitRenderTarget();
+
+    const char *vertex_source = R"spirv(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %4 "main"
+               OpSource GLSL 450
+               OpExtension "GL_EXT_scalar_block_layout"
+               OpName %4 "main"
+          %2 = OpTypeVoid
+          %3 = OpTypeFunction %2
+          %4 = OpFunction %2 None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )spirv";
+    VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM_TRY);
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    if (vs.InitFromASMTry() != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to compile shader";
+    }
+    const VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08741");
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
