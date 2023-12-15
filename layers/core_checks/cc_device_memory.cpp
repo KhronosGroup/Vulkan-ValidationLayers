@@ -116,7 +116,7 @@ bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const vvl::Buffer &buf
 //  IF a previous binding existed, output validation error
 //  Otherwise, add reference from objectInfo to memoryInfo
 //  Add reference off of objInfo
-bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const BINDABLE &mem_binding, const Location &loc) const {
+bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindable &mem_binding, const Location &loc) const {
     bool skip = false;
     if (memory == VK_NULL_HANDLE) {
         return skip;  // It's an error to bind an object to NULL memory

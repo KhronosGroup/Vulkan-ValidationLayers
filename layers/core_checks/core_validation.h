@@ -240,7 +240,7 @@ class CoreChecks : public ValidationStateTracker {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
-    bool ValidateSetMemBinding(VkDeviceMemory memory, const BINDABLE& mem_binding, const Location& loc) const;
+    bool ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindable& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
     bool ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
@@ -483,7 +483,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToImage(const LogObjectList& objlist, const vvl::Image& image_state, const Location& loc,
                                       const char* vuid) const;
 
-    bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const Location& loc, const char* error_code) const;
+    bool ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const;
     bool ValidateCmdQueueFlags(const vvl::CommandBuffer& cb_state, const Location& loc, VkQueueFlags flags, const char* vuid,
                                const char* extra_message = "") const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const Location& loc) const;

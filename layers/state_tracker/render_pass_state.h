@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "generated/vk_safe_struct.h"
 
 namespace vvl {
@@ -70,7 +70,7 @@ struct SubpassLayout {
 
 namespace vvl {
 
-class RenderPass : public BASE_NODE {
+class RenderPass : public StateObject {
   public:
     struct AttachmentTransition {
         uint32_t prev_pass;
@@ -123,7 +123,7 @@ class RenderPass : public BASE_NODE {
     const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
 };
 
-class Framebuffer : public BASE_NODE {
+class Framebuffer : public StateObject {
   public:
     const safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<const RenderPass> rp_state;

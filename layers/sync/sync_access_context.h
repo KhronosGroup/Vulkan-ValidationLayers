@@ -29,7 +29,7 @@ namespace syncval_state {
 class ImageState;
 class ImageViewState;
 }  // namespace syncval_state
-bool SimpleBinding(const BINDABLE &bindable);
+bool SimpleBinding(const vvl::Bindable &bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
 // ForEachEntryInRangesUntil -- Execute Action for each map entry in the generated ranges until it returns true

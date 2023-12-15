@@ -102,7 +102,7 @@ namespace vvl {
 //    Note that the images for *every* image_index will show up as parents of the swapchain,
 //    so swapchain_image_index values must be compared.
 //
-class Image : public BINDABLE {
+class Image : public Bindable {
   public:
     const safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &createInfo;
@@ -235,15 +235,15 @@ class Image : public BINDABLE {
     void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
 
   protected:
-    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     template <typename UnaryPredicate>
-    bool AnyAliasBindingOf(const BASE_NODE::NodeMap &bindings, const UnaryPredicate &pred) const {
+    bool AnyAliasBindingOf(const StateObject::NodeMap &bindings, const UnaryPredicate &pred) const {
         for (auto &entry : bindings) {
             if (entry.first.type == kVulkanObjectTypeImage) {
-                auto base_node = entry.second.lock();
-                if (base_node) {
-                    auto other_image = static_cast<Image *>(base_node.get());
+                auto state_object = entry.second.lock();
+                if (state_object) {
+                    auto other_image = static_cast<Image *>(state_object.get());
                     if ((other_image != this) && other_image->IsCompatibleAliasing(this)) {
                         if (pred(*other_image)) return true;
                     }
@@ -276,7 +276,7 @@ class Image : public BINDABLE {
 // State for VkImageView objects.
 // Parent -> child relationships in the object usage tree:
 //    ImageView [N] -> [1] vv::Image
-class ImageView : public BASE_NODE {
+class ImageView : public StateObject {
   public:
     const safe_VkImageViewCreateInfo safe_create_info;
     const VkImageViewCreateInfo &create_info;
@@ -333,7 +333,7 @@ struct SwapchainImage {
 // Parent -> child relationships in the object usage tree:
 //    vvl::Swapchain [N] -> [1] vvl::Surface
 //    However, only 1 swapchain for each surface can be !retired.
-class Swapchain : public BASE_NODE {
+class Swapchain : public StateObject {
   public:
     const safe_VkSwapchainCreateInfoKHR createInfo;
     std::vector<VkPresentModeKHR> present_modes;
@@ -371,7 +371,7 @@ class Swapchain : public BASE_NODE {
     std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
 
   protected:
-    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 };
 
 }  // namespace vvl
@@ -407,9 +407,9 @@ namespace vvl {
 
 // Parent -> child relationships in the object usage tree:
 //    vvl::Surface -> nothing
-class Surface : public BASE_NODE {
+class Surface : public StateObject {
   public:
-    Surface(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
+    Surface(VkSurfaceKHR s) : StateObject(s, kVulkanObjectTypeSurfaceKHR) {}
 
     ~Surface() {
         if (!Destroyed()) {
@@ -427,7 +427,7 @@ class Surface : public BASE_NODE {
 
     void Destroy() override;
 
-    void RemoveParent(BASE_NODE *parent_node) override;
+    void RemoveParent(StateObject *parent_node) override;
 
     void SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported);
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;

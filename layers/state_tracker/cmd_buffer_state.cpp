@@ -23,7 +23,7 @@ namespace vvl {
 
 CommandPool::CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
                          VkQueueFlags flags)
-    : BASE_NODE(cp, kVulkanObjectTypeCommandPool),
+    : StateObject(cp, kVulkanObjectTypeCommandPool),
       dev_data(dev),
       createFlags(pCreateInfo->flags),
       queueFamilyIndex(pCreateInfo->queueFamilyIndex),
@@ -60,7 +60,7 @@ void CommandPool::Destroy() {
         dev_data->Destroy<CommandBuffer>(entry.first);
     }
     commandBuffers.clear();
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
 void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
@@ -71,7 +71,7 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
 
 CommandBuffer::CommandBuffer(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                              const vvl::CommandPool *pool)
-    : REFCOUNTED_NODE(cb, kVulkanObjectTypeCommandBuffer),
+    : RefcountedStateObject(cb, kVulkanObjectTypeCommandBuffer),
       createInfo(*pCreateInfo),
       command_pool(pool),
       dev_data(dev),
@@ -94,14 +94,14 @@ const vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t 
     return active_attachments->at(index);
 }
 
-void CommandBuffer::AddChild(std::shared_ptr<BASE_NODE> &child_node) {
+void CommandBuffer::AddChild(std::shared_ptr<StateObject> &child_node) {
     assert(child_node);
     if (child_node->AddParent(this)) {
         object_bindings.insert(child_node);
     }
 }
 
-void CommandBuffer::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
+void CommandBuffer::RemoveChild(std::shared_ptr<StateObject> &child_node) {
     assert(child_node);
     child_node->RemoveParent(this);
     object_bindings.erase(child_node);
@@ -253,10 +253,10 @@ void CommandBuffer::Destroy() {
         auto guard = WriteLock();
         ResetCBState();
     }
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
-void CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
+void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
     {
         auto guard = WriteLock();
         assert(!invalid_nodes.empty());
@@ -270,7 +270,7 @@ void CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, b
         for (auto &obj : invalid_nodes) {
             // Only record a broken binding if one of the nodes in the invalid chain is still
             // being tracked by the command buffer. This is to try to avoid race conditions
-            // caused by separate CommandBuffer and BASE_NODE::parent_nodes locking.
+            // caused by separate CommandBuffer and StateObject::parent_nodes locking.
             if (object_bindings.erase(obj)) {
                 obj->RemoveParent(this);
                 found_invalid = true;
@@ -299,7 +299,7 @@ void CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, b
             broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
         }
     }
-    BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);
+    StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 const CommandBufferImageLayoutMap &CommandBuffer::GetImageSubresourceLayoutMap() const { return image_layout_map; }
@@ -1339,7 +1339,7 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicFlags const &state_bit
     dynamic_state_status.pipeline |= state_bits;
 }
 
-void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
+void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2) {
     RecordCmd(command);
     if (buf1) {
         AddChild(buf1);

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include <future>
 #include <mutex>
 
@@ -29,7 +29,7 @@ namespace vvl {
 
 class Queue;
 
-class Fence : public REFCOUNTED_NODE {
+class Fence : public RefcountedStateObject {
   public:
     enum State { kUnsignaled, kInflight, kRetired };
     enum Scope {
@@ -39,7 +39,7 @@ class Fence : public REFCOUNTED_NODE {
     };
     // Default constructor
     Fence(ValidationStateTracker &dev, VkFence f, const VkFenceCreateInfo *pCreateInfo)
-        : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
+        : RefcountedStateObject(f, kVulkanObjectTypeFence),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
           state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),

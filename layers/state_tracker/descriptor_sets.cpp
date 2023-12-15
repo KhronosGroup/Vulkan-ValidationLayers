@@ -33,7 +33,7 @@ static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPool
 
 vvl::DescriptorPool::DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool pool,
                                              const VkDescriptorPoolCreateInfo *pCreateInfo)
-    : BASE_NODE(pool, kVulkanObjectTypeDescriptorPool),
+    : StateObject(pool, kVulkanObjectTypeDescriptorPool),
       maxSets(pCreateInfo->maxSets),
       createInfo(pCreateInfo),
       maxDescriptorTypeCount(GetMaxTypeCounts(pCreateInfo)),
@@ -114,7 +114,7 @@ const VulkanTypedHandle *vvl::DescriptorPool::InUse() const {
 
 void vvl::DescriptorPool::Destroy() {
     Reset();
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
 // ExtendedBinding collects a VkDescriptorSetLayoutBinding and any extended
@@ -368,14 +368,14 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 // handle invariant portion
 vvl::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
                                                           const VkDescriptorSetLayout layout)
-    : BASE_NODE(layout, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(p_create_info)) {}
+    : StateObject(layout, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(p_create_info)) {}
 
 void vvl::AllocateDescriptorSetsData::Init(uint32_t count) { layout_nodes.resize(count); }
 
 vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool_state,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
                                               vvl::DescriptorSet::StateTracker *state_data)
-    : BASE_NODE(set, kVulkanObjectTypeDescriptorSet),
+    : StateObject(set, kVulkanObjectTypeDescriptorSet),
       some_update_(false),
       pool_state_(pool_state),
       layout_(layout),
@@ -487,7 +487,7 @@ void vvl::DescriptorSet::Destroy() {
     for (auto &binding : bindings_) {
         binding->RemoveParent(this);
     }
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
 void vvl::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {
@@ -973,44 +973,44 @@ void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, v
     }
 }
 
-bool vvl::MutableDescriptor::AddParent(BASE_NODE *base_node) {
+bool vvl::MutableDescriptor::AddParent(StateObject *state_object) {
     bool result = false;
     auto active_class = DescriptorTypeToClass(active_descriptor_type_);
     switch (active_class) {
         case DescriptorClass::PlainSampler:
             if (sampler_state_) {
-                result |= sampler_state_->AddParent(base_node);
+                result |= sampler_state_->AddParent(state_object);
             }
             break;
         case DescriptorClass::ImageSampler:
             if (sampler_state_) {
-                result |= sampler_state_->AddParent(base_node);
+                result |= sampler_state_->AddParent(state_object);
             }
             if (image_view_state_) {
-                result = image_view_state_->AddParent(base_node);
+                result = image_view_state_->AddParent(state_object);
             }
             break;
         case DescriptorClass::TexelBuffer:
             if (buffer_view_state_) {
-                result = buffer_view_state_->AddParent(base_node);
+                result = buffer_view_state_->AddParent(state_object);
             }
             break;
         case DescriptorClass::Image:
             if (image_view_state_) {
-                result = image_view_state_->AddParent(base_node);
+                result = image_view_state_->AddParent(state_object);
             }
             break;
         case DescriptorClass::GeneralBuffer:
             if (buffer_state_) {
-                result = buffer_state_->AddParent(base_node);
+                result = buffer_state_->AddParent(state_object);
             }
             break;
         case DescriptorClass::AccelerationStructure:
             if (acc_state_) {
-                result |= acc_state_->AddParent(base_node);
+                result |= acc_state_->AddParent(state_object);
             }
             if (acc_state_nv_) {
-                result |= acc_state_nv_->AddParent(base_node);
+                result |= acc_state_nv_->AddParent(state_object);
             }
             break;
         default:
@@ -1018,24 +1018,24 @@ bool vvl::MutableDescriptor::AddParent(BASE_NODE *base_node) {
     }
     return result;
 }
-void vvl::MutableDescriptor::RemoveParent(BASE_NODE *base_node) {
+void vvl::MutableDescriptor::RemoveParent(StateObject *state_object) {
     if (sampler_state_) {
-        sampler_state_->RemoveParent(base_node);
+        sampler_state_->RemoveParent(state_object);
     }
     if (image_view_state_) {
-        image_view_state_->RemoveParent(base_node);
+        image_view_state_->RemoveParent(state_object);
     }
     if (buffer_view_state_) {
-        buffer_view_state_->RemoveParent(base_node);
+        buffer_view_state_->RemoveParent(state_object);
     }
     if (buffer_state_) {
-        buffer_state_->RemoveParent(base_node);
+        buffer_state_->RemoveParent(state_object);
     }
     if (acc_state_) {
-        acc_state_->RemoveParent(base_node);
+        acc_state_->RemoveParent(state_object);
     }
     if (acc_state_nv_) {
-        acc_state_nv_->RemoveParent(base_node);
+        acc_state_nv_->RemoveParent(state_object);
     }
 }
 

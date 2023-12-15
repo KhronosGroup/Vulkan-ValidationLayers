@@ -449,8 +449,8 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
             access_context_.DetectHazard(presented.range_gen, SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
         if (hazard.IsHazard()) {
             const auto queue_handle = queue_state_->Handle();
-            const auto swap_handle = BASE_NODE::Handle(presented.swapchain_state.lock());
-            const auto image_handle = BASE_NODE::Handle(presented.image);
+            const auto swap_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
+            const auto image_handle = vvl::StateObject::Handle(presented.image);
             skip = sync_state_->LogError(
                 string_SyncHazardVUID(hazard.Hazard()), queue_handle, loc,
                 "Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32 " %s, Access info %s.",
@@ -920,7 +920,7 @@ PresentedImage::PresentedImage(std::shared_ptr<const syncval_state::Swapchain> s
 void PresentedImage::ExportToSwapchain(SyncValidator&) {  // Include this argument to prove the const cast is safe
     // If the swapchain is dead just ignore the present
     auto swap_lock = swapchain_state.lock();
-    if (BASE_NODE::Invalid(swap_lock)) return;
+    if (vvl::StateObject::Invalid(swap_lock)) return;
     auto swap = std::const_pointer_cast<syncval_state::Swapchain>(swap_lock);
     swap->RecordPresentedImage(std::move(*this));
 }
@@ -929,7 +929,7 @@ void PresentedImage::SetImage(uint32_t at_index) {
     image_index = at_index;
 
     auto swap_lock = swapchain_state.lock();
-    if (BASE_NODE::Invalid(swap_lock)) return;
+    if (vvl::StateObject::Invalid(swap_lock)) return;
     image = std::static_pointer_cast<const syncval_state::ImageState>(swap_lock->GetSwapChainImageShared(image_index));
     if (Invalid()) {
         range_gen = ImageRangeGen();

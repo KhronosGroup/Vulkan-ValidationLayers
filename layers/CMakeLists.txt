@@ -220,8 +220,6 @@ target_sources(vvl PRIVATE
     gpu_shaders/gpu_shaders_constants.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
-    state_tracker/base_node.cpp
-    state_tracker/base_node.h
     state_tracker/buffer_state.cpp
     state_tracker/buffer_state.h
     state_tracker/cmd_buffer_state.cpp
@@ -246,6 +244,8 @@ target_sources(vvl PRIVATE
     state_tracker/query_state.h
     state_tracker/semaphore_state.cpp
     state_tracker/semaphore_state.h
+    state_tracker/state_object.cpp
+    state_tracker/state_object.h
     state_tracker/queue_state.cpp
     state_tracker/queue_state.h
     state_tracker/ray_tracing_state.h

@@ -246,7 +246,7 @@ void VideoSessionDeviceState::Deactivate(int32_t slot_index) {
 VIDEO_SESSION_STATE::VIDEO_SESSION_STATE(ValidationStateTracker *dev_data, VkVideoSessionKHR vs,
                                          VkVideoSessionCreateInfoKHR const *pCreateInfo,
                                          std::shared_ptr<const VideoProfileDesc> &&profile_desc)
-    : BASE_NODE(vs, kVulkanObjectTypeVideoSessionKHR),
+    : vvl::StateObject(vs, kVulkanObjectTypeVideoSessionKHR),
       create_info(pCreateInfo),
       profile(std::move(profile_desc)),
       memory_binding_count_queried(false),
@@ -277,7 +277,7 @@ VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionPar
                                                                VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
                                                                std::shared_ptr<VIDEO_SESSION_STATE> &&vsstate,
                                                                std::shared_ptr<VIDEO_SESSION_PARAMETERS_STATE> &&vsp_template)
-    : BASE_NODE(vsp, kVulkanObjectTypeVideoSessionParametersKHR), createInfo(pCreateInfo), vs_state(vsstate), mutex_(), data_() {
+    : vvl::StateObject(vsp, kVulkanObjectTypeVideoSessionParametersKHR), createInfo(pCreateInfo), vs_state(vsstate), mutex_(), data_() {
     data_.update_sequence_counter = 0;
 
     switch (vs_state->GetCodecOp()) {

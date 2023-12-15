@@ -28,7 +28,7 @@ struct AcquiredImage {
     subresource_adapter::ImageRangeGenerator generator;
     ResourceUsageTag present_tag;
     ResourceUsageTag acquire_tag;
-    bool Invalid() const { return BASE_NODE::Invalid(image); }
+    bool Invalid() const { return vvl::StateObject::Invalid(image); }
 
     AcquiredImage() = default;
     AcquiredImage(const PresentedImage &presented, ResourceUsageTag acq_tag);
@@ -122,7 +122,7 @@ struct PresentedImage : public PresentedImageRecord {
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
     PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index);
-    bool Invalid() const { return BASE_NODE::Invalid(image); }
+    bool Invalid() const { return vvl::StateObject::Invalid(image); }
     void ExportToSwapchain(SyncValidator &);
     void SetImage(uint32_t at_index);
 };

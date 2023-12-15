@@ -71,7 +71,7 @@ void SyncValidator::UpdateFenceWaitInfo(VkFence fence, const PresentedImage &ima
 }
 
 void SyncValidator::UpdateFenceWaitInfo(std::shared_ptr<const vvl::Fence> &fence_state, FenceSyncState &&wait_info) {
-    if (BASE_NODE::Invalid(fence_state)) return;
+    if (vvl::StateObject::Invalid(fence_state)) return;
     waitable_fences_[fence_state->VkHandle()] = std::move(wait_info);
 }
 
@@ -2608,7 +2608,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 
     // Get the image out of the presented list and create apppropriate fences/semaphores.
     auto swapchain_state = Get<syncval_state::Swapchain>(swapchain);
-    if (BASE_NODE::Invalid(swapchain_state)) return;  // Invalid acquire calls to be caught in CoreCheck/Parameter validation
+    if (vvl::StateObject::Invalid(swapchain_state)) return;  // Invalid acquire calls to be caught in CoreCheck/Parameter validation
 
     PresentedImage presented = swapchain_state->MovePresentedImage(*pImageIndex);
     if (presented.Invalid()) return;
@@ -2794,7 +2794,7 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
 }
 
 bool syncval_state::ImageState::IsSimplyBound() const {
-    bool simple = SimpleBinding(static_cast<const BINDABLE &>(*this)) || IsSwapchainImage() || bind_swapchain;
+    bool simple = SimpleBinding(static_cast<const vvl::Bindable &>(*this)) || IsSwapchainImage() || bind_swapchain;
 
     // If it's not simple we must have an encoder.
     assert(!simple || fragment_encoder.get());

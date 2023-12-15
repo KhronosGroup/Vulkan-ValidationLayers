@@ -55,7 +55,7 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
 namespace vvl {
 
 Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
-    : BINDABLE(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
+    : Bindable(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
@@ -75,7 +75,7 @@ Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCr
 
 BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                        VkFormatFeatureFlags2KHR buf_ff)
-    : BASE_NODE(bv, kVulkanObjectTypeBufferView),
+    : StateObject(bv, kVulkanObjectTypeBufferView),
       create_info(*ci),
       buffer_state(bf),
 #ifdef VK_USE_PLATFORM_METAL_EXT

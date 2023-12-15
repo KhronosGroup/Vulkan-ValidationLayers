@@ -1170,7 +1170,7 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
     const auto &memory_heap = phys_dev_mem_props.memoryHeaps[memory_type.heapIndex];
     auto fake_address = fake_memory.Alloc(pAllocateInfo->allocationSize);
 
-    std::optional<DedicatedBinding> dedicated_binding;
+    std::optional<vvl::DedicatedBinding> dedicated_binding;
     if (const auto dedicated = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
         if (dedicated->buffer) {
             auto buffer_state = Get<vvl::Buffer>(dedicated->buffer);
@@ -3180,7 +3180,7 @@ void ValidationStateTracker::PostCallRecordMapMemory2KHR(VkDevice device, const 
 void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem, const RecordObject &record_obj) {
     auto mem_info = Get<vvl::DeviceMemory>(mem);
     if (mem_info) {
-        mem_info->mapped_range = MemRange();
+        mem_info->mapped_range = vvl::MemRange();
         mem_info->p_driver_data = nullptr;
     }
 }
@@ -3189,7 +3189,7 @@ void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const
                                                           const RecordObject &record_obj) {
     auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory);
     if (mem_info) {
-        mem_info->mapped_range = MemRange();
+        mem_info->mapped_range = vvl::MemRange();
         mem_info->p_driver_data = nullptr;
     }
 }
@@ -5289,7 +5289,7 @@ std::shared_ptr<vvl::CommandBuffer> ValidationStateTracker::CreateCmdBufferState
 
 std::shared_ptr<vvl::DeviceMemory> ValidationStateTracker::CreateDeviceMemoryState(
     VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address, const VkMemoryType &memory_type,
-    const VkMemoryHeap &memory_heap, std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count) {
+    const VkMemoryHeap &memory_heap, std::optional<vvl::DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count) {
     return std::make_shared<vvl::DeviceMemory>(mem, p_alloc_info, fake_address, memory_type, memory_heap,
                                                std::move(dedicated_binding), physical_device_count);
 }

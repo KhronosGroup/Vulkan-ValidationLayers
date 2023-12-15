@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
 #include <condition_variable>
@@ -75,11 +75,11 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
     return std::chrono::steady_clock::now() + std::chrono::seconds(10);
 }
 
-class Queue: public BASE_NODE {
+class Queue: public StateObject {
   public:
     Queue(ValidationStateTracker &dev_data, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                 const VkQueueFamilyProperties &queueFamilyProperties)
-        : BASE_NODE(q, kVulkanObjectTypeQueue),
+        : StateObject(q, kVulkanObjectTypeQueue),
           queueFamilyIndex(index),
           flags(flags),
           queueFamilyProperties(queueFamilyProperties),

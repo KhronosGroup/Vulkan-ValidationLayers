@@ -395,7 +395,7 @@ class CommandBuffer : public vvl::CommandBuffer {
                   const vvl::CommandPool *pool);
     ~CommandBuffer() { Destroy(); }
 
-    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     void Destroy() override;
     void Reset() override;
@@ -405,13 +405,13 @@ class CommandBuffer : public vvl::CommandBuffer {
 // Message Creation Helpers
 struct SyncNodeFormatter {
     const debug_report_data *report_data;
-    const BASE_NODE *node;
+    const vvl::StateObject *node;
     const char *label;
 
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state);
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image);
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_ = nullptr);
+    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
 };
 
 std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter);

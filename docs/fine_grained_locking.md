@@ -98,7 +98,7 @@ Because validation often requires accessing objects in ways that go beyond their
 
 ## State Objects
 
-All Vulkan handles except `VkDevice` and `VkInstance` have a state object storing information needed for validation. State objects all inherit from the `BASE_NODE` class, and contain a combination of information determined at object creation time and information that changes based on how the object is used in other Vulkan API calls.
+All Vulkan handles except `VkDevice` and `VkInstance` have a state object storing information needed for validation. State objects all inherit from the `vvl::StateObject` class, and contain a combination of information determined at object creation time and information that changes based on how the object is used in other Vulkan API calls.
 
 
 ### Instance and Device object maps
@@ -143,7 +143,7 @@ This part of validation checks that all Vulkan objects used by a command buffer 
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
     // in a map keyed by VulkanTypedHandle. This also allows looking for specific
     // parent types without locking every weak_ptr.
-    using NodeMap = vvl::unordered_map<VulkanTypedHandle, std::weak_ptr<BASE_NODE>>;
+    using NodeMap = vvl::unordered_map<VulkanTypedHandle, std::weak_ptr<vvl::StateObject>>;
   private:
     ReadLockGuard ReadLockTree() const { return ReadLockGuard(tree_lock_); }
     WriteLockGuard WriteLockTree() { return WriteLockGuard(tree_lock_); }
@@ -156,9 +156,9 @@ This part of validation checks that all Vulkan objects used by a command buffer 
 ```
 
 
-The tree is only accessible through methods of class BASE_NODE.  To allow the use of std::weak_ptr for parent references, BASE_NODE inherits from [std::enable_shared_from_this<BASE_NODE>](https://en.cppreference.com/w/cpp/memory/enable_shared_from_this). This adds a shared_from_this() method which returns a shared pointer to the object it is called on.  This method is most often used to get a weak_ptr parent reference. In C++17, a `weak_from_this()` method is available which would be more concise and slightly more efficient. Using shared_from_this() only works on objects stored in shared pointers, which is why it state objects MUST be constructed with `std::make_shared<>`.
+The tree is only accessible through methods of class vvl::StateObject.  To allow the use of std::weak_ptr for parent references, vvl::StateObject inherits from [std::enable_shared_from_this<vvl::StateObject>](https://en.cppreference.com/w/cpp/memory/enable_shared_from_this). This adds a shared_from_this() method which returns a shared pointer to the object it is called on.  This method is most often used to get a weak_ptr parent reference. In C++17, a `weak_from_this()` method is available which would be more concise and slightly more efficient. Using shared_from_this() only works on objects stored in shared pointers, which is why it state objects MUST be constructed with `std::make_shared<>`.
 
-`AddParent()` and `RemoveParent()` manage the contents of the tree. For example, when creating a `VkImageView`, the `vvl::ImageView` will be added to `vvl::Image’s` parent_nodes_ with an `AddParent()`. During destruction of the `VkImageView`, the `vvl::ImageView` will be remove with a call to `RemoveParent()`. **IMPORTANT**:  `AddParent()` uses `shared_from_this(),` which only works after the constructor finishes executing. A second phase constructor `BASE_NODE::LinkChildNodes()` should be used to make `AddParent()` calls. `LinkChildNodes()` is called by the `Add()` method before inserting the new state object into the state object map.
+`AddParent()` and `RemoveParent()` manage the contents of the tree. For example, when creating a `VkImageView`, the `vvl::ImageView` will be added to `vvl::Image’s` parent_nodes_ with an `AddParent()`. During destruction of the `VkImageView`, the `vvl::ImageView` will be remove with a call to `RemoveParent()`. **IMPORTANT**:  `AddParent()` uses `shared_from_this(),` which only works after the constructor finishes executing. A second phase constructor `vvl::StateObject::LinkChildNodes()` should be used to make `AddParent()` calls. `LinkChildNodes()` is called by the `Add()` method before inserting the new state object into the state object map.
 
 `Destroy()` is called when the Vulkan object is destroyed. Note that because state objects are reference counted with a shared pointer, the state object might not be deleted and its destructor might not be called.
 
@@ -170,7 +170,7 @@ All of the above methods are guarded by the per-node `tree_lock_`, which MUST NO
 
 ###### PRs:
 
-[layers: Add BASE_NODE tree locking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3658)
+[layers: Add vvl::StateObject tree locking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3658)
 
 ### Locking policy for state objects
 
@@ -535,9 +535,9 @@ layers: Remove excess state object lookups](https://github.com/KhronosGroup/Vulk
 The `p_driver_data` pointer is only used by Best Practices validation, but it is used in `vkCmdDrawIndexed()`. It may require further review when Best Practices no longer uses the `ValidationObject` lock.
 
 
-### BINDABLE
+### vvl::Bindable
 
-`BINDABLE` is an abstract class representing something that can have `VkDeviceMemory` handles bound to it. It is used by the state objects for `VkImages`, `VkBuffers` and `VkAccelerationStructureNVs`. It tracks the state for bound memory in a map, which will have 0 or 1 entries except for when sparse memory is being used:
+`vvl::Bindable` is an abstract class representing something that can have `VkDeviceMemory` handles bound to it. It is used by the state objects for `VkImages`, `VkBuffers` and `VkAccelerationStructureNVs`. It tracks the state for bound memory in a map, which will have 0 or 1 entries except for when sparse memory is being used:
 
 
 ```

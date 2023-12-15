@@ -30,7 +30,7 @@ static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_d
 ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
                            std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
                            uint32_t unique_shader_id)
-    : BASE_NODE(shader_object, kVulkanObjectTypeShaderEXT),
+    : StateObject(shader_object, kVulkanObjectTypeShaderEXT),
       create_info(&create_info),
       spirv(spirv_module),
       entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),

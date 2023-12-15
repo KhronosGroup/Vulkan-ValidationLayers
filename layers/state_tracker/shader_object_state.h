@@ -22,13 +22,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "utils/shader_utils.h"
 #include "descriptor_sets.h"
 
 namespace vvl {
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
-struct ShaderObject : public BASE_NODE {
+struct ShaderObject : public StateObject {
     ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
                  std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
                  uint32_t unique_shader_id = 0);

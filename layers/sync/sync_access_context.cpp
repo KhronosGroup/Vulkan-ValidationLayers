@@ -19,7 +19,7 @@
 #include "state_tracker/buffer_state.h"
 #include "sync/sync_access_context.h"
 
-bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
+bool SimpleBinding(const vvl::Bindable &bindable) { return !bindable.sparse && bindable.Binding(); }
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer) { return buffer.GetFakeBaseAddress(); }
 
 class HazardDetector {
