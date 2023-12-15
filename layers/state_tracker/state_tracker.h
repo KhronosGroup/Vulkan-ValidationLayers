@@ -1826,7 +1826,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
         VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
-        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vtx_attrib_divisor_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperative_matrix_props_khr;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
