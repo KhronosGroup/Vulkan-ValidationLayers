@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 
 // Note: some of the types in this header are needed by both the DescriptorSet and Pipeline
 // state objects. It is helpful to have a separate header to avoid circular #include madness.
@@ -56,14 +56,14 @@ struct hash<SamplerUsedByImage> {
 
 namespace vvl {
 
-class Sampler : public BASE_NODE {
+class Sampler : public StateObject {
   public:
     const VkSamplerCreateInfo createInfo;
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
     Sampler(const VkSampler s, const VkSamplerCreateInfo *pci)
-        : BASE_NODE(s, kVulkanObjectTypeSampler),
+        : StateObject(s, kVulkanObjectTypeSampler),
           createInfo(*pci),
           samplerConversion(GetConversion(pci)),
           customCreateInfo(GetCustomCreateInfo(pci)) {}
@@ -83,7 +83,7 @@ class Sampler : public BASE_NODE {
     }
 };
 
-class SamplerYcbcrConversion : public BASE_NODE {
+class SamplerYcbcrConversion : public StateObject {
   public:
     const VkFormatFeatureFlags2KHR format_features;
     const VkFormat format;
@@ -92,7 +92,7 @@ class SamplerYcbcrConversion : public BASE_NODE {
 
     SamplerYcbcrConversion(VkSamplerYcbcrConversion ycbcr, const VkSamplerYcbcrConversionCreateInfo *info,
                            VkFormatFeatureFlags2KHR features)
-        : BASE_NODE(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion),
+        : StateObject(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion),
           format_features(features),
           format(info->format),
           chromaFilter(info->chromaFilter),

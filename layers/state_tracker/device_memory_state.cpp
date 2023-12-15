@@ -19,9 +19,9 @@
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_state.h"
 
-using MemoryRange = BindableMemoryTracker::MemoryRange;
-using BoundMemoryRange = BindableMemoryTracker::BoundMemoryRange;
-using DeviceMemoryState = BindableMemoryTracker::DeviceMemoryState;
+using MemoryRange = vvl::BindableMemoryTracker::MemoryRange;
+using BoundMemoryRange = vvl::BindableMemoryTracker::BoundMemoryRange;
+using DeviceMemoryState = vvl::BindableMemoryTracker::DeviceMemoryState;
 
 // It is allowed to export memory into the handles of different types,
 // that's why we use set of flags (VkExternalMemoryHandleTypeFlags)
@@ -89,7 +89,7 @@ namespace vvl {
 DeviceMemory::DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                            const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                            std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
-    : BASE_NODE(memory, kVulkanObjectTypeDeviceMemory),
+    : StateObject(memory, kVulkanObjectTypeDeviceMemory),
       alloc_info(p_alloc_info),
       export_handle_types(GetExportHandleTypes(p_alloc_info)),
       import_handle_type(GetImportHandleType(p_alloc_info)),
@@ -105,7 +105,7 @@ DeviceMemory::DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_
 }
 }  // namespace vvl
 
-void BindableLinearMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
+void vvl::BindableLinearMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                              VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     if (!mem_state) return;
 
@@ -113,11 +113,11 @@ void BindableLinearMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<
     binding_ = {mem_state, memory_offset, 0u};
 }
 
-DeviceMemoryState BindableLinearMemoryTracker::GetBoundMemoryStates() const {
+DeviceMemoryState vvl::BindableLinearMemoryTracker::GetBoundMemoryStates() const {
     return binding_.memory_state ? DeviceMemoryState{binding_.memory_state} : DeviceMemoryState{};
 }
 
-BoundMemoryRange BindableLinearMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
+BoundMemoryRange vvl::BindableLinearMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
     return binding_.memory_state ? BoundMemoryRange{BoundMemoryRange::value_type{
                                        binding_.memory_state->deviceMemory(),
                                        BoundMemoryRange::value_type::second_type{
@@ -125,7 +125,7 @@ BoundMemoryRange BindableLinearMemoryTracker::GetBoundMemoryRange(const MemoryRa
                                  : BoundMemoryRange{};
 }
 
-unsigned BindableSparseMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
+unsigned vvl::BindableSparseMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
     unsigned count = 0u;
     auto guard = ReadLockGuard{binding_lock_};
     for (const auto &range_state : binding_map_) {
@@ -134,7 +134,7 @@ unsigned BindableSparseMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) c
     return count;
 }
 
-bool BindableSparseMemoryTracker::HasFullRangeBound() const {
+bool vvl::BindableSparseMemoryTracker::HasFullRangeBound() const {
     if (!is_resident_) {
         VkDeviceSize current_offset = 0u;
         {
@@ -153,7 +153,7 @@ bool BindableSparseMemoryTracker::HasFullRangeBound() const {
     return true;
 }
 
-void BindableSparseMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
+void vvl::BindableSparseMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                              VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     MEM_BINDING memory_data{mem_state, memory_offset, resource_offset};
     BindingMap::value_type item{{resource_offset, resource_offset + size}, memory_data};
@@ -171,7 +171,7 @@ void BindableSparseMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<
     }
 }
 
-BoundMemoryRange BindableSparseMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
+BoundMemoryRange vvl::BindableSparseMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
     BoundMemoryRange mem_ranges;
     auto guard = ReadLockGuard{binding_lock_};
     auto range_bounds = binding_map_.bounds(range);
@@ -191,7 +191,7 @@ BoundMemoryRange BindableSparseMemoryTracker::GetBoundMemoryRange(const MemoryRa
     return mem_ranges;
 }
 
-DeviceMemoryState BindableSparseMemoryTracker::GetBoundMemoryStates() const {
+DeviceMemoryState vvl::BindableSparseMemoryTracker::GetBoundMemoryStates() const {
     DeviceMemoryState dev_mem_states;
 
     {
@@ -205,13 +205,13 @@ DeviceMemoryState BindableSparseMemoryTracker::GetBoundMemoryStates() const {
 }
 
 
-BindableMultiplanarMemoryTracker::BindableMultiplanarMemoryTracker(const VkMemoryRequirements *requirements, uint32_t num_planes)
+vvl::BindableMultiplanarMemoryTracker::BindableMultiplanarMemoryTracker(const VkMemoryRequirements *requirements, uint32_t num_planes)
     : planes_(num_planes) {
     for (unsigned i = 0; i < num_planes; ++i) {
         planes_[i].size = requirements[i].size;
     }
 }
-unsigned BindableMultiplanarMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
+unsigned vvl::BindableMultiplanarMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
     unsigned count = 0u;
     for (size_t i = 0u; i < planes_.size(); i++) {
         const auto &plane = planes_[i];
@@ -221,7 +221,7 @@ unsigned BindableMultiplanarMemoryTracker::CountDeviceMemory(VkDeviceMemory memo
     return count;
 }
 
-bool BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
+bool vvl::BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
     bool full_range_bound = true;
 
     for (unsigned i = 0u; i < planes_.size(); ++i) {
@@ -232,7 +232,7 @@ bool BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
 }
 
 // resource_offset is the plane index
-void BindableMultiplanarMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
+void vvl::BindableMultiplanarMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
                                                   VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     if (!mem_state) return;
 
@@ -245,7 +245,7 @@ void BindableMultiplanarMemoryTracker::BindMemory(BASE_NODE *parent, std::shared
 // To access plane 0 range must be [0, planes_[0].size)
 // To access plane 1 range must be [planes_[0].size, planes_[1].size)
 // To access plane 2 range must be [planes_[1].size, planes_[2].size)
-BoundMemoryRange BindableMultiplanarMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
+BoundMemoryRange vvl::BindableMultiplanarMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
     BoundMemoryRange mem_ranges;
     VkDeviceSize start_offset = 0u;
     for (unsigned i = 0u; i < planes_.size(); ++i) {
@@ -263,7 +263,7 @@ BoundMemoryRange BindableMultiplanarMemoryTracker::GetBoundMemoryRange(const Mem
     return mem_ranges;
 }
 
-DeviceMemoryState BindableMultiplanarMemoryTracker::GetBoundMemoryStates() const {
+DeviceMemoryState vvl::BindableMultiplanarMemoryTracker::GetBoundMemoryStates() const {
     DeviceMemoryState dev_mem_states;
 
     for (unsigned i = 0u; i < planes_.size(); ++i) {
@@ -275,8 +275,8 @@ DeviceMemoryState BindableMultiplanarMemoryTracker::GetBoundMemoryStates() const
     return dev_mem_states;
 }
 
-std::pair<VkDeviceMemory, MemoryRange> BINDABLE::GetResourceMemoryOverlap(
-        const MemoryRange &memory_region, const BINDABLE *other_resource,
+std::pair<VkDeviceMemory, MemoryRange> vvl::Bindable::GetResourceMemoryOverlap(
+        const MemoryRange &memory_region, const Bindable *other_resource,
         const MemoryRange &other_memory_region) const {
     if (!other_resource) return {VK_NULL_HANDLE, {}};
 
@@ -301,13 +301,13 @@ std::pair<VkDeviceMemory, MemoryRange> BINDABLE::GetResourceMemoryOverlap(
     return {VK_NULL_HANDLE, {}};
 }
 
-VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
+VkDeviceSize vvl::Bindable::GetFakeBaseAddress() const {
     assert(!sparse);  // not implemented yet
     const auto *binding = Binding();
     return binding ? binding->memory_offset + binding->memory_state->fake_base_address : 0;
 }
 
-void BINDABLE::CacheInvalidMemory() const {
+void vvl::Bindable::CacheInvalidMemory() const {
     need_to_recache_invalid_memory_ = false;
     cached_invalid_memory_.clear();
     for (auto const &bindable : GetBoundMemoryStates()) {

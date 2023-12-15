@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "utils/hash_vk_types.h"
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -54,17 +54,17 @@ struct StageCreateInfo {
 };
 
 namespace vvl {
-class PipelineCache : public BASE_NODE {
+class PipelineCache : public StateObject {
   public:
     PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
-        : BASE_NODE(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
+        : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
 
     VkPipelineCache pipelineCache() const { return handle_.Cast<VkPipelineCache>(); }
 
     const safe_VkPipelineCacheCreateInfo create_info;
 };
 
-class Pipeline : public BASE_NODE {
+class Pipeline : public StateObject {
   public:
     union CreateInfo {
         template <typename CI>

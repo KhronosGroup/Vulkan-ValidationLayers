@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <memory>
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
 #include "utils/hash_vk_types.h"
 #include "state_tracker/state_tracker.h"
@@ -69,7 +69,7 @@ PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPus
 namespace vvl {
 
 // Store layouts and pushconstants for PipelineLayout
-class PipelineLayout : public BASE_NODE {
+class PipelineLayout : public StateObject {
   public:
     using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
     const SetLayoutVector set_layouts;

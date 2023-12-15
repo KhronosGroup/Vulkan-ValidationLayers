@@ -16,16 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 
-BASE_NODE::~BASE_NODE() { Destroy(); }
+vvl::StateObject::~StateObject() { Destroy(); }
 
-void BASE_NODE::Destroy() {
+void vvl::StateObject::Destroy() {
     Invalidate();
     destroyed_ = true;
 }
 
-const VulkanTypedHandle* BASE_NODE::InUse() const {
+const VulkanTypedHandle* vvl::StateObject::InUse() const {
     // NOTE: for performance reasons, this method calls up the tree
     // with the read lock held.
     auto guard = ReadLockTree();
@@ -41,13 +41,13 @@ const VulkanTypedHandle* BASE_NODE::InUse() const {
     return nullptr;
 }
 
-bool BASE_NODE::AddParent(BASE_NODE* parent_node) {
+bool vvl::StateObject::AddParent(StateObject* parent_node) {
     auto guard = WriteLockTree();
-    auto result = parent_nodes_.emplace(parent_node->Handle(), std::weak_ptr<BASE_NODE>(parent_node->shared_from_this()));
+    auto result = parent_nodes_.emplace(parent_node->Handle(), std::weak_ptr<StateObject>(parent_node->shared_from_this()));
     return result.second;
 }
 
-void BASE_NODE::RemoveParent(BASE_NODE* parent_node) {
+void vvl::StateObject::RemoveParent(StateObject* parent_node) {
     assert(parent_node);
     auto guard = WriteLockTree();
     parent_nodes_.erase(parent_node->Handle());
@@ -55,7 +55,7 @@ void BASE_NODE::RemoveParent(BASE_NODE* parent_node) {
 
 // copy the current set of parents so that we don't need to hold the lock
 // while calling NotifyInvalidate on them, as that would lead to recursive locking.
-BASE_NODE::NodeMap BASE_NODE::GetParentsForInvalidate(bool unlink) {
+vvl::StateObject::NodeMap vvl::StateObject::GetParentsForInvalidate(bool unlink) {
     NodeMap result;
     if (unlink) {
         auto guard = WriteLockTree();
@@ -68,21 +68,21 @@ BASE_NODE::NodeMap BASE_NODE::GetParentsForInvalidate(bool unlink) {
     return result;
 }
 
-BASE_NODE::NodeMap BASE_NODE::ObjectBindings() const {
+vvl::StateObject::NodeMap vvl::StateObject::ObjectBindings() const {
     auto guard = ReadLockTree();
     return parent_nodes_;
 }
 
-void BASE_NODE::Invalidate(bool unlink) {
+void vvl::StateObject::Invalidate(bool unlink) {
     NodeList empty;
     // We do not want to call the virtual method here because any special handling
     // in an overriden NotifyInvalidate() is for when a child node has become invalid.
     // But calling Invalidate() indicates the current node is invalid.
     // Calling the default implementation directly here avoids duplicating it inline.
-    BASE_NODE::NotifyInvalidate(empty, unlink);
+    StateObject::NotifyInvalidate(empty, unlink);
 }
 
-void BASE_NODE::NotifyInvalidate(const NodeList& invalid_nodes, bool unlink) {
+void vvl::StateObject::NotifyInvalidate(const NodeList& invalid_nodes, bool unlink) {
     auto current_parents = GetParentsForInvalidate(unlink);
     if (current_parents.size() == 0) {
         return;

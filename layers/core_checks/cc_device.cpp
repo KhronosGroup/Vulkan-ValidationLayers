@@ -786,7 +786,7 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
-bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const Location &loc, const char *error_code) const {
+bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject *obj_node, const Location &loc, const char *error_code) const {
     if (disabled[object_in_use]) return false;
     auto obj_struct = obj_node->Handle();
     bool skip = false;

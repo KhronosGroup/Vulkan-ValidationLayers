@@ -1128,8 +1128,8 @@ SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl:
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
     : report_data(sync_state.report_data), node(q_state), label("queue") {}
 
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const BASE_NODE *base_node, const char *label_)
-    : report_data(sync_state.report_data), node(base_node), label(label_) {}
+SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_)
+    : report_data(sync_state.report_data), node(state_object), label(label_) {}
 
 std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
     std::stringstream out;
@@ -1153,7 +1153,7 @@ void syncval_state::CommandBuffer::Reset() {
     access_context.Reset();
 }
 
-void syncval_state::CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
+void syncval_state::CommandBuffer::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
     for (auto &obj : invalid_nodes) {
         switch (obj->Type()) {
             case kVulkanObjectTypeEvent:

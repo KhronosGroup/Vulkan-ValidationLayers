@@ -143,7 +143,7 @@ void vvl::Queue::Destroy() {
         dead_thread->join();
         dead_thread.reset();
     }
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
 vvl::QueueSubmission *vvl::Queue::NextSubmission() {

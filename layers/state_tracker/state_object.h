@@ -37,27 +37,28 @@ struct hash<VulkanTypedHandle> {
 };
 }  // namespace std
 
+namespace vvl {
 // inheriting from enable_shared_from_this<> adds a method, shared_from_this(), which
 // returns a shared_ptr version of the current object. It requires the object to
 // be created with std::make_shared<> and it MUST NOT be used from the constructor
-class BASE_NODE : public std::enable_shared_from_this<BASE_NODE>, public TypedHandleWrapper {
+class StateObject: public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
   public:
     // Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
     // in a map keyed by VulkanTypedHandle. This also allows looking for specific
     // parent types without locking every weak_ptr.
-    using NodeMap = vvl::unordered_map<VulkanTypedHandle, std::weak_ptr<BASE_NODE>>;
-    using NodeList = small_vector<std::shared_ptr<BASE_NODE>, 4, uint32_t>;
+    using NodeMap = unordered_map<VulkanTypedHandle, std::weak_ptr<StateObject>>;
+    using NodeList = small_vector<std::shared_ptr<StateObject>, 4, uint32_t>;
 
     template <typename Handle>
-    BASE_NODE(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false) {}
+    StateObject(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false) {}
 
     // because shared_from_this() does not work from the constructor, this 2nd phase
     // constructor is where a state object should call AddParent() on its child nodes.
     // It is called as part of ValidationStateTracker::Add()
     virtual void LinkChildNodes() {}
 
-    virtual ~BASE_NODE();
+    virtual ~StateObject();
 
     // Because state objects are reference counted, they may outlive the vulkan objects
     // they represent. Destroy() is called when the vulkan object is destroyed, so that
@@ -71,17 +72,17 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE>, public TypedHa
     virtual bool Invalid() const { return Destroyed(); }
 
     // Save the tedium of two part testing...
-    static bool Invalid(const BASE_NODE *node) { return !node || node->Destroyed(); }
-    static bool Invalid(const std::shared_ptr<const BASE_NODE> &node) { return !node || node->Destroyed(); }
+    static bool Invalid(const StateObject *node) { return !node || node->Destroyed(); }
+    static bool Invalid(const std::shared_ptr<const StateObject> &node) { return !node || node->Destroyed(); }
 
     using TypedHandleWrapper::Handle;
-    static VulkanTypedHandle Handle(const BASE_NODE *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
-    static VulkanTypedHandle Handle(const std::shared_ptr<const BASE_NODE> &node) { return Handle(node.get()); }
+    static VulkanTypedHandle Handle(const StateObject *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
+    static VulkanTypedHandle Handle(const std::shared_ptr<const StateObject> &node) { return Handle(node.get()); }
 
     virtual const VulkanTypedHandle* InUse() const;
 
-    virtual bool AddParent(BASE_NODE *parent_node);
-    virtual void RemoveParent(BASE_NODE *parent_node);
+    virtual bool AddParent(StateObject *parent_node);
+    virtual void RemoveParent(StateObject *parent_node);
 
     // Invalidate is called on a state object to inform its parents that it
     // is being destroyed (unlink == true) or otherwise becoming invalid (unlink == false)
@@ -93,7 +94,7 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE>, public TypedHa
   protected:
     template <typename Derived, typename Shared = std::shared_ptr<Derived>>
     static Shared SharedFromThisImpl(Derived *derived) {
-        using Base = typename std::conditional<std::is_const<Derived>::value, const BASE_NODE, BASE_NODE>::type;
+        using Base = typename std::conditional<std::is_const<Derived>::value, const StateObject, StateObject>::type;
         auto base = static_cast<Base *>(derived);
         return std::static_pointer_cast<Derived>(base->shared_from_this());
     }
@@ -120,18 +121,19 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE>, public TypedHa
     mutable std::shared_mutex tree_lock_;
 };
 
-class REFCOUNTED_NODE : public BASE_NODE {
+class RefcountedStateObject : public StateObject {
   private:
     // Track if command buffer is in-flight
     std::atomic_int in_use_;
 
   public:
     template <typename Handle>
-    REFCOUNTED_NODE(Handle h, VulkanObjectType t) : BASE_NODE(h, t), in_use_(0) {}
+    RefcountedStateObject(Handle h, VulkanObjectType t) : StateObject(h, t), in_use_(0) {}
 
     void BeginUse() { in_use_.fetch_add(1); }
 
     void EndUse() { in_use_.fetch_sub(1); }
 
-    const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || BASE_NODE::InUse()) ? &Handle() : nullptr; }
+    const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr; }
 };
+} // namespace vvl

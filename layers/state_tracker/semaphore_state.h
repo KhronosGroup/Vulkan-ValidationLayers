@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include <future>
 #include <map>
 #include <mutex>
@@ -31,7 +31,7 @@ namespace vvl {
 class Queue;
 struct SubmissionLocator;
 
-class Semaphore : public REFCOUNTED_NODE {
+class Semaphore : public RefcountedStateObject {
   public:
     // possible payload values for binary semaphore
     enum OpType {
@@ -126,7 +126,7 @@ class Semaphore : public REFCOUNTED_NODE {
 
     Semaphore(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info,
                     const VkSemaphoreCreateInfo *pCreateInfo)
-        : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
+        : RefcountedStateObject(sem, kVulkanObjectTypeSemaphore),
 #ifdef VK_USE_PLATFORM_METAL_EXT
           metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT

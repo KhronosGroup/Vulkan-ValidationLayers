@@ -172,7 +172,7 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 namespace vvl {
 
 Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
-    : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+    : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
@@ -215,7 +215,7 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
 
 Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
              uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
-    : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+    : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
@@ -262,11 +262,11 @@ void Image::Destroy() {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;
     }
-    BINDABLE::Destroy();
+    Bindable::Destroy();
 }
 
-void Image::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
-    BINDABLE::NotifyInvalidate(invalid_nodes, unlink);
+void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    Bindable::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
         bind_swapchain = nullptr;
     }
@@ -406,7 +406,7 @@ namespace vvl {
 
 ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
                      VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
-    : BASE_NODE(iv, kVulkanObjectTypeImageView),
+    : StateObject(iv, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
       normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, *ci)),
@@ -434,7 +434,7 @@ void ImageView::Destroy() {
         image_state->RemoveParent(this);
         image_state = nullptr;
     }
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
 uint32_t ImageView::GetAttachmentLayerCount() const {
@@ -529,7 +529,7 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
 namespace vvl {
 
 Swapchain::Swapchain(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
-    : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
+    : StateObject(swapchain, kVulkanObjectTypeSwapchainKHR),
       createInfo(pCreateInfo),
       images(),
       exclusive_full_screen_access(false),
@@ -587,11 +587,11 @@ void Swapchain::Destroy() {
         surface->RemoveParent(this);
         surface = nullptr;
     }
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
-void Swapchain::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
-    BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);
+void Swapchain::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    StateObject::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
         surface = nullptr;
     }
@@ -616,14 +616,14 @@ void Surface::Destroy() {
     if (swapchain) {
         swapchain = nullptr;
     }
-    BASE_NODE::Destroy();
+    StateObject::Destroy();
 }
 
-void Surface::RemoveParent(BASE_NODE *parent_node) {
+void Surface::RemoveParent(StateObject *parent_node) {
     if (swapchain == parent_node) {
         swapchain = nullptr;
     }
-    BASE_NODE::RemoveParent(parent_node);
+    StateObject::RemoveParent(parent_node);
 }
 
 void Surface::SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported) {

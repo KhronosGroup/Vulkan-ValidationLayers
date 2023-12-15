@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "state_tracker/shader_instruction.h"
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "state_tracker/sampler_state.h"
 #include <spirv/unified1/spirv.hpp>
 #include "spirv-tools/optimizer.hpp"
@@ -656,15 +656,15 @@ struct Module {
 
 // Represents a VkShaderModule handle
 namespace vvl {
-struct ShaderModule : public BASE_NODE {
+struct ShaderModule : public StateObject {
     ShaderModule(VkShaderModule shader_module, std::shared_ptr<spirv::Module> &spirv_module, uint32_t unique_shader_id)
-        : BASE_NODE(shader_module, kVulkanObjectTypeShaderModule), spirv(spirv_module), gpu_validation_shader_id(unique_shader_id) {
+        : StateObject(shader_module, kVulkanObjectTypeShaderModule), spirv(spirv_module), gpu_validation_shader_id(unique_shader_id) {
         spirv->handle_ = handle_;
     }
 
     // For when we need to create a module with no SPIR-V backing it
     ShaderModule(uint32_t unique_shader_id)
-        : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
+        : StateObject(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
           gpu_validation_shader_id(unique_shader_id) {}
 
     // If null, means this is a empty object and no shader backing it

@@ -23,10 +23,10 @@
 
 namespace vvl {
 
-class AccelerationStructureNV : public BINDABLE {
+class AccelerationStructureNV : public Bindable {
   public:
     AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
-        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
+        : Bindable(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
           create_infoNV(ci),
           memory_requirements(GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
           build_scratch_memory_requirements(
@@ -34,7 +34,7 @@ class AccelerationStructureNV : public BINDABLE {
           update_scratch_memory_requirements(
               GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)),
           tracker_(&memory_requirements) {
-        BINDABLE::SetMemoryTracker(&tracker_);
+        Bindable::SetMemoryTracker(&tracker_);
     }
     AccelerationStructureNV(const AccelerationStructureNV &rh_obj) = delete;
 
@@ -69,11 +69,11 @@ class AccelerationStructureNV : public BINDABLE {
     BindableLinearMemoryTracker tracker_;
 };
 
-class AccelerationStructureKHR : public BASE_NODE {
+class AccelerationStructureKHR : public StateObject {
   public:
     AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                             std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address)
-        : BASE_NODE(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
+                             std::shared_ptr<Buffer> &&buf_state, VkDeviceAddress address)
+        : StateObject(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
@@ -88,7 +88,7 @@ class AccelerationStructureKHR : public BASE_NODE {
             buffer_state->RemoveParent(this);
             buffer_state = nullptr;
         }
-        BASE_NODE::Destroy();
+        StateObject::Destroy();
     }
 
     virtual ~AccelerationStructureKHR() {

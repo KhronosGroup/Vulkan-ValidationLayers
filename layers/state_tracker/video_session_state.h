@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
 #include "generated/vk_safe_struct.h"
 #include <memory>
@@ -292,7 +292,7 @@ class VideoSessionDeviceState {
     std::vector<vvl::unordered_map<VideoPictureID, VideoPictureResource, VideoPictureID::hash>> pictures_per_id_;
 };
 
-class VIDEO_SESSION_STATE : public BASE_NODE {
+class VIDEO_SESSION_STATE : public vvl::StateObject {
   public:
     struct MemoryBindingInfo {
         VkMemoryRequirements requirements;
@@ -362,7 +362,7 @@ class VIDEO_SESSION_STATE : public BASE_NODE {
     VideoSessionDeviceState device_state_;
 };
 
-class VIDEO_SESSION_PARAMETERS_STATE : public BASE_NODE {
+class VIDEO_SESSION_PARAMETERS_STATE : public vvl::StateObject {
   public:
     using H264SPSKey = uint8_t;
     using H264PPSKey = uint16_t;

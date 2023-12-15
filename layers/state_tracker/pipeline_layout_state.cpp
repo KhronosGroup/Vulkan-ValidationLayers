@@ -195,14 +195,14 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(const vvl::span<const Pipel
 }
 
 PipelineLayout::PipelineLayout(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo)
-    : BASE_NODE(l, kVulkanObjectTypePipelineLayout),
+    : StateObject(l, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)),
       create_flags(pCreateInfo->flags) {}
 
 PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
-    : BASE_NODE(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
+    : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)),

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/base_node.h"
+#include "state_tracker/state_object.h"
 #include "utils/hash_vk_types.h"
 #include "utils/vk_layer_utils.h"
 
@@ -34,11 +34,11 @@ enum QueryState {
 
 namespace vvl {
 
-class QueryPool : public BASE_NODE {
+class QueryPool : public StateObject {
   public:
     QueryPool(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t n_perf_pass, bool has_cb,
               bool has_rb, std::shared_ptr<const VideoProfileDesc> &&supp_video_profile)
-        : BASE_NODE(qp, kVulkanObjectTypeQueryPool),
+        : StateObject(qp, kVulkanObjectTypeQueryPool),
           createInfo(*pCreateInfo),
           has_perf_scope_command_buffer(has_cb),
           has_perf_scope_render_pass(has_rb),
