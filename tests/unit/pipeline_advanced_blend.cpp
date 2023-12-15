@@ -141,7 +141,7 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
+TEST_F(NegativePipelineAdvancedBlend, AllOperations) {
     TEST_DESCRIPTION("Create a graphics pipeline with advanced blend when its disabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);

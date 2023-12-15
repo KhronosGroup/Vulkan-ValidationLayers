@@ -251,3 +251,69 @@ TEST_F(PositiveThreading, DebugObjectNames) {
 }
 
 #endif  // GTEST_IS_THREADSAFE
+
+TEST_F(PositiveThreading, Queue) {
+#if defined(VVL_ENABLE_TSAN)
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
+
+    TEST_DESCRIPTION("Test concurrent Queue access from vkGet and vkSubmit");
+
+    using namespace std::chrono;
+    using std::thread;
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    const auto queue_family = m_device->graphics_queues()[0]->get_family_index();
+    constexpr uint32_t queue_index = 0;
+    vkt::CommandPool command_pool(*DeviceObj(), queue_family);
+
+    const VkDevice device_h = device();
+    VkQueue queue_h;
+    vk::GetDeviceQueue(device(), queue_family, queue_index, &queue_h);
+    vkt::Queue queue_o(queue_h, queue_family);
+
+    const VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool.handle(),
+                                              VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
+    vkt::CommandBuffer mock_cmdbuff(*DeviceObj(), cbai);
+    const VkCommandBufferBeginInfo cbbi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+                                        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
+    mock_cmdbuff.begin(&cbbi);
+    mock_cmdbuff.end();
+
+    std::mutex queue_mutex;
+
+    constexpr auto test_duration = seconds{2};
+    const auto timer_begin = steady_clock::now();
+
+    const auto &testing_thread1 = [&]() {
+        for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
+            VkQueue dummy_q;
+            vk::GetDeviceQueue(device_h, queue_family, queue_index, &dummy_q);
+        }
+    };
+
+    const auto &testing_thread2 = [&]() {
+        for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
+            VkSubmitInfo si = vku::InitStructHelper();
+            si.commandBufferCount = 1;
+            si.pCommandBuffers = &mock_cmdbuff.handle();
+            queue_mutex.lock();
+            ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(queue_h, 1, &si, VK_NULL_HANDLE));
+            queue_mutex.unlock();
+        }
+    };
+
+    const auto &testing_thread3 = [&]() {
+        for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
+            queue_mutex.lock();
+            ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(queue_h));
+            queue_mutex.unlock();
+        }
+    };
+
+    std::array<thread, 3> threads = {thread(testing_thread1), thread(testing_thread2), thread(testing_thread3)};
+    for (auto &t : threads) t.join();
+
+    vk::QueueWaitIdle(queue_h);
+}

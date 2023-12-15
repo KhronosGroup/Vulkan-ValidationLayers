@@ -87,7 +87,7 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
+TEST_F(PositivePipelineTopology, LoosePointSizeWrite) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize outside of a structure.");
 
     RETURN_IF_SKIP(Init());
@@ -312,7 +312,7 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
+TEST_F(PositivePipelineTopology, PolygonModeValid) {
     TEST_DESCRIPTION("Verify that using a solid polygon fill mode works correctly.");
 
     RETURN_IF_SKIP(Init());
@@ -404,7 +404,7 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
+TEST_F(PositivePipelineTopology, Rasterizer) {
     TEST_DESCRIPTION("Test topology set when creating a pipeline with tessellation and geometry shader.");
 
     RETURN_IF_SKIP(Init());

@@ -328,3 +328,124 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
 
     m_default_queue->wait();
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
+    TEST_DESCRIPTION("Test vkExportMetalObjectsEXT");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
+
+    // Initialize framework
+    {
+        VkExportMetalObjectCreateInfoEXT queue_info = vku::InitStructHelper();
+        queue_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT;
+
+        VkExportMetalObjectCreateInfoEXT metal_info = vku::InitStructHelper();
+        metal_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT;
+        metal_info.pNext = &queue_info;
+
+        RETURN_IF_SKIP(InitFramework(&metal_info));
+
+        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_features = vku::InitStructHelper();
+        auto features2 = GetPhysicalDeviceFeatures2(portability_features);
+
+        RETURN_IF_SKIP(InitState(nullptr, &features2));
+    }
+
+    const VkDevice device = m_device->device();
+
+    // Get Metal Device and Metal Command Queue in 1 call
+    {
+        const VkQueue queue = m_default_queue->handle();
+
+        VkExportMetalCommandQueueInfoEXT queueInfo = vku::InitStructHelper();
+        queueInfo.queue = queue;
+        VkExportMetalDeviceInfoEXT deviceInfo = vku::InitStructHelper(&queueInfo);
+        VkExportMetalObjectsInfoEXT objectsInfo = vku::InitStructHelper(&deviceInfo);
+
+        // This tests both device, queue, and pNext chaining
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(deviceInfo.mtlDevice != nullptr);
+        ASSERT_TRUE(queueInfo.mtlCommandQueue != nullptr);
+    }
+
+    // Get Metal Buffer
+    {
+        VkExportMetalObjectCreateInfoEXT metalBufferCreateInfo = vku::InitStructHelper();
+        metalBufferCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT;
+
+        VkMemoryAllocateInfo mem_info = vku::InitStructHelper();
+        mem_info.allocationSize = 1024;
+        mem_info.pNext = &metalBufferCreateInfo;
+
+        VkDeviceMemory memory;
+        const VkResult err = vk::AllocateMemory(device, &mem_info, NULL, &memory);
+        ASSERT_EQ(VK_SUCCESS, err);
+
+        VkExportMetalBufferInfoEXT bufferInfo = vku::InitStructHelper();
+        bufferInfo.memory = memory;
+        VkExportMetalObjectsInfoEXT objectsInfo = vku::InitStructHelper(&bufferInfo);
+
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(bufferInfo.mtlBuffer != nullptr);
+
+        vk::FreeMemory(device, memory, nullptr);
+    }
+
+    // Get Metal Texture and Metal IOSurfaceRef
+    {
+        VkExportMetalObjectCreateInfoEXT metalSurfaceInfo = vku::InitStructHelper();
+        metalSurfaceInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT;
+        VkExportMetalObjectCreateInfoEXT metalTextureCreateInfo = vku::InitStructHelper(&metalSurfaceInfo);
+        metalTextureCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+
+        // Image contents don't matter
+        VkImageCreateInfo ici = vku::InitStructHelper(&metalTextureCreateInfo);
+        ici.imageType = VK_IMAGE_TYPE_2D;
+        ici.format = VK_FORMAT_B8G8R8A8_UNORM;
+        ici.extent = {32, 32, 1};
+        ici.mipLevels = 1;
+        ici.arrayLayers = 1;
+        ici.samples = VK_SAMPLE_COUNT_1_BIT;
+        ici.tiling = VK_IMAGE_TILING_LINEAR;
+        ici.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        VkImageObj image(m_device);
+        image.Init(ici);
+        ASSERT_TRUE(image.initialized());
+
+        VkExportMetalIOSurfaceInfoEXT surfaceInfo = vku::InitStructHelper();
+        surfaceInfo.image = image.handle();
+        VkExportMetalTextureInfoEXT textureInfo = vku::InitStructHelper(&surfaceInfo);
+        textureInfo.image = image.handle();
+        textureInfo.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;  // Image is not multi-planar
+        VkExportMetalObjectsInfoEXT objectsInfo = vku::InitStructHelper(&textureInfo);
+
+        // This tests both texture, surface, and pNext chaining
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(textureInfo.mtlTexture != nullptr);
+        ASSERT_TRUE(surfaceInfo.ioSurface != nullptr);
+    }
+
+    // Get Metal Shared Event
+    {
+        VkExportMetalObjectCreateInfoEXT metalEventCreateInfo = vku::InitStructHelper();
+        metalEventCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT;
+
+        VkEventCreateInfo eventCreateInfo = vku::InitStructHelper(&metalEventCreateInfo);
+        vkt::Event event(*m_device, eventCreateInfo);
+        ASSERT_TRUE(event.initialized());
+
+        VkExportMetalSharedEventInfoEXT eventInfo = vku::InitStructHelper();
+        eventInfo.event = event.handle();
+        VkExportMetalObjectsInfoEXT objectsInfo = vku::InitStructHelper(&eventInfo);
+
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(eventInfo.mtlSharedEvent != nullptr);
+    }
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT

@@ -70,6 +70,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/buffer_positive.cpp
     unit/command.cpp
     unit/command_positive.cpp
+    unit/debug_extensions.cpp
     unit/debug_printf.cpp
     unit/descriptor_buffer.cpp
     unit/descriptor_buffer_positive.cpp
@@ -116,6 +117,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/multiview.cpp
     unit/nvidia_best_practices.cpp
     unit/object_lifetime.cpp
+    unit/object_lifetime_positive.cpp
     unit/other_positive.cpp
     unit/others.cpp
     unit/parent.cpp

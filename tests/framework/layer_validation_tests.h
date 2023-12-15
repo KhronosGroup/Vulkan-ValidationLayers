@@ -338,6 +338,8 @@ class PushDescriptorTest : public VkLayerTest {};
 class NegativePushDescriptor : public PushDescriptorTest {};
 class PositivePushDescriptor : public PushDescriptorTest {};
 
+class NegativeDebugExtensions : public VkLayerTest {};
+
 class DescriptorBufferTest : public VkLayerTest {
   public:
     void InitBasicDescriptorBuffer(void *pNextFeatures = nullptr);
@@ -449,7 +451,9 @@ class PositiveMesh : public MeshTest {};
 
 class NegativeMultiview : public VkLayerTest {};
 
-class NegativeObjectLifetime : public VkLayerTest {};
+class ObjectLifetimeTest : public VkLayerTest {};
+class NegativeObjectLifetime : public ObjectLifetimeTest {};
+class PositiveObjectLifetime : public ObjectLifetimeTest {};
 
 class NegativePipelineAdvancedBlend : public VkLayerTest {};
 

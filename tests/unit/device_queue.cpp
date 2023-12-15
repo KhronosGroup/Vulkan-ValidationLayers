@@ -427,3 +427,42 @@ TEST_F(NegativeDeviceQueue, QueuesSameQueueFamily) {
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, MismatchedQueueFamiliesOnSubmit) {
+    TEST_DESCRIPTION(
+        "Submit command buffer created using one queue family and attempt to submit them on a queue created in a different queue "
+        "family.");
+
+    RETURN_IF_SKIP(Init());  // assumes it initializes all queue families on vk::CreateDevice
+
+    // This test is meaningless unless we have multiple queue families
+    auto queue_family_properties = m_device->phy().queue_properties_;
+    std::vector<uint32_t> queue_families;
+    for (uint32_t i = 0; i < queue_family_properties.size(); ++i)
+        if (queue_family_properties[i].queueCount > 0) queue_families.push_back(i);
+
+    if (queue_families.size() < 2) {
+        GTEST_SKIP() << "Device only has one queue family";
+    }
+
+    const uint32_t queue_family = queue_families[0];
+
+    const uint32_t other_queue_family = queue_families[1];
+    VkQueue other_queue;
+    vk::GetDeviceQueue(m_device->device(), other_queue_family, 0, &other_queue);
+
+    vkt::CommandPool cmd_pool(*m_device, queue_family);
+    vkt::CommandBuffer cmd_buff(m_device, &cmd_pool);
+
+    cmd_buff.begin();
+    cmd_buff.end();
+
+    // Submit on the wrong queue
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buff.handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00074");
+    vk::QueueSubmit(other_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}

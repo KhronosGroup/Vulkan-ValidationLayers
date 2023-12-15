@@ -174,7 +174,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
 }
 
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
-TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
+TEST_F(NegativePipeline, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline that is incompatible with the requirements of its contained Renderpass/subpasses.");
     RETURN_IF_SKIP(Init());
@@ -191,7 +191,7 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09030");
 }
 
-TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
+TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a pipeline dependency being destroyed.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1715,7 +1715,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     vk::DestroyPipeline(device(), c_pipeline, nullptr);
 }
 
-TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
+TEST_F(NegativePipeline, MaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
     RETURN_IF_SKIP(InitFramework());
@@ -2371,7 +2371,7 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXTMaxAttachments) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
+TEST_F(NegativePipeline, VariableSampleLocations) {
     TEST_DESCRIPTION("Validate using VkPhysicalDeviceSampleLocationsPropertiesEXT");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
@@ -2549,7 +2549,7 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
+TEST_F(NegativePipeline, NullRenderPass) {
     TEST_DESCRIPTION("Test for a creating a pipeline with a null renderpass but VK_KHR_dynamic_rendering is not enabled");
 
     RETURN_IF_SKIP(Init());
@@ -3591,4 +3591,60 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
                                              "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
+}
+
+TEST_F(NegativePipeline, ViewportStateScissorOverflow) {
+    TEST_DESCRIPTION("Validate sum of offset and width of viewport state scissor");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkRect2D scissor_x = {{vvl::kI32Max / 2, 0}, {vvl::kI32Max / 2 + 64, 64}};
+    VkRect2D scissor_y = {{0, vvl::kI32Max / 2}, {64, vvl::kI32Max / 2 + 64}};
+
+    const auto break_vp_x = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = &viewport;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = &scissor_x;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_x, kErrorBit,
+                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02822"}));
+
+    const auto break_vp_y = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = &viewport;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = &scissor_y;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_y, kErrorBit,
+                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02823"}));
+}
+
+TEST_F(NegativePipeline, ViewportStateScissorNegative) {
+    TEST_DESCRIPTION("Validate offset of viewport state scissor");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkRect2D scissor_x = {{-64, 0}, {256, 256}};
+    VkRect2D scissor_y = {{0, -64}, {256, 256}};
+
+    const auto break_vp_x = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = &viewport;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = &scissor_x;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_x, kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-x-02821");
+
+    const auto break_vp_y = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = &viewport;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = &scissor_y;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_y, kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-x-02821");
 }

@@ -1105,7 +1105,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
+TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     TEST_DESCRIPTION("Verify renderpass layout transitions for a 2d ImageView created from a 3d Image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());

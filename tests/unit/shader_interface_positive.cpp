@@ -16,7 +16,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 
-TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
+TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
     TEST_DESCRIPTION("Test shader layout in and out with different components.");
 
     RETURN_IF_SKIP(Init());
@@ -123,7 +123,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
+TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
     TEST_DESCRIPTION("Test shader interface with structs.");
 
     RETURN_IF_SKIP(Init());
@@ -733,7 +733,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(VkPositiveLayerTest, FragmentOutputNotConsumedButAlphaToCoverageEnabled) {
+TEST_F(PositiveShaderInterface, FragmentOutputNotConsumedButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION(
         "Test that no warning is produced when writing to non-existing color attachment if alpha to coverage is enabled.");
 
@@ -788,7 +788,7 @@ TEST_F(PositiveShaderInterface, DISABLED_InputOutputMatch2) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
+TEST_F(PositiveShaderInterface, InputOutputMatch) {
     TEST_DESCRIPTION("Test matching vertex shader output with fragment shader input.");
 
     RETURN_IF_SKIP(Init());

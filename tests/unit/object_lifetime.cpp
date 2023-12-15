@@ -1133,3 +1133,131 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     m_default_queue->wait();
 }
 #endif
+
+TEST_F(NegativeObjectLifetime, LeakAnObject) {
+    TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
+
+    RETURN_IF_SKIP(InitFramework());
+    if (!IsPlatformMockICD()) {
+        // This test leaks a fence (on purpose) and should not be run on a real driver
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+
+    // Workaround for overzealous layers checking even the guaranteed 0th queue family
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
+
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+
+    VkDevice leaky_device;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
+
+    const VkFenceCreateInfo fence_ci = vku::InitStructHelper();
+    VkFence leaked_fence;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateFence(leaky_device, &fence_ci, nullptr, &leaked_fence));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-05137");
+    vk::DestroyDevice(leaky_device, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    // There's no way we can destroy the fence at this point. Even though DestroyDevice failed, the loader has already removed
+    // references to the device
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyInstance-instance-00629");
+}
+
+TEST_F(NegativeObjectLifetime, LeakABuffer) {
+    TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the buffer.");
+
+    RETURN_IF_SKIP(InitFramework());
+    if (!IsPlatformMockICD()) {
+        // This test leaks a buffer (on purpose) and should not be run on a real driver
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+
+    // Workaround for overzealous layers checking even the guaranteed 0th queue family
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
+
+    auto features = vkt::PhysicalDevice(gpu()).features();
+    if (!features.sparseBinding) {
+        GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
+    }
+
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.pEnabledFeatures = &features;
+
+    VkDevice leaky_device;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.size = 1;
+
+    VkBuffer buffer{};
+    ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(leaky_device, &buffer_create_info, nullptr, &buffer));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-05137");
+    vk::DestroyDevice(leaky_device, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    // There's no way we can destroy the buffer at this point.
+    // Even though DestroyDevice failed, the loader has already removed references to the device
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyInstance-instance-00629");
+}
+
+TEST_F(NegativeObjectLifetime, FreeCommandBuffersNull) {
+    TEST_DESCRIPTION("Can pass NULL for vkFreeCommandBuffers");
+    RETURN_IF_SKIP(Init());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    VkCommandBuffer invalid_cb = CastToHandle<VkCommandBuffer, uintptr_t>(0xbaadbeef);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &invalid_cb);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeObjectLifetime, FreeDescriptorSetsNull) {
+    TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 2, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    VkDescriptorSet invalid_set = CastToHandle<VkDescriptorSet, uintptr_t>(0xbaadbeef);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &invalid_set);
+    m_errorMonitor->VerifyFound();
+}
