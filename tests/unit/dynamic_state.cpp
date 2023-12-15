@@ -5330,6 +5330,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.CreateGraphicsPipeline();
@@ -5553,25 +5554,18 @@ TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT xfb_features = vku::InitStructHelper();
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper(&xfb_features);
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT eds3_features = vku::InitStructHelper(&primitives_generated_features);
-    auto features2 = GetPhysicalDeviceFeatures2(eds3_features);
-    if (xfb_features.transformFeedback == VK_FALSE) {
-        GTEST_SKIP() << "transformFeedback not supported";
-    }
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery not supported";
-    }
-    if (eds3_features.extendedDynamicState3RasterizationStream == VK_FALSE) {
-        GTEST_SKIP() << "extendedDynamicState3RasterizationStream not supported";
-    }
-
-    primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationStream);
+    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(transform_feedback_props);
+    if (!transform_feedback_props.transformFeedbackRasterizationStreamSelect) {
+        GTEST_SKIP() << "transformFeedbackRasterizationStreamSelect not supported";
+    }
 
     vkt::QueryPool pg_query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 

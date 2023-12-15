@@ -987,14 +987,11 @@ bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &
     bool skip = false;
 
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) &&
-        (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
-        (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+        (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)) {
         if (!pipeline.TessellationState() && (!pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
                                               !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3))) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
-                             "includes a tessellation control "
-                             "shader stage and a tessellation evaluation shader stage, "
-                             "but pTessellationState is NULL.");
+                             "includes a tessellation control shader stage, but pTessellationState is NULL.");
         }
     }
     return skip;

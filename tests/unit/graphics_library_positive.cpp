@@ -1457,6 +1457,9 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
     TEST_DESCRIPTION("Create a pipeline library with tessellation shader but no tessellation state");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
@@ -1494,7 +1497,10 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
-        pre_raster_lib.shader_stages_ = {stages[0], stages[1]};
+        pre_raster_lib.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
+        pre_raster_lib.shader_stages_ = {pre_raster_lib.vs_->GetStageCreateInfo(), stages[0], stages[1]};
+        pre_raster_lib.gp_ci_.stageCount = pre_raster_lib.shader_stages_.size();
+        pre_raster_lib.gp_ci_.pStages = pre_raster_lib.shader_stages_.data();
         pre_raster_lib.CreateGraphicsPipeline();
     }
 

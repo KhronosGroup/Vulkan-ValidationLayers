@@ -897,6 +897,7 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
     p_iasci = &iasci_bad;
     // Pass a tess control shader without a tess eval shader
     shader_stages = {tcs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
 
     // Pass a tess eval shader without a tess control shader
