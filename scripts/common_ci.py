@@ -160,8 +160,6 @@ def BuildMockICD(mockAndroid):
 #
 # Prepare Profile Layer for use with Layer Validation Tests
 def BuildProfileLayer(mockAndroid):
-    RunShellCmd('pip3 install jsonschema')
-
     SRC_DIR = f'{CI_EXTERNAL_DIR}/Vulkan-Profiles'
     BUILD_DIR = f'{SRC_DIR}/build'
 
