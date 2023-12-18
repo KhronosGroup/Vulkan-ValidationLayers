@@ -150,6 +150,27 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+bool CoreChecks::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                        HANDLE *pHandle, const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (const auto memory_state = Get<vvl::DeviceMemory>(pGetWin32HandleInfo->memory)) {
+        const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
+        if (!export_info) {
+            skip |= LogError("VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662", pGetWin32HandleInfo->memory,
+                             error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::memory),
+                             "pNext chain does not include a VkExportMemoryAllocateInfo structure.");
+        } else if ((export_info->handleTypes & pGetWin32HandleInfo->handleType) == 0) {
+            skip |= LogError("VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662", pGetWin32HandleInfo->memory,
+                             error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::memory),
+                             "the requested handle type (%s) is not included in the memory's "
+                             "VkExportMemoryAllocateInfo::handleTypes (%s).",
+                             string_VkExternalMemoryHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
+                             string_VkExternalMemoryHandleTypeFlags(export_info->handleTypes).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo,
     const ErrorObject &error_obj) const {

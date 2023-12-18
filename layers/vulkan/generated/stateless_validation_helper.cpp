@@ -16473,6 +16473,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device
                               "VUID-VkMemoryGetWin32HandleInfoKHR-handleType-parameter");
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle, "VUID-vkGetMemoryWin32HandleKHR-pHandle-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, error_obj);
     return skip;
 }
 

@@ -112,6 +112,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetSemaphoreFdKHR',
             'vkImportFenceFdKHR',
             'vkGetFenceFdKHR',
+            'vkGetMemoryWin32HandleKHR',
             'vkImportFenceWin32HandleKHR',
             'vkGetFenceWin32HandleKHR',
             'vkImportSemaphoreWin32HandleKHR',

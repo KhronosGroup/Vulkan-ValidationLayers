@@ -878,6 +878,8 @@ class StatelessValidation : public ValidationObject {
                                                                  const ErrorObject &error_obj) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool manual_PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                       HANDLE *pHandle, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                  HANDLE handle,
                                                                  VkMemoryWin32HandlePropertiesKHR *pMemoryWin32HandleProperties,
