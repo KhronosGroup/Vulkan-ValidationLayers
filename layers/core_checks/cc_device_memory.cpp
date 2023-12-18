@@ -401,30 +401,79 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    const auto import_memory_win32_info = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
-    const bool imported_win32 =
-        import_memory_win32_info && (import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
-                                     import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT);
-    if (imported_win32) {
+    if (const auto import_memory_win32_info = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext)) {
         if (const auto payload_info = GetOpaqueInfoFromWin32Handle(import_memory_win32_info->handle)) {
-            const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryWin32HandleInfoKHR, Field::handle);
-            static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
-            if (pAllocateInfo->allocationSize != payload_info->allocation_size) {
-                skip |= LogError(
-                    "VUID-VkMemoryAllocateInfo-allocationSize-01743", device, allocate_info_loc.dot(Field::allocationSize),
-                    "allocationSize (%" PRIu64 ") does not match %s (0x%" PRIxPTR ") of type %s allocationSize (%" PRIu64 ").",
-                    pAllocateInfo->allocationSize, import_loc.Fields().c_str(),
-                    reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                    string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType), payload_info->allocation_size);
+            if (IsValueIn(import_memory_win32_info->handleType,
+                          {VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT})) {
+                const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryWin32HandleInfoKHR, Field::handle);
+                static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
+                if (pAllocateInfo->allocationSize != payload_info->allocation_size) {
+                    skip |= LogError(
+                        "VUID-VkMemoryAllocateInfo-allocationSize-01743", device, allocate_info_loc.dot(Field::allocationSize),
+                        "allocationSize (%" PRIu64 ") does not match %s (0x%" PRIxPTR ") of type %s allocationSize (%" PRIu64 ").",
+                        pAllocateInfo->allocationSize, import_loc.Fields().c_str(),
+                        reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                        string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
+                        payload_info->allocation_size);
+                }
+                if (pAllocateInfo->memoryTypeIndex != payload_info->memory_type_index) {
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-01743", device,
+                                     allocate_info_loc.dot(Field::memoryTypeIndex),
+                                     "memoryTypeIndex (%" PRIu32 ") does not match %s (0x%" PRIxPTR
+                                     ") of type %s memoryTypeIndex (%" PRIu32 ").",
+                                     pAllocateInfo->memoryTypeIndex, import_loc.Fields().c_str(),
+                                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                     string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
+                                     payload_info->memory_type_index);
+                }
             }
-            if (pAllocateInfo->memoryTypeIndex != payload_info->memory_type_index) {
-                skip |= LogError(
-                    "VUID-VkMemoryAllocateInfo-allocationSize-01743", device, allocate_info_loc.dot(Field::memoryTypeIndex),
-                    "memoryTypeIndex (%" PRIu32 ") does not match %s (0x%" PRIxPTR ") of type %s memoryTypeIndex (%" PRIu32 ").",
-                    pAllocateInfo->memoryTypeIndex, import_loc.Fields().c_str(),
-                    reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                    string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
-                    payload_info->memory_type_index);
+            const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryWin32HandleInfoKHR, Field::handle);
+            if (dedicated_image != VK_NULL_HANDLE) {
+                if (IsValueIn(
+                        import_memory_win32_info->handleType,
+                        {VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT,
+                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT,
+                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT})) {
+                    if (payload_info->dedicated_image == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01876", dedicated_image,
+                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                         "is %s but %s (0x%" PRIxPTR ") was not created with a dedicated image.",
+                                         FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(),
+                                         reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle));
+                    } else if (payload_info->dedicated_image != dedicated_image) {
+                        const LogObjectList objlist(payload_info->dedicated_image, dedicated_image);
+                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01876", objlist,
+                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                         "is %s but %s (0x%" PRIxPTR ") was created with a dedicated image %s.",
+                                         FormatHandle(dedicated_image).c_str(), import_loc.Fields().c_str(),
+                                         reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                         FormatHandle(payload_info->dedicated_image).c_str());
+                    }
+                }
+            }
+            if (dedicated_buffer != VK_NULL_HANDLE) {
+                if (IsValueIn(
+                        import_memory_win32_info->handleType,
+                        {VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT,
+                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT,
+                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT})) {
+                    if (payload_info->dedicated_buffer == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", dedicated_buffer,
+                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                         "is %s but %s (0x%" PRIxPTR ") was not created with a dedicated buffer.",
+                                         FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
+                                         reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle));
+
+                    } else if (payload_info->dedicated_buffer != dedicated_buffer) {
+                        const LogObjectList objlist(payload_info->dedicated_buffer, dedicated_buffer);
+                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", objlist,
+                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                         "is %s but %s (0x%" PRIxPTR ") was created with a dedicated buffer %s.",
+                                         FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
+                                         reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                         FormatHandle(payload_info->dedicated_buffer).c_str());
+                    }
+                }
             }
         }
     }
