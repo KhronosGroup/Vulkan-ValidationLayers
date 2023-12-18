@@ -5740,7 +5740,8 @@
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT"
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",

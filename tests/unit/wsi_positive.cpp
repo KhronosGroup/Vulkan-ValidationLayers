@@ -180,13 +180,12 @@ TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -219,9 +218,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -674,8 +671,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
 TEST_F(PositiveWsi, SwapchainImageLayout) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
     }
@@ -752,10 +748,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -843,10 +836,7 @@ TEST_F(PositiveWsi, CreateSurface) {
     TEST_DESCRIPTION("Create and destroy a surface without ever creating a swapchain");
 
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
@@ -863,14 +853,12 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -911,14 +899,12 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive2) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -957,9 +943,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     TEST_DESCRIPTION("Try using special format props on a swapchain image");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -1043,10 +1027,7 @@ TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     TEST_DESCRIPTION("Try using special format props on a swapchain image");
 
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -1099,9 +1080,7 @@ TEST_F(PositiveWsi, DestroySwapchainWithBoundImages) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -1278,9 +1257,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -1371,10 +1348,7 @@ TEST_F(PositiveWsi, PhysicalDeviceSurfaceSupport) {
     TEST_DESCRIPTION("Test if physical device supports surface.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }

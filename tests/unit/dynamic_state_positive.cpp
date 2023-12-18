@@ -22,24 +22,14 @@ void DynamicStateTest::InitBasicExtendedDynamicState() {
     RETURN_IF_SKIP(Init());
 }
 
-void DynamicStateTest::InitBasicExtendedDynamicState3(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT &features) {
-    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    GetPhysicalDeviceFeatures2(features);
-    RETURN_IF_SKIP(InitState(nullptr, &features));
-}
-
 TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     if (!InstanceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
         GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
     }
-
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -204,9 +194,7 @@ TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     TEST_DESCRIPTION("Don't check discard rectangles if dynamic state is not set");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // pass in struct, but don't set the dynamic state in the pipeline
@@ -660,12 +648,9 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
 
 TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to false so its not checked.");
-
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicExtendedDynamicState3(extended_dynamic_state_features));
-    if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
-    }
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToCoverageEnable);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -699,12 +684,9 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
 
 TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
     TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to true, but have component set.");
-
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicExtendedDynamicState3(extended_dynamic_state_features));
-    if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
-    }
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToCoverageEnable);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -755,23 +737,13 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnored) {
 
 TEST_F(PositiveDynamicState, MultisampleStateIgnoredAlphaToOne) {
     TEST_DESCRIPTION("Ignore null pMultisampleState with alphaToOne enabled");
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicExtendedDynamicState3(extended_dynamic_state3_features));
-    if (!extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3RasterizationSamples";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3SampleMask) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3SampleMask";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToCoverageEnable) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToOneEnable";
-    }
-    if (!m_device->phy().features().alphaToOne) {
-        GTEST_SKIP() << "Test requires (unsupported) alphaToOne";
-    }
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleMask);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToCoverageEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
+    AddRequiredFeature(vkt::Feature::alphaToOne);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -788,12 +760,10 @@ TEST_F(PositiveDynamicState, InputAssemblyStateIgnored) {
     TEST_DESCRIPTION("Ignore null pInputAssemblyState");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features =
-        vku::InitStructHelper(&extended_dynamic_state_features);
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
-        vku::InitStructHelper(&extended_dynamic_state2_features);
-    RETURN_IF_SKIP(InitBasicExtendedDynamicState3(extended_dynamic_state3_features));
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceExtendedDynamicState3PropertiesEXT dynamic_state_3_props = vku::InitStructHelper();
@@ -830,27 +800,15 @@ TEST_F(PositiveDynamicState, ViewportStateIgnored) {
 TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
     TEST_DESCRIPTION("Ignore null pColorBlendState");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features =
-        vku::InitStructHelper(&extended_dynamic_state2_features);
-    RETURN_IF_SKIP(InitBasicExtendedDynamicState3(extended_dynamic_state3_features));
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2LogicOp);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
-        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
-        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
-        GTEST_SKIP() << "extendedDynamicState3ColorBlendEnable not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
-        GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
-    }
-    if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
-        GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
-    }
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);

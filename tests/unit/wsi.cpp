@@ -27,9 +27,7 @@ TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
     AddRequiredExtensions(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     InitRenderTarget();
     if (!InitSurface()) {
@@ -99,13 +97,12 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "This test appears to leave the image created a swapchain in a weird state that leads to 00378 when it "
                         "shouldn't. Requires further investigation.";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping BindSwapchainImageMemory test";
@@ -190,9 +187,7 @@ TEST_F(NegativeWsi, SwapchainImage) {
 
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -460,9 +455,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoSync) {
 
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     {
@@ -479,9 +472,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoSync2KHR) {
 
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     {
@@ -559,8 +550,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain.");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
     ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
@@ -592,8 +582,7 @@ TEST_F(NegativeWsi, GetSwapchainImageAndTryDestroy) {
     TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
     const auto images = GetSwapchainImages(m_swapchain);
 
@@ -690,9 +679,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     ASSERT_TRUE(InitSwapchain());
     uint32_t image_count;
@@ -733,9 +720,7 @@ TEST_F(NegativeWsi, SwapchainImageFormatList) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -829,9 +814,7 @@ TEST_F(NegativeWsi, SwapchainMinImageCountNonShared) {
     TEST_DESCRIPTION("Use invalid minImageCount for non shared swapchain creation");
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -877,9 +860,7 @@ TEST_F(NegativeWsi, SwapchainMinImageCountShared) {
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -943,9 +924,7 @@ TEST_F(NegativeWsi, SwapchainUsageNonShared) {
     TEST_DESCRIPTION("Use invalid imageUsage for non-shared swapchain creation");
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -990,9 +969,7 @@ TEST_F(NegativeWsi, SwapchainUsageShared) {
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -1056,9 +1033,7 @@ TEST_F(NegativeWsi, SwapchainPresentShared) {
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -1423,9 +1398,7 @@ TEST_F(NegativeWsi, WarningSwapchainCreateInfoPreTransform) {
 
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "WARNING-Swapchain-PreTransform");
@@ -1511,9 +1484,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     vkt::Semaphore semaphore(*m_device);
@@ -1545,9 +1516,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     vkt::Semaphore semaphore(*m_device);
@@ -1594,8 +1563,7 @@ TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping test";
     }
@@ -1642,12 +1610,11 @@ TEST_F(NegativeWsi, LeakASwapchain) {
 #endif
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     if (!IsPlatformMockICD()) {
         // This test leaks a swapchain (on purpose) and should not be run on a real driver
         GTEST_SKIP() << "This test only runs on the mock ICD";
     }
-    RETURN_IF_SKIP(InitState());
 
     SurfaceContext surface_context{};
     VkSurfaceKHR surface{};
@@ -1798,8 +1765,7 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
 TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     TEST_DESCRIPTION("Test for getting swapchain images count and presenting before getting swapchain images.");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSurface());
 
     VkBool32 supported;
@@ -1861,8 +1827,7 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
     AddOptionalExtensions(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     const bool swapchain = IsExtensionsEnabled(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     const bool get_surface_capabilities2 = IsExtensionsEnabled(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     const bool display_surface_counter = IsExtensionsEnabled(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -1970,14 +1935,12 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    RETURN_IF_SKIP(InitState());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -2554,13 +2517,12 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -2632,14 +2594,12 @@ TEST_F(NegativeWsi, CreateSwapchainFullscreenExclusive) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -2681,13 +2641,11 @@ TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
+    RETURN_IF_SKIP(Init());
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
@@ -2937,13 +2895,11 @@ TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {
     TEST_DESCRIPTION("Create swapchain with extent greater than maxImageExtent of SurfaceCapabilities");
 
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
-    RETURN_IF_SKIP(InitState());
     InitSwapchainInfo();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-pNext-07781");
@@ -3005,9 +2961,7 @@ TEST_F(NegativeWsi, PhysicalDeviceSurfaceCapabilities) {
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
@@ -3028,8 +2982,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping test";
     }
@@ -3277,9 +3230,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
 
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     ASSERT_TRUE(InitSwapchain());
 
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
@@ -3324,9 +3275,7 @@ TEST_F(NegativeWsi, PresentInfoParameters) {
     TEST_DESCRIPTION("Validate VkPresentInfoKHR implicit VUs");
 
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -3355,9 +3304,7 @@ TEST_F(NegativeWsi, PresentRegionsKHR) {
 
     AddRequiredExtensions(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
@@ -3399,9 +3346,7 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
     TEST_DESCRIPTION("Draw to images of a destroyed swapchain");
     AddSurfaceExtension();
 
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -3601,9 +3546,7 @@ TEST_F(NegativeWsi, IncompatibleImageWithSwapchain) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }

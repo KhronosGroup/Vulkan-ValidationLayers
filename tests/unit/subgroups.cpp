@@ -271,8 +271,7 @@ TEST_F(NegativeSubgroup, DISABLED_pNextDisabled) {
     TEST_DESCRIPTION("Try to use structs with 1.0");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&subgroup_prop);

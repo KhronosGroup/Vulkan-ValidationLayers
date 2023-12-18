@@ -19,8 +19,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
 
     AddRequiredExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
@@ -107,9 +106,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";

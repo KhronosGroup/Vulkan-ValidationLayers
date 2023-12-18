@@ -49,9 +49,7 @@ TEST_F(NegativeGraphicsLibrary, GPLDSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts with VK_EXT_grahpics_pipeline_library enabled");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
@@ -179,9 +177,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
     TEST_DESCRIPTION("Attempt to bind invalid descriptor sets with and with VK_EXT_graphics_pipeline_library");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Prepare descriptors
     OneOffDescriptorSet ds(m_device, {
@@ -1044,12 +1040,8 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
 
 TEST_F(NegativeGraphicsLibrary, Tessellation) {
     TEST_DESCRIPTION("Test various errors when creating a graphics pipeline with tessellation stages active.");
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
-
     InitRenderTarget();
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);

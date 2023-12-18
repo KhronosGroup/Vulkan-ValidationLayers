@@ -68,7 +68,6 @@ TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     TEST_DESCRIPTION("Call a VkPhysicalDevice query API that uses an enum that is only valid with a promoted extension");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitFramework());
-    // RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;

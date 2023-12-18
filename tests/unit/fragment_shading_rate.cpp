@@ -79,8 +79,7 @@ TEST_F(NegativeFragmentShadingRate, ValuesNoFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkExtent2D fragmentSize = {1, 1};
@@ -292,14 +291,12 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (!IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME) &&
         !IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "Extensions not supported";
     }
-
-    RETURN_IF_SKIP(InitState());
 
     VkAttachmentDescription attach = {0,
                                       VK_FORMAT_R8G8_UNORM,
@@ -631,9 +628,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDisabled) {
 
     // VK_EXT_fragment_density_map2 requires VK_EXT_fragment_density_map
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1369,9 +1364,7 @@ TEST_F(NegativeFragmentShadingRate, PipelineFeatureUsage) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = vku::InitStructHelper();
@@ -2361,10 +2354,8 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
 TEST_F(NegativeFragmentShadingRate, StageUsage) {
     TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature disabled");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     const vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     const vkt::Event event(*m_device);
@@ -2390,10 +2381,8 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
         "Specify shading rate pipeline stage with shading rate features disabled and NV shading rate extension enabled");
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     const vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     const vkt::Event event(*m_device);

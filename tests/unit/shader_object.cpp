@@ -306,11 +306,18 @@ TEST_F(NegativeShaderObject, MeshNVNextStage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-nextStage-08436");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
-    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&meshShaderFeatures, VK_API_VERSION_1_2));
-    if (meshShaderFeatures.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported.";
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features_nv = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&mesh_shader_features_nv);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    if (mesh_shader_features_nv.meshShader == VK_FALSE) {
+        GTEST_SKIP() << "shadingRateImage not supported.";
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_NV, kMeshMinimalGlsl, "main", nullptr, SPV_ENV_VULKAN_1_3);
@@ -793,8 +800,9 @@ TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08684");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08688");
-
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false));
+    AddDisabledFeature(vkt::Feature::geometryShader);
+    AddDisabledFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1551,12 +1559,20 @@ TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08637");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures));
-    if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features_nv = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&shading_rate_image_features_nv);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    if (shading_rate_image_features_nv.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
+
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1595,11 +1611,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetExclusiveScissorEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-exclusiveScissor-09235");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
-    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusiveScissorFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&exclusiveScissorFeatures));
-    if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
-        GTEST_SKIP() << "exclusiveScissor not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::exclusiveScissor);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -1623,11 +1636,8 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08638");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
-    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusiveScissorFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&exclusiveScissorFeatures));
-    if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
-        GTEST_SKIP() << "exclusiveScissor not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::exclusiveScissor);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     uint32_t count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
@@ -1805,12 +1815,8 @@ TEST_F(NegativeShaderObject, MissingColorWriteEnable) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08646");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
-    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&color_write_enable_features));
-    if (!color_write_enable_features.colorWriteEnable) {
-        GTEST_SKIP() << "colorWriteEnable not supported.";
-    }
-
+    AddRequiredFeature(vkt::Feature::colorWriteEnable);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -1832,13 +1838,8 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     TEST_DESCRIPTION("Draw with shader objects without setting color write enable for all attachments.");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08647");
-
-    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&color_write_enable_features));
-    if (!color_write_enable_features.colorWriteEnable) {
-        GTEST_SKIP() << "colorWriteEnable not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::colorWriteEnable);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkImageObj img1(m_device);
     img1.Init(m_width, m_height, 1, m_render_target_fmt,
@@ -1872,6 +1873,8 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 2u;
     renderingInfo.pColorAttachments = attachments;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08647");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(renderingInfo);
@@ -2314,11 +2317,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetFragmentShadingRateKHR) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pipelineFragmentShadingRate-09238");
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&fsr_features));
-    if (!fsr_features.pipelineFragmentShadingRate) {
-        GTEST_SKIP() << "pipelineFragmentShadingRate not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2391,11 +2391,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08660");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transformFeedbackFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&transformFeedbackFeatures));
-    if (transformFeedbackFeatures.geometryStreams == VK_FALSE) {
-        GTEST_SKIP() << "geometryStreams not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2472,12 +2469,9 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipEnableEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08663");
 
-    VkPhysicalDeviceDepthClipEnableFeaturesEXT depthClipEnableFeatures = vku::InitStructHelper();
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject(&depthClipEnableFeatures));
-    if (depthClipEnableFeatures.depthClipEnable == VK_FALSE) {
-        GTEST_SKIP() << "depthClipEnable not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::depthClipEnable);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2678,11 +2672,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipNegativeOneToOneEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08673");
 
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
-    VkPhysicalDeviceDepthClipControlFeaturesEXT depthClipControlFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&depthClipControlFeatures));
-    if (depthClipControlFeatures.depthClipControl == VK_FALSE) {
-        GTEST_SKIP() << "depthClipControl not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::depthClipControl);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2903,12 +2894,20 @@ TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08681");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures));
-    if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features_nv = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&shading_rate_image_features_nv);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    if (shading_rate_image_features_nv.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
+
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2932,10 +2931,17 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-shadingRateImage-09234");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures));
-    if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features_nv = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&shading_rate_image_features_nv);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    if (shading_rate_image_features_nv.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
     InitDynamicRenderTarget();
@@ -2962,10 +2968,17 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-shadingRateImage-09233");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    VkPhysicalDeviceShadingRateImageFeaturesNV shadingRateImageFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&shadingRateImageFeatures));
-    if (shadingRateImageFeatures.shadingRateImage == VK_FALSE) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features_nv = vku::InitStructHelper();
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&shading_rate_image_features_nv);
+    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    if (shading_rate_image_features_nv.shadingRateImage == VK_FALSE) {
         GTEST_SKIP() << "shadingRateImage not supported.";
     }
     InitDynamicRenderTarget();
@@ -2992,11 +3005,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetRepresentativeFragmentTestEnableNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08682");
 
     AddRequiredExtensions(VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME);
-    VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV representativeFragmentTestFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&representativeFragmentTestFeatures));
-    if (representativeFragmentTestFeatures.representativeFragmentTest == VK_FALSE) {
-        GTEST_SKIP() << "representativeFragmentTest not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::representativeFragmentTest);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3020,11 +3030,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageReductionModeNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08683");
 
     AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
-    VkPhysicalDeviceCoverageReductionModeFeaturesNV coverageReductionFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&coverageReductionFeatures));
-    if (coverageReductionFeatures.coverageReductionMode == VK_FALSE) {
-        GTEST_SKIP() << "coverageReductionMode not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::coverageReductionMode);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3605,12 +3612,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08880");
 
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
-    VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT attachmentFeedbackLoopDynamicStateFeatures =
-        vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&attachmentFeedbackLoopDynamicStateFeatures));
-    if (attachmentFeedbackLoopDynamicStateFeatures.attachmentFeedbackLoopDynamicState == VK_FALSE) {
-        GTEST_SKIP() << "attachmentFeedbackLoopDynamicState not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::attachmentFeedbackLoopDynamicState);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4715,7 +4718,13 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08740");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false));
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddDisabledFeature(vkt::Feature::shaderClipDistance);
+    RETURN_IF_SKIP(Init());
 
     const char* vs_src = R"(
                OpCapability Shader
@@ -4791,7 +4800,12 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08741");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false));
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
 
     const char* vs_src = R"(
                OpCapability Shader
@@ -4829,7 +4843,12 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08742");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_0, false));
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
 
     const char* cs_src = R"(
                    OpCapability Shader
@@ -4910,15 +4929,10 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEmitStreamVertex-06310");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&transform_feedback_features));
-    auto features2 = GetPhysicalDeviceFeatures2(transform_feedback_features);
-    if (features2.features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported";
-    }
-    if (!transform_feedback_features.transformFeedback || !transform_feedback_features.geometryStreams) {
-        GTEST_SKIP() << "transformFeedback or geometryStreams feature is not supported";
-    }
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
@@ -4994,15 +5008,10 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-XfbStride-06313");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&transform_feedback_features));
-    auto features2 = GetPhysicalDeviceFeatures2(transform_feedback_features);
-    if (features2.features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported";
-    }
-    if (!transform_feedback_features.transformFeedback || !transform_feedback_features.geometryStreams) {
-        GTEST_SKIP() << "transformFeedback or geometryStreams feature is not supported";
-    }
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
@@ -5381,7 +5390,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07954");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07955");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false));
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
@@ -5499,10 +5508,11 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_2));
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
@@ -5652,11 +5662,8 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-08642");
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&fsr_features));
-    if (!fsr_features.pipelineFragmentShadingRate) {
-        GTEST_SKIP() << "pipelineFragmentShadingRate not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
@@ -6113,12 +6120,9 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08416");
 
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&subgroup_size_features));
-    if (::testing::Test::IsSkipped()) return;
-    if (!subgroup_size_features.subgroupSizeControl || !subgroup_size_features.computeFullSubgroups) {
-        GTEST_SKIP() << "subgroupSizeControl or computeFullSubgroups not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(subgroup_size_control_properties);
@@ -6152,12 +6156,10 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08417");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&subgroup_size_features, VK_API_VERSION_1_2));
-    if (!subgroup_size_features.computeFullSubgroups) {
-        GTEST_SKIP() << "computeFullSubgroups not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(properties11);
@@ -6421,13 +6423,9 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
 
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&features11, VK_API_VERSION_1_2));
-
-    if (!features11.multiview) {
-        GTEST_SKIP() << "multiview not supported.";
-    }
-
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     VkPhysicalDeviceMultiviewProperties multiview_properties = vku::InitStructHelper();
@@ -6625,12 +6623,10 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
-
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
-    VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperative_matrix_features = vku::InitStructHelper(&float16_features);
-    VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
-
-    RETURN_IF_SKIP(InitBasicShaderObject(&memory_model_features));
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
@@ -7370,7 +7366,6 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-09404");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
-    if (::testing::Test::IsSkipped()) return;
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
 
@@ -7394,7 +7389,6 @@ TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-09405");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
-    if (::testing::Test::IsSkipped()) return;
 
     static const char comp_source[] = R"glsl(
         #version 460
@@ -7426,7 +7420,6 @@ TEST_F(NegativeShaderObject, CoverageToColorInvalidFormat) {
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
-    if (::testing::Test::IsSkipped()) return;
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
@@ -7453,7 +7446,6 @@ TEST_F(NegativeShaderObject, InvalidViewportSwizzleCount) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
-    if (::testing::Test::IsSkipped()) return;
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));

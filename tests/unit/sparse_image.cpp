@@ -78,19 +78,10 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
 TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported types");
 
-    // Determine which device feature are available
-    VkPhysicalDeviceFeatures device_features = {};
-    RETURN_IF_SKIP(InitFramework());
-    GetPhysicalDeviceFeatures(&device_features);
-
-    // Mask out device features we don't want and initialize device state
-    device_features.sparseResidencyImage2D = VK_FALSE;
-    device_features.sparseResidencyImage3D = VK_FALSE;
-    RETURN_IF_SKIP(InitState(&device_features));
-
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
-    }
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddDisabledFeature(vkt::Feature::sparseResidencyImage2D);
+    AddDisabledFeature(vkt::Feature::sparseResidencyImage3D);
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
@@ -125,23 +116,12 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
 
 TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported tiling or sample counts");
-
-    // Determine which device feature are available
-    VkPhysicalDeviceFeatures device_features = {};
-    RETURN_IF_SKIP(InitFramework());
-    GetPhysicalDeviceFeatures(&device_features);
-
-    // These tests require that the device support sparse residency for 2D images
-    if (VK_TRUE != device_features.sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported SparseResidencyImage2D feature";
-    }
-
-    // Mask out device features we don't want and initialize device state
-    device_features.sparseResidency2Samples = VK_FALSE;
-    device_features.sparseResidency4Samples = VK_FALSE;
-    device_features.sparseResidency8Samples = VK_FALSE;
-    device_features.sparseResidency16Samples = VK_FALSE;
-    RETURN_IF_SKIP(InitState(&device_features));
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
+    AddDisabledFeature(vkt::Feature::sparseResidency2Samples);
+    AddDisabledFeature(vkt::Feature::sparseResidency4Samples);
+    AddDisabledFeature(vkt::Feature::sparseResidency8Samples);
+    AddDisabledFeature(vkt::Feature::sparseResidency16Samples);
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -181,15 +161,12 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
 TEST_F(NegativeSparseImage, ResidencyFlag) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBindInfo without sparse residency flag");
 
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
         GTEST_SKIP() << "Required queue families not present";
-    }
-
-    if (!m_device->phy().features().sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported SparseResidencyImage2D feature";
     }
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -233,14 +210,8 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
 TEST_F(NegativeSparseImage, ImageUsageBits) {
     TEST_DESCRIPTION("Try to use VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT with sparse image");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
-
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-
-    if (!device_features.sparseBinding) {
-        GTEST_SKIP() << "No sparseBinding feature";
-    }
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
@@ -378,13 +349,9 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     TEST_DESCRIPTION("Test QueueBindSparse with memory of a wrong type");
 
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseResidencyBuffer) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
-    } else if (!m_device->phy().features().sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -558,13 +525,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
 
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseResidencyBuffer) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
-    } else if (!m_device->phy().features().sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -690,13 +653,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
         "Test QueueBindSparse with memory having export external handle types that do not match those of the resource");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseResidencyBuffer) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
-    } else if (!m_device->phy().features().sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -847,16 +806,11 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     AddRequiredExtensions(ext_mem_extension_name);
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "External tests are not supported by MockICD, skipping tests";
-    }
-
-    if (!m_device->phy().features().sparseResidencyBuffer) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
-    }
-    if (!m_device->phy().features().sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
     }
 
     // Check for import/export capability
@@ -1032,11 +986,9 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
 TEST_F(NegativeSparseImage, ImageMemoryBind) {
     TEST_DESCRIPTION("Try to bind sparse resident image with invalid VkSparseImageMemoryBind");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage3D);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseBinding || !m_device->phy().features().sparseResidencyImage3D) {
-        GTEST_SKIP() << "sparseBinding && sparseResidencyImage3D features are required.";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -1158,11 +1110,9 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
 TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     TEST_DESCRIPTION("Try to bind sparse resident image with an extent having a null size on one of its dimension");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage3D);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseBinding || !m_device->phy().features().sparseResidencyImage3D) {
-        GTEST_SKIP() << "sparseBinding && sparseResidencyImage3D features are required.";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {

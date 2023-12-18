@@ -1572,6 +1572,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
 
 TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     TEST_DESCRIPTION("Copy with host memory and image memory overlapping");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     constexpr uint32_t width = 32;
     constexpr uint32_t height = 32;
@@ -1580,9 +1581,6 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "sparseBinding feature is required.";
-    }
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
         GTEST_SKIP() << "Required queue families not present";

@@ -1412,10 +1412,8 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
 TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     TEST_DESCRIPTION("Buffer barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, 32);
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
@@ -1455,10 +1453,8 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
 TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     TEST_DESCRIPTION("Image barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -2033,10 +2029,8 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
 
 TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan13Features features_13 = vku::InitStructHelper();
-    features_13.synchronization2 = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features_13));
+    AddDisabledFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo info = vkt::Image::create_info();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2185,10 +2179,9 @@ TEST_F(NegativeSyncObject, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using QueueSubmit2KHR when synchronization2 is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitState());
 
     VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
@@ -2257,10 +2250,8 @@ TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoCore) {
     TEST_DESCRIPTION("Invalid usage of VkSemaphoreTypeCreateInfo with a 1.2 core version");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
     // Core 1.2 supports timelineSemaphore feature bit but not enabled
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkSemaphore semaphore;
 
@@ -2289,10 +2280,8 @@ TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoExtension) {
     SetTargetApiVersion(VK_API_VERSION_1_1);  // before timelineSemaphore was added to core
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
     // Enabled extension but not the timelineSemaphore feature bit
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkSemaphore semaphore;
 
@@ -2784,16 +2773,9 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
 
     AddOptionalExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_features = vku::InitStructHelper();
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper(&timeline_features);
-    GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
     // VUIDs reported change if the extension is enabled, even if the timelineSemaphore feature isn't supported.
@@ -3440,10 +3422,8 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage) {
 TEST_F(NegativeSyncObject, DetectInterQueueEventUsage2) {
     TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent2/CmdWaitEvents2)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     if (m_device->graphics_queues().size() < 2) {
         GTEST_SKIP() << "2 graphics queues are needed";

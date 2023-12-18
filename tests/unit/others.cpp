@@ -153,10 +153,8 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
     // feature not enabled
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
 
@@ -665,13 +663,10 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
         "in a 1.0 context will generate an error message.");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
@@ -855,9 +850,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
 TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
     // Make sure using VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE doesn't trigger a false positive.
     AddRequiredExtensions(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     // Specify an invalid VkBool32 value, expecting a warning with StatelessValidation::ValidateBool32
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
@@ -1178,9 +1171,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
 
 TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     AddRequiredExtensions(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkValidationCacheCreateInfoEXT validationCacheCreateInfo = vku::InitStructHelper();
     validationCacheCreateInfo.initialDataSize = 0;
     validationCacheCreateInfo.pInitialData = NULL;
@@ -1244,14 +1235,11 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
 
 TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     TEST_DESCRIPTION("Attempt to enable AMD_negative_viewport_height and Maintenance1_KHR extension simultaneously");
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     if (!((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) &&
           (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)))) {
         GTEST_SKIP() << "Maintenance1 and AMD_negative viewport height extensions not supported";
     }
-
-    RETURN_IF_SKIP(InitState());
 
     vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
     const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
@@ -1308,9 +1296,7 @@ TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     uint32_t data = 100;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
@@ -1603,9 +1589,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     // The feature bit samplerYcbcrConversion prevents the function from being called even in Vulkan 1.0
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSamplerYcbcrConversion-None-01648");
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
@@ -1626,12 +1610,9 @@ TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
 TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     TEST_DESCRIPTION("Create a pNext chain containing valid structures, but with a duplicate structure type");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-
     // VK_KHR_get_physical_device_properties2 promoted to 1.1
-
-    RETURN_IF_SKIP(InitState());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-sType-unique");
     // in VkPhysicalDeviceProperties2 create a chain of pNext of type A -> B -> A

@@ -1209,14 +1209,8 @@ TEST_F(NegativeQuery, Sizes) {
 
 TEST_F(NegativeQuery, PreciseBit) {
     TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
-
-    // These tests require that the device support pipeline statistics query
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    if (VK_TRUE != device_features.pipelineStatisticsQuery) {
-        GTEST_SKIP() << "Test requires unsupported pipelineStatisticsQuery feature";
-    }
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
@@ -1413,17 +1407,9 @@ TEST_F(NegativeQuery, WriteTimeStamp) {
     TEST_DESCRIPTION("Test for invalid query slot in query pool.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    bool sync2 = IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    synchronization2.synchronization2 = VK_TRUE;
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
-    if (sync2) {
-        features2.pNext = &synchronization2;
-    }
-    InitState(nullptr, &features2);
-    sync2 &= (synchronization2.synchronization2 == VK_TRUE);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
@@ -1962,10 +1948,8 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
     TEST_DESCRIPTION(
         "Test executing secondary command buffer without VkCommandBufferInheritanceInfo::occlusionQueryEnable enabled while "
         "occlusion query is active.");
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
-    if (!m_device->phy().features().inheritedQueries) {
-        GTEST_SKIP() << "inheritedQueries not supported";
-    }
     InitRenderTarget();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
@@ -1995,10 +1979,8 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
 
 TEST_F(NegativeQuery, CommandBufferInheritanceFlags) {
     TEST_DESCRIPTION("Test executing secondary command buffer with bad VkCommandBufferInheritanceInfo::queryFlags.");
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
-    if (!m_device->phy().features().inheritedQueries) {
-        GTEST_SKIP() << "inheritedQueries not supported";
-    }
     InitRenderTarget();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
@@ -2396,10 +2378,8 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
     TEST_DESCRIPTION("Begin a query in secondary command buffer that is already active in primary command buffer");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().inheritedQueries == VK_FALSE) {
-        GTEST_SKIP() << "inheritedQueries feature is not supported";
-    }
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
@@ -2578,13 +2558,9 @@ TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
     TEST_DESCRIPTION("Use a pipeline statistics query in secondary command buffer");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().inheritedQueries == VK_FALSE) {
-        GTEST_SKIP() << "inheritedQueries feature is not supported";
-    }
-    if (m_device->phy().features().pipelineStatisticsQuery == VK_FALSE) {
-        GTEST_SKIP() << "pipelineStatisticsQuery feature is not supported";
-    }
     InitRenderTarget();
 
     VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);

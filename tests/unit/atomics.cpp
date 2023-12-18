@@ -125,17 +125,8 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
 TEST_F(NegativeAtomic, Int64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    // Create device without VK_KHR_shader_atomic_int64 extension or features enabled
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-    if (!available_features.shaderInt64) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::shaderInt64 is not supported";
-    }
-    RETURN_IF_SKIP(InitState());
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(Init());
 
     // For sanity check without GL_EXT_shader_atomic_int64
     std::string cs_positive = R"glsl(
@@ -213,16 +204,8 @@ TEST_F(NegativeAtomic, ImageInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    // Create device without VK_EXT_shader_image_atomic_int64 extension or features enabled
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-    if (!available_features.shaderInt64) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::shaderInt64 is not supported, skipping tests.";
-    }
-
-    RETURN_IF_SKIP(InitState());
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(Init());
 
     // clang-format off
     std::string cs_image_base = R"glsl(
@@ -561,10 +544,9 @@ TEST_F(NegativeAtomic, Float) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     // Create device without VK_EXT_shader_atomic_float extension or features enabled
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     VkPhysicalDeviceFeatures available_features = {};
     GetPhysicalDeviceFeatures(&available_features);
-    RETURN_IF_SKIP(InitState());
 
     // clang-format off
     std::string cs_32_base = R"glsl(

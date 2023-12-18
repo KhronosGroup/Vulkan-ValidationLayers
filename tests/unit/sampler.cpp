@@ -45,12 +45,8 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
 TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
     TEST_DESCRIPTION("Validation should check anisotropy parameters are correct with samplerAnisotropy disabled.");
 
-    // Determine if required device features are available
-    VkPhysicalDeviceFeatures device_features = {};
-    RETURN_IF_SKIP(InitFramework());
-    GetPhysicalDeviceFeatures(&device_features);
-    device_features.samplerAnisotropy = VK_FALSE;  // force anisotropy off
-    RETURN_IF_SKIP(InitState(&device_features));
+    AddDisabledFeature(vkt::Feature::samplerAnisotropy);
+    RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-anisotropyEnable-01070");
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -64,20 +60,12 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Anisotropy is enabled.");
 
     AddOptionalExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
-    VkPhysicalDeviceFeatures device_features = {};
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::samplerAnisotropy);
+    RETURN_IF_SKIP(Init());
     const bool cubic_support = IsExtensionsEnabled(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
-    GetPhysicalDeviceFeatures(&device_features);
-
-    // These tests require that the device support anisotropic filtering
-    if (VK_TRUE != device_features.samplerAnisotropy) {
-        GTEST_SKIP() << "Test requires unsupported samplerAnisotropy feature";
-    }
-
     VkSamplerCreateInfo sampler_info_ref = SafeSaneSamplerCreateInfo();
     sampler_info_ref.anisotropyEnable = VK_TRUE;
     VkSamplerCreateInfo sampler_info = sampler_info_ref;
-    RETURN_IF_SKIP(InitState());
 
     // maxAnisotropy out-of-bounds low.
     sampler_info.maxAnisotropy = NearestSmaller(1.0F);
@@ -114,13 +102,12 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
 TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {
     TEST_DESCRIPTION("Validate restrictions on sampler parameters when unnormalizedCoordinates is true.");
 
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     VkSamplerCreateInfo sampler_info_ref = SafeSaneSamplerCreateInfo();
     sampler_info_ref.unnormalizedCoordinates = VK_TRUE;
     sampler_info_ref.minLod = 0.0f;
     sampler_info_ref.maxLod = 0.0f;
     VkSamplerCreateInfo sampler_info = sampler_info_ref;
-    RETURN_IF_SKIP(InitState());
 
     // min and mag filters must be the same
     sampler_info.minFilter = VK_FILTER_NEAREST;
@@ -1438,8 +1425,7 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     TEST_DESCRIPTION("Validate vkCreateSampler with VkSamplerBorderColorComponentMappingCreateInfoEXT");
 
     AddRequiredExtensions(VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping =
         vku::InitStructHelper();
@@ -1476,8 +1462,7 @@ TEST_F(NegativeSampler, CompareOpValue) {
 TEST_F(NegativeSampler, CustomBorderColorsFeature) {
     TEST_DESCRIPTION("Don't turn on the customBorderColors feature");
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();

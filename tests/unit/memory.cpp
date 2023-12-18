@@ -966,11 +966,8 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     const bool mp_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1372,9 +1369,7 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
 
 TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
     auto buffer_info = vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -1748,9 +1743,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
 TEST_F(NegativeMemory, MemoryType) {
     // Attempts to allocate from a memory type that doesn't exist
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 
@@ -1769,9 +1762,7 @@ TEST_F(NegativeMemory, MemoryType) {
 TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
     // Attempts to allocate a single piece of memory that's larger than the heap size
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 
@@ -1979,9 +1970,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Need to make sure disjoint is supported for format
     // Also need to support an arbitrary image usage feature
@@ -2079,9 +2068,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
 
 TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkDeviceMemory mem;
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;

@@ -3885,14 +3885,10 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    AddDisabledFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    synchronization2.synchronization2 = VK_FALSE;  // Invalid
-    GetPhysicalDeviceFeatures2(synchronization2);
 
     bool timestamp = false;
 

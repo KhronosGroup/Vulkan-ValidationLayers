@@ -13,23 +13,13 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-void ShaderObjectTest::InitBasicShaderObject(void *pNextFeatures, APIVersion targetApiVersion, bool coreFeatures) {
-    SetTargetApiVersion(targetApiVersion);
+void ShaderObjectTest::InitBasicShaderObject() {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(pNextFeatures);
-    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
-    if (!coreFeatures) {
-        features2 = vku::InitStructHelper(&shader_object_features);
-    }
-    if (!shader_object_features.shaderObject) {
-        GTEST_SKIP() << "Test requires (unsupported) shaderObject , skipping.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
 }
 
 void ShaderObjectTest::InitBasicMeshShaderObject(void *pNextFeatures, APIVersion targetApiVersion, bool taskShader,
@@ -979,7 +969,10 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false));
+    AddDisabledFeature(vkt::Feature::alphaToOne);
+    AddDisabledFeature(vkt::Feature::depthClamp);
+    AddDisabledFeature(vkt::Feature::logicOp);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1029,7 +1022,7 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_1, false));
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1643,7 +1636,8 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
     TEST_DESCRIPTION("Draw in secondary command buffers with render pass continue flag.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3));
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1697,7 +1691,8 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
 TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     TEST_DESCRIPTION("Draw after rebinding only some shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3));
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
 
@@ -1745,11 +1740,9 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
 TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
     TEST_DESCRIPTION("Test vertex inputs.");
 
-    VkPhysicalDeviceVulkanMemoryModelFeatures vulkanMemoryModelFeatures = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitBasicShaderObject(&vulkanMemoryModelFeatures));
-    if (!vulkanMemoryModelFeatures.vulkanMemoryModel || !vulkanMemoryModelFeatures.vulkanMemoryModelDeviceScope) {
-        GTEST_SKIP() << "vulkanMemoryModel or vulkanMemoryModelDeviceScope not supported.";
-    }
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     static const char vert_src[] = R"glsl(
@@ -1878,8 +1871,8 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
 TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
     TEST_DESCRIPTION("Create and draw with some linked and some unlinked shaders.");
 
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_3));
-
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,

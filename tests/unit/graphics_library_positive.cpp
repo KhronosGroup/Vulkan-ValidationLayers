@@ -838,11 +838,8 @@ TEST_F(PositiveGraphicsLibrary, TessellationWithoutPreRasterization) {
     TEST_DESCRIPTION("have Tessellation stages with null pTessellationState but not Pre-Rasterization");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
 
     CreatePipelineHelper pipe(*this);
     pipe.InitVertexInputLibInfo();

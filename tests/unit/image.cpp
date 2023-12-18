@@ -1338,9 +1338,7 @@ TEST_F(NegativeImage, Array2DImageType) {
     TEST_DESCRIPTION("Create an image with a flag specifying 2D_ARRAY_COMPATIBLE but not of imageType 3D.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
     VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                              nullptr,
@@ -1365,9 +1363,7 @@ TEST_F(NegativeImage, View2DImageType) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
     VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                              nullptr,
@@ -1992,9 +1988,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
 TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
@@ -2142,9 +2136,7 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
     TEST_DESCRIPTION("Usage modification via a chained VkImageViewUsageCreateInfo struct");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
@@ -2222,12 +2214,9 @@ TEST_F(NegativeImage, ImageViewNoSeparateStencilUsage) {
     TEST_DESCRIPTION("Verify CreateImageView create info for the case VK_EXT_separate_stencil_usage is not supported.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    const auto depth_format = FindSupportedDepthStencilFormat(gpu());
-
     // without VK_EXT_separate_stencil_usage explicitly enabled
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
+    const auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
     const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
     const VkImageSubresourceRange range = {aspect, 0, 1, 0, 1};
@@ -2276,11 +2265,9 @@ TEST_F(NegativeImage, ImageViewStencilUsageCreateInfo) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
-
-    RETURN_IF_SKIP(InitState());
 
     const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
     const VkImageSubresourceRange range = {aspect, 0, 1, 0, 1};
@@ -2650,9 +2637,7 @@ TEST_F(NegativeImage, UndefinedFormat) {
 TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     TEST_DESCRIPTION("Create an image with a color format, then try to create a depth view of it");
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
@@ -2688,9 +2673,7 @@ TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
 TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
     TEST_DESCRIPTION("Create an image view with a different format, when the image does not have MUTABLE_FORMAT bit");
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
@@ -2724,9 +2707,7 @@ TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
 TEST_F(NegativeImage, ImageViewDifferentClass) {
     TEST_DESCRIPTION("Passing bad parameters to CreateImageView");
 
-    VkPhysicalDeviceFeatures device_features = {};
     RETURN_IF_SKIP(Init());
-    GetPhysicalDeviceFeatures(&device_features);
 
     if (!(m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "Device does not support R8_UINT as color attachment";
@@ -2764,6 +2745,8 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
     CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
 
     // Use CUBE_ARRAY without feature enabled
+    VkPhysicalDeviceFeatures device_features = {};
+    GetPhysicalDeviceFeatures(&device_features);
     if (device_features.imageCubeArray == false) {
         VkImageCreateInfo cubeImageInfo = imageInfo;
         cubeImageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -3758,13 +3741,8 @@ TEST_F(NegativeImage, Stencil) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    device_features.shaderStorageImageMultisample = VK_FALSE;  // Force multisampled storage images off
-
-    RETURN_IF_SKIP(InitState(&device_features));
+    AddDisabledFeature(vkt::Feature::shaderStorageImageMultisample);
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = 0;
@@ -4056,9 +4034,7 @@ TEST_F(NegativeImage, ImageFormatList) {
     TEST_DESCRIPTION("Tests for VK_KHR_image_format_list");
 
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Use sampled formats that will always be supported
     // Last format is not compatible with the rest
@@ -4138,9 +4114,7 @@ TEST_F(NegativeImage, ImageFormatList) {
 TEST_F(NegativeImage, ImageFormatListEnum) {
     TEST_DESCRIPTION("VkImageFormatListCreateInfo with bad enum");
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const VkFormat formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VkFormat(0xBAD00000)};
     VkImageFormatListCreateInfo formatList = vku::InitStructHelper(nullptr);
     formatList.viewFormatCount = 2;
@@ -4156,10 +4130,7 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
 
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
@@ -4199,9 +4170,7 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
     TEST_DESCRIPTION("VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     auto image_ci = DefaultImageInfo();
     image_ci.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -4219,9 +4188,7 @@ TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFlag) {
     TEST_DESCRIPTION("VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     auto image_ci = DefaultImageInfo();
     image_ci.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;  // missing MUTABLE_FORMAT_BIT
     image_ci.format = VK_FORMAT_BC3_UNORM_BLOCK;
@@ -4250,10 +4217,8 @@ TEST_F(NegativeImage, SparseResidencyAliased) {
 
 TEST_F(NegativeImage, SparseResidencyLinear) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT with VK_IMAGE_TILING_LINEAR.");
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
-    if (!m_device->phy().features().sparseResidencyImage2D) {
-        GTEST_SKIP() << "Test requires unsupported SparseResidencyImage2D feature";
-    }
 
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;
@@ -4277,12 +4242,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    // Check that all extensions and their dependencies were enabled successfully
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper(nullptr);
     image_create_info.flags = 0;
@@ -4429,9 +4389,7 @@ TEST_F(NegativeImage, BlockTexelViewLevelOrLayerCount) {
         "layerCount are not 1.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4572,9 +4530,7 @@ TEST_F(NegativeImage, BlockTexelViewType) {
         "VK_IMAGE_VIEW_TYPE_3D.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
@@ -4618,9 +4574,7 @@ TEST_F(NegativeImage, BlockTexelViewFormat) {
     TEST_DESCRIPTION("Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT with non compatible formats.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4798,9 +4752,7 @@ TEST_F(NegativeImage, MultiSampleImageView) {
     TEST_DESCRIPTION("Begin conditional rendering when it is already active.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
     if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
@@ -6265,10 +6217,8 @@ TEST_F(NegativeImage, ImageCompressionControlPlaneCount) {
 
 TEST_F(NegativeImage, IncompatibleArrayAndSparseFlags) {
     TEST_DESCRIPTION("Create image with invalid combination of create flags");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "sparseBinding not supported";
-    }
 
     VkImageCreateInfo create_info = vku::InitStructHelper();
     create_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;

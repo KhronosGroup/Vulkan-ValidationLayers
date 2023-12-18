@@ -71,9 +71,7 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
         "errors when objects are bound and used");
 
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     // Create a test buffer
     vkt::Buffer buffer;
     buffer.init_no_mem(*m_device,
@@ -138,9 +136,7 @@ TEST_F(PositiveMemory, BindMemory2) {
         "used");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Create a test buffer
     vkt::Buffer buffer;
@@ -293,9 +289,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
     TEST_DESCRIPTION("Test mapping memory that uses memory heap with VK_MEMORY_HEAP_MULTI_INSTANCE_BIT");
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 

@@ -67,8 +67,7 @@ TEST_F(NegativeParent, BindBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -104,8 +103,7 @@ TEST_F(NegativeParent, BindImage) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
@@ -276,9 +274,7 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
 TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetPhysicalDeviceSurfaceSupportKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
@@ -298,9 +294,7 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 TEST_F(NegativeParent, Instance_DeviceAndSurface) {
     TEST_DESCRIPTION("Surface from a different instance in vkGetDeviceGroupSurfacePresentModesKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
@@ -320,8 +314,7 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 TEST_F(NegativeParent, Instance_Surface) {
     TEST_DESCRIPTION("Surface from a different instance in vkCreateSwapchainKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -362,8 +355,7 @@ TEST_F(NegativeParent, Instance_Surface) {
 TEST_F(NegativeParent, Device_OldSwapchain) {
     TEST_DESCRIPTION("oldSwapchain from a different device in vkCreateSwapchainKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSurface()) {
         GTEST_SKIP() << "Cannot create surface";
     }
@@ -421,9 +413,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
 TEST_F(NegativeParent, Instance_Surface_2) {
     TEST_DESCRIPTION("Surface from a different instance in vkDestroySurfaceKHR");
     AddSurfaceExtension();
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
@@ -443,9 +433,7 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
     TEST_DESCRIPTION("VkDebugUtilsMessengerEXT from a different instance in vkDestroyDebugUtilsMessengerEXT");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const VkInstanceCreateInfo instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));
@@ -474,9 +462,7 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
 TEST_F(NegativeParent, Instance_DebugReportCallback) {
     TEST_DESCRIPTION("VkDebugReportCallbackEXT from a different instance in vkDestroyDebugReportCallbackEXT");
     AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     const auto instance_create_info = GetInstanceCreateInfo();
     Instance instance2;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2.handle));

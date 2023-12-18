@@ -17,8 +17,7 @@
 TEST_F(PositiveTooling, BasicUsage) {
     TEST_DESCRIPTION("Call Tooling Extension and verify layer results");
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";

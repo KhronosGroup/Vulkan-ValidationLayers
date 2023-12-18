@@ -313,12 +313,9 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
         "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
         "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
         "location outputs");
-
+    AddRequiredFeature(vkt::Feature::independentBlend);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().independentBlend) {
-        GTEST_SKIP() << "independentBlend not supported";
-    }
 
     VkVertexInputBindingDescription input_binding;
     memset(&input_binding, 0, sizeof(input_binding));
@@ -386,13 +383,9 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
@@ -442,12 +435,9 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
 TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     TEST_DESCRIPTION("Use 64-bit Vertex format");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     const VkFormat format = VK_FORMAT_R64_SFLOAT;
     VkFormatProperties format_props = m_device->format_properties(format);
@@ -481,12 +471,9 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
 TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location with 64-bit Vertex format");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
@@ -546,12 +533,9 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
 TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
     TEST_DESCRIPTION("Shader uses f64vec2, but provides too many component with R64G64B64A64, which is valid");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     const VkFormat format = VK_FORMAT_R64G64B64A64_SFLOAT;
     VkFormatProperties format_props = m_device->format_properties(format);
