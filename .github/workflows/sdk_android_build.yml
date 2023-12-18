@@ -65,7 +65,7 @@ jobs:
     - name: CMake Build
       run: python scripts/android.py --config Release --app-abi ${{ matrix.abi }} --app-stl c++_static
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: vvl-android
         path: ./build-android/libs/lib/
@@ -99,7 +99,7 @@ jobs:
       run: |
         echo "${{ steps.create_release.outputs.upload_url }}" > ./release_url
     - name: Upload release URL
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release_url
         path: ./release_url
