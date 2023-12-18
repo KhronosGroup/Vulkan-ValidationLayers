@@ -1166,8 +1166,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Check for external semaphore import and export capability
     VkPhysicalDeviceExternalSemaphoreInfoKHR esi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR, nullptr,
@@ -1325,8 +1324,7 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     AddRequiredExtensions(extension_name);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Check for external fence import and export capability
     VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
@@ -1381,8 +1379,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     AddRequiredExtensions(extension_name);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // Check for external fence import and export capability
     VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
@@ -1521,10 +1518,8 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent) {
 TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
     TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent2/CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcAccessMask = 0;
@@ -1602,8 +1597,7 @@ TEST_F(PositiveSyncObject, WaitEventThenSet) {
 TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     TEST_DESCRIPTION("Attempt vkCmdPipelineBarrier with 2 layout transitions of the same image.");
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1914,8 +1908,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     TEST_DESCRIPTION("Submit a CB and Fence but synchronize with vkQueueWaitIdle() (Issue 2756)");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
     }
@@ -2215,10 +2208,8 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
 TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     TEST_DESCRIPTION("Barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     // HOST stage as source
     vkt::Buffer buffer(*m_device, 32);
@@ -2269,10 +2260,8 @@ TEST_F(PositiveSyncObject, BarrierASBuildWithShaderReadAccess) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;

@@ -290,7 +290,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
 
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
@@ -298,7 +298,6 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
     if (maxVertexInputAttributeOffset == 0xFFFFFFFF) {
         GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
     }
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkVertexInputBindingDescription vertex_input_binding_description{};
@@ -948,12 +947,9 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
 TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
     TEST_DESCRIPTION("InputAttribute has 64-bit, but shader reads 32-bit");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     const VkFormat format = VK_FORMAT_R64_SFLOAT;
     VkFormatProperties format_props = m_device->format_properties(format);
@@ -987,12 +983,9 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
 TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     TEST_DESCRIPTION("InputAttribute has 32-bit, but shader reads 64-bit");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     const VkFormat format = VK_FORMAT_R32_SFLOAT;
     VkFormatProperties format_props = m_device->format_properties(format);
@@ -1027,12 +1020,9 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
 TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
     TEST_DESCRIPTION("Shader uses f64vec2, but only provides first component with R64");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     const VkFormat format = VK_FORMAT_R64_SFLOAT;
     VkFormatProperties format_props = m_device->format_properties(format);
@@ -1067,12 +1057,9 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
 TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location with 64-bit Vertex format");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
-    }
 
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);

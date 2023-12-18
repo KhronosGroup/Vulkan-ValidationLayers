@@ -175,8 +175,7 @@ TEST_F(PositiveShaderInterface, RelaxedBlockLayout) {
     TEST_DESCRIPTION("Create a shader that requires relaxed block layout.");
 
     AddRequiredExtensions(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Vertex shader requiring relaxed layout.
@@ -373,12 +372,9 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
 TEST_F(PositiveShaderInterface, TessPerVertex) {
     TEST_DESCRIPTION("Test that pipeline validation accepts per-vertex variables passed between the TCS and TES stages");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
 
     char const *tcsSource = R"glsl(
         #version 450
@@ -423,12 +419,9 @@ TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
         "Test that pipeline validation accepts a user-defined interface block passed into the geometry shader. This is interesting "
         "because the 'extra' array level is not present on the member type, but on the block instance.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().geometryShader) {
-        GTEST_SKIP() << "Device does not support geometry shaders";
-    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1287,11 +1280,9 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
 TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
     TEST_DESCRIPTION("Make sure multidimensional arrays are handled for 64bits");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit floats";
-    }
 
     char const *vsSource = R"glsl(
         #version 450

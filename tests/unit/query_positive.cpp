@@ -24,11 +24,9 @@ bool QueryTest::HasZeroTimestampValidBits() {
 }
 
 TEST_F(PositiveQuery, OutsideRenderPass) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().pipelineStatisticsQuery) {
-        GTEST_SKIP() << "Test requires (unsupported) pipelineStatisticsQuery";
-    }
 
     VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
@@ -44,11 +42,9 @@ TEST_F(PositiveQuery, OutsideRenderPass) {
 }
 
 TEST_F(PositiveQuery, InsideRenderPass) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().pipelineStatisticsQuery) {
-        GTEST_SKIP() << "Test requires (unsupported) pipelineStatisticsQuery";
-    }
 
     VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
@@ -387,15 +383,8 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     TEST_DESCRIPTION("Test using vkCmdWriteTimestamp2 with NONE and ALL_COMMANDS.");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
-    synchronization2.synchronization2 = VK_TRUE;
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
-    features2.pNext = &synchronization2;
-    InitState(nullptr, &features2);
-    if (synchronization2.synchronization2 != VK_TRUE) {
-        GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 not supported";
-    }
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
@@ -411,10 +400,8 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
 
 TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     TEST_DESCRIPTION("Test executing secondary command buffer with VkCommandBufferInheritanceInfo::queryFlags.");
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
-    if (!m_device->phy().features().inheritedQueries) {
-        GTEST_SKIP() << "inheritedQueries not supported";
-    }
     InitRenderTarget();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);

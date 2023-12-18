@@ -947,9 +947,8 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     TEST_DESCRIPTION("Create an image sampler layout->image layout mismatch within/without a command buffer");
 
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
 
@@ -2272,8 +2271,7 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
         "Attempt to bind a slice of a 3D texture in a descriptor set. This is explicitly disallowed by KHR_maintenance1 to keep "
         "things simple for drivers.");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2683,9 +2681,8 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
     // Don't enable any features
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding dslb = {};
     dslb.binding = 0;
@@ -3142,8 +3139,7 @@ TEST_F(NegativeDescriptors, MissingMutableDescriptorTypeFeature) {
     TEST_DESCRIPTION("Create mutable descriptor pool with feature not enabled.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -3679,10 +3675,8 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
 TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
+    AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().shaderStorageImageWriteWithoutFormat == VK_FALSE) {
-        GTEST_SKIP() << "multiViewport feature is not supported";
-    }
     InitRenderTarget();
 
     const uint32_t width = 32;
@@ -3894,10 +3888,8 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
 
 TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     TEST_DESCRIPTION("Validate writting to a descriptor that uses same image view as framebuffer read attachment");
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().fragmentStoresAndAtomics == VK_FALSE) {
-        GTEST_SKIP() << "fragmentStoresAndAtomics feature is not supported";
-    }
     InitRenderTarget();
 
     const uint32_t width = 32;
@@ -5072,16 +5064,10 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
     TEST_DESCRIPTION("Test the maxInlineUniformTotalSize limit");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan13Features vulkan_13_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(vulkan_13_features);
-    if (!vulkan_13_features.inlineUniformBlock) {
-        GTEST_SKIP() << "inlineUniformBlock not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &vulkan_13_features));
-    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().tessellationShader)) {
-        GTEST_SKIP() << "Device does not support the geometry or tessellation shaders";
-    }
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_properties = vku::InitStructHelper();
     VkPhysicalDeviceVulkan13Properties properties13 = vku::InitStructHelper(&inline_uniform_block_properties);

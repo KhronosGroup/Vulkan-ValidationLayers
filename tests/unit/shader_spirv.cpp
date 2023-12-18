@@ -85,9 +85,7 @@ TEST_F(NegativeShaderSpirv, ShaderFloatControl) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     // The issue with revision 4 of this extension should not be an issue with the tests
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceFloatControlsProperties shader_float_control = vku::InitStructHelper();
@@ -1097,10 +1095,8 @@ TEST_F(NegativeShaderSpirv, ReadShaderClock) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Don't enable either feature bit on purpose
-    RETURN_IF_SKIP(InitState());
+    // Don't enable either feature bit on
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Device scope using GL_EXT_shader_realtime_clock
@@ -1662,14 +1658,8 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline in which a capability declared by the shader requires a feature not enabled on the device.");
 
-    RETURN_IF_SKIP(InitFramework());
-
-    // Some awkward steps are required to test with custom device features.
-    VkPhysicalDeviceFeatures device_features = {};
-    // Disable support for 64 bit floats
-    device_features.shaderFloat64 = false;
-    // The sacrificial device object
-    RETURN_IF_SKIP(InitState(&device_features));
+    AddDisabledFeature(vkt::Feature::shaderFloat64);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -1694,11 +1684,10 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
 TEST_F(NegativeShaderSpirv, NonSemanticInfoEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_non_semantic_info.");
 
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_shader_non_semantic_info not supported";
     }
-    RETURN_IF_SKIP(InitState());
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);

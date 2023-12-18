@@ -640,8 +640,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -1067,9 +1066,7 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     TEST_DESCRIPTION("Import semaphore when semaphore is in use.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
     if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
         GTEST_SKIP() << "Semaphore does not support export and import through fd handle";
@@ -1102,9 +1099,7 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     TEST_DESCRIPTION("Import semaphore when semaphore is in use.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
         GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";

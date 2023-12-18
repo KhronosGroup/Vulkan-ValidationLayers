@@ -1150,10 +1150,9 @@ TEST_F(NegativeCommand, CopyImageLayerCountMismatch) {
         "Try to copy between images with the source subresource having a different layerCount than the destination subresource");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     const bool maintenance1 =
         IsExtensionsEnabled(VK_KHR_MAINTENANCE_1_EXTENSION_NAME) || DeviceValidationVersion() >= VK_API_VERSION_1_1;
-    RETURN_IF_SKIP(InitState());
 
     VkFormat image_format = VK_FORMAT_B8G8R8A8_UNORM;
     VkFormatProperties format_props;
@@ -2433,9 +2432,7 @@ TEST_F(NegativeCommand, CopyImageTypeExtentMismatch) {
 
 TEST_F(NegativeCommand, CopyImageTypeExtentMismatchMaintenance1) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -4853,11 +4850,8 @@ TEST_F(NegativeCommand, MultiDrawFeatures) {
 TEST_F(NegativeCommand, IndirectDraw) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect and vkCmdDrawIndexedIndirect");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().multiDrawIndirect == VK_FALSE) {
-        GTEST_SKIP() << "multiDrawIndirect feature is disabled";
-    }
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -5006,8 +5000,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
 
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -5086,8 +5079,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndexedIndirectCountKHR");
 
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -5356,10 +5348,8 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     TEST_DESCRIPTION("Verify VK_NV_clip_space_w_scaling");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().multiViewport == VK_FALSE) {
-        GTEST_SKIP() << "multiViewport feature is not supported";
-    }
     InitRenderTarget();
 
     const char vs_src[] = R"glsl(
@@ -5712,9 +5702,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
 
 TEST_F(NegativeCommand, CmdClearColorImageNullColor) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
-
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -5737,8 +5725,7 @@ TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
     TEST_DESCRIPTION("Call EndCommandBuffer when conditional rendering is active");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     auto buffer_ci =
         vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
@@ -5805,8 +5792,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     TEST_DESCRIPTION("Invalid calls to vkCmdEndConditionalRenderingEXT.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -5924,9 +5910,7 @@ TEST_F(NegativeCommand, RenderPassContentsWhenCallingCmdExecuteCommandsWithBegin
 
 TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
     TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
-
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
@@ -5994,9 +5978,7 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
 
 TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
     TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
-
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
@@ -6177,9 +6159,7 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
 TEST_F(NegativeCommand, DISABLED_CopyImageOverlappingMemory) {
     TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     auto image_ci =
         VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
@@ -6394,9 +6374,7 @@ TEST_F(NegativeCommand, ResolveUsage) {
 
 TEST_F(NegativeCommand, CopyImageRemainingLayers) {
     TEST_DESCRIPTION("Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS");
-
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -6655,11 +6633,9 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
     TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
 
     AddOptionalExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     const bool separate_stencil_usage_supported = IsExtensionsEnabled(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -6965,9 +6941,7 @@ TEST_F(NegativeCommand, ClearColorImageImageLayout) {
     TEST_DESCRIPTION("Check ClearImage layouts with SHARED_PRESENTABLE_IMAGE extension active.");
 
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkImageObj dst_image(m_device);
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -7185,8 +7159,7 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
 
 TEST_F(NegativeCommand, DebugLabelSecondaryCommandBuffer) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
@@ -7379,11 +7352,8 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
 
 TEST_F(NegativeCommand, CommandBufferInheritanceInfo) {
     TEST_DESCRIPTION("Test invalid command buffer begin inheritance info.");
-
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().inheritedQueries == VK_FALSE) {
-        GTEST_SKIP() << "inheritedQueries feature is disabled";
-    }
 
     vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 

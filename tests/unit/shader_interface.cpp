@@ -562,11 +562,9 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct64bit) {
     TEST_DESCRIPTION("Have a struct inside a block between shaders");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit floats";
-    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -903,11 +901,9 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType64bit) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit floats";
-    }
 
     char const *vsSource = R"glsl(
         #version 450
@@ -1487,11 +1483,9 @@ TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
 TEST_F(NegativeShaderInterface, MultidimensionalArray64bit) {
     TEST_DESCRIPTION("Make sure multidimensional arrays are handled for 64bits");
 
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (!m_device->phy().features().shaderFloat64) {
-        GTEST_SKIP() << "Device does not support 64bit floats";
-    }
 
     char const *vsSource = R"glsl(
         #version 450

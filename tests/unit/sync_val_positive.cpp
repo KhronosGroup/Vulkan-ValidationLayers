@@ -407,10 +407,9 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }

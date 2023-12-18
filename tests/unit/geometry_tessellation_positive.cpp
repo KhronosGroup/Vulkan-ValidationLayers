@@ -23,11 +23,9 @@ TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
     RETURN_IF_SKIP(Init());
-
-    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
-        GTEST_SKIP() << "Device does not support the required geometry shader features";
-    }
     InitRenderTarget();
 
     // Create GS declaring PointSize and writing to it

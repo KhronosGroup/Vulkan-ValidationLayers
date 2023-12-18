@@ -20,9 +20,7 @@ TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
     TEST_DESCRIPTION("Get POXIS handle for memory allocation");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
-
+    RETURN_IF_SKIP(Init());
     VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 

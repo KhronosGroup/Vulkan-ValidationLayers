@@ -36,11 +36,9 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, and write in the final geometry stage.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
     RETURN_IF_SKIP(Init());
-
-    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
-        GTEST_SKIP() << "Device does not support the required geometry shader features";
-    }
     InitRenderTarget();
 
     // Create VS declaring PointSize and writing to it
@@ -59,11 +57,9 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
 TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
     TEST_DESCRIPTION("If vertex is not emitted, don't need Point Size in Geometry shader");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
     RETURN_IF_SKIP(Init());
-
-    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
-        GTEST_SKIP() << "Device does not support the required geometry shader features";
-    }
     InitRenderTarget();
 
     // Never calls OpEmitVertex
@@ -377,11 +373,8 @@ TEST_F(PositivePipelineTopology, PolygonModeValid) {
 TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST, but geometry shader doesn't include PointSize.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
-
-    if ((!m_device->phy().features().geometryShader)) {
-        GTEST_SKIP() << "Device does not support the required geometry shader features";
-    }
     InitRenderTarget();
 
     static char const geom_src[] = R"glsl(
@@ -407,13 +400,10 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
 TEST_F(PositivePipelineTopology, Rasterizer) {
     TEST_DESCRIPTION("Test topology set when creating a pipeline with tessellation and geometry shader.");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
 
     InitRenderTarget();
-
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
 
     char const *tcsSource = R"glsl(
         #version 450

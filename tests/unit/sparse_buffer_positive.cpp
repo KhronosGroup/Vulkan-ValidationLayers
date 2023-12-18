@@ -15,12 +15,8 @@
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     TEST_DESCRIPTION("Test correct non overlapping sparse buffers' copy");
-
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -107,12 +103,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     TEST_DESCRIPTION("Non overlapping ranges copies should not trigger errors");
-
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -192,12 +184,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     TEST_DESCRIPTION("Test that overlaps are computed in buffer space, not memory space");
-
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -275,12 +263,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     TEST_DESCRIPTION("Test coyping from a range that spans two different memory chunks");
-
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
-
-    if (!m_device->phy().features().sparseBinding) {
-        GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
-    }
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {

@@ -19,10 +19,8 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageExtendedFormats);
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().features().shaderStorageImageExtendedFormats == VK_FALSE) {
-        GTEST_SKIP() << "shaderStorageImageExtendedFormats feature is not supported";
-    }
 
     // not valid GLSL, but would look like:
     // layout(set = 0, binding = 0, Rg32ui) uniform uimageBuffer storageTexelBuffer;

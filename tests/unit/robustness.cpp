@@ -19,8 +19,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     {
         CreateComputePipelineHelper pipe(*this);
@@ -76,8 +75,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
 

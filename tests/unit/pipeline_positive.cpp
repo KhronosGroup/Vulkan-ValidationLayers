@@ -19,12 +19,9 @@
 
 TEST_F(PositivePipeline, ComplexTypes) {
     TEST_DESCRIPTION("Smoke test for complex types across VS/FS boundary");
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
@@ -465,12 +462,9 @@ TEST_F(PositivePipeline, TessellationDomainOrigin) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!m_device->phy().features().tessellationShader) {
-        GTEST_SKIP() << "Device does not support tessellation shaders";
-    }
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
@@ -499,22 +493,10 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
     TEST_DESCRIPTION("Test to validate VK_NV_viewport_array2");
 
     AddRequiredExtensions(VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-
-    if (!available_features.multiViewport) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
-    }
-    if (!available_features.tessellationShader) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::tessellationShader is not supported";
-    }
-    if (!available_features.geometryShader) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::geometryShader is not supported";
-    }
-
-    RETURN_IF_SKIP(InitState());
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char tcs_src[] = R"glsl(
@@ -666,9 +648,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     TEST_DESCRIPTION("Test to validate VK_NV_sample_mask_override_coverage");
 
     AddRequiredExtensions(VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     const char vs_src[] = R"glsl(
         #version 450
@@ -1426,9 +1406,7 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
 
 TEST_F(PositivePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     std::array<VkViewportSwizzleNV, 2> swizzle = {};

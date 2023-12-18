@@ -358,7 +358,7 @@ class NegativeDeviceQueue : public VkLayerTest {};
 
 class DynamicRenderingTest : public VkLayerTest {
   public:
-    void InitBasicDynamicRendering(void *pNextFeatures = nullptr);
+    void InitBasicDynamicRendering();
 };
 class NegativeDynamicRendering : public DynamicRenderingTest {};
 class PositiveDynamicRendering : public DynamicRenderingTest {};
@@ -366,7 +366,6 @@ class PositiveDynamicRendering : public DynamicRenderingTest {};
 class DynamicStateTest : public VkLayerTest {
   public:
     void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
-    void InitBasicExtendedDynamicState3(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT &features);
 };
 class NegativeDynamicState : public DynamicStateTest {
     // helper functions for tests in this file
@@ -526,8 +525,7 @@ class ShaderObjectTest : public virtual VkLayerTest {
     vkt::Buffer vertexBuffer;
 
   public:
-    void InitBasicShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1,
-                               bool coreFeatures = true);
+    void InitBasicShaderObject();
     void InitBasicMeshShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1,
                                    bool taskShader = true, bool meshShader = true);
     void BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader);

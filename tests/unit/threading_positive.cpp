@@ -22,8 +22,7 @@ TEST_F(PositiveThreading, DisplayObjects) {
 
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     uint32_t prop_count = 0;
     vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
@@ -46,8 +45,7 @@ TEST_F(PositiveThreading, DisplayPlaneObjects) {
 
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     uint32_t prop_count = 0;
     vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
