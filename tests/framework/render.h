@@ -141,9 +141,11 @@ class VkRenderFramework : public VkTestFramework {
     // are not enabled, but this can be overridden for individual test cases that explicitly test such use cases.
     void AllowPromotedExtensions() { allow_promoted_extensions_ = true; }
 
-    // Add a feature required for the test to be executed
+    // Add a feature required for the test to be executed. The currently targeted API version is used to add the correct struct, so
+    // be sure to call SetTargetApiVersion before
     void AddRequiredFeature(vkt::Feature feature);
-    // Add a feature that will be disabled when creating the device
+    // Add a feature that will be disabled when creating the device. The currently targeted API version is used to add the correct
+    // struct, so be sure to call SetTargetApiVersion before
     void AddDisabledFeature(vkt::Feature feature);
 
     void *SetupValidationSettings(void *first_pnext);
