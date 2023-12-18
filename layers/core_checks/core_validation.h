@@ -1803,6 +1803,8 @@ class CoreChecks : public ValidationStateTracker {
                                                        zx_handle_t* pZirconHandle, const RecordObject& record_obj) override;
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                HANDLE* pHandle, const ErrorObject& error_obj) const override;
     bool PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device,
                                                       const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
                                                       const ErrorObject& error_obj) const override;
