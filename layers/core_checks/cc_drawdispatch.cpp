@@ -594,10 +594,21 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                          phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
 
-    if ((counterOffset % 4) != 0) {
-        skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568",
-                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::offset),
+    if (SafeModulo(counterBufferOffset, 4) != 0) {
+        skip |= LogError(
+            "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+            error_obj.location.dot(Field::counterBufferOffset), "(%" PRIu64 ") must be a multiple of 4.", counterBufferOffset);
+    }
+    // VUs being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6310
+    if (SafeModulo(counterOffset, 4) != 0) {
+        skip |= LogError("UNASSIGNED-vkCmdDrawIndirectByteCountEXT-counterOffset",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::counterOffset),
                          "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
+    }
+    if (SafeModulo(vertexStride, 4) != 0) {
+        skip |= LogError("UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexStride",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
+                         "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
     }
 
     skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
