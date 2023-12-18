@@ -2669,3 +2669,65 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeQuery, Stride) {
+    TEST_DESCRIPTION("Validate Stride parameter.");
+    RETURN_IF_SKIP(Init());
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        GTEST_SKIP() << " Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    InitRenderTarget();
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0);
+    m_commandBuffer->end();
+
+    m_default_queue->submit(*m_commandBuffer);
+    m_default_queue->wait();
+
+    char data_space;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02828");
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
+                            VK_QUERY_RESULT_WAIT_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-00815");
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
+                            (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
+    m_errorMonitor->VerifyFound();
+
+    char data_space4[4] = "";
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space4), &data_space4, 4,
+                            VK_QUERY_RESULT_WAIT_BIT);
+
+    char data_space8[8] = "";
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space8), &data_space8, 8,
+                            (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
+
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-flags-00822");
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 1, 1, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-flags-00823");
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 1, 1,
+                                VK_QUERY_RESULT_64_BIT);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 4, 4, 0);
+
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 8, 8,
+                                VK_QUERY_RESULT_64_BIT);
+}
