@@ -161,14 +161,14 @@ float myfloat = 3.1415f;
 vec4 floatvec = vec4(1.2f, 2.2f, 3.2f, 4.2f);
 uint64_t bigvar = 0x2000000000000001ul;
 ```
-debugPrintfEXT("Here's a float value to 2 decimals %1.2f", myfloat);
-Would print "Here's a float value to 2 decimals 3.14"
+`debugPrintfEXT("Here's a float value to 2 decimals %1.2f", myfloat);`
+Would print **"Here's a float value to 2 decimals 3.14"**
 
-debugPrintfEXT("Here's a vector of floats %1.2v4f", floatvec);
-Would print "Here's a vector of floats 1.20, 2.20, 3.20, 4.20"
+`debugPrintfEXT("Here's a vector of floats %1.2v4f", floatvec);`
+Would print **"Here's a vector of floats 1.20, 2.20, 3.20, 4.20"**
 
-debugPrintfEXT("Unsigned long as decimal %lu and as hex 0x%lx", bigvar, bigvar);
-Would print "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001"
+`debugPrintfEXT("Unsigned long as decimal %lu and as hex 0x%lx", bigvar, bigvar);`
+Would print **"Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001"**
 
 ### Limitations
 * Debug Printf cannot be used at the same time as GPU Assisted Validation.
@@ -181,7 +181,7 @@ buffer size.
 * Vulkan API version 1.1 or greater is required
 * VkPhysicalDevice features: fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics
 are required
-* VK_KHR_shader_non_semantic_info extension supported and enabled
+* The VK_KHR_shader_non_semantic_info extension must be supported and enabled
 * RenderDoc release 1.14 or later
 * When using Debug Printf with a debug callback, it is recommended to disable validation,
 as the debug level of INFO or DEBUG causes the validation layers to produce many messages
@@ -195,3 +195,4 @@ There is a validation layer test that demonstrates the simple and programmatic u
 Printf. It is called "NegativeDebugPrintf.BasicUsage" and is in `tests/unit/debug_printf.cpp` 
 in the Vulkan-ValidationLayers repository.
 
+Earlier implementations implicitly included stage specific built-in variables such as `gl_InvocationID`, `gl_VertexID` and `gl_FragCoord` in Debug Printf messages. This functionality has been removed because it made Debug Printf unusable in shader modules that defined entry points for multiple pipeline stages. If necessary, you can add these values to your printf statements explicitly. However, you must then make sure that the printf statement can only be executed from a pipeline stage where the built-in variable is available.
