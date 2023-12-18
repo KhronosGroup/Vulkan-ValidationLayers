@@ -5634,10 +5634,6 @@ TEST_F(NegativeDynamicState, RebindSamePipeline) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &eds_features));
     InitRenderTarget();
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(driver_properties);
     if (driver_properties.conformanceVersion.major > 1 || driver_properties.conformanceVersion.minor > 3 ||

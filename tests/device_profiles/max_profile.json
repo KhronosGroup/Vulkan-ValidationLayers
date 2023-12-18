@@ -1041,7 +1041,14 @@
                         "VK_SHADER_STAGE_CALLABLE_BIT_KHR"
                     ]
                 },
-                "VkPhysicalDeviceDriverProperties": {},
+                "VkPhysicalDeviceDriverProperties": {
+                    "conformanceVersion": {
+                        "major": 1,
+                        "minor": 3,
+                        "subminor": 6,
+                        "patch": 0
+                    }
+                },
                 "VkPhysicalDeviceIDProperties": {},
                 "VkPhysicalDeviceMultiviewProperties": {
                     "maxMultiviewViewCount": 16,
@@ -1409,6 +1416,12 @@
                     "maxMemoryAllocationSize": 4294967000
                 },
                 "VkPhysicalDeviceVulkan12Properties": {
+                    "conformanceVersion": {
+                        "major": 1,
+                        "minor": 3,
+                        "subminor": 6,
+                        "patch": 0
+                    },
                     "shaderSignedZeroInfNanPreserveFloat16": true,
                     "shaderSignedZeroInfNanPreserveFloat32": true,
                     "shaderSignedZeroInfNanPreserveFloat64": true,
