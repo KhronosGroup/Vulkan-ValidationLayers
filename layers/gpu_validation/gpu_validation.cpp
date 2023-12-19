@@ -734,7 +734,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         push_constants[1] = phys_dev_props.limits.maxDrawIndirectCount;
         push_constants[2] = max_count;
         push_constants[3] = static_cast<uint32_t>((count_buffer_offset / sizeof(uint32_t)));
-    } else if (command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) {
+    } else if ((command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) &&
+               !enabled_features.drawIndirectFirstInstance) {
         // Validate buffer for firstInstance check instead of count buffer check
         push_constants[0] = glsl::pre_draw_select_draw_buffer;
         push_constants[1] = draw_count;
