@@ -1456,7 +1456,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandB
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindIndexBuffer-commandBuffer-parameter"
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindIndexBuffer-commonparent"
-    skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdBindIndexBuffer-buffer-parameter",
+    skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, true, "VUID-vkCmdBindIndexBuffer-buffer-parameter",
                            "VUID-vkCmdBindIndexBuffer-commonparent", error_obj.location.dot(Field::buffer));
 
     return skip;
@@ -3390,6 +3390,12 @@ bool ObjectLifetimes::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBu
                 }
             }
         }
+        if (auto pNext = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pDecodeInfo->pNext)) {
+            const Location pNext_loc = pDecodeInfo_loc.pNext(Struct::VkVideoInlineQueryInfoKHR);
+            skip |= ValidateObject(pNext->queryPool, kVulkanObjectTypeQueryPool, true,
+                                   "VUID-VkVideoInlineQueryInfoKHR-queryPool-parameter",
+                                   "UNASSIGNED-VkVideoInlineQueryInfoKHR-queryPool-parent", pNext_loc.dot(Field::queryPool));
+        }
     }
 
     return skip;
@@ -4015,7 +4021,6 @@ bool ObjectLifetimes::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMe
 
     return skip;
 }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 // vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-physicalDevice-parameter"
@@ -4072,11 +4077,16 @@ bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBu
                 }
             }
         }
+        if (auto pNext = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pEncodeInfo->pNext)) {
+            const Location pNext_loc = pEncodeInfo_loc.pNext(Struct::VkVideoInlineQueryInfoKHR);
+            skip |= ValidateObject(pNext->queryPool, kVulkanObjectTypeQueryPool, true,
+                                   "VUID-VkVideoInlineQueryInfoKHR-queryPool-parameter",
+                                   "UNASSIGNED-VkVideoInlineQueryInfoKHR-queryPool-parent", pNext_loc.dot(Field::queryPool));
+        }
     }
 
     return skip;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                      const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
@@ -4176,7 +4186,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer comm
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindIndexBuffer2KHR-commandBuffer-parameter"
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindIndexBuffer2KHR-commonparent"
-    skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdBindIndexBuffer2KHR-buffer-parameter",
+    skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, true, "VUID-vkCmdBindIndexBuffer2KHR-buffer-parameter",
                            "VUID-vkCmdBindIndexBuffer2KHR-commonparent", error_obj.location.dot(Field::buffer));
 
     return skip;
@@ -4208,6 +4218,252 @@ bool ObjectLifetimes::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice devi
 
 // vkGetCalibratedTimestampsKHR:
 // Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+
+bool ObjectLifetimes::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                               const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBindDescriptorSets2KHR-commandBuffer-parameter"
+    if (pBindDescriptorSetsInfo) {
+        [[maybe_unused]] const Location pBindDescriptorSetsInfo_loc = error_obj.location.dot(Field::pBindDescriptorSetsInfo);
+        skip |= ValidateObject(pBindDescriptorSetsInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                               "VUID-VkBindDescriptorSetsInfoKHR-layout-parameter", "VUID-VkBindDescriptorSetsInfoKHR-commonparent",
+                               pBindDescriptorSetsInfo_loc.dot(Field::layout));
+
+        if ((pBindDescriptorSetsInfo->descriptorSetCount > 0) && (pBindDescriptorSetsInfo->pDescriptorSets)) {
+            for (uint32_t index1 = 0; index1 < pBindDescriptorSetsInfo->descriptorSetCount; ++index1) {
+                skip |= ValidateObject(pBindDescriptorSetsInfo->pDescriptorSets[index1], kVulkanObjectTypeDescriptorSet, false,
+                                       "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-parameter",
+                                       "VUID-VkBindDescriptorSetsInfoKHR-commonparent",
+                                       pBindDescriptorSetsInfo_loc.dot(Field::pDescriptorSets, index1));
+            }
+        }
+        if (auto pNext = vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorSetsInfo->pNext)) {
+            const Location pNext_loc = pBindDescriptorSetsInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
+
+            if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
+                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                    skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           pNext_loc.dot(Field::pSetLayouts, index2));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdPushConstants2KHR-commandBuffer-parameter"
+    if (pPushConstantsInfo) {
+        [[maybe_unused]] const Location pPushConstantsInfo_loc = error_obj.location.dot(Field::pPushConstantsInfo);
+        skip |= ValidateObject(pPushConstantsInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                               "VUID-VkPushConstantsInfoKHR-layout-parameter", "UNASSIGNED-VkPushConstantsInfoKHR-layout-parent",
+                               pPushConstantsInfo_loc.dot(Field::layout));
+        if (auto pNext = vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushConstantsInfo->pNext)) {
+            const Location pNext_loc = pPushConstantsInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
+
+            if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
+                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                    skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           pNext_loc.dot(Field::pSetLayouts, index2));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                              const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet2KHR-commandBuffer-parameter"
+    if (pPushDescriptorSetInfo) {
+        [[maybe_unused]] const Location pPushDescriptorSetInfo_loc = error_obj.location.dot(Field::pPushDescriptorSetInfo);
+        skip |=
+            ValidateObject(pPushDescriptorSetInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                           "VUID-VkPushDescriptorSetInfoKHR-layout-parameter",
+                           "UNASSIGNED-VkPushDescriptorSetInfoKHR-layout-parent", pPushDescriptorSetInfo_loc.dot(Field::layout));
+        if (pPushDescriptorSetInfo->pDescriptorWrites) {
+            for (uint32_t index1 = 0; index1 < pPushDescriptorSetInfo->descriptorWriteCount; ++index1) {
+                [[maybe_unused]] const Location index1_loc = pPushDescriptorSetInfo_loc.dot(Field::pDescriptorWrites, index1);
+                skip |=
+                    ValidateObject(pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet, kVulkanObjectTypeDescriptorSet, true,
+                                   kVUIDUndefined, "VUID-VkWriteDescriptorSet-commonparent", index1_loc.dot(Field::dstSet));
+                if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo) {
+                    for (uint32_t index2 = 0; index2 < pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                         ++index2) {
+                        [[maybe_unused]] const Location index2_loc = index1_loc.dot(Field::pImageInfo, index2);
+                        skip |= ValidateObject(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler,
+                                               kVulkanObjectTypeSampler, true, kVUIDUndefined,
+                                               "VUID-VkDescriptorImageInfo-commonparent", index2_loc.dot(Field::sampler));
+                        skip |= ValidateObject(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView,
+                                               kVulkanObjectTypeImageView, true, kVUIDUndefined,
+                                               "VUID-VkDescriptorImageInfo-commonparent", index2_loc.dot(Field::imageView));
+                    }
+                }
+                if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo) {
+                    for (uint32_t index2 = 0; index2 < pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                         ++index2) {
+                        [[maybe_unused]] const Location index2_loc = index1_loc.dot(Field::pBufferInfo, index2);
+                        skip |= ValidateObject(pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo[index2].buffer,
+                                               kVulkanObjectTypeBuffer, true, "VUID-VkDescriptorBufferInfo-buffer-parameter",
+                                               "UNASSIGNED-VkDescriptorBufferInfo-buffer-parent", index2_loc.dot(Field::buffer));
+                    }
+                }
+
+                if ((pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount > 0) &&
+                    (pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView)) {
+                    for (uint32_t index2 = 0; index2 < pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                         ++index2) {
+                        skip |= ValidateObject(pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView[index2],
+                                               kVulkanObjectTypeBufferView, true, kVUIDUndefined,
+                                               "VUID-VkWriteDescriptorSet-commonparent",
+                                               index1_loc.dot(Field::pTexelBufferView, index2));
+                    }
+                }
+                if (auto pNext = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(
+                        pPushDescriptorSetInfo->pDescriptorWrites[index1].pNext)) {
+                    const Location pNext_loc = index1_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR);
+
+                    if ((pNext->accelerationStructureCount > 0) && (pNext->pAccelerationStructures)) {
+                        for (uint32_t index3 = 0; index3 < pNext->accelerationStructureCount; ++index3) {
+                            skip |= ValidateObject(
+                                pNext->pAccelerationStructures[index3], kVulkanObjectTypeAccelerationStructureKHR, true,
+                                "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
+                                "UNASSIGNED-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parent",
+                                pNext_loc.dot(Field::pAccelerationStructures, index3));
+                        }
+                    }
+                }
+                if (auto pNext = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(
+                        pPushDescriptorSetInfo->pDescriptorWrites[index1].pNext)) {
+                    const Location pNext_loc = index1_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV);
+
+                    if ((pNext->accelerationStructureCount > 0) && (pNext->pAccelerationStructures)) {
+                        for (uint32_t index3 = 0; index3 < pNext->accelerationStructureCount; ++index3) {
+                            skip |= ValidateObject(
+                                pNext->pAccelerationStructures[index3], kVulkanObjectTypeAccelerationStructureNV, true,
+                                "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parameter",
+                                "UNASSIGNED-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parent",
+                                pNext_loc.dot(Field::pAccelerationStructures, index3));
+                        }
+                    }
+                }
+            }
+        }
+        if (auto pNext = vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetInfo->pNext)) {
+            const Location pNext_loc = pPushDescriptorSetInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
+
+            if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
+                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                    skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           pNext_loc.dot(Field::pSetLayouts, index2));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSetWithTemplate2KHR-commandBuffer-parameter"
+    if (pPushDescriptorSetWithTemplateInfo) {
+        [[maybe_unused]] const Location pPushDescriptorSetWithTemplateInfo_loc =
+            error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo);
+        skip |=
+            ValidateObject(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate,
+                           false, "VUID-VkPushDescriptorSetWithTemplateInfoKHR-descriptorUpdateTemplate-parameter",
+                           "VUID-VkPushDescriptorSetWithTemplateInfoKHR-commonparent",
+                           pPushDescriptorSetWithTemplateInfo_loc.dot(Field::descriptorUpdateTemplate));
+        skip |= ValidateObject(pPushDescriptorSetWithTemplateInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                               "VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-parameter",
+                               "VUID-VkPushDescriptorSetWithTemplateInfoKHR-commonparent",
+                               pPushDescriptorSetWithTemplateInfo_loc.dot(Field::layout));
+        if (auto pNext = vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetWithTemplateInfo->pNext)) {
+            const Location pNext_loc = pPushDescriptorSetWithTemplateInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
+
+            if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
+                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                    skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           pNext_loc.dot(Field::pSetLayouts, index2));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdSetDescriptorBufferOffsets2EXT-commandBuffer-parameter"
+    if (pSetDescriptorBufferOffsetsInfo) {
+        [[maybe_unused]] const Location pSetDescriptorBufferOffsetsInfo_loc =
+            error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo);
+        skip |= ValidateObject(pSetDescriptorBufferOffsetsInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                               "VUID-VkSetDescriptorBufferOffsetsInfoEXT-layout-parameter",
+                               "UNASSIGNED-VkSetDescriptorBufferOffsetsInfoEXT-layout-parent",
+                               pSetDescriptorBufferOffsetsInfo_loc.dot(Field::layout));
+        if (auto pNext = vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pSetDescriptorBufferOffsetsInfo->pNext)) {
+            const Location pNext_loc = pSetDescriptorBufferOffsetsInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
+
+            if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
+                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                    skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           pNext_loc.dot(Field::pSetLayouts, index2));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBindDescriptorBufferEmbeddedSamplers2EXT-commandBuffer-parameter"
+    if (pBindDescriptorBufferEmbeddedSamplersInfo) {
+        [[maybe_unused]] const Location pBindDescriptorBufferEmbeddedSamplersInfo_loc =
+            error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo);
+        skip |= ValidateObject(pBindDescriptorBufferEmbeddedSamplersInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                               "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-parameter",
+                               "UNASSIGNED-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-parent",
+                               pBindDescriptorBufferEmbeddedSamplersInfo_loc.dot(Field::layout));
+        if (auto pNext =
+                vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorBufferEmbeddedSamplersInfo->pNext)) {
+            const Location pNext_loc = pBindDescriptorBufferEmbeddedSamplersInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
+
+            if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
+                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                    skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter", kVUIDUndefined,
+                                           pNext_loc.dot(Field::pSetLayouts, index2));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
 
 // vkCreateDebugReportCallbackEXT:
 // Checked by chassis: instance: "VUID-vkCreateDebugReportCallbackEXT-instance-parameter"

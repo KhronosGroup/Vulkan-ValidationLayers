@@ -601,12 +601,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
     }
     // VUs being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6310
     if (SafeModulo(counterOffset, 4) != 0) {
-        skip |= LogError("UNASSIGNED-vkCmdDrawIndirectByteCountEXT-counterOffset",
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-counterOffset-09474",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::counterOffset),
                          "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
     }
     if (SafeModulo(vertexStride, 4) != 0) {
-        skip |= LogError("UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexStride",
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-09475",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
                          "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
     }

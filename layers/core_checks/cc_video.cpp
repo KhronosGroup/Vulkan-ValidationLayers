@@ -217,8 +217,8 @@ bool CoreChecks::ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR *p
                     has_decode_profile = true;
                     break;
 
-                case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT:
-                case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_EXT:
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
                     has_encode_profile = true;
                     break;
 

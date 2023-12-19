@@ -113,9 +113,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR;
     PFN_vkGetDisplayPlaneCapabilities2KHR GetDisplayPlaneCapabilities2KHR;
     PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
     PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
@@ -448,10 +446,8 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineExecutableInternalRepresentationsKHR GetPipelineExecutableInternalRepresentationsKHR;
     PFN_vkMapMemory2KHR MapMemory2KHR;
     PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
     PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdSetEvent2KHR CmdSetEvent2KHR;
     PFN_vkCmdResetEvent2KHR CmdResetEvent2KHR;
     PFN_vkCmdWaitEvents2KHR CmdWaitEvents2KHR;
@@ -475,6 +471,12 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
     PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
     PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
+    PFN_vkCmdBindDescriptorSets2KHR CmdBindDescriptorSets2KHR;
+    PFN_vkCmdPushConstants2KHR CmdPushConstants2KHR;
+    PFN_vkCmdPushDescriptorSet2KHR CmdPushDescriptorSet2KHR;
+    PFN_vkCmdPushDescriptorSetWithTemplate2KHR CmdPushDescriptorSetWithTemplate2KHR;
+    PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
+    PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
     PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT;

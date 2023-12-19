@@ -2826,7 +2826,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
     ds_layout_ci.pBindings = &dsl_binding;
 
     VkDescriptorSetLayout ds_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorCount-00283");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorCount-09465");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }

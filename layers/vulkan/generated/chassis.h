@@ -1064,7 +1064,6 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapI
 
 VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo);
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties);
@@ -1075,7 +1074,6 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
 
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo);
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo);
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask);
@@ -1145,6 +1143,23 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPh
 VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                           const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation);
+
+VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo);
+
+VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo);
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                    const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo);
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo);
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo);
+
+VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo);
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
@@ -3472,7 +3487,6 @@ class ValidationObject {
         virtual bool PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo, const RecordObject& record_obj) {};
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {};
@@ -3482,7 +3496,6 @@ class ValidationObject {
         virtual bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo, const RecordObject& record_obj) {};
-#endif  // VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {};
@@ -3558,6 +3571,24 @@ class ValidationObject {
         virtual bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount, const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps, uint64_t* pMaxDeviation, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount, const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps, uint64_t* pMaxDeviation, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount, const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps, uint64_t* pMaxDeviation, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdPushDescriptorSetWithTemplate2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo, const RecordObject& record_obj) {};
         virtual bool PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback, const RecordObject& record_obj) {};

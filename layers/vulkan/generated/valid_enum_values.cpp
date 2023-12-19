@@ -834,7 +834,6 @@ std::vector<VkFragmentShadingRateCombinerOpKHR> ValidationObject::ValidParamValu
     return values;
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 template<>
 std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkVideoEncodeTuningModeKHREnums = {VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR, VK_VIDEO_ENCODE_TUNING_MODE_HIGH_QUALITY_KHR, VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR, VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR, VK_VIDEO_ENCODE_TUNING_MODE_LOSSLESS_KHR};
@@ -850,7 +849,6 @@ std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() con
     std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
     return values;
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 template<>
 std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const {

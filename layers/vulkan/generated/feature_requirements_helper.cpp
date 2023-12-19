@@ -3141,6 +3141,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->maintenance5, "VkPhysicalDeviceMaintenance5FeaturesKHR::maintenance5"};
         }
+        case Feature::maintenance6: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMaintenance6FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMaintenance6FeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMaintenance6FeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->maintenance6, "VkPhysicalDeviceMaintenance6FeaturesKHR::maintenance6"};
+        }
         case Feature::memoryDecompression: {
             auto vk_struct = const_cast<VkPhysicalDeviceMemoryDecompressionFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceMemoryDecompressionFeaturesNV>(*inout_pnext_chain));
@@ -3526,6 +3540,34 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->pageableDeviceLocalMemory,
                     "VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::pageableDeviceLocalMemory"};
+        }
+        case Feature::dynamicPipelineLayout: {
+            auto vk_struct = const_cast<VkPhysicalDevicePerStageDescriptorSetFeaturesNV *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePerStageDescriptorSetFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePerStageDescriptorSetFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dynamicPipelineLayout, "VkPhysicalDevicePerStageDescriptorSetFeaturesNV::dynamicPipelineLayout"};
+        }
+        case Feature::perStageDescriptorSet: {
+            auto vk_struct = const_cast<VkPhysicalDevicePerStageDescriptorSetFeaturesNV *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePerStageDescriptorSetFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePerStageDescriptorSetFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->perStageDescriptorSet, "VkPhysicalDevicePerStageDescriptorSetFeaturesNV::perStageDescriptorSet"};
         }
         case Feature::performanceCounterMultipleQueryPools: {
             auto vk_struct = const_cast<VkPhysicalDevicePerformanceQueryFeaturesKHR *>(
@@ -5798,6 +5840,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->vertexInputDynamicState,
                     "VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT::vertexInputDynamicState"};
+        }
+        case Feature::videoMaintenance1: {
+            auto vk_struct = const_cast<VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVideoMaintenance1FeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceVideoMaintenance1FeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->videoMaintenance1, "VkPhysicalDeviceVideoMaintenance1FeaturesKHR::videoMaintenance1"};
         }
         case Feature::descriptorIndexing: {
             auto vk_struct = const_cast<VkPhysicalDeviceVulkan12Features *>(

@@ -14339,6 +14339,65 @@ void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(
     }
 }
 
+safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV(
+    const VkPhysicalDevicePerStageDescriptorSetFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType),
+      perStageDescriptorSet(in_struct->perStageDescriptorSet),
+      dynamicPipelineLayout(in_struct->dynamicPipelineLayout) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PER_STAGE_DESCRIPTOR_SET_FEATURES_NV),
+      pNext(nullptr),
+      perStageDescriptorSet(),
+      dynamicPipelineLayout() {}
+
+safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV(
+    const safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV& copy_src) {
+    sType = copy_src.sType;
+    perStageDescriptorSet = copy_src.perStageDescriptorSet;
+    dynamicPipelineLayout = copy_src.dynamicPipelineLayout;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV& safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::operator=(
+    const safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    perStageDescriptorSet = copy_src.perStageDescriptorSet;
+    dynamicPipelineLayout = copy_src.dynamicPipelineLayout;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::~safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::initialize(
+    const VkPhysicalDevicePerStageDescriptorSetFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    perStageDescriptorSet = in_struct->perStageDescriptorSet;
+    dynamicPipelineLayout = in_struct->dynamicPipelineLayout;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV::initialize(
+    const safe_VkPhysicalDevicePerStageDescriptorSetFeaturesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    perStageDescriptorSet = copy_src->perStageDescriptorSet;
+    dynamicPipelineLayout = copy_src->dynamicPipelineLayout;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM::safe_VkPhysicalDeviceImageProcessing2FeaturesQCOM(
     const VkPhysicalDeviceImageProcessing2FeaturesQCOM* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
     : sType(in_struct->sType), textureBlockMatch2(in_struct->textureBlockMatch2) {

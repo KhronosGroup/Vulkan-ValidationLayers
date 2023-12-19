@@ -876,6 +876,24 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetCalibratedTimestampsKHR,
     InterceptIdPreCallRecordGetCalibratedTimestampsKHR,
     InterceptIdPostCallRecordGetCalibratedTimestampsKHR,
+    InterceptIdPreCallValidateCmdBindDescriptorSets2KHR,
+    InterceptIdPreCallRecordCmdBindDescriptorSets2KHR,
+    InterceptIdPostCallRecordCmdBindDescriptorSets2KHR,
+    InterceptIdPreCallValidateCmdPushConstants2KHR,
+    InterceptIdPreCallRecordCmdPushConstants2KHR,
+    InterceptIdPostCallRecordCmdPushConstants2KHR,
+    InterceptIdPreCallValidateCmdPushDescriptorSet2KHR,
+    InterceptIdPreCallRecordCmdPushDescriptorSet2KHR,
+    InterceptIdPostCallRecordCmdPushDescriptorSet2KHR,
+    InterceptIdPreCallValidateCmdPushDescriptorSetWithTemplate2KHR,
+    InterceptIdPreCallRecordCmdPushDescriptorSetWithTemplate2KHR,
+    InterceptIdPostCallRecordCmdPushDescriptorSetWithTemplate2KHR,
+    InterceptIdPreCallValidateCmdSetDescriptorBufferOffsets2EXT,
+    InterceptIdPreCallRecordCmdSetDescriptorBufferOffsets2EXT,
+    InterceptIdPostCallRecordCmdSetDescriptorBufferOffsets2EXT,
+    InterceptIdPreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT,
+    InterceptIdPreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT,
+    InterceptIdPostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT,
     InterceptIdPreCallValidateDebugMarkerSetObjectTagEXT,
     InterceptIdPreCallRecordDebugMarkerSetObjectTagEXT,
     InterceptIdPostCallRecordDebugMarkerSetObjectTagEXT,
@@ -2515,14 +2533,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateUnmapMemory2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordUnmapMemory2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordUnmapMemory2KHR);
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     BUILD_DISPATCH_VECTOR(PreCallValidateGetEncodedVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetEncodedVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetEncodedVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEncodeVideoKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEncodeVideoKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdEncodeVideoKHR);
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetEvent2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetEvent2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetEvent2KHR);
@@ -2592,6 +2608,24 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetCalibratedTimestampsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetCalibratedTimestampsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetCalibratedTimestampsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindDescriptorSets2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindDescriptorSets2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindDescriptorSets2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdPushConstants2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdPushConstants2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdPushConstants2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdPushDescriptorSet2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdPushDescriptorSet2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdPushDescriptorSet2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdPushDescriptorSetWithTemplate2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdPushDescriptorSetWithTemplate2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdPushDescriptorSetWithTemplate2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDescriptorBufferOffsets2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDescriptorBufferOffsets2EXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDescriptorBufferOffsets2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordDebugMarkerSetObjectTagEXT);

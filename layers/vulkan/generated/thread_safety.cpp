@@ -3754,7 +3754,6 @@ void ThreadSafety::PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemory
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, const RecordObject& record_obj) {
@@ -3779,7 +3778,6 @@ void ThreadSafety::PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
     // Host access to commandBuffer must be externally synchronized
 }
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                 const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {
     PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
@@ -4043,6 +4041,90 @@ void ThreadSafety::PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uin
                                                             uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                             const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void ThreadSafety::PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                                          const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                           const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                                           const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                                     const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                      const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                                      const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                         const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                                         const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                                          const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+    const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+    const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+    const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+    const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance,

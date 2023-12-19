@@ -429,11 +429,9 @@ PFN_vkGetPipelineExecutableStatisticsKHR GetPipelineExecutableStatisticsKHR;
 PFN_vkGetPipelineExecutableInternalRepresentationsKHR GetPipelineExecutableInternalRepresentationsKHR;
 PFN_vkMapMemory2KHR MapMemory2KHR;
 PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
 PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
 PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdSetEvent2KHR CmdSetEvent2KHR;
 PFN_vkCmdResetEvent2KHR CmdResetEvent2KHR;
 PFN_vkCmdWaitEvents2KHR CmdWaitEvents2KHR;
@@ -459,6 +457,12 @@ PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
 PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
 PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
 PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
+PFN_vkCmdBindDescriptorSets2KHR CmdBindDescriptorSets2KHR;
+PFN_vkCmdPushConstants2KHR CmdPushConstants2KHR;
+PFN_vkCmdPushDescriptorSet2KHR CmdPushDescriptorSet2KHR;
+PFN_vkCmdPushDescriptorSetWithTemplate2KHR CmdPushDescriptorSetWithTemplate2KHR;
+PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
+PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
 PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
 PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
@@ -1681,7 +1685,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 UnmapMemory2KHR = reinterpret_cast<PFN_vkUnmapMemory2KHR>(GetDeviceProcAddr(device, "vkUnmapMemory2KHR"));
             }
         },
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_KHR_video_encode_queue", [](VkInstance instance, VkDevice device) {
                 GetEncodedVideoSessionParametersKHR = reinterpret_cast<PFN_vkGetEncodedVideoSessionParametersKHR>(GetDeviceProcAddr(device, "vkGetEncodedVideoSessionParametersKHR"));
@@ -1689,7 +1692,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR"));
             }
         },
-#endif  // VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_KHR_synchronization2", [](VkInstance , VkDevice device) {
                 CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(GetDeviceProcAddr(device, "vkCmdSetEvent2KHR"));
@@ -1741,6 +1743,16 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             "VK_KHR_calibrated_timestamps", [](VkInstance instance, VkDevice device) {
                 GetCalibratedTimestampsKHR = reinterpret_cast<PFN_vkGetCalibratedTimestampsKHR>(GetDeviceProcAddr(device, "vkGetCalibratedTimestampsKHR"));
                 GetPhysicalDeviceCalibrateableTimeDomainsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCalibrateableTimeDomainsKHR"));
+            }
+        },
+        {
+            "VK_KHR_maintenance6", [](VkInstance , VkDevice device) {
+                CmdBindDescriptorSets2KHR = reinterpret_cast<PFN_vkCmdBindDescriptorSets2KHR>(GetDeviceProcAddr(device, "vkCmdBindDescriptorSets2KHR"));
+                CmdPushConstants2KHR = reinterpret_cast<PFN_vkCmdPushConstants2KHR>(GetDeviceProcAddr(device, "vkCmdPushConstants2KHR"));
+                CmdPushDescriptorSet2KHR = reinterpret_cast<PFN_vkCmdPushDescriptorSet2KHR>(GetDeviceProcAddr(device, "vkCmdPushDescriptorSet2KHR"));
+                CmdPushDescriptorSetWithTemplate2KHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate2KHR>(GetDeviceProcAddr(device, "vkCmdPushDescriptorSetWithTemplate2KHR"));
+                CmdSetDescriptorBufferOffsets2EXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsets2EXT>(GetDeviceProcAddr(device, "vkCmdSetDescriptorBufferOffsets2EXT"));
+                CmdBindDescriptorBufferEmbeddedSamplers2EXT = reinterpret_cast<PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT>(GetDeviceProcAddr(device, "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT"));
             }
         },
         {
@@ -2536,11 +2548,9 @@ void ResetAllExtensions() {
     GetPipelineExecutableInternalRepresentationsKHR = nullptr;
     MapMemory2KHR = nullptr;
     UnmapMemory2KHR = nullptr;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = nullptr;
     GetEncodedVideoSessionParametersKHR = nullptr;
     CmdEncodeVideoKHR = nullptr;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     CmdSetEvent2KHR = nullptr;
     CmdResetEvent2KHR = nullptr;
     CmdWaitEvents2KHR = nullptr;
@@ -2566,6 +2576,12 @@ void ResetAllExtensions() {
     GetPhysicalDeviceCooperativeMatrixPropertiesKHR = nullptr;
     GetPhysicalDeviceCalibrateableTimeDomainsKHR = nullptr;
     GetCalibratedTimestampsKHR = nullptr;
+    CmdBindDescriptorSets2KHR = nullptr;
+    CmdPushConstants2KHR = nullptr;
+    CmdPushDescriptorSet2KHR = nullptr;
+    CmdPushDescriptorSetWithTemplate2KHR = nullptr;
+    CmdSetDescriptorBufferOffsets2EXT = nullptr;
+    CmdBindDescriptorBufferEmbeddedSamplers2EXT = nullptr;
     CreateDebugReportCallbackEXT = nullptr;
     DestroyDebugReportCallbackEXT = nullptr;
     DebugReportMessageEXT = nullptr;
