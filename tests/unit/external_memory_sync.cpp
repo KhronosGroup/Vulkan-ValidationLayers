@@ -1548,6 +1548,70 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(NegativeExternalMemorySync, GetMemoryWin32Handle) {
+    TEST_DESCRIPTION("Validate VkMemoryGetWin32HandleInfoKHR passed to vkGetMemoryWin32HandleKHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    HANDLE handle = NULL;
+
+    // Allocate memory without VkExportMemoryAllocateInfo in the pNext chain
+    {
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+        alloc_info.allocationSize = 32;
+        alloc_info.memoryTypeIndex = 0;
+        vkt::DeviceMemory memory;
+        memory.init(*m_device, alloc_info);
+
+        VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662");
+        vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle);
+        m_errorMonitor->VerifyFound();
+    }
+    // VkExportMemoryAllocateInfo::handleTypes does not include requested handle type
+    {
+        VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
+        export_info.handleTypes = 0;
+
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&export_info);
+        alloc_info.allocationSize = 1024;
+        alloc_info.memoryTypeIndex = 0;
+        vkt::DeviceMemory memory;
+        memory.init(*m_device, alloc_info);
+
+        VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662");
+        vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle);
+        m_errorMonitor->VerifyFound();
+    }
+    // Request handle of the wrong type
+    {
+        VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
+        export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&export_info);
+        alloc_info.allocationSize = 1024;
+        alloc_info.memoryTypeIndex = 0;
+
+        vkt::DeviceMemory memory;
+        memory.init(*m_device, alloc_info);
+        VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00664");
+        vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
     TEST_DESCRIPTION("Win32 handle memory import. Import parameters do not match payload's parameters");
     SetTargetApiVersion(VK_API_VERSION_1_1);
