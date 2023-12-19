@@ -792,11 +792,10 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         const Location barrier_loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
 
-        if (VK_QUEUE_FAMILY_IGNORED != img_barrier.srcQueueFamilyIndex ||
-            VK_QUEUE_FAMILY_IGNORED != img_barrier.dstQueueFamilyIndex) {
+        if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
             skip |= LogError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182", state.rp_handle,
                              barrier_loc.dot(Field::srcQueueFamilyIndex),
-                             "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but both must be VK_QUEUE_FAMILY_IGNORED.",
+                             "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but they must be equal.",
                              img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         }
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
@@ -846,11 +845,10 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         skip |= state.ValidateStage(barrier_loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
 
-        if (VK_QUEUE_FAMILY_IGNORED != img_barrier.srcQueueFamilyIndex ||
-            VK_QUEUE_FAMILY_IGNORED != img_barrier.dstQueueFamilyIndex) {
+        if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
             skip |= LogError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182", state.rp_handle,
                              barrier_loc.dot(Field::srcQueueFamilyIndex),
-                             "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but both must be VK_QUEUE_FAMILY_IGNORED.",
+                             "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but they must be equal.",
                              img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         }
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
