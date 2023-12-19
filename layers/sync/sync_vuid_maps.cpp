@@ -1068,6 +1068,16 @@ static const std::map<ImageError, std::vector<Entry>> kImageErrors{
          {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-04073"},
          {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-image-04073"},
      }},
+    {ImageError::kRenderPassMismatchColorUnused,
+     {
+         {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-09373"},
+         {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-image-09373"},
+     }},
+    {ImageError::kRenderPassMismatchAhbZero,
+     {
+         {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-09374"},
+         {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-image-09374"},
+     }},
     {ImageError::kRenderPassLayoutChange,
      {
          {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-oldLayout-01181"},

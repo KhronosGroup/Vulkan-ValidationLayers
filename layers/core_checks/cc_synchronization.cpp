@@ -1673,14 +1673,23 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, vvl
                     sub_image_found = true;
                     break;
                 }
+                // Will also catch a "color resolve" attachment
                 if (!sub_image_found && sub_desc.pResolveAttachments &&
                     sub_desc.pResolveAttachments[j].attachment == attach_index) {
                     sub_image_layout = sub_desc.pResolveAttachments[j].layout;
                     sub_image_found = true;
                     if (image_ahb_format == 0) {
-                        skip |= LogError("VUID-vkCmdPipelineBarrier2-image-09374", rp_handle, image_loc,
+                        const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassMismatchAhbZero);
+                        skip |= LogError(vuid, rp_handle, image_loc,
                                          "(%s) for subpass %" PRIu32 " was not created with an externalFormat.",
                                          FormatHandle(img_bar_image).c_str(), active_subpass);
+                    } else if (sub_desc.pColorAttachments && sub_desc.pColorAttachments[0].attachment != VK_ATTACHMENT_UNUSED) {
+                        const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassMismatchColorUnused);
+                        skip |=
+                            LogError(vuid, rp_handle, image_loc,
+                                     "(%s) for subpass %" PRIu32 " the pColorAttachments[0].attachment is %" PRIu32
+                                     " instead of VK_ATTACHMENT_UNUSED.",
+                                     FormatHandle(img_bar_image).c_str(), active_subpass, sub_desc.pColorAttachments[0].attachment);
                     }
                     break;
                 }
