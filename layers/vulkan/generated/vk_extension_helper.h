@@ -404,6 +404,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_sampler_mirror_clamp_to_edge{kNotEnabled};
     ExtEnabled vk_khr_video_queue{kNotEnabled};
     ExtEnabled vk_khr_video_decode_queue{kNotEnabled};
+    ExtEnabled vk_khr_video_encode_h264{kNotEnabled};
+    ExtEnabled vk_khr_video_encode_h265{kNotEnabled};
     ExtEnabled vk_khr_video_decode_h264{kNotEnabled};
     ExtEnabled vk_khr_dynamic_rendering{kNotEnabled};
     ExtEnabled vk_khr_multiview{kNotEnabled};
@@ -480,8 +482,10 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_maintenance5{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
+    ExtEnabled vk_khr_video_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_vertex_attribute_divisor{kNotEnabled};
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
+    ExtEnabled vk_khr_maintenance6{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
     ExtEnabled vk_img_filter_cubic{kNotEnabled};
@@ -498,8 +502,6 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_amd_negative_viewport_height{kNotEnabled};
     ExtEnabled vk_amd_gpu_shader_half_float{kNotEnabled};
     ExtEnabled vk_amd_shader_ballot{kNotEnabled};
-    ExtEnabled vk_ext_video_encode_h264{kNotEnabled};
-    ExtEnabled vk_ext_video_encode_h265{kNotEnabled};
     ExtEnabled vk_amd_texture_gather_bias_lod{kNotEnabled};
     ExtEnabled vk_amd_shader_info{kNotEnabled};
     ExtEnabled vk_amd_shader_image_load_store_lod{kNotEnabled};
@@ -701,6 +703,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_dynamic_rendering_unused_attachments{kNotEnabled};
     ExtEnabled vk_nv_low_latency2{kNotEnabled};
     ExtEnabled vk_qcom_multiview_per_view_render_areas{kNotEnabled};
+    ExtEnabled vk_nv_per_stage_descriptor_set{kNotEnabled};
     ExtEnabled vk_qcom_image_processing2{kNotEnabled};
     ExtEnabled vk_qcom_filter_cubic_weights{kNotEnabled};
     ExtEnabled vk_qcom_ycbcr_degamma{kNotEnabled};
@@ -832,6 +835,12 @@ struct DeviceExtensions : public InstanceExtensions {
              DeviceInfo(&DeviceExtensions::vk_khr_video_decode_queue,
                         {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
+            {VK_KHR_VIDEO_ENCODE_H264_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_video_encode_h264,
+                        {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
+            {VK_KHR_VIDEO_ENCODE_H265_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_video_encode_h265,
+                        {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
             {VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_video_decode_h264,
                         {{{&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
@@ -1039,12 +1048,10 @@ struct DeviceExtensions : public InstanceExtensions {
                                                           {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                                                             {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                              VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-#ifdef VK_ENABLE_BETA_EXTENSIONS
             {VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_video_encode_queue,
                         {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-#endif  // VK_ENABLE_BETA_EXTENSIONS
             {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_synchronization2, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1085,6 +1092,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_cooperative_matrix,
                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_video_maintenance1,
+                        {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}}})},
             {VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_vertex_attribute_divisor,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -1092,6 +1102,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_calibrated_timestamps,
                                                                      {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_MAINTENANCE_6_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance6, {})},
             {VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
             {VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
             {VK_IMG_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})},
@@ -1113,14 +1124,6 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_negative_viewport_height, {})},
             {VK_AMD_GPU_SHADER_HALF_FLOAT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_gpu_shader_half_float, {})},
             {VK_AMD_SHADER_BALLOT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_ballot, {})},
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-            {VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME,
-             DeviceInfo(&DeviceExtensions::vk_ext_video_encode_h264,
-                        {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
-            {VK_EXT_VIDEO_ENCODE_H265_EXTENSION_NAME,
-             DeviceInfo(&DeviceExtensions::vk_ext_video_encode_h265,
-                        {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
-#endif  // VK_ENABLE_BETA_EXTENSIONS
             {VK_AMD_TEXTURE_GATHER_BIAS_LOD_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_amd_texture_gather_bias_lod,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -1795,6 +1798,9 @@ struct DeviceExtensions : public InstanceExtensions {
                           {&DeviceExtensions::vk_khr_timeline_semaphore, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME}}})},
             {VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_render_areas, {})},
+            {VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_nv_per_stage_descriptor_set,
+                        {{{&DeviceExtensions::vk_khr_maintenance6, VK_KHR_MAINTENANCE_6_EXTENSION_NAME}}})},
             {VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_qcom_image_processing2,
                         {{{&DeviceExtensions::vk_qcom_image_processing, VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME}}})},
@@ -1928,6 +1934,8 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
     VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,
     VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,
+    VK_KHR_VIDEO_ENCODE_H264_EXTENSION_NAME,
+    VK_KHR_VIDEO_ENCODE_H265_EXTENSION_NAME,
     VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME,
     VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
     VK_KHR_MULTIVIEW_EXTENSION_NAME,
@@ -2001,9 +2009,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     VK_KHR_PRESENT_ID_EXTENSION_NAME,
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
     VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME,
     VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME,
@@ -2016,8 +2022,10 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_MAINTENANCE_5_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
     VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME,
+    VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME,
     VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE_6_EXTENSION_NAME,
     VK_NV_GLSL_SHADER_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
     VK_IMG_FILTER_CUBIC_EXTENSION_NAME,
@@ -2034,10 +2042,6 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME,
     VK_AMD_GPU_SHADER_HALF_FLOAT_EXTENSION_NAME,
     VK_AMD_SHADER_BALLOT_EXTENSION_NAME,
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME,
-    VK_EXT_VIDEO_ENCODE_H265_EXTENSION_NAME,
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     VK_AMD_TEXTURE_GATHER_BIAS_LOD_EXTENSION_NAME,
     VK_AMD_SHADER_INFO_EXTENSION_NAME,
     VK_AMD_SHADER_IMAGE_LOAD_STORE_LOD_EXTENSION_NAME,
@@ -2259,6 +2263,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME,
     VK_NV_LOW_LATENCY_2_EXTENSION_NAME,
     VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME,
+    VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME,
     VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME,
     VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME,
     VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME,

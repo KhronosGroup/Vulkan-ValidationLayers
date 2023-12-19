@@ -1939,7 +1939,6 @@ void PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* p
 void PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo,
                                    const RecordObject& record_obj) override;
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void PreCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device,
                                                       const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
                                                       VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
@@ -1956,7 +1955,6 @@ void PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideo
 void PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                      const RecordObject& record_obj) override;
 
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 void PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
                                   const RecordObject& record_obj) override;
 
@@ -2104,6 +2102,50 @@ void PreCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestamp
 void PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                               uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
+
+void PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                            const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                            const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                             const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                             const RecordObject& record_obj) override;
+
+void PreCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                        const RecordObject& record_obj) override;
+
+void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                           const RecordObject& record_obj) override;
+
+void PostCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                            const RecordObject& record_obj) override;
+
+void PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+    const RecordObject& record_obj) override;
+
+void PostCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+    const RecordObject& record_obj) override;
+
+void PreCallRecordCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
+                                                    const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+                                                    const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
+                                                     const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+                                                     const RecordObject& record_obj) override;
+
+void PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject& record_obj) override;
 
 void PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,

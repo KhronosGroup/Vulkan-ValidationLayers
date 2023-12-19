@@ -502,7 +502,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                 // If descriptorCount is not 0, stageFlags must be a valid combination of VkShaderStageFlagBits values
                 if ((pCreateInfo->pBindings[i].stageFlags != 0) &&
                     ((pCreateInfo->pBindings[i].stageFlags & (~AllVkShaderStageFlagBits)) != 0)) {
-                    skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorCount-00283", device,
+                    skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorCount-09465", device,
                                      binding_loc.dot(Field::descriptorCount),
                                      "is %" PRIu32 " but stageFlags is invalid (0x%" PRIx32 ").",
                                      pCreateInfo->pBindings[i].descriptorCount, pCreateInfo->pBindings[i].stageFlags);

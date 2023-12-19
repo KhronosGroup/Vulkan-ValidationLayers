@@ -624,7 +624,11 @@ void FreePnextChain(const void *pNext) {
                             memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
                         }
                     }
-                '''
+                ''',
+                # TODO: VkPushDescriptorSetWithTemplateInfoKHR needs a custom constructor to handle pData
+                # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7169
+                'VkPushDescriptorSetWithTemplateInfoKHR': '''
+                ''',
             }
 
         custom_copy_txt = {

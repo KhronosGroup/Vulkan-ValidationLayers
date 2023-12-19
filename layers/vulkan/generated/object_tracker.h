@@ -768,7 +768,6 @@ bool PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMe
                                   const ErrorObject& error_obj) const override;
 bool PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo,
                                     const ErrorObject& error_obj) const override;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateGetEncodedVideoSessionParametersKHR(VkDevice device,
                                                         const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
                                                         VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
@@ -776,7 +775,6 @@ bool PreCallValidateGetEncodedVideoSessionParametersKHR(VkDevice device,
                                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                       const ErrorObject& error_obj) const override;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
                                     const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
@@ -807,6 +805,23 @@ bool PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuff
                                            VkIndexType indexType, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                   VkSubresourceLayout2KHR* pLayout, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                              const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                         const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                             const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+    const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
+                                                      const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const ErrorObject& error_obj) const override;
 void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
                                                 const RecordObject& record_obj) override;

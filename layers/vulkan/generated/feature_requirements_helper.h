@@ -488,6 +488,8 @@ enum class Feature {
     maintenance4,
     // VkPhysicalDeviceMaintenance5FeaturesKHR
     maintenance5,
+    // VkPhysicalDeviceMaintenance6FeaturesKHR
+    maintenance6,
     // VkPhysicalDeviceMemoryDecompressionFeaturesNV
     memoryDecompression,
     // VkPhysicalDeviceMemoryPriorityFeaturesEXT
@@ -536,6 +538,10 @@ enum class Feature {
     opticalFlow,
     // VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT
     pageableDeviceLocalMemory,
+    // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
+    dynamicPipelineLayout,
+    // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
+    perStageDescriptorSet,
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
     performanceCounterMultipleQueryPools,
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
@@ -796,6 +802,8 @@ enum class Feature {
     vertexAttributeInstanceRateZeroDivisor,
     // VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
     vertexInputDynamicState,
+    // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
+    videoMaintenance1,
     // VkPhysicalDeviceVulkan12Features
     descriptorIndexing,
     // VkPhysicalDeviceVulkan12Features

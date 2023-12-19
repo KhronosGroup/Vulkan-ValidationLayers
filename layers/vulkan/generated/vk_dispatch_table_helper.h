@@ -694,7 +694,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubMapMemory2KHR(VkDevice device, const V
 static VKAPI_ATTR VkResult VKAPI_CALL StubUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
     return VK_SUCCESS;
 }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) {
@@ -706,7 +705,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetEncodedVideoSessionParametersKHR(
     return VK_SUCCESS;
 }
 static VKAPI_ATTR void VKAPI_CALL StubCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {}
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                       const VkDependencyInfo* pDependencyInfo) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -769,6 +767,19 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetCalibratedTimestampsKHR(VkDevice de
                                                                      const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                                      uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
     return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                                const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                           const VkPushConstantsInfoKHR* pPushConstantsInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                               const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo) {
 }
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDebugReportCallbackEXT(VkInstance instance,
                                                                        const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
@@ -1945,6 +1956,12 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkGetDeviceImageSubresourceLayoutKHR", {"VK_KHR_maintenance5"}},
     {"vkGetImageSubresourceLayout2KHR", {"VK_KHR_maintenance5"}},
     {"vkGetCalibratedTimestampsKHR", {"VK_KHR_calibrated_timestamps"}},
+    {"vkCmdBindDescriptorSets2KHR", {"VK_KHR_maintenance6"}},
+    {"vkCmdPushConstants2KHR", {"VK_KHR_maintenance6"}},
+    {"vkCmdPushDescriptorSet2KHR", {"VK_KHR_maintenance6"}},
+    {"vkCmdPushDescriptorSetWithTemplate2KHR", {"VK_KHR_maintenance6"}},
+    {"vkCmdSetDescriptorBufferOffsets2EXT", {"VK_KHR_maintenance6"}},
+    {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", {"VK_KHR_maintenance6"}},
     {"vkDebugMarkerSetObjectTagEXT", {"VK_EXT_debug_marker"}},
     {"vkDebugMarkerSetObjectNameEXT", {"VK_EXT_debug_marker"}},
     {"vkCmdDebugMarkerBeginEXT", {"VK_EXT_debug_marker"}},
@@ -3004,7 +3021,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->UnmapMemory2KHR == nullptr) {
         table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)StubUnmapMemory2KHR;
     }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->GetEncodedVideoSessionParametersKHR =
         (PFN_vkGetEncodedVideoSessionParametersKHR)gpa(device, "vkGetEncodedVideoSessionParametersKHR");
     if (table->GetEncodedVideoSessionParametersKHR == nullptr) {
@@ -3015,7 +3031,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdEncodeVideoKHR == nullptr) {
         table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)StubCmdEncodeVideoKHR;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     table->CmdSetEvent2KHR = (PFN_vkCmdSetEvent2KHR)gpa(device, "vkCmdSetEvent2KHR");
     if (table->CmdSetEvent2KHR == nullptr) {
         table->CmdSetEvent2KHR = (PFN_vkCmdSetEvent2KHR)StubCmdSetEvent2KHR;
@@ -3115,6 +3130,35 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)gpa(device, "vkGetCalibratedTimestampsKHR");
     if (table->GetCalibratedTimestampsKHR == nullptr) {
         table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)StubGetCalibratedTimestampsKHR;
+    }
+    table->CmdBindDescriptorSets2KHR = (PFN_vkCmdBindDescriptorSets2KHR)gpa(device, "vkCmdBindDescriptorSets2KHR");
+    if (table->CmdBindDescriptorSets2KHR == nullptr) {
+        table->CmdBindDescriptorSets2KHR = (PFN_vkCmdBindDescriptorSets2KHR)StubCmdBindDescriptorSets2KHR;
+    }
+    table->CmdPushConstants2KHR = (PFN_vkCmdPushConstants2KHR)gpa(device, "vkCmdPushConstants2KHR");
+    if (table->CmdPushConstants2KHR == nullptr) {
+        table->CmdPushConstants2KHR = (PFN_vkCmdPushConstants2KHR)StubCmdPushConstants2KHR;
+    }
+    table->CmdPushDescriptorSet2KHR = (PFN_vkCmdPushDescriptorSet2KHR)gpa(device, "vkCmdPushDescriptorSet2KHR");
+    if (table->CmdPushDescriptorSet2KHR == nullptr) {
+        table->CmdPushDescriptorSet2KHR = (PFN_vkCmdPushDescriptorSet2KHR)StubCmdPushDescriptorSet2KHR;
+    }
+    table->CmdPushDescriptorSetWithTemplate2KHR =
+        (PFN_vkCmdPushDescriptorSetWithTemplate2KHR)gpa(device, "vkCmdPushDescriptorSetWithTemplate2KHR");
+    if (table->CmdPushDescriptorSetWithTemplate2KHR == nullptr) {
+        table->CmdPushDescriptorSetWithTemplate2KHR =
+            (PFN_vkCmdPushDescriptorSetWithTemplate2KHR)StubCmdPushDescriptorSetWithTemplate2KHR;
+    }
+    table->CmdSetDescriptorBufferOffsets2EXT =
+        (PFN_vkCmdSetDescriptorBufferOffsets2EXT)gpa(device, "vkCmdSetDescriptorBufferOffsets2EXT");
+    if (table->CmdSetDescriptorBufferOffsets2EXT == nullptr) {
+        table->CmdSetDescriptorBufferOffsets2EXT = (PFN_vkCmdSetDescriptorBufferOffsets2EXT)StubCmdSetDescriptorBufferOffsets2EXT;
+    }
+    table->CmdBindDescriptorBufferEmbeddedSamplers2EXT =
+        (PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT)gpa(device, "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT");
+    if (table->CmdBindDescriptorBufferEmbeddedSamplers2EXT == nullptr) {
+        table->CmdBindDescriptorBufferEmbeddedSamplers2EXT =
+            (PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT)StubCmdBindDescriptorBufferEmbeddedSamplers2EXT;
     }
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gpa(device, "vkDebugMarkerSetObjectTagEXT");
     if (table->DebugMarkerSetObjectTagEXT == nullptr) {
@@ -4705,14 +4749,12 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
         table->GetPhysicalDeviceFragmentShadingRatesKHR =
             (PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR)StubGetPhysicalDeviceFragmentShadingRatesKHR;
     }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = (PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR)gpa(
         instance, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR");
     if (table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR == nullptr) {
         table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR =
             (PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR)StubGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
     }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     table->GetPhysicalDeviceCooperativeMatrixPropertiesKHR =
         (PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR");
     if (table->GetPhysicalDeviceCooperativeMatrixPropertiesKHR == nullptr) {

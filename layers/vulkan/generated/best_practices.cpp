@@ -1569,7 +1569,6 @@ void BestPractices::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryM
     }
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {
@@ -1595,7 +1594,6 @@ void BestPractices::PostCallRecordGetEncodedVideoSessionParametersKHR(
         LogErrorCode(record_obj);
     }
 }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                   const RecordObject& record_obj) {

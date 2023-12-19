@@ -65,9 +65,7 @@ template<> std::vector<VkPresentModeKHR> ValidationObject::ValidParamValues() co
 template<> std::vector<VkColorSpaceKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkQueueGlobalPriorityKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkFragmentShadingRateCombinerOpKHR> ValidationObject::ValidParamValues() const;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() const;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkTimeDomainKHR> ValidationObject::ValidParamValues() const;

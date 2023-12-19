@@ -493,6 +493,8 @@ struct DeviceFeatures {
     bool maintenance4;
     // VkPhysicalDeviceMaintenance5FeaturesKHR
     bool maintenance5;
+    // VkPhysicalDeviceMaintenance6FeaturesKHR
+    bool maintenance6;
     // VkPhysicalDeviceMemoryDecompressionFeaturesNV
     bool memoryDecompression;
     // VkPhysicalDeviceMemoryPriorityFeaturesEXT
@@ -541,6 +543,10 @@ struct DeviceFeatures {
     bool opticalFlow;
     // VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT
     bool pageableDeviceLocalMemory;
+    // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
+    bool dynamicPipelineLayout;
+    // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
+    bool perStageDescriptorSet;
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
     bool performanceCounterMultipleQueryPools;
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
@@ -801,6 +807,8 @@ struct DeviceFeatures {
     bool vertexAttributeInstanceRateZeroDivisor;
     // VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
     bool vertexInputDynamicState;
+    // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
+    bool videoMaintenance1;
     // VkPhysicalDeviceVulkan12Features
     bool descriptorIndexing;
     // VkPhysicalDeviceVulkan12Features

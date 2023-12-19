@@ -605,7 +605,6 @@ VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations);
 VkResult DispatchMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData);
 VkResult DispatchUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo);
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 VkResult DispatchGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties);
@@ -614,7 +613,6 @@ VkResult DispatchGetEncodedVideoSessionParametersKHR(VkDevice device,
                                                      VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
                                                      size_t* pDataSize, void* pData);
 void DispatchCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo);
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 void DispatchCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo);
 void DispatchCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask);
 void DispatchCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -655,6 +653,15 @@ VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice p
 VkResult DispatchGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                             uint64_t* pMaxDeviation);
+void DispatchCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo);
+void DispatchCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo);
+void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo);
+void DispatchCmdPushDescriptorSetWithTemplate2KHR(VkCommandBuffer commandBuffer,
+                                                  const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo);
+void DispatchCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
+                                               const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo);
+void DispatchCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo);
 VkResult DispatchCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback);
 void DispatchDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
