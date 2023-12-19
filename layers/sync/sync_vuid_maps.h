@@ -80,6 +80,8 @@ enum class ImageError {
     kSeparateDepthWithStencilLayout,
     kSeparateStencilhWithDepthLayout,
     kRenderPassMismatch,
+    kRenderPassMismatchColorUnused,
+    kRenderPassMismatchAhbZero,
     kRenderPassLayoutChange,
 };
 
