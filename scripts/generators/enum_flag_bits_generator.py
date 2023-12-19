@@ -98,6 +98,8 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
         for bitmask in bitmasks:
             if bitmask.flagName == 'VkGeometryInstanceFlagsKHR':
                 continue # only called in VkAccelerationStructureInstanceKHR which is never called anywhere explicitly
+            if bitmask.flagName == 'VkShaderStageFlags':
+                continue # Special case handled below
             elif len(bitmask.flags) == 0:
                 continue # some bitmask are empty and used for reserve in the future
 
@@ -111,6 +113,12 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
         out.append('\n')
         out.append('// mask of all the VK_PIPELINE_STAGE_*_SHADER_BIT stages\n')
         out.append(f'const VkPipelineStageFlagBits2 AllVkPipelineShaderStageBits2 = {"|".join([flag.name for flag in self.vk.bitmasks["VkPipelineStageFlagBits2"].flags if "_SHADER_BIT" in flag.name])};\n')
+        out.append('\n')
+
+        # Special edge cases
+        out.append('// VK_SHADER_STAGE_ALL is special bit that is the collection of all bits.\n')
+        out.append('const VkShaderStageFlags AllVkShaderStageFlagBits = VK_SHADER_STAGE_ALL;\n')
+        out.append(f'const VkShaderStageFlags AllVkShaderStageFlagBitsExcludingStageAll = {"|".join([flag.name for flag in self.vk.bitmasks["VkShaderStageFlagBits"].flags if flag.name != "VK_SHADER_STAGE_ALL"])};\n')
 
         out.append('\n')
         flagBitsAsArray = ['VkQueueFlagBits', 'VkShaderStageFlagBits']

@@ -1147,3 +1147,21 @@ TEST_F(PositiveDescriptors, VariableDescriptorCount) {
     VkDescriptorSet descriptor_set;
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
 }
+
+TEST_F(PositiveDescriptors, ShaderStageAll) {
+    TEST_DESCRIPTION("VkDescriptorSetLayout stageFlags can be VK_SHADER_STAGE_ALL");
+
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 1;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &dsl_binding;
+    vkt::DescriptorSetLayout(*m_device, ds_layout_ci);
+}

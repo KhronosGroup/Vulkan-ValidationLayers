@@ -2818,7 +2818,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
     dsl_binding.binding = 1;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = 0xBADFFFFF;
+    dsl_binding.stageFlags = 0x3BADFFFF;
     dsl_binding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
