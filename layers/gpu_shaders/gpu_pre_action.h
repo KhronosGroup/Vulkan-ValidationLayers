@@ -16,7 +16,7 @@
 
 #include "gpu_shaders_constants.h"
 
-#define ERROR_RECORD_WORDS_COUNT 3
+#define ERROR_RECORD_WORDS_COUNT kInstValidationOutError + 4
 
 layout(set = 0, binding = 0) buffer OutputBuffer {
     uint flags;
