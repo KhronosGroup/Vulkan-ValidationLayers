@@ -948,7 +948,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
     const auto expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
 
     if (!enabled_features.rayQuery && (access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)) {
-        const auto illegal_pipeline_stages = allVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+        const auto illegal_pipeline_stages = AllVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
         if (stage_mask & illegal_pipeline_stages) {
             // Select right vuid based on enabled extensions
             const auto &vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(access_mask_loc, device_extensions);
