@@ -405,7 +405,7 @@ std::shared_ptr<gpuav::DescriptorSet::State> gpuav::DescriptorSet::GetOutputStat
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = descriptor_count * sizeof(uint32_t);
-    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
