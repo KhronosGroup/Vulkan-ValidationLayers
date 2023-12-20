@@ -19,6 +19,7 @@
 typedef struct {
     bool validate_descriptors;
     bool validate_indirect_buffer;
+    bool validate_copies;
     bool vma_linear_output;
     bool warn_on_robust_oob;
     bool cache_instrumented_shaders;

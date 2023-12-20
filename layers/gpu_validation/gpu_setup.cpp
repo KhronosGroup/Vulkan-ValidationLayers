@@ -592,84 +592,91 @@ void gpuav::Validator::Destroy(AccelerationStructureBuildValidationInfo &as_vali
     }
 }
 
-void gpuav::CommonDrawResources::Destroy(VkDevice device) {
+void gpuav::PreDrawResources::SharedResources::Destroy(gpuav::Validator &validator) {
     if (shader_module != VK_NULL_HANDLE) {
-        DispatchDestroyShaderModule(device, shader_module, nullptr);
+        DispatchDestroyShaderModule(validator.device, shader_module, nullptr);
         shader_module = VK_NULL_HANDLE;
     }
     if (ds_layout != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(device, ds_layout, nullptr);
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
         ds_layout = VK_NULL_HANDLE;
     }
     if (pipeline_layout != VK_NULL_HANDLE) {
-        DispatchDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
         pipeline_layout = VK_NULL_HANDLE;
     }
     auto to_destroy = renderpass_to_pipeline.snapshot();
     for (auto &entry : to_destroy) {
-        DispatchDestroyPipeline(device, entry.second, nullptr);
+        DispatchDestroyPipeline(validator.device, entry.second, nullptr);
         renderpass_to_pipeline.erase(entry.first);
     }
     if (shader_object != VK_NULL_HANDLE) {
-        DispatchDestroyShaderEXT(device, shader_object, nullptr);
+        DispatchDestroyShaderEXT(validator.device, shader_object, nullptr);
         shader_object = VK_NULL_HANDLE;
     }
-    initialized = false;
 }
 
-void gpuav::CommonDispatchResources::Destroy(VkDevice device) {
-    if (shader_module != VK_NULL_HANDLE) {
-        DispatchDestroyShaderModule(device, shader_module, nullptr);
-        shader_module = VK_NULL_HANDLE;
-    }
+void gpuav::PreDispatchResources::SharedResources::Destroy(gpuav::Validator &validator) {
     if (ds_layout != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(device, ds_layout, nullptr);
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
         ds_layout = VK_NULL_HANDLE;
     }
     if (pipeline_layout != VK_NULL_HANDLE) {
-        DispatchDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
         pipeline_layout = VK_NULL_HANDLE;
     }
     if (pipeline != VK_NULL_HANDLE) {
-        DispatchDestroyPipeline(device, pipeline, nullptr);
+        DispatchDestroyPipeline(validator.device, pipeline, nullptr);
         pipeline = VK_NULL_HANDLE;
     }
     if (shader_object != VK_NULL_HANDLE) {
-        DispatchDestroyShaderEXT(device, shader_object, nullptr);
+        DispatchDestroyShaderEXT(validator.device, shader_object, nullptr);
         shader_object = VK_NULL_HANDLE;
     }
-    initialized = false;
 }
 
-void gpuav::CommonTraceRaysResources::Destroy(VkDevice device, VmaAllocator &vmaAllocator) {
-    if (shader_module != VK_NULL_HANDLE) {
-        DispatchDestroyShaderModule(device, shader_module, nullptr);
-        shader_module = VK_NULL_HANDLE;
-    }
+void gpuav::PreTraceRaysResources::SharedResources::Destroy(gpuav::Validator &validator) {
     if (ds_layout != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(device, ds_layout, nullptr);
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
         ds_layout = VK_NULL_HANDLE;
     }
     if (pipeline_layout != VK_NULL_HANDLE) {
-        DispatchDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
         pipeline_layout = VK_NULL_HANDLE;
     }
     if (pipeline != VK_NULL_HANDLE) {
-        DispatchDestroyPipeline(device, pipeline, nullptr);
+        DispatchDestroyPipeline(validator.device, pipeline, nullptr);
         pipeline = VK_NULL_HANDLE;
     }
     if (sbt_buffer != VK_NULL_HANDLE) {
-        vmaDestroyBuffer(vmaAllocator, sbt_buffer, sbt_allocation);
+        vmaDestroyBuffer(validator.vmaAllocator, sbt_buffer, sbt_allocation);
         sbt_buffer = VK_NULL_HANDLE;
         sbt_allocation = VK_NULL_HANDLE;
         sbt_address = 0;
     }
     if (sbt_pool) {
-        vmaDestroyPool(vmaAllocator, sbt_pool);
+        vmaDestroyPool(validator.vmaAllocator, sbt_pool);
         sbt_pool = VK_NULL_HANDLE;
     }
+}
 
-    initialized = false;
+void gpuav::PreCopyBufferToImageResources::SharedResources::Destroy(gpuav::Validator &validator) {
+    if (ds_layout != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(validator.device, ds_layout, nullptr);
+        ds_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(validator.device, pipeline_layout, nullptr);
+        pipeline_layout = VK_NULL_HANDLE;
+    }
+    if (pipeline != VK_NULL_HANDLE) {
+        DispatchDestroyPipeline(validator.device, pipeline, nullptr);
+        pipeline = VK_NULL_HANDLE;
+    }
+    if (copy_regions_pool != VK_NULL_HANDLE) {
+        vmaDestroyPool(validator.vmaAllocator, copy_regions_pool);
+        copy_regions_pool = VK_NULL_HANDLE;
+    }
 }
 
 void gpuav::AccelerationStructureBuildValidationState::Destroy(VkDevice device, VmaAllocator &vmaAllocator) {
@@ -788,6 +795,22 @@ void gpuav::PreTraceRaysResources::Destroy(gpuav::Validator &validator) {
         validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
         desc_set = VK_NULL_HANDLE;
         desc_pool = VK_NULL_HANDLE;
+    }
+
+    CommandResources::Destroy(validator);
+}
+
+void gpuav::PreCopyBufferToImageResources::Destroy(gpuav::Validator &validator) {
+    if (desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
+        desc_set = VK_NULL_HANDLE;
+        desc_pool = VK_NULL_HANDLE;
+    }
+
+    if (copy_src_regions_buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(validator.vmaAllocator, copy_src_regions_buffer, copy_src_regions_allocation);
+        copy_src_regions_buffer = VK_NULL_HANDLE;
+        copy_src_regions_allocation = VK_NULL_HANDLE;
     }
 
     CommandResources::Destroy(validator);

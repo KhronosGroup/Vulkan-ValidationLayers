@@ -181,7 +181,8 @@ const int kInstErrorPreDrawValidate = 5;
 const int kInstErrorPreDispatchValidate = 6;
 const int kInstErrorBindlessDestroyed = 7;
 const int kInstErrorPreTraceRaysKhrValidate = 8;
-const int kInstErrorMax = 8;
+const int kInstErrorCopyBufferToImage = 9;
+const int kInstErrorMax = 9;
 
 // Direct Input Buffer Offsets
 //
@@ -241,16 +242,21 @@ const int kDebugInputBuffAddrLengthOffset = 0;
 const int pre_draw_count_exceeds_bufsize_error = 1;
 const int pre_draw_count_exceeds_limit_error = 2;
 const int pre_draw_first_instance_error = 3;
-const int pre_dispatch_count_exceeds_limit_x_error = 1;
-const int pre_dispatch_count_exceeds_limit_y_error = 2;
-const int pre_dispatch_count_exceeds_limit_z_error = 3;
-const int pre_trace_rays_query_dimensions_exceeds_width_limit = 1;
-const int pre_trace_rays_query_dimensions_exceeds_height_limit = 2;
-const int pre_trace_rays_query_dimensions_exceeds_depth_limit = 3;
+
 const int pre_draw_group_count_exceeds_limit_x_error = 4;
 const int pre_draw_group_count_exceeds_limit_y_error = 5;
 const int pre_draw_group_count_exceeds_limit_z_error = 6;
 const int pre_draw_group_count_exceeds_total_error = 7;
+
+const int pre_dispatch_count_exceeds_limit_x_error = 1;
+const int pre_dispatch_count_exceeds_limit_y_error = 2;
+const int pre_dispatch_count_exceeds_limit_z_error = 3;
+
+const int pre_trace_rays_query_dimensions_exceeds_width_limit = 1;
+const int pre_trace_rays_query_dimensions_exceeds_height_limit = 2;
+const int pre_trace_rays_query_dimensions_exceeds_depth_limit = 3;
+
+const int pre_copy_buffer_to_image_out_of_range_value = 1;
 
 // These values select which pre-draw validation will be performed
 const int pre_draw_select_count_buffer = 1;

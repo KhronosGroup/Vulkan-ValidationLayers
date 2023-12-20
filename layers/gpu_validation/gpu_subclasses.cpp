@@ -155,52 +155,49 @@ void gpuav::CommandBuffer::ResetCBState() {
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void gpuav::CommandBuffer::Process(VkQueue queue, const Location &loc) {
     auto *device_state = static_cast<Validator *>(dev_data);
-    if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
-        uint32_t draw_index = 0;
-        uint32_t compute_index = 0;
-        uint32_t ray_trace_index = 0;
+    uint32_t draw_index = 0;
+    uint32_t compute_index = 0;
+    uint32_t ray_trace_index = 0;
 
-        for (auto &cmd_info : per_command_resources) {
-            uint32_t operation_index = 0;
-            if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                operation_index = draw_index++;
-            } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                operation_index = compute_index++;
-            } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-                operation_index = ray_trace_index++;
-            } else {
-                assert(false);
-            }
-            cmd_info->LogErrorIfAny(*device_state, queue, VkHandle(), operation_index);
+    for (auto &cmd_info : per_command_resources) {
+        uint32_t operation_index = 0;
+        if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+            operation_index = draw_index++;
+        } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+            operation_index = compute_index++;
+        } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+            operation_index = ray_trace_index++;
         }
 
-        // For each vkCmdBindDescriptorSets()...
-        // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
-        // checking them multiple times.
-        vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
-        for (auto &di_info : di_input_buffer_list) {
-            Location draw_loc(vvl::Func::vkCmdDraw);
-            // For each descriptor set ...
-            for (auto &set : di_info.descriptor_set_buffers) {
-                if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
-                    continue;
-                }
-                validated_desc_sets.emplace(set.state->VkHandle());
-                assert(set.output_state);
+        cmd_info->LogErrorIfAny(*device_state, queue, VkHandle(), operation_index);
+    }
 
-                vvl::DescriptorValidator context(*device_state, *this, *set.state, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
-                auto used_descs = set.output_state->UsedDescriptors(*set.state);
-                // For each used binding ...
-                for (const auto &u : used_descs) {
-                    auto iter = set.binding_req.find(u.first);
-                    vvl::DescriptorBindingInfo binding_info;
-                    binding_info.first = u.first;
-                    while (iter != set.binding_req.end() && iter->first == u.first) {
-                        binding_info.second.emplace_back(iter->second);
-                        ++iter;
-                    }
-                    context.ValidateBinding(binding_info, u.second);
+    // For each vkCmdBindDescriptorSets()...
+    // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
+    // checking them multiple times.
+    vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
+    for (auto &di_info : di_input_buffer_list) {
+        Location draw_loc(vvl::Func::vkCmdDraw);
+        // For each descriptor set ...
+        for (auto &set : di_info.descriptor_set_buffers) {
+            if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
+                continue;
+            }
+            validated_desc_sets.emplace(set.state->VkHandle());
+            assert(set.output_state);
+
+            vvl::DescriptorValidator context(*device_state, *this, *set.state, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
+            auto used_descs = set.output_state->UsedDescriptors(*set.state);
+            // For each used binding ...
+            for (const auto &u : used_descs) {
+                auto iter = set.binding_req.find(u.first);
+                vvl::DescriptorBindingInfo binding_info;
+                binding_info.first = u.first;
+                while (iter != set.binding_req.end() && iter->first == u.first) {
+                    binding_info.second.emplace_back(iter->second);
+                    ++iter;
                 }
+                context.ValidateBinding(binding_info, u.second);
             }
         }
     }

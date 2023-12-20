@@ -23,6 +23,10 @@
 #include "gpu_validation/gpu_subclasses.h"
 #include "state_tracker/pipeline_state.h"
 
+#include <typeinfo>
+#include <unordered_map>
+#include <memory>
+
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 namespace gpuav {
@@ -95,9 +99,13 @@ class Validator : public gpu_tracker::Validator {
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
 
-    // Allocate per command validation resources
-    [[nodiscard]] CommandResources AllocateCommandResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
-                                                            Func command, const CmdIndirectState* indirect_state = nullptr);
+    // Allocate per action (draw, dispatch, trace rays) command validation resources. Should only be used by action commands
+    [[nodiscard]] CommandResources AllocateActionCommandResources(const VkCommandBuffer cmd_buffer,
+                                                                  const VkPipelineBindPoint bind_point, Func command,
+                                                                  const CmdIndirectState* indirect_state = nullptr);
+    // Allocate memory for the output block that the gpu will use to return any error information
+    [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem);
+
     [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDrawIndirectValidationResources(
         vvl::Func command, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
         VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
@@ -108,12 +116,26 @@ class Validator : public gpu_tracker::Validator {
     [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreTraceRaysValidationResources(vvl::Func command,
                                                                                             VkCommandBuffer cmd_buffer,
                                                                                             VkDeviceAddress indirect_data_address);
+    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreCopyBufferToImageValidationResources(
+        vvl::Func cmd, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2* copy_buffer_to_img_info);
 
   private:
-    void AllocateSharedTraceRaysValidationResources();
-    void AllocateSharedDrawIndirectValidationResources(bool use_shader_objects);
-    void AllocateSharedDispatchIndirectValidationResources(bool use_shader_objects);
+    VkPipeline GetDrawValidationPipeline(PreDrawResources::SharedResources& shared_draw_resources, VkRenderPass render_pass);
+    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources(bool use_shader_objects);
+    PreDispatchResources::SharedResources* GetSharedDispatchIndirectValidationResources(bool use_shader_objects);
+    PreTraceRaysResources::SharedResources* GetSharedTraceRaysValidationResources();
+    PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources();
+
     void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources);
+
+    using TypeInfoRef = std::reference_wrapper<const std::type_info>;
+    struct Hasher {
+        std::size_t operator()(TypeInfoRef code) const { return code.get().hash_code(); }
+    };
+    struct EqualTo {
+        bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
+    };
+    std::unordered_map<TypeInfoRef, std::unique_ptr<SharedValidationResources>, Hasher, EqualTo> shared_validation_resources_map;
 
     // gpu_error_message.cpp
     // ---------------------
@@ -456,9 +478,6 @@ class Validator : public gpu_tracker::Validator {
     VkBool32 shaderInt64 = false;
     std::string instrumented_shader_cache_path{};
     AccelerationStructureBuildValidationState acceleration_structure_validation_state{};
-    CommonDrawResources common_draw_resources{};
-    CommonDispatchResources common_dispatch_resources{};
-    CommonTraceRaysResources common_trace_rays_resources{};
     DeviceMemoryBlock app_buffer_device_addresses{};
     size_t app_bda_buffer_size{};
     uint32_t gpuav_bda_buffer_version = 0;
