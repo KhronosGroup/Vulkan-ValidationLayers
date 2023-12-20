@@ -1699,3 +1699,19 @@ TEST_F(PositivePipeline, ShaderModuleIdentifierZeroLength) {
     pipe.shader_stages_[0].pNext = &moduleIdentifier;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, IgnoredPipelineCreateFlags) {
+    TEST_DESCRIPTION("Create pipeline with invalid flags when allowed");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfoKHR pipelineCreateFlags2 = vku::InitStructHelper();
+    pipelineCreateFlags2.flags = VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT_KHR;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipelineCreateFlags2;
+    pipe.gp_ci_.flags = 0x80000000;
+    pipe.CreateGraphicsPipeline();
+}
