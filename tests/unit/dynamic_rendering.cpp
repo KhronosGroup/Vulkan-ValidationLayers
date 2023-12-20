@@ -6571,3 +6571,123 @@ TEST_F(NegativeDynamicRendering, DynamicRenderingInlineContents) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicRendering, IdentitySwizzleColor) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo();
+    view_info.components.r = VK_COMPONENT_SWIZZLE_G;
+    vkt::ImageView image_view(*m_device, view_info);
+
+    VkRenderingAttachmentInfoKHR attachment = vku::InitStructHelper();
+    attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment.imageView = image_view.handle();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &attachment;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-colorAttachmentCount-09479");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, IdentitySwizzleDepthStencil) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    view_info.components.r = VK_COMPONENT_SWIZZLE_G;
+    vkt::ImageView image_view(*m_device, view_info);
+
+    VkRenderingAttachmentInfoKHR attachment = vku::InitStructHelper();
+    attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachment.imageView = image_view.handle();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &attachment;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-09481");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    rendering_info.pStencilAttachment = &attachment;
+    rendering_info.pDepthAttachment = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pStencilAttachment-09483");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, IdentitySwizzleFragmentShadingRate) {
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "format doesn't support FRAGMENT_SHADING_RATE_ATTACHMENT_BIT";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo();
+    view_info.components.r = VK_COMPONENT_SWIZZLE_G;
+    vkt::ImageView image_view(*m_device, view_info);
+
+    VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
+    fragment_shading_rate.imageView = image_view.handle();
+    fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fragment_shading_rate);
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-09485");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, IdentitySwizzleFragmentDensityMap) {
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "format doesn't support VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo();
+    view_info.components.r = VK_COMPONENT_SWIZZLE_G;
+    vkt::ImageView image_view(*m_device, view_info);
+
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
+    fragment_density_map.imageView = image_view.handle();
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fragment_density_map);
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-09486");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
