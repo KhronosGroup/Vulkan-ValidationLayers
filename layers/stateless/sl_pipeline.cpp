@@ -214,6 +214,12 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             }
         }
 
+        const auto *pipeline_create_flags = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(create_info.pNext);
+        if (!pipeline_create_flags) {
+            skip |= ValidateFlags(create_info_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
+                                  create_info.flags, kOptionalFlags, "VUID-VkGraphicsPipelineCreateInfo-None-09497");
+        }
+
         // Values needed from either dynamic rendering or the subpass description
         uint32_t color_attachment_count = 0;
 
@@ -1358,6 +1364,12 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                     create_info_loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pipelineStageCreationFeedbackCount),
                     "is %" PRIu32 ".", feedback_count);
             }
+        }
+
+        const auto *pipeline_create_flags = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(pCreateInfos[i].pNext);
+        if (!pipeline_create_flags) {
+            skip |= ValidateFlags(create_info_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
+                                  pCreateInfos[i].flags, kOptionalFlags, "VUID-VkComputePipelineCreateInfo-None-09497");
         }
 
         // Make sure compute stage is selected
