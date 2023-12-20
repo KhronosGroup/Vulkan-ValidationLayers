@@ -77,10 +77,9 @@ std::vector<std::shared_ptr<const vvl::ImageView>> ValidationStateTracker::GetAt
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?
 
-template <typename CreateInfo>
-VkFormatFeatureFlags2KHR ValidationStateTracker::GetExternalFormatFeaturesANDROID(const CreateInfo *create_info) const {
+VkFormatFeatureFlags2KHR ValidationStateTracker::GetExternalFormatFeaturesANDROID(const void *pNext) const {
     VkFormatFeatureFlags2KHR format_features = 0;
-    const uint64_t external_format = GetExternalFormat(create_info->pNext);
+    const uint64_t external_format = GetExternalFormat(pNext);
     if ((0 != external_format)) {
         // VUID 01894 will catch if not found in map
         auto it = ahb_ext_formats_map.find(external_format);
@@ -95,22 +94,43 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
     VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties,
     const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
+    uint64_t external_format = 0;
     auto ahb_format_props2 = vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatProperties2ANDROID>(pProperties->pNext);
     if (ahb_format_props2) {
-        ahb_ext_formats_map.insert(ahb_format_props2->externalFormat, ahb_format_props2->formatFeatures);
+        external_format = ahb_format_props2->externalFormat;
+        ahb_ext_formats_map.insert(external_format, ahb_format_props2->formatFeatures);
     } else {
         auto ahb_format_props = vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
         if (ahb_format_props) {
-            ahb_ext_formats_map.insert(ahb_format_props->externalFormat,
-                                       static_cast<VkFormatFeatureFlags2KHR>(ahb_format_props->formatFeatures));
+            external_format = ahb_format_props->externalFormat;
+            ahb_ext_formats_map.insert(external_format, static_cast<VkFormatFeatureFlags2KHR>(ahb_format_props->formatFeatures));
+        }
+    }
+
+    // For external format resolve, we need to also track externalFormat with its color attachment property
+    if (enabled_features.externalFormatResolve) {
+        auto ahb_format_resolve_props =
+            vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatResolvePropertiesANDROID>(pProperties->pNext);
+        if (ahb_format_resolve_props && external_format != 0) {
+            // easy case, caller provided both structs for us
+            ahb_ext_resolve_formats_map.insert(external_format, ahb_format_resolve_props->colorAttachmentFormat);
+        } else {
+            // If caller didn't provide both struct, re-call for them
+            VkAndroidHardwareBufferFormatResolvePropertiesANDROID new_ahb_format_resolve_props = vku::InitStructHelper();
+            VkAndroidHardwareBufferFormatPropertiesANDROID new_ahb_format_props =
+                vku::InitStructHelper(&new_ahb_format_resolve_props);
+            VkAndroidHardwareBufferPropertiesANDROID new_ahb_props = vku::InitStructHelper(&new_ahb_format_props);
+            DispatchGetAndroidHardwareBufferPropertiesANDROID(device, buffer, &new_ahb_props);
+            ahb_ext_resolve_formats_map.insert(new_ahb_format_props.externalFormat,
+                                               new_ahb_format_resolve_props.colorAttachmentFormat);
         }
     }
 }
 
 #else
 
-template <typename CreateInfo>
-VkFormatFeatureFlags2KHR ValidationStateTracker::GetExternalFormatFeaturesANDROID(const CreateInfo *create_info) const {
+VkFormatFeatureFlags2KHR ValidationStateTracker::GetExternalFormatFeaturesANDROID(const void *pNext) const {
+    (void)pNext;
     return 0;
 }
 
@@ -202,7 +222,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     if (VK_SUCCESS != record_obj.result) return;
     VkFormatFeatureFlags2KHR format_features = 0;
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
+        format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
     if (format_features == 0) {
         format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
@@ -4185,7 +4205,7 @@ void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(VkDevice
         format_features = GetPotentialFormatFeatures(pCreateInfo->format);
     } else if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         // If format is VK_FORMAT_UNDEFINED, format_features will be set by external AHB features
-        format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
+        format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
 
     Add(std::make_shared<vvl::SamplerYcbcrConversion>(*pYcbcrConversion, pCreateInfo, format_features));
