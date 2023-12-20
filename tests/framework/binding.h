@@ -1002,6 +1002,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);
     void DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo);
+    void EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
 
     void QueueCommandBuffer(bool check_success = true);

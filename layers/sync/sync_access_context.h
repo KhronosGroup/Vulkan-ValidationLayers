@@ -23,6 +23,8 @@
 
 namespace vvl {
 class Buffer;
+class VideoSession;
+class VideoPictureResource;
 }  // namespace vvl
 
 namespace syncval_state {
@@ -262,6 +264,8 @@ class AccessContext {
                               SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
     HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
+    HazardResult DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
+                              SyncStageAccessIndex current_usage) const;
     HazardResult DetectHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                               const VkExtent3D &extent, bool is_depth_sliced, SyncStageAccessIndex current_usage,
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
@@ -318,6 +322,8 @@ class AccessContext {
                            ResourceUsageTag tag);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTag tag);
+    void UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
+                           SyncStageAccessIndex current_usage, ResourceUsageTag tag);
     void ResolveChildContexts(const std::vector<AccessContext> &contexts);
 
     void ImportAsyncContexts(const AccessContext &from);

@@ -62,7 +62,7 @@ Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCr
       requirements(GetMemoryRequirements(dev_data, buff)),
       usage(GetBufferUsageFlags(createInfo)),
       supported_video_profiles(dev_data->video_profile_cache_.Get(
-          dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+          dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
         tracker_.emplace<BindableSparseMemoryTracker>(&requirements,
                                                       (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);

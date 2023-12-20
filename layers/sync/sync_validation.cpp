@@ -2156,6 +2156,230 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     }
 }
 
+bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
+                                                     const ErrorObject &error_obj) const {
+    bool skip = false;
+    const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    if (!cb_state) return skip;
+    const auto *cb_access_context = &cb_state->access_context;
+
+    const auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+    if (!context) return skip;
+
+    const auto vs_state = cb_state->bound_video_session.get();
+    if (!vs_state) return skip;
+
+    const Location decode_info_loc = error_obj.location.dot(Field::pDecodeInfo);
+
+    auto src_buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
+    if (src_buffer) {
+        const ResourceAccessRange src_range = MakeRange(*src_buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
+        auto hazard = context->DetectHazard(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range);
+        if (hazard.IsHazard()) {
+            // PHASE1 TODO -- add tag information to log msg when useful.
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), src_buffer->buffer(), decode_info_loc.dot(Field::srcBuffer),
+                             "Hazard %s for bitstream buffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                             FormatHandle(pDecodeInfo->srcBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
+        }
+    }
+
+    auto dst_resource = vvl::VideoPictureResource(this, pDecodeInfo->dstPictureResource);
+    if (dst_resource) {
+        auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
+        if (hazard.IsHazard()) {
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dst_resource.image_view_state->image_view(),
+                             decode_info_loc.dot(Field::dstPictureResource), "Hazard %s for decode output picture. Access info %s.",
+                             string_SyncHazard(hazard.Hazard()), cb_access_context->FormatHazard(hazard).c_str());
+        }
+    }
+
+    if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
+        auto setup_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+        if (setup_resource && (setup_resource != dst_resource)) {
+            auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
+            if (hazard.IsHazard()) {
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), setup_resource.image_view_state->image_view(),
+                                 decode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource),
+                                 "Hazard %s for reconstructed picture. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                                 cb_access_context->FormatHazard(hazard).c_str());
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
+        if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
+            auto reference_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+            if (reference_resource) {
+                auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
+                if (hazard.IsHazard()) {
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), reference_resource.image_view_state->image_view(),
+                                     decode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource),
+                                     "Hazard %s for reference picture #%u. Access info %s.", string_SyncHazard(hazard.Hazard()), i,
+                                     cb_access_context->FormatHazard(hazard).c_str());
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
+                                                   const RecordObject &record_obj) {
+    auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    if (!cb_state) return;
+    auto *cb_access_context = &cb_state->access_context;
+
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
+    auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+
+    const auto vs_state = cb_state->bound_video_session.get();
+    if (!vs_state) return;
+
+    auto src_buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
+    if (src_buffer) {
+        const ResourceAccessRange src_range = MakeRange(*src_buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range, tag);
+    }
+
+    auto dst_resource = vvl::VideoPictureResource(this, pDecodeInfo->dstPictureResource);
+    if (dst_resource) {
+        context->UpdateAccessState(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
+    }
+
+    if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
+        auto setup_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+        if (setup_resource && (setup_resource != dst_resource)) {
+            context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
+        }
+    }
+
+    for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
+        if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
+            auto reference_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+            if (reference_resource) {
+                context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, tag);
+            }
+        }
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
+                                                     const ErrorObject &error_obj) const {
+    bool skip = false;
+    const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    if (!cb_state) return skip;
+    const auto *cb_access_context = &cb_state->access_context;
+
+    const auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+    if (!context) return skip;
+
+    const auto vs_state = cb_state->bound_video_session.get();
+    if (!vs_state) return skip;
+
+    const Location encode_info_loc = error_obj.location.dot(Field::pEncodeInfo);
+
+    auto dst_buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
+    if (dst_buffer) {
+        const ResourceAccessRange src_range = MakeRange(*dst_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, src_range);
+        if (hazard.IsHazard()) {
+            // PHASE1 TODO -- add tag information to log msg when useful.
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dst_buffer->buffer(), encode_info_loc.dot(Field::dstBuffer),
+                             "Hazard %s for bitstream buffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                             FormatHandle(pEncodeInfo->dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
+        }
+    }
+
+    auto src_resource = vvl::VideoPictureResource(this, pEncodeInfo->srcPictureResource);
+    if (src_resource) {
+        auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
+        if (hazard.IsHazard()) {
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), src_resource.image_view_state->image_view(),
+                             encode_info_loc.dot(Field::srcPictureResource), "Hazard %s for encode input picture. Access info %s.",
+                             string_SyncHazard(hazard.Hazard()), cb_access_context->FormatHazard(hazard).c_str());
+        }
+    }
+
+    if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
+        auto setup_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+        if (setup_resource) {
+            auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
+            if (hazard.IsHazard()) {
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), setup_resource.image_view_state->image_view(),
+                                 encode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource),
+                                 "Hazard %s for reconstructed picture. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                                 cb_access_context->FormatHazard(hazard).c_str());
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
+        if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
+            auto reference_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+            if (reference_resource) {
+                auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
+                if (hazard.IsHazard()) {
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), reference_resource.image_view_state->image_view(),
+                                     encode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource),
+                                     "Hazard %s for reference picture #%u. Access info %s.", string_SyncHazard(hazard.Hazard()), i,
+                                     cb_access_context->FormatHazard(hazard).c_str());
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
+                                                   const RecordObject &record_obj) {
+    auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    if (!cb_state) return;
+    auto *cb_access_context = &cb_state->access_context;
+
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
+    auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+
+    const auto vs_state = cb_state->bound_video_session.get();
+    if (!vs_state) return;
+
+    auto src_buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
+    if (src_buffer) {
+        const ResourceAccessRange src_range = MakeRange(*src_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range, tag);
+    }
+
+    auto src_resource = vvl::VideoPictureResource(this, pEncodeInfo->srcPictureResource);
+    if (src_resource) {
+        context->UpdateAccessState(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
+    }
+
+    if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
+        auto setup_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+        if (setup_resource) {
+            context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, tag);
+        }
+    }
+
+    for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
+        if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
+            auto reference_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+            if (reference_resource) {
+                context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
+            }
+        }
+    }
+}
+
 bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const ErrorObject &error_obj) const {
     bool skip = false;

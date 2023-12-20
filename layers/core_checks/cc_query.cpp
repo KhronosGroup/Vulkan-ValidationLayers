@@ -195,6 +195,13 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
             query_size = query_size_in_bytes * (query_items + query_avail_data);
             break;
 
+        case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR:
+            // Video encode feedback queries write one integer value for each bit that is enabled in
+            // VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::encodeFeedbackFlags when the pool is created
+            query_items = GetBitSetCount(query_pool_state.video_encode_feedback_flags);
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
             // Performance queries store results in a tightly packed array of VkPerformanceCounterResultsKHR
             query_items = query_pool_state.perf_counter_index_count;
@@ -298,8 +305,57 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
         case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR: {
             auto video_profile = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext);
             if (video_profile) {
-                skip |= ValidateVideoProfileInfo(video_profile, device, "vkCreateQueryPool",
-                                                 "the VkVideoProfileInfoKHR structure included in the pCreateInfo->pNext chain");
+                skip |= ValidateVideoProfileInfo(video_profile, device, create_info_loc.pNext(Struct::VkVideoProfileInfoKHR));
+            }
+            break;
+        }
+        case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR: {
+            const char *pnext_chain_msg =
+                "is VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR but missing %s from the pNext chain of pCreateInfo";
+
+            auto video_profile = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext);
+            if (video_profile == nullptr) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-07133", device, create_info_loc.dot(Field::queryType),
+                                 pnext_chain_msg, "VkVideoProfileInfoKHR");
+            }
+
+            auto encode_feedback_info =
+                vku::FindStructInPNextChain<VkQueryPoolVideoEncodeFeedbackCreateInfoKHR>(pCreateInfo->pNext);
+            if (encode_feedback_info == nullptr) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-07906", device, create_info_loc.dot(Field::queryType),
+                                 pnext_chain_msg, "VkQueryPoolVideoEncodeFeedbackCreateInfoKHR");
+            }
+
+            bool video_profile_valid = false;
+            if (video_profile) {
+                if (ValidateVideoProfileInfo(video_profile, device, create_info_loc.pNext(Struct::VkVideoProfileInfoKHR))) {
+                    skip = true;
+                } else {
+                    video_profile_valid = true;
+                }
+            }
+
+            if (video_profile_valid) {
+                vvl::VideoProfileDesc profile_desc(physical_device, video_profile);
+                if (!profile_desc.IsEncode()) {
+                    skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-07133", device, create_info_loc.dot(Field::queryType),
+                                     "is VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR but "
+                                     "VkVideoProfileInfoKHR::videoCodecOperation (%s) is not an encode operation.",
+                                     string_VkVideoCodecOperationFlagBitsKHR(video_profile->videoCodecOperation));
+                } else if (encode_feedback_info) {
+                    auto requested_flags = encode_feedback_info->encodeFeedbackFlags;
+                    auto supported_flags = profile_desc.GetCapabilities().encode.supportedEncodeFeedbackFlags;
+                    if ((requested_flags & supported_flags) != requested_flags) {
+                        skip |=
+                            LogError("VUID-VkQueryPoolCreateInfo-queryType-07907", device, create_info_loc.dot(Field::queryType),
+                                     "is VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR but "
+                                     "not all video encode feedback flags requested in "
+                                     "VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::encodeFeedbackFlags (%s) are supported "
+                                     "as indicated by VkVideoEncodeCapabilitiesKHR::supportedEncodeFeedbackFlags (%s).",
+                                     string_VkVideoEncodeFeedbackFlagsKHR(requested_flags).c_str(),
+                                     string_VkVideoEncodeFeedbackFlagsKHR(supported_flags).c_str());
+                    }
+                }
             }
             break;
         }
@@ -561,32 +617,73 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
     }
 
     if (cb_state.bound_video_session) {
+        if (cb_state.bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
+            const char *vuid = loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-None-08370"
+                                                                               : "VUID-vkCmdBeginQuery-None-08370";
+            const LogObjectList objlist(cb_state.commandBuffer(), cb_state.bound_video_session->Handle());
+            skip |= LogError(vuid, objlist, loc,
+                             "cannot start a query with this command as the bound video session "
+                             "%s was created with VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR.",
+                             FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+        }
+
         if (!cb_state.activeQueries.empty()) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(cb_state.bound_video_session->Handle());
+            const LogObjectList objlist(cb_state.commandBuffer(), cb_state.bound_video_session->Handle());
             skip |= LogError(vuids->vuid_no_active_in_vc_scope, objlist, loc,
                              "cannot start another query while there is already an active query in a "
-                             "video coding scope (%s is bound)",
+                             "video coding scope (%s is bound).",
                              FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
         }
 
-        if (cb_state.bound_video_session->profile != query_pool_state->supported_video_profile) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(query_pool_state->pool());
-            objlist.add(cb_state.bound_video_session->Handle());
-            skip |= LogError(vuids->vuid_result_status_profile_in_vc_scope, objlist, loc,
-                             "the video profile %s was created with does not match the video profile of %s",
-                             FormatHandle(query_pool_state->pool()).c_str(),
-                             FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
-        }
+        switch (query_pool_ci.queryType) {
+            case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR: {
+                if (cb_state.bound_video_session->profile != query_pool_state->supported_video_profile) {
+                    const char *vuid = loc.function == Func::vkCmdBeginQueryIndexedEXT
+                                           ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07128"
+                                           : "VUID-vkCmdBeginQuery-queryType-07128";
+                    const LogObjectList objlist(cb_state.commandBuffer(), query_pool_state->pool(),
+                                                cb_state.bound_video_session->Handle());
+                    skip |= LogError(vuid, objlist, loc,
+                                     "the video profile %s was created with does not match the video profile of %s.",
+                                     FormatHandle(query_pool_state->pool()).c_str(),
+                                     FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                }
+                break;
+            }
 
-        if (query_pool_ci.queryType != VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(cb_state.bound_video_session->Handle());
-            skip |= LogError(vuids->vuid_vc_scope_query_type, objlist, loc,
-                             "invalid query type used in a video coding scope (%s is bound)",
-                             FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+            case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR: {
+                if (cb_state.bound_video_session->profile != query_pool_state->supported_video_profile) {
+                    const char *vuid = loc.function == Func::vkCmdBeginQueryIndexedEXT
+                                           ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07130"
+                                           : "VUID-vkCmdBeginQuery-queryType-07130";
+                    const LogObjectList objlist(cb_state.commandBuffer(), query_pool_state->pool(),
+                                                cb_state.bound_video_session->Handle());
+                    skip |= LogError(vuid, objlist, loc,
+                                     "the video profile %s was created with does not match the video profile of %s.",
+                                     FormatHandle(query_pool_state->pool()).c_str(),
+                                     FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                }
+                break;
+            }
+
+            default: {
+                const char *vuid =
+                    IsExtEnabled(device_extensions.vk_khr_video_encode_queue)
+                        ? (loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07131"
+                                                                           : "VUID-vkCmdBeginQuery-queryType-07131")
+                        : (loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07132"
+                                                                           : "VUID-vkCmdBeginQuery-queryType-07132");
+                const LogObjectList objlist(cb_state.commandBuffer(), cb_state.bound_video_session->Handle());
+                skip |= LogError(vuid, objlist, loc, "invalid query type used in a video coding scope (%s is bound).",
+                                 FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                break;
+            }
         }
+    } else if (query_pool_ci.queryType == VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR) {
+        const char *vuid = loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07129"
+                                                                           : "VUID-vkCmdBeginQuery-queryType-07129";
+        skip |= LogError(vuid, cb_state.commandBuffer(), loc,
+                         "there is no bound video session but query type is VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR.");
     }
 
     return skip;
@@ -624,8 +721,6 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
             vuid_primitives_generated = "VUID-vkCmdBeginQuery-queryType-06687";
             vuid_result_status_support = "VUID-vkCmdBeginQuery-queryType-07126";
             vuid_no_active_in_vc_scope = "VUID-vkCmdBeginQuery-None-07127";
-            vuid_result_status_profile_in_vc_scope = "VUID-vkCmdBeginQuery-queryType-07128";
-            vuid_vc_scope_query_type = "VUID-vkCmdBeginQuery-queryType-07131";
         }
     };
     BeginQueryVuids vuids;
@@ -659,10 +754,21 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const Qu
     if (state != QUERYSTATE_RESET) {
         const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
         const Location loc(command);
+
+        // Most of these VUIDs and the call sites of this function are not tested so we set here
+        // some default VUID name and assert in debug builds to detect unexpected callers.
+        const char *unexpected_caller_vuid = "UNASSIGNED-CoreValidation-QueryReset";
         const char *vuid = (command == Func::vkCmdBeginQuery)             ? "VUID-vkCmdBeginQuery-None-00807"
                            : (command == Func::vkCmdBeginQueryIndexedEXT) ? "VUID-vkCmdBeginQueryIndexedEXT-None-00807"
                            : (command == Func::vkCmdWriteTimestamp)       ? "VUID-vkCmdWriteTimestamp-None-00830"
-                                                                          : "VUID-vkCmdWriteTimestamp2-None-03864";
+                           : (command == Func::vkCmdWriteTimestamp2)      ? "VUID-vkCmdWriteTimestamp2-None-03864"
+                           : (command == Func::vkCmdDecodeVideoKHR)       ? "VUID-vkCmdDecodeVideoKHR-pNext-08366"
+                           : (command == Func::vkCmdEncodeVideoKHR)       ? "VUID-vkCmdEncodeVideoKHR-pNext-08361"
+                           : (command == Func::vkCmdWriteAccelerationStructuresPropertiesKHR)
+                               ? "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryPool-02494"
+                               : unexpected_caller_vuid;
+        assert(strcmp(vuid, unexpected_caller_vuid) != 0);
+
         skip |= state_data->LogError(vuid, objlist, loc,
                                      "%s and query %" PRIu32
                                      ": query not reset. "
@@ -1221,8 +1327,6 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             vuid_primitives_generated = "VUID-vkCmdBeginQueryIndexedEXT-queryType-06689";
             vuid_result_status_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-07126";
             vuid_no_active_in_vc_scope = "VUID-vkCmdBeginQueryIndexedEXT-None-07127";
-            vuid_result_status_profile_in_vc_scope = "VUID-vkCmdBeginQueryIndexedEXT-queryType-07128";
-            vuid_vc_scope_query_type = "VUID-vkCmdBeginQueryIndexedEXT-queryType-07131";
         }
     };
     BeginQueryIndexedVuids vuids;

@@ -673,16 +673,43 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          string_VkImageCreateFlags(pCreateInfo->flags).c_str());
     }
 
-    bool has_decode_usage =
+    const bool has_decode_usage =
         pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
                               VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR);
-    bool has_encode_usage =
+    const bool has_encode_usage =
         pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
                               VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
+    const bool video_profile_independent = pCreateInfo->flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
+
+    if (video_profile_independent && !enabled_features.videoMaintenance1) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08328", device, create_info_loc.dot(Field::flags),
+                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR is set but the videoMaintenance1 "
+                         "device feature is not enabled.");
+    }
+
+    if (video_profile_independent && (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
+        (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08329", device, create_info_loc.dot(Field::flags),
+                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
+                         "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR without also containing "
+                         "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR.",
+                         string_VkImageUsageFlags(pCreateInfo->usage).c_str());
+    }
+
+    if (video_profile_independent && (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
+                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
+                         "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.",
+                         string_VkImageUsageFlags(pCreateInfo->usage).c_str());
+    }
+
     if (has_decode_usage || has_encode_usage) {
+        const bool expect_decode_profile = has_decode_usage && !video_profile_independent;
+        const bool expect_encode_profile = has_encode_usage && !video_profile_independent;
+
         const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        skip |= ValidateVideoProfileListInfo(video_profiles, device, "vkCreateImage", has_decode_usage,
-                                             "VUID-VkImageCreateInfo-usage-04815", has_encode_usage,
+        skip |= ValidateVideoProfileListInfo(video_profiles, device, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR),
+                                             expect_decode_profile, "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile,
                                              "VUID-VkImageCreateInfo-usage-04816");
 
         if (video_profiles && video_profiles->profileCount > 0) {
@@ -700,12 +727,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
             if (!supported_video_format) {
                 skip |= LogError("VUID-VkImageCreateInfo-pNext-06811", device, create_info_loc,
-                                 "image creation parameters (flags: %s, format: %s, imageType: %s, "
-                                 "tiling: %s) are not supported by any of the supported video format properties for "
-                                 "the video profiles specified in the VkVideoProfileListInfoKHR structure included in "
-                                 "the pCreateInfo->pNext chain, as reported by "
+                                 "specifies flags (%s), format (%s), imageType (%s), and tiling (%s) which are not "
+                                 "supported by any of the supported video format properties for the video profiles "
+                                 "specified in the VkVideoProfileListInfoKHR structure included in the "
+                                 "pCreateInfo->pNext chain, as reported by "
                                  "vkGetPhysicalDeviceVideoFormatPropertiesKHR for the same video profiles "
-                                 "and the image usage flags specified in pCreateInfo->usage (%s)",
+                                 "and the image usage flags specified in pCreateInfo->usage (%s).",
                                  string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkFormat(pCreateInfo->format),
                                  string_VkImageType(pCreateInfo->imageType), string_VkImageTiling(pCreateInfo->tiling),
                                  string_VkImageUsageFlags(pCreateInfo->usage).c_str());
@@ -1662,6 +1689,42 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         }
     }
 
+    if (image_state.createInfo.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+        if ((image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) &&
+            !(tiling_features & VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR)) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08333",
+                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
+                   !(tiling_features & VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR)) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08334",
+                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else if (image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08335",
+                             "vkCreateImageView(): image views from video profile independent images with usage "
+                             "VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR are not allowed.");
+        } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR) &&
+                   !(tiling_features & VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR)) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08336",
+                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) &&
+                   !(tiling_features & VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08337",
+                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else if (image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08338",
+                             "vkCreateImageView(): image views from video profile independent images with usage "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR are not allowed.");
+        }
+    }
+
     return skip;
 }
 // Returns whether two formats have identical components (compares the size and type of each component)
@@ -1893,28 +1956,6 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         skip |= LogError("VUID-VkImageViewCreateInfo-image-04972", pCreateInfo->image, create_info_loc.dot(Field::image),
                          "was created with sample count %s, but pCreateInfo->viewType is %s.",
                          string_VkSampleCountFlagBits(image_state.createInfo.samples), string_VkImageViewType(view_type));
-    }
-
-    if (image_usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
-                       VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
-        if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
-            skip |= LogError("VUID-VkImageViewCreateInfo-image-04818", pCreateInfo->image, create_info_loc.dot(Field::image),
-                             "was created with video encode usage flags, but pCreateInfo->viewType (%s) "
-                             "is not VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.",
-                             string_VkImageViewType(view_type));
-        }
-        if (!IsIdentitySwizzle(pCreateInfo->components)) {
-            skip |= LogError(
-                "VUID-VkImageViewCreateInfo-image-04818", pCreateInfo->image, create_info_loc.dot(Field::image),
-                "was created with video encode usage flags, but not all members of "
-                "pCreateInfo->components have identity swizzle. Here are the actual swizzle values:\n"
-                "r swizzle = %s\n"
-                "g swizzle = %s\n"
-                "b swizzle = %s\n"
-                "a swizzle = %s\n",
-                string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
-                string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
-        }
     }
 
     // Validate correct image aspect bits for desired formats and format consistency
@@ -2230,7 +2271,14 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                          VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
         if (image_usage & decode_usage) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-04817", pCreateInfo->image, create_info_loc.dot(Field::viewType),
-                             "%s is incompatible with decode usage.", string_VkImageViewType(pCreateInfo->viewType));
+                             "%s is incompatible with video decode usage.", string_VkImageViewType(pCreateInfo->viewType));
+        }
+
+        VkImageUsageFlags encode_usage = VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                                         VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
+        if (image_usage & encode_usage) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-04818", pCreateInfo->image, create_info_loc.dot(Field::viewType),
+                             "%s is incompatible with video encode usage.", string_VkImageViewType(pCreateInfo->viewType));
         }
     }
 
