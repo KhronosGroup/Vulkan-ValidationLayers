@@ -2009,6 +2009,18 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         }
                     }
 
+                    const auto *fragment_shading_rate_info =
+                        vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pNext);
+                    if (fragment_shading_rate_info && fragment_shading_rate_info->pFragmentShadingRateAttachment &&
+                        fragment_shading_rate_info->pFragmentShadingRateAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                        skip |= LogError(
+                            "VUID-VkSubpassDescription2-externalFormatResolve-09347", device,
+                            create_info_loc
+                                .pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment)
+                                .dot(Field::attachment),
+                            "is %" PRIu32 ".", fragment_shading_rate_info->pFragmentShadingRateAttachment->attachment);
+                    }
+
                     const auto *fragment_density_map_info =
                         vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
                     if (fragment_density_map_info &&
