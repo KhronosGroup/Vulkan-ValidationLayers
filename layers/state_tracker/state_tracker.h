@@ -1423,8 +1423,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode,
                                                      const RecordObject& record_obj) override;
 
-    template <typename CreateInfo>
-    VkFormatFeatureFlags2KHR GetExternalFormatFeaturesANDROID(const CreateInfo* create_info) const;
+    VkFormatFeatureFlags2KHR GetExternalFormatFeaturesANDROID(const void* pNext) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                  VkAndroidHardwareBufferPropertiesANDROID* pProperties,
@@ -1907,7 +1906,11 @@ class ValidationStateTracker : public ValidationObject {
     BufferAddressRangeMap buffer_address_map_;
     mutable std::shared_mutex buffer_address_lock_;
 
+    // < external format, features >
     vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
+    // < external format, colorAttachmentFormat > (VK_ANDROID_external_format_resolve)
+    vl_concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
+
     std::atomic<VkDeviceSize> descriptorBufferAddressSpaceSize = {0u};
     std::atomic<VkDeviceSize> resourceDescriptorBufferAddressSpaceSize = {0u};
     std::atomic<VkDeviceSize> samplerDescriptorBufferAddressSpaceSize = {0u};

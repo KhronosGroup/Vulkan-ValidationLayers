@@ -909,8 +909,6 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
     const auto &framebuffer_state = *Get<vvl::Framebuffer>(pRenderPassBeginInfo->framebuffer);
     const auto &framebuffer_create_info = framebuffer_state.createInfo;
-    const auto *framebuffer_attachments_create_info =
-        vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(framebuffer_create_info.pNext);
     if ((framebuffer_create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         const LogObjectList objlist(pRenderPassBeginInfo->renderPass, pRenderPassBeginInfo->framebuffer);
         skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03207", objlist,
@@ -918,173 +916,202 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                          "is %" PRIu32 ", but the VkFramebuffer create flags (%s) has no VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT.",
                          render_pass_attachment_begin_info->attachmentCount,
                          string_VkFramebufferCreateFlags(framebuffer_create_info.flags).c_str());
-    } else if (framebuffer_attachments_create_info) {
-        if (framebuffer_attachments_create_info->attachmentImageInfoCount != render_pass_attachment_begin_info->attachmentCount) {
-            const LogObjectList objlist(pRenderPassBeginInfo->renderPass, pRenderPassBeginInfo->framebuffer);
-            skip |= LogError(
-                "VUID-VkRenderPassBeginInfo-framebuffer-03208", objlist,
-                loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::attachmentCount),
-                "is %" PRIu32
-                ", but VkFramebuffer was created with VkFramebufferAttachmentsCreateInfo::attachmentImageInfoCount = %" PRIu32 ".",
-                render_pass_attachment_begin_info->attachmentCount, framebuffer_attachments_create_info->attachmentImageInfoCount);
-        } else {
-            auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBeginInfo->renderPass);
-            const auto *render_pass_create_info = &render_pass_state->createInfo;
-            for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
-                const Location attachment_loc = loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::pAttachments, i);
-                auto image_view_state = Get<vvl::ImageView>(render_pass_attachment_begin_info->pAttachments[i]);
-                const VkImageViewCreateInfo *image_view_create_info = &image_view_state->create_info;
-                const auto &subresource_range = image_view_state->normalized_subresource_range;
-                const VkFramebufferAttachmentImageInfo *framebuffer_attachment_image_info =
-                    &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
-                const auto *image_create_info = &image_view_state->image_state->createInfo;
-                const LogObjectList objlist(pRenderPassBeginInfo->renderPass, pRenderPassBeginInfo->framebuffer,
-                                            image_view_state->image_view(), image_view_state->image_state->image());
+        return skip;  // not marked as imageless so ignore rest of checks
+    }
 
-                if (framebuffer_attachment_image_info->flags != image_create_info->flags) {
-                    skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03209", objlist, attachment_loc.dot(Field::flags),
-                                     "is %s, but the VkFramebuffer was created with "
-                                     "VkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].flags = %s",
-                                     string_VkImageCreateFlags(image_create_info->flags).c_str(), i,
-                                     string_VkImageCreateFlags(framebuffer_attachment_image_info->flags).c_str());
-                }
+    const auto *framebuffer_attachments_create_info =
+        vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(framebuffer_create_info.pNext);
+    if (!framebuffer_attachments_create_info) {
+        return skip;
+    }
 
-                if (framebuffer_attachment_image_info->usage != image_view_state->inherited_usage) {
-                    // Give clearer message if this error is due to the "inherited" part or not
-                    if (image_create_info->usage == image_view_state->inherited_usage) {
-                        skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
-                                         "is (%s), but the VkFramebuffer was created with "
-                                         "vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].usage = %s.",
-                                         string_VkImageUsageFlags(image_create_info->usage).c_str(), i,
-                                         string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str());
-                    } else {
-                        skip |= LogError(
-                            "VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
-                            "is (%s), which has an inherited usage subset from VkImageViewUsageCreateInfo of (%s), but the "
-                            "VkFramebuffer was created with vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
-                            "].usage = %s.",
-                            string_VkImageUsageFlags(image_create_info->usage).c_str(),
-                            string_VkImageUsageFlags(image_view_state->inherited_usage).c_str(), i,
-                            string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str());
+    if (framebuffer_attachments_create_info->attachmentImageInfoCount != render_pass_attachment_begin_info->attachmentCount) {
+        const LogObjectList objlist(pRenderPassBeginInfo->renderPass, pRenderPassBeginInfo->framebuffer);
+        skip |= LogError(
+            "VUID-VkRenderPassBeginInfo-framebuffer-03208", objlist,
+            loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::attachmentCount),
+            "is %" PRIu32
+            ", but VkFramebuffer was created with VkFramebufferAttachmentsCreateInfo::attachmentImageInfoCount = %" PRIu32 ".",
+            render_pass_attachment_begin_info->attachmentCount, framebuffer_attachments_create_info->attachmentImageInfoCount);
+        return skip;  // the indexing below is assuming the counts are matching
+    }
+
+    auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBeginInfo->renderPass);
+    const auto *render_pass_create_info = &render_pass_state->createInfo;
+    for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
+        const Location attachment_loc = loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::pAttachments, i);
+        auto image_view_state = Get<vvl::ImageView>(render_pass_attachment_begin_info->pAttachments[i]);
+        const VkImageViewCreateInfo *image_view_create_info = &image_view_state->create_info;
+        const auto &subresource_range = image_view_state->normalized_subresource_range;
+        const VkFramebufferAttachmentImageInfo *framebuffer_attachment_image_info =
+            &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
+        const auto *image_create_info = &image_view_state->image_state->createInfo;
+        const LogObjectList objlist(pRenderPassBeginInfo->renderPass, pRenderPassBeginInfo->framebuffer,
+                                    image_view_state->image_view(), image_view_state->image_state->image());
+
+        if (framebuffer_attachment_image_info->flags != image_create_info->flags) {
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03209", objlist, attachment_loc.dot(Field::flags),
+                             "is %s, but the VkFramebuffer was created with "
+                             "VkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].flags = %s",
+                             string_VkImageCreateFlags(image_create_info->flags).c_str(), i,
+                             string_VkImageCreateFlags(framebuffer_attachment_image_info->flags).c_str());
+        }
+
+        if (framebuffer_attachment_image_info->usage != image_view_state->inherited_usage) {
+            // Give clearer message if this error is due to the "inherited" part or not
+            if (image_create_info->usage == image_view_state->inherited_usage) {
+                skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
+                                 "is (%s), but the VkFramebuffer was created with "
+                                 "vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].usage = %s.",
+                                 string_VkImageUsageFlags(image_create_info->usage).c_str(), i,
+                                 string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str());
+            } else {
+                skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
+                                 "is (%s), which has an inherited usage subset from VkImageViewUsageCreateInfo of (%s), but the "
+                                 "VkFramebuffer was created with vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
+                                 "].usage = %s.",
+                                 string_VkImageUsageFlags(image_create_info->usage).c_str(),
+                                 string_VkImageUsageFlags(image_view_state->inherited_usage).c_str(), i,
+                                 string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str());
+            }
+        }
+
+        const auto view_width = std::max(1u, image_create_info->extent.width >> subresource_range.baseMipLevel);
+        if (framebuffer_attachment_image_info->width != view_width) {
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03211", objlist, attachment_loc,
+                             "has VkImageView width (%" PRIu32 ") at mip level %" PRIu32 " (%" PRIu32
+                             ") != VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].width (%" PRIu32 ").",
+                             image_create_info->extent.width, subresource_range.baseMipLevel, view_width, i,
+                             framebuffer_attachment_image_info->width);
+        }
+
+        const bool is_1d = (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D) ||
+                           (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY);
+        const auto view_height = (!is_1d) ? std::max(1u, image_create_info->extent.height >> subresource_range.baseMipLevel)
+                                          : image_create_info->extent.height;
+        if (framebuffer_attachment_image_info->height != view_height) {
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03212", objlist, attachment_loc,
+                             "has VkImageView height (%" PRIu32 ") at mip level %" PRIu32 " (%" PRIu32
+                             ") != VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].height (%" PRIu32 ").",
+                             image_create_info->extent.height, subresource_range.baseMipLevel, view_height, i,
+                             framebuffer_attachment_image_info->height);
+        }
+
+        const uint32_t layerCount = image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
+                                        ? image_view_state->create_info.subresourceRange.layerCount
+                                        : image_create_info->extent.depth;
+        if (framebuffer_attachment_image_info->layerCount != layerCount) {
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03213", objlist, attachment_loc,
+                             "has a subresource range with a layerCount of %" PRIu32
+                             ", but VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].layerCount is %" PRIu32 ".",
+                             layerCount, i, framebuffer_attachment_image_info->layerCount);
+        }
+
+        const auto *image_format_list_create_info =
+            vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_create_info->pNext);
+        if (image_format_list_create_info) {
+            if (image_format_list_create_info->viewFormatCount != framebuffer_attachment_image_info->viewFormatCount) {
+                skip |=
+                    LogError("VUID-VkRenderPassBeginInfo-framebuffer-03214", objlist, attachment_loc,
+                             "internal VkImage was created with a VkImageFormatListCreateInfo::viewFormatCount of %" PRIu32
+                             " but VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].viewFormatCount is %" PRIu32 ".",
+                             image_format_list_create_info->viewFormatCount, i, framebuffer_attachment_image_info->viewFormatCount);
+            }
+
+            for (uint32_t j = 0; j < image_format_list_create_info->viewFormatCount; ++j) {
+                bool format_found = false;
+                for (uint32_t k = 0; k < framebuffer_attachment_image_info->viewFormatCount; ++k) {
+                    if (image_format_list_create_info->pViewFormats[j] == framebuffer_attachment_image_info->pViewFormats[k]) {
+                        format_found = true;
                     }
                 }
-
-                const auto view_width = std::max(1u, image_create_info->extent.width >> subresource_range.baseMipLevel);
-                if (framebuffer_attachment_image_info->width != view_width) {
-                    skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03211", objlist, attachment_loc,
-                                     "has VkImageView width (%" PRIu32 ") at mip level %" PRIu32 " (%" PRIu32
-                                     ") != VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].width (%" PRIu32 ").",
-                                     image_create_info->extent.width, subresource_range.baseMipLevel, view_width, i,
-                                     framebuffer_attachment_image_info->width);
+                if (!format_found) {
+                    skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03215", objlist, attachment_loc,
+                                     "internal VkImage was created with VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
+                                     "] = %s,"
+                                     "but now found in vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
+                                     "].pViewFormats.",
+                                     j, string_VkFormat(image_format_list_create_info->pViewFormats[j]), i);
                 }
+            }
+        }
 
-                const bool is_1d = (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D) ||
-                                   (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY);
-                const auto view_height = (!is_1d) ? std::max(1u, image_create_info->extent.height >> subresource_range.baseMipLevel)
-                                                  : image_create_info->extent.height;
-                if (framebuffer_attachment_image_info->height != view_height) {
-                    skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03212", objlist, attachment_loc,
-                                     "has VkImageView height (%" PRIu32 ") at mip level %" PRIu32 " (%" PRIu32
-                                     ") != VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].height (%" PRIu32 ").",
-                                     image_create_info->extent.height, subresource_range.baseMipLevel, view_height, i,
-                                     framebuffer_attachment_image_info->height);
-                }
+        if (render_pass_create_info->pAttachments[i].format != image_view_create_info->format) {
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03216", objlist, attachment_loc.dot(Field::format),
+                             "is %s, but the VkRenderPass was created with a pAttachments[%" PRIu32 "].format of %s.",
+                             string_VkFormat(image_view_create_info->format), i,
+                             string_VkFormat(render_pass_create_info->pAttachments[i].format));
+        } else if (image_view_create_info->format == VK_FORMAT_UNDEFINED) {
+            // both have external foramts
+            const uint64_t attachment_external_format = GetExternalFormat(render_pass_create_info->pAttachments[i].pNext);
+            if (image_view_state->image_state->ahb_format != attachment_external_format) {
+                skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-09354", objlist, attachment_loc,
+                                 "externalFormat is %" PRIu64 ", but the VkRenderPass was created with a pAttachments[%" PRIu32
+                                 "] with externalFormat of %" PRIu64 ".",
+                                 image_view_state->image_state->ahb_format, i, attachment_external_format);
+            }
+        }
 
-                const uint32_t layerCount = image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
-                                                ? image_view_state->create_info.subresourceRange.layerCount
-                                                : image_create_info->extent.depth;
-                if (framebuffer_attachment_image_info->layerCount != layerCount) {
+        const VkSampleCountFlagBits attachment_samples = render_pass_create_info->pAttachments[i].samples;
+        const auto *ms_render_to_single_sample =
+            vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderPassBeginInfo->pNext);
+        const bool single_sample_enabled = ms_render_to_single_sample &&
+                                           ms_render_to_single_sample->multisampledRenderToSingleSampledEnable &&
+                                           (attachment_samples == VK_SAMPLE_COUNT_1_BIT);
+        if (attachment_samples != image_create_info->samples && !single_sample_enabled) {
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-09047", objlist, attachment_loc,
+                             "internal VkImage was created with %s samples, "
+                             "but the VkRenderPass was created with a pAttachments[%" PRIu32 "].samples of %s.",
+                             string_VkSampleCountFlagBits(image_create_info->samples), i,
+                             string_VkSampleCountFlagBits(render_pass_create_info->pAttachments[i].samples));
+        }
+
+        if (subresource_range.levelCount != 1) {
+            skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218", objlist, attachment_loc,
+                             "was created with multiple mip levels (%" PRIu32 ").", subresource_range.levelCount);
+        }
+
+        if (IsIdentitySwizzle(image_view_create_info->components) == false) {
+            skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219", objlist, attachment_loc,
+                             "was created with non-identity swizzle. All "
+                             "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
+                             "swizzle values:\n"
+                             "r swizzle = %s\n"
+                             "g swizzle = %s\n"
+                             "b swizzle = %s\n"
+                             "a swizzle = %s\n",
+                             string_VkComponentSwizzle(image_view_create_info->components.r),
+                             string_VkComponentSwizzle(image_view_create_info->components.g),
+                             string_VkComponentSwizzle(image_view_create_info->components.b),
+                             string_VkComponentSwizzle(image_view_create_info->components.a));
+        }
+
+        if (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_3D) {
+            skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114", objlist, attachment_loc,
+                             "was created with viewType of VK_IMAGE_VIEW_TYPE_3D.");
+        }
+    }
+
+    if (enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop) {
+        for (const auto [i, subpass] : vvl::enumerate(render_pass_create_info->pSubpasses, render_pass_create_info->subpassCount)) {
+            if (!subpass->pResolveAttachments || !subpass->pColorAttachments) {
+                continue;
+            }
+            const uint32_t resolve_attachment = subpass->pResolveAttachments[0].attachment;
+            const uint32_t color_attachment = subpass->pColorAttachments[0].attachment;
+            const uint64_t attachment_external_format =
+                GetExternalFormat(render_pass_create_info->pAttachments[resolve_attachment].pNext);
+            auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
+            if (it != ahb_ext_resolve_formats_map.end()) {
+                VkFormat color_format = render_pass_create_info->pAttachments[color_attachment].format;
+                if (it->second != color_format) {
+                    const LogObjectList objlist(pRenderPassBeginInfo->renderPass, pRenderPassBeginInfo->framebuffer);
                     skip |=
-                        LogError("VUID-VkRenderPassBeginInfo-framebuffer-03213", objlist, attachment_loc,
-                                 "has a subresource range with a layerCount of %" PRIu32
-                                 ", but VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].layerCount is %" PRIu32 ".",
-                                 layerCount, i, framebuffer_attachment_image_info->layerCount);
-                }
-
-                const auto *image_format_list_create_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_create_info->pNext);
-                if (image_format_list_create_info) {
-                    if (image_format_list_create_info->viewFormatCount != framebuffer_attachment_image_info->viewFormatCount) {
-                        skip |= LogError(
-                            "VUID-VkRenderPassBeginInfo-framebuffer-03214", objlist, attachment_loc,
-                            "internal VkImage was created with a VkImageFormatListCreateInfo::viewFormatCount of %" PRIu32
-                            " but VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].viewFormatCount is %" PRIu32 ".",
-                            image_format_list_create_info->viewFormatCount, i, framebuffer_attachment_image_info->viewFormatCount);
-                    }
-
-                    for (uint32_t j = 0; j < image_format_list_create_info->viewFormatCount; ++j) {
-                        bool format_found = false;
-                        for (uint32_t k = 0; k < framebuffer_attachment_image_info->viewFormatCount; ++k) {
-                            if (image_format_list_create_info->pViewFormats[j] ==
-                                framebuffer_attachment_image_info->pViewFormats[k]) {
-                                format_found = true;
-                            }
-                        }
-                        if (!format_found) {
-                            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03215", objlist, attachment_loc,
-                                             "internal VkImage was created with VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
-                                             "] = %s,"
-                                             "but now found in vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
-                                             "].pViewFormats.",
-                                             j, string_VkFormat(image_format_list_create_info->pViewFormats[j]), i);
-                        }
-                    }
-                }
-
-                if (render_pass_create_info->pAttachments[i].format != image_view_create_info->format) {
-                    skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03216", objlist, attachment_loc.dot(Field::format),
-                                     "is %s, but the VkRenderPass was created with a pAttachments[%" PRIu32 "].format of %s.",
-                                     string_VkFormat(image_view_create_info->format), i,
-                                     string_VkFormat(render_pass_create_info->pAttachments[i].format));
-                } else if (image_view_create_info->format == VK_FORMAT_UNDEFINED) {
-                    // both have external foramts
-                    const uint64_t attachment_external_format = GetExternalFormat(render_pass_create_info->pAttachments[i].pNext);
-                    if (image_view_state->image_state->ahb_format != attachment_external_format) {
-                        skip |=
-                            LogError("VUID-VkRenderPassBeginInfo-framebuffer-09354", objlist, attachment_loc,
-                                     "externalFormat is %" PRIu64 ", but the VkRenderPass was created with a pAttachments[%" PRIu32
-                                     "] with externalFormat of %" PRIu64 ".",
-                                     image_view_state->image_state->ahb_format, i, attachment_external_format);
-                    }
-                }
-
-                const VkSampleCountFlagBits attachment_samples = render_pass_create_info->pAttachments[i].samples;
-                const auto *ms_render_to_single_sample =
-                    vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderPassBeginInfo->pNext);
-                const bool single_sample_enabled = ms_render_to_single_sample &&
-                                                   ms_render_to_single_sample->multisampledRenderToSingleSampledEnable &&
-                                                   (attachment_samples == VK_SAMPLE_COUNT_1_BIT);
-                if (attachment_samples != image_create_info->samples && !single_sample_enabled) {
-                    skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-09047", objlist, attachment_loc,
-                                     "internal VkImage was created with %s samples, "
-                                     "but the VkRenderPass was created with a pAttachments[%" PRIu32 "].samples of %s.",
-                                     string_VkSampleCountFlagBits(image_create_info->samples), i,
-                                     string_VkSampleCountFlagBits(render_pass_create_info->pAttachments[i].samples));
-                }
-
-                if (subresource_range.levelCount != 1) {
-                    skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218", objlist, attachment_loc,
-                                     "was created with multiple mip levels (%" PRIu32 ").", subresource_range.levelCount);
-                }
-
-                if (IsIdentitySwizzle(image_view_create_info->components) == false) {
-                    skip |=
-                        LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219", objlist, attachment_loc,
-                                 "was created with non-identity swizzle. All "
-                                 "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
-                                 "swizzle values:\n"
-                                 "r swizzle = %s\n"
-                                 "g swizzle = %s\n"
-                                 "b swizzle = %s\n"
-                                 "a swizzle = %s\n",
-                                 string_VkComponentSwizzle(image_view_create_info->components.r),
-                                 string_VkComponentSwizzle(image_view_create_info->components.g),
-                                 string_VkComponentSwizzle(image_view_create_info->components.b),
-                                 string_VkComponentSwizzle(image_view_create_info->components.a));
-                }
-
-                if (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_3D) {
-                    skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114", objlist, attachment_loc,
-                                     "was created with viewType of VK_IMAGE_VIEW_TYPE_3D.");
+                        LogError("VUID-VkRenderPassBeginInfo-framebuffer-09353", objlist, loc,
+                                 "subpass[%" PRIu32 "].pResolveAttachments[0].attachment %" PRIu32 " has externalFormat %" PRIu64
+                                 " which corresponds to needing a color attachment format of %s, but the format is %s.",
+                                 i, resolve_attachment, attachment_external_format, string_VkFormat(it->second),
+                                 string_VkFormat(color_format));
                 }
             }
         }
@@ -3736,6 +3763,19 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                         skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09328", commandBuffer,
                                          color_loc.dot(Field::imageView), "is not null (%s).",
                                          FormatHandle(attachment_info.imageView).c_str());
+                    } else {
+                        auto it = ahb_ext_resolve_formats_map.find(resolve_view_state->image_state->ahb_format);
+                        if (it != ahb_ext_resolve_formats_map.end()) {
+                            if (it->second != color_view_state->create_info.format) {
+                                skip |=
+                                    LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09330", commandBuffer,
+                                             color_loc.dot(Field::imageView),
+                                             "has externalFormat %" PRIu64
+                                             " which corresponds to needing a color attachment format of %s, but the format is %s.",
+                                             resolve_view_state->image_state->ahb_format, string_VkFormat(it->second),
+                                             string_VkFormat(color_view_state->create_info.format));
+                            }
+                        }
                     }
                 } else if (!android_external_format_resolve_null_color_attachment_prop) {
                     skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09329", commandBuffer,
@@ -4358,6 +4398,25 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                              "has a layer count (%" PRIu32
                                              ") not equal to 1 but renderPass (%s) was not specified with non-zero view masks.",
                                              layer_count, FormatHandle(pCreateInfo->renderPass).c_str());
+                        }
+                    }
+                }
+
+                if (enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop &&
+                    subpass.pResolveAttachments && subpass.pResolveAttachments[0].attachment == i && subpass.pColorAttachments) {
+                    const uint64_t attachment_external_format =
+                        GetExternalFormat(rpci->pAttachments[subpass.pResolveAttachments[0].attachment].pNext);
+                    auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
+                    if (it != ahb_ext_resolve_formats_map.end()) {
+                        VkFormat color_format = rpci->pAttachments[subpass.pColorAttachments[0].attachment].format;
+                        if (it->second != color_format) {
+                            LogObjectList objlist(pCreateInfo->renderPass, image_views[i]);
+                            skip |= LogError(
+                                "VUID-VkFramebufferCreateInfo-nullColorAttachmentWithExternalFormatResolve-09349", objlist,
+                                attachment_loc,
+                                "subpass[%" PRIu32 "].pResolveAttachments[0].attachment %" PRIu32 " has externalFormat %" PRIu64
+                                " which corresponds to needing a color attachment format of %s, but the format is %s.",
+                                j, i, attachment_external_format, string_VkFormat(it->second), string_VkFormat(color_format));
                         }
                     }
                 }
