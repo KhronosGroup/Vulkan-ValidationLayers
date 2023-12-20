@@ -630,3 +630,124 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     m_commandBuffer->QueueCommandBuffer();
     m_default_queue->wait();
 }
+
+TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
+    TEST_DESCRIPTION(
+        "Copy depth buffer to image with all depth values in the [0, 1] legal range. Depth image has format "
+        "VK_FORMAT_D32_SFLOAT.");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    float *ptr = static_cast<float *>(copy_src_buffer.memory().map());
+    for (size_t i = 0; i < 64 * 64; ++i) {
+        if (i % 2) {
+            ptr[i] = 1.0f;
+        } else {
+            ptr[i] = 0.0f;
+        }
+    }
+    copy_src_buffer.memory().unmap();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_D32_SFLOAT;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageObj copy_dst_image(m_device);
+    copy_dst_image.Init(image_ci);
+
+    copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    m_commandBuffer->begin();
+
+    VkBufferImageCopy buffer_image_copy_1;
+    buffer_image_copy_1.bufferOffset = 0;
+    buffer_image_copy_1.bufferRowLength = 0;
+    buffer_image_copy_1.bufferImageHeight = 0;
+    buffer_image_copy_1.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    buffer_image_copy_1.imageSubresource.mipLevel = 0;
+    buffer_image_copy_1.imageSubresource.baseArrayLayer = 0;
+    buffer_image_copy_1.imageSubresource.layerCount = 1;
+    buffer_image_copy_1.imageOffset = {0, 0, 0};
+    buffer_image_copy_1.imageExtent = {64, 64, 1};
+
+    vk::CmdCopyBufferToImage(*m_commandBuffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &buffer_image_copy_1);
+
+    VkBufferImageCopy buffer_image_copy_2 = buffer_image_copy_1;
+    buffer_image_copy_2.imageOffset = {32, 32, 0};
+    buffer_image_copy_2.imageExtent = {32, 32, 1};
+
+    vk::CmdCopyBufferToImage(*m_commandBuffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &buffer_image_copy_2);
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+}
+
+TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
+    TEST_DESCRIPTION(
+        "Copy depth buffer to image with all depth values in the [0, 1] legal range. Depth image has format "
+        "VK_FORMAT_D32_SFLOAT_S8_UINT.");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    auto ptr = static_cast<uint8_t *>(copy_src_buffer.memory().map());
+    std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.create_info().size));
+    for (size_t i = 0; i < 64 * 64; ++i) {
+        auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
+        if (i % 2) {
+            *ptr_float = 1.0f;
+        } else {
+            *ptr_float = 0.0f;
+        }
+    }
+
+    copy_src_buffer.memory().unmap();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageObj copy_dst_image(m_device);
+    copy_dst_image.Init(image_ci);
+
+    copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    m_commandBuffer->begin();
+
+    VkBufferImageCopy buffer_image_copy;
+    buffer_image_copy.bufferOffset = 0;
+    buffer_image_copy.bufferRowLength = 0;
+    buffer_image_copy.bufferImageHeight = 0;
+    buffer_image_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    buffer_image_copy.imageSubresource.mipLevel = 0;
+    buffer_image_copy.imageSubresource.baseArrayLayer = 0;
+    buffer_image_copy.imageSubresource.layerCount = 1;
+    buffer_image_copy.imageOffset = {33, 33, 0};
+    buffer_image_copy.imageExtent = {31, 31, 1};
+
+    vk::CmdCopyBufferToImage(*m_commandBuffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &buffer_image_copy);
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+}
