@@ -5636,6 +5636,8 @@ TEST_F(NegativeDynamicState, RebindSamePipeline) {
 
     VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(driver_properties);
+    printf("%u %u %u %u\n", driver_properties.conformanceVersion.major, driver_properties.conformanceVersion.minor,
+           driver_properties.conformanceVersion.subminor, driver_properties.conformanceVersion.patch);
     if (driver_properties.conformanceVersion.major > 1 || driver_properties.conformanceVersion.minor > 3 ||
         (driver_properties.conformanceVersion.minor == 3 && driver_properties.conformanceVersion.subminor > 7)) {
         GTEST_SKIP() << "conformanceVersion is greater than the version the test requires";

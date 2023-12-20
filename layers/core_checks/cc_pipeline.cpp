@@ -370,6 +370,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 }
             }
 
+            printf("%u %u %u %u\n", phys_dev_props_core12.conformanceVersion.major, phys_dev_props_core12.conformanceVersion.minor,
+                   phys_dev_props_core12.conformanceVersion.subminor, phys_dev_props_core12.conformanceVersion.patch);
             if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && cb_state->GetCurrentPipeline(pipelineBindPoint) &&
                 pipeline == cb_state->GetCurrentPipeline(pipelineBindPoint)->pipeline() && cb_state->dirtyStaticState &&
                 IsBeforeCtsVersion(1, 3, 8)) {
