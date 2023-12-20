@@ -348,30 +348,43 @@ void gpuav::Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer command
     BaseClass::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                                  record_obj);
 
-    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto dst_image_state = Get<vvl::Image>(dstImage);
-    if (cb_state_ptr && dst_image_state) {
-        // Make sure that all image slices are record referenced layout
-        for (uint32_t i = 0; i < regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
+    {
+        auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
+        auto dst_image_state = Get<vvl::Image>(dstImage);
+        if (cb_state_ptr && dst_image_state) {
+            // Make sure that all image slices are record referenced layout
+            for (uint32_t i = 0; i < regionCount; ++i) {
+                cb_state_ptr->SetImageInitialLayout(*dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
+            }
         }
     }
+
+    std::vector<VkBufferImageCopy2> regions_2(regionCount);
+    for (const auto [i, region] : vvl::enumerate(pRegions, regionCount)) {
+        regions_2[i].bufferOffset = region->bufferOffset;
+        regions_2[i].bufferRowLength = region->bufferRowLength;
+        regions_2[i].bufferImageHeight = region->bufferImageHeight;
+        regions_2[i].imageSubresource = region->imageSubresource;
+        regions_2[i].imageOffset = region->imageOffset;
+        regions_2[i].imageExtent = region->imageExtent;
+    }
+
+    VkCopyBufferToImageInfo2 copy_buffer_to_image_info = vku::InitStructHelper();
+    copy_buffer_to_image_info.srcBuffer = srcBuffer;
+    copy_buffer_to_image_info.dstImage = dstImage;
+    copy_buffer_to_image_info.dstImageLayout = dstImageLayout;
+    copy_buffer_to_image_info.regionCount = regionCount;
+    copy_buffer_to_image_info.pRegions = regions_2.data();
+
+    auto copy_buffer_to_image =
+        AllocatePreCopyBufferToImageValidationResources(record_obj.location.function, commandBuffer, &copy_buffer_to_image_info);
+    StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image));
 }
 
 void gpuav::Validator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                              const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR,
                                                              const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
-
-    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo2KHR->dstImage);
-    if (cb_state_ptr && dst_image_state) {
-        // Make sure that all image slices are record referenced layout
-        for (uint32_t i = 0; i < pCopyBufferToImageInfo2KHR->regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, pCopyBufferToImageInfo2KHR->pRegions[i].imageSubresource,
-                                                pCopyBufferToImageInfo2KHR->dstImageLayout);
-        }
-    }
+    PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
 }
 
 void gpuav::Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
@@ -379,15 +392,21 @@ void gpuav::Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer comman
                                                           const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
 
-    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo->dstImage);
-    if (cb_state_ptr && dst_image_state) {
-        // Make sure that all image slices are record referenced layout
-        for (uint32_t i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, pCopyBufferToImageInfo->pRegions[i].imageSubresource,
-                                                pCopyBufferToImageInfo->dstImageLayout);
+    {
+        auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
+        auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo->dstImage);
+        if (cb_state_ptr && dst_image_state) {
+            // Make sure that all image slices are record referenced layout
+            for (uint32_t i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
+                cb_state_ptr->SetImageInitialLayout(*dst_image_state, pCopyBufferToImageInfo->pRegions[i].imageSubresource,
+                                                    pCopyBufferToImageInfo->dstImageLayout);
+            }
         }
     }
+
+    auto copy_buffer_to_image =
+        AllocatePreCopyBufferToImageValidationResources(record_obj.location.function, commandBuffer, pCopyBufferToImageInfo);
+    StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image));
 }
 
 template <typename RegionType>

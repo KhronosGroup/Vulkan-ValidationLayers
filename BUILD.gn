@@ -168,6 +168,7 @@ vvl_sources = [
   "layers/gpu_validation/gpu_subclasses.cpp",
   "layers/gpu_validation/gpu_subclasses.h",
   "layers/gpu_validation/gpu_record.cpp",
+  "layers/gpu_validation/gpu_settings.h",
   "layers/gpu_validation/gpu_setup.cpp",
   "layers/gpu_validation/gpu_validation.cpp",
   "layers/gpu_validation/gpu_validation.h",

@@ -218,6 +218,7 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_subclasses.cpp
     gpu_validation/gpu_subclasses.h
     gpu_validation/gpu_record.cpp
+    gpu_validation/gpu_settings.h
     gpu_validation/gpu_setup.cpp
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.h

@@ -51,49 +51,6 @@ struct DescBindingInfo {
     std::vector<DescSetState> descriptor_set_buffers;
 };
 
-struct CommonDrawResources {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkShaderModule shader_module = VK_NULL_HANDLE;
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vl_concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
-    VkShaderEXT shader_object = VK_NULL_HANDLE;
-
-    void Destroy(VkDevice device);
-};
-
-struct CommonDispatchResources {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkShaderModule shader_module = VK_NULL_HANDLE;
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkShaderEXT shader_object = VK_NULL_HANDLE;
-
-    void Destroy(VkDevice device);
-};
-
-struct CommonTraceRaysResources {
-    // some resources can be used each time so only to need to create once
-    bool initialized = false;
-
-    VkShaderModule shader_module = VK_NULL_HANDLE;
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VmaPool sbt_pool = VK_NULL_HANDLE;
-    VkBuffer sbt_buffer = VK_NULL_HANDLE;
-    VmaAllocation sbt_allocation = {};
-    VkDeviceAddress sbt_address = 0;
-    uint32_t shader_group_handle_size_aligned = 0;
-
-    void Destroy(VkDevice device, VmaAllocator &vmaAllocator);
-};
-
 struct AccelerationStructureBuildValidationState {
     // some resources can be used each time so only to need to create once
     bool initialized = false;
@@ -135,7 +92,7 @@ struct AccelerationStructureBuildValidationInfo {
 
 class Validator;
 
-// Every recorded command need the validation resources listed in this function
+// Every recorded action command needs the validation resources listed in this function
 // If adding validation for a new command reveals the need to allocate specific resources for it, create a new class that derives
 // from this one
 class CommandResources {
@@ -147,11 +104,13 @@ class CommandResources {
     CommandResources &operator=(const CommandResources &) = default;
 
     void LogErrorIfAny(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
-    // Return true iff an error has been logged
-    virtual bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                      const uint32_t *debug_record, const uint32_t operation_index, const LogObjectList &objlist);
+    void LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *output_buffer_begin,
+                              const uint32_t operation_index, const LogObjectList &objlist);
+    virtual void LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                            const uint32_t *debug_record, const uint32_t operation_index,
+                                            const LogObjectList &objlist) {}
 
-    DeviceMemoryBlock output_mem_block;
+    DeviceMemoryBlock output_mem_block{};
 
     VkDescriptorSet output_buffer_desc_set = VK_NULL_HANDLE;
     VkDescriptorPool output_buffer_desc_pool = VK_NULL_HANDLE;
@@ -160,6 +119,11 @@ class CommandResources {
     vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
     uint32_t desc_binding_index = vvl::kU32Max;// desc_binding is only used to help generate an error message
     std::vector<DescBindingInfo> *desc_binding_list = nullptr;
+};
+
+struct SharedValidationResources {
+    virtual ~SharedValidationResources() {}
+    virtual void Destroy(Validator &validator) = 0;
 };
 
 class PreDrawResources : public CommandResources {
@@ -177,8 +141,19 @@ class PreDrawResources : public CommandResources {
     bool emit_task_error = false;  // Used to decide between mesh error and task error
 
     void Destroy(gpuav::Validator &validator) final;
-    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
-                              const uint32_t operation_index, const LogObjectList &objlist);
+    void LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                    const uint32_t *debug_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist) final;
+
+    struct SharedResources : SharedValidationResources {
+        VkShaderModule shader_module = VK_NULL_HANDLE;
+        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        vl_concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
+        VkShaderEXT shader_object = VK_NULL_HANDLE;
+
+        void Destroy(Validator &validator);
+    };
 };
 
 class PreDispatchResources : public CommandResources {
@@ -192,8 +167,18 @@ class PreDispatchResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 4;
 
     void Destroy(gpuav::Validator &validator) final;
-    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
-                              const uint32_t operation_index, const LogObjectList &objlist);
+    void LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                    const uint32_t *debug_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist) final;
+
+    struct SharedResources : SharedValidationResources {
+        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkShaderEXT shader_object = VK_NULL_HANDLE;
+
+        void Destroy(Validator &validator);
+    };
 };
 
 class PreTraceRaysResources : public CommandResources {
@@ -206,8 +191,49 @@ class PreTraceRaysResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 5;
 
     void Destroy(gpuav::Validator &validator) final;
-    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
-                              const uint32_t operation_index, const LogObjectList &objlist);
+    void LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                    const uint32_t *debug_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist) final;
+
+    struct SharedResources : SharedValidationResources {
+        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VmaPool sbt_pool = VK_NULL_HANDLE;
+        VkBuffer sbt_buffer = VK_NULL_HANDLE;
+        VmaAllocation sbt_allocation = {};
+        VkDeviceAddress sbt_address = 0;
+        uint32_t shader_group_handle_size_aligned = 0;
+
+        void Destroy(Validator &validator);
+    };
+};
+
+class PreCopyBufferToImageResources : public CommandResources {
+  public:
+    ~PreCopyBufferToImageResources() {}
+
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    VkDescriptorSet desc_set = VK_NULL_HANDLE;
+    VkBuffer src_buffer = VK_NULL_HANDLE;
+
+    // Buffer holding the copy regions obtained from pRegions
+    VkBuffer copy_src_regions_buffer = VK_NULL_HANDLE;
+    VmaAllocation copy_src_regions_allocation = VK_NULL_HANDLE;
+
+    void Destroy(Validator &validator) final;
+    void LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+                                    const uint32_t *debug_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist) final;
+
+    struct SharedResources : SharedValidationResources {
+        VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VmaPool copy_regions_pool = VK_NULL_HANDLE;
+
+        void Destroy(Validator &validator);
+    };
 };
 
 class CommandBuffer : public gpu_tracker::CommandBuffer {
