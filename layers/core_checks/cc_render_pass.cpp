@@ -3236,6 +3236,19 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                              ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
                              layer_count, pRenderingInfo->viewMask);
         }
+
+        const VkComponentMapping components = fragment_density_map_view_state->create_info.components;
+        if (!IsIdentitySwizzle(components)) {
+            const LogObjectList objlist(commandBuffer, fragment_density_map_view_state->image_view());
+            skip |= LogError("VUID-VkRenderingInfo-imageView-09486", objlist, view_loc,
+                             "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                             "r swizzle = %s\n"
+                             "g swizzle = %s\n"
+                             "b swizzle = %s\n"
+                             "a swizzle = %s\n",
+                             string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                             string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+        }
     }
 
     const auto *device_group_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
@@ -3322,6 +3335,20 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
         skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148", objlist,
                          rendering_info.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                          "was not created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.");
+    }
+
+    const VkComponentMapping components = view_state->create_info.components;
+    if (!IsIdentitySwizzle(components)) {
+        const LogObjectList objlist(commandBuffer, view_state->image_view());
+        skip |= LogError("VUID-VkRenderingInfo-imageView-09485", objlist,
+                         rendering_info.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
+                         "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                         "r swizzle = %s\n"
+                         "g swizzle = %s\n"
+                         "b swizzle = %s\n"
+                         "a swizzle = %s\n",
+                         string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                         string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
     }
 
     const auto *device_group_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
@@ -3788,6 +3815,19 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06087", objlist, color_loc.dot(Field::imageView),
                                  "must have been created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.");
             }
+
+            const VkComponentMapping components = image_view_state->create_info.components;
+            if (!IsIdentitySwizzle(components)) {
+                const LogObjectList objlist(commandBuffer, image_view_state->image_view());
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09479", objlist, color_loc.dot(Field::imageView),
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                                 "r swizzle = %s\n"
+                                 "g swizzle = %s\n"
+                                 "b swizzle = %s\n"
+                                 "a swizzle = %s\n",
+                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+            }
         }
 
         if (attachment_info.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
@@ -3804,13 +3844,13 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             }
             const auto *fragment_density_info_ext =
                 vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
-            const auto *fragment_shading_rate_info_khr =
-                vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
             if (fragment_density_info_ext && fragment_density_info_ext->imageView != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkRenderingInfo-resolveMode-09321", commandBuffer,
                                  rendering_info.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                                  "is not null (%s).", FormatHandle(fragment_density_info_ext->imageView).c_str());
             }
+            const auto *fragment_shading_rate_info_khr =
+                vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
             if (fragment_shading_rate_info_khr && fragment_shading_rate_info_khr->imageView != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkRenderingInfo-resolveMode-09322", commandBuffer,
                                  rendering_info.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
@@ -3865,6 +3905,25 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                 }
             }
         }
+
+        if (attachment_info.resolveMode != VK_RESOLVE_MODE_NONE) {
+            auto resolve_view_state = Get<vvl::ImageView>(attachment_info.resolveImageView);
+            if (resolve_view_state) {
+                const VkComponentMapping components = resolve_view_state->create_info.components;
+                if (!IsIdentitySwizzle(components)) {
+                    const LogObjectList objlist(commandBuffer, resolve_view_state->image_view());
+                    skip |=
+                        LogError("VUID-VkRenderingInfo-colorAttachmentCount-09480", objlist, color_loc.dot(Field::resolveImageView),
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                                 "r swizzle = %s\n"
+                                 "g swizzle = %s\n"
+                                 "b swizzle = %s\n"
+                                 "a swizzle = %s\n",
+                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                }
+            }
+        }
     }
 
     if (pRenderingInfo->pDepthAttachment) {
@@ -3889,11 +3948,44 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                  "was created with a format (%s) that does not have a depth aspect.",
                                  string_VkFormat(depth_view_state->create_info.format));
             }
+
+            const VkComponentMapping components = depth_view_state->create_info.components;
+            if (!IsIdentitySwizzle(components)) {
+                const LogObjectList objlist(commandBuffer, depth_view_state->image_view());
+                skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09481", objlist,
+                                 rendering_info.dot(Field::pDepthAttachment).dot(Field::imageView),
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                                 "r swizzle = %s\n"
+                                 "g swizzle = %s\n"
+                                 "b swizzle = %s\n"
+                                 "a swizzle = %s\n",
+                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+            }
         }
-        if (depth_attachment_info.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09318", commandBuffer,
-                             rendering_info.dot(Field::pDepthAttachment).dot(Field::resolveMode),
-                             "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+
+        if (depth_attachment_info.resolveMode != VK_RESOLVE_MODE_NONE) {
+            if (depth_attachment_info.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
+                skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09318", commandBuffer,
+                                 rendering_info.dot(Field::pDepthAttachment).dot(Field::resolveMode),
+                                 "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+            }
+            auto depth_resolve_view_state = Get<vvl::ImageView>(depth_attachment_info.resolveImageView);
+            if (depth_resolve_view_state) {
+                const VkComponentMapping components = depth_resolve_view_state->create_info.components;
+                if (!IsIdentitySwizzle(components)) {
+                    const LogObjectList objlist(commandBuffer, depth_resolve_view_state->image_view());
+                    skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09482", objlist,
+                                     rendering_info.dot(Field::pDepthAttachment).dot(Field::resolveImageView),
+                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                                     "r swizzle = %s\n"
+                                     "g swizzle = %s\n"
+                                     "b swizzle = %s\n"
+                                     "a swizzle = %s\n",
+                                     string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                                     string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                }
+            }
         }
     }
 
@@ -3919,11 +4011,44 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                  "was created with a format (%s) that does not have a stencil aspect.",
                                  string_VkFormat(stencil_view_state->create_info.format));
             }
+
+            const VkComponentMapping components = stencil_view_state->create_info.components;
+            if (!IsIdentitySwizzle(components)) {
+                const LogObjectList objlist(commandBuffer, stencil_view_state->image_view());
+                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09483", objlist,
+                                 rendering_info.dot(Field::pStencilAttachment).dot(Field::imageView),
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                                 "r swizzle = %s\n"
+                                 "g swizzle = %s\n"
+                                 "b swizzle = %s\n"
+                                 "a swizzle = %s\n",
+                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+            }
         }
-        if (stencil_attachment_info.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09319", commandBuffer,
-                             rendering_info.dot(Field::pStencilAttachment).dot(Field::resolveMode),
-                             "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+        if (stencil_attachment_info.resolveMode != VK_RESOLVE_MODE_NONE) {
+            if (stencil_attachment_info.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
+                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09319", commandBuffer,
+                                 rendering_info.dot(Field::pStencilAttachment).dot(Field::resolveMode),
+                                 "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+            }
+
+            auto stencil_resolve_view_state = Get<vvl::ImageView>(stencil_attachment_info.resolveImageView);
+            if (stencil_resolve_view_state) {
+                const VkComponentMapping components = stencil_resolve_view_state->create_info.components;
+                if (!IsIdentitySwizzle(components)) {
+                    const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->image_view());
+                    skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09484", objlist,
+                                     rendering_info.dot(Field::pStencilAttachment).dot(Field::resolveImageView),
+                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n"
+                                     "r swizzle = %s\n"
+                                     "g swizzle = %s\n"
+                                     "b swizzle = %s\n"
+                                     "a swizzle = %s\n",
+                                     string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
+                                     string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                }
+            }
         }
     }
 
