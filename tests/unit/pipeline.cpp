@@ -2120,6 +2120,8 @@ TEST_F(NegativePipeline, CreateFlags) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07401");
     flags = VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07997");
+    flags = 0x80000000;
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-09497");
 }
 
 TEST_F(NegativePipeline, CreateFlagsCompute) {
@@ -2154,6 +2156,8 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-07996");
     flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-09007");
+    flags = 0x80000000;
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-None-09497");
 }
 
 TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
