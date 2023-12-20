@@ -1255,6 +1255,14 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) {
     vkCmdDecodeVideoKHR(handle(), &decodeInfo);
 }
 
+void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo) {
+    PFN_vkCmdEncodeVideoKHR vkCmdEncodeVideoKHR =
+        (PFN_vkCmdEncodeVideoKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdEncodeVideoKHR");
+    assert(vkCmdEncodeVideoKHR);
+
+    vkCmdEncodeVideoKHR(handle(), &encodeInfo);
+}
+
 void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
     PFN_vkCmdEndVideoCodingKHR vkCmdEndVideoCodingKHR =
         (PFN_vkCmdEndVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdEndVideoCodingKHR");

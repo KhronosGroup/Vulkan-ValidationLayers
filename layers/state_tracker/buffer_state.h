@@ -23,9 +23,10 @@
 #include "containers/range_vector.h"
 
 class ValidationStateTracker;
-class VideoProfileDesc;
 
 namespace vvl {
+
+class VideoProfileDesc;
 
 class Buffer : public Bindable {
   public:

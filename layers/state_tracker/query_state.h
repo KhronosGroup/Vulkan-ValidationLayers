@@ -22,8 +22,6 @@
 #include "utils/hash_vk_types.h"
 #include "utils/vk_layer_utils.h"
 
-class VideoProfileDesc;
-
 enum QueryState {
     QUERYSTATE_UNKNOWN,    // Initial state.
     QUERYSTATE_RESET,      // After resetting.
@@ -34,10 +32,13 @@ enum QueryState {
 
 namespace vvl {
 
+class VideoProfileDesc;
+
 class QueryPool : public StateObject {
   public:
     QueryPool(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t n_perf_pass, bool has_cb,
-              bool has_rb, std::shared_ptr<const VideoProfileDesc> &&supp_video_profile)
+              bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
+              VkVideoEncodeFeedbackFlagsKHR enabled_video_encode_feedback_flags)
         : StateObject(qp, kVulkanObjectTypeQueryPool),
           createInfo(*pCreateInfo),
           has_perf_scope_command_buffer(has_cb),
@@ -45,6 +46,7 @@ class QueryPool : public StateObject {
           n_performance_passes(n_perf_pass),
           perf_counter_index_count(index_count),
           supported_video_profile(std::move(supp_video_profile)),
+          video_encode_feedback_flags(enabled_video_encode_feedback_flags),
           query_states_(pCreateInfo->queryCount) {
         for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
             auto perf_size = n_perf_pass > 0 ? n_perf_pass : 1;
@@ -85,7 +87,8 @@ class QueryPool : public StateObject {
     const uint32_t n_performance_passes;
     const uint32_t perf_counter_index_count;
 
-    std::shared_ptr<const VideoProfileDesc> supported_video_profile;
+    std::shared_ptr<const vvl::VideoProfileDesc> supported_video_profile;
+    VkVideoEncodeFeedbackFlagsKHR video_encode_feedback_flags;
 
   private:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }

@@ -1698,9 +1698,18 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
         DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->PhysDev(), perf, &n_perf_pass);
     }
 
+    VkVideoEncodeFeedbackFlagsKHR video_encode_feedback_flags = 0;
+    if (pCreateInfo->queryType == VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR) {
+        const auto *feedback_info = vku::FindStructInPNextChain<VkQueryPoolVideoEncodeFeedbackCreateInfoKHR>(pCreateInfo->pNext);
+        if (feedback_info) {
+            video_encode_feedback_flags = feedback_info->encodeFeedbackFlags;
+        }
+    }
+
     Add(std::make_shared<vvl::QueryPool>(
         *pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb,
-        video_profile_cache_.Get(this, vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext))));
+        video_profile_cache_.Get(physical_device, vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext)),
+        video_encode_feedback_flags));
 }
 
 void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -2921,8 +2930,8 @@ void ValidationStateTracker::PostCallRecordCreateVideoSessionKHR(VkDevice device
                                                                  VkVideoSessionKHR *pVideoSession, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    auto profile_desc = video_profile_cache_.Get(this, pCreateInfo->pVideoProfile);
-    Add(std::make_shared<VIDEO_SESSION_STATE>(this, *pVideoSession, pCreateInfo, std::move(profile_desc)));
+    auto profile_desc = video_profile_cache_.Get(physical_device, pCreateInfo->pVideoProfile);
+    Add(std::make_shared<vvl::VideoSession>(this, *pVideoSession, pCreateInfo, std::move(profile_desc)));
 }
 
 void ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
@@ -2930,7 +2939,7 @@ void ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkVideoSessionMemoryRequirementsKHR *pMemoryRequirements, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
+    auto vs_state = Get<vvl::VideoSession>(videoSession);
     assert(vs_state);
 
     if (pMemoryRequirements != nullptr) {
@@ -2948,7 +2957,7 @@ void ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(VkDevice de
                                                                      const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
+    auto vs_state = Get<vvl::VideoSession>(videoSession);
     assert(vs_state);
 
     for (uint32_t i = 0; i < bindSessionMemoryInfoCount; ++i) {
@@ -2959,7 +2968,7 @@ void ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(VkDevice de
 void ValidationStateTracker::PreCallRecordDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  const RecordObject &record_obj) {
-    Destroy<VIDEO_SESSION_STATE>(videoSession);
+    Destroy<vvl::VideoSession>(videoSession);
 }
 
 void ValidationStateTracker::PostCallRecordCreateVideoSessionParametersKHR(VkDevice device,
@@ -2969,9 +2978,9 @@ void ValidationStateTracker::PostCallRecordCreateVideoSessionParametersKHR(VkDev
                                                                            const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    Add(std::make_shared<VIDEO_SESSION_PARAMETERS_STATE>(
-        *pVideoSessionParameters, pCreateInfo, Get<VIDEO_SESSION_STATE>(pCreateInfo->videoSession),
-        Get<VIDEO_SESSION_PARAMETERS_STATE>(pCreateInfo->videoSessionParametersTemplate)));
+    Add(std::make_shared<vvl::VideoSessionParameters>(
+        *pVideoSessionParameters, pCreateInfo, Get<vvl::VideoSession>(pCreateInfo->videoSession),
+        Get<vvl::VideoSessionParameters>(pCreateInfo->videoSessionParametersTemplate)));
 }
 
 void ValidationStateTracker::PostCallRecordUpdateVideoSessionParametersKHR(VkDevice device,
@@ -2980,14 +2989,14 @@ void ValidationStateTracker::PostCallRecordUpdateVideoSessionParametersKHR(VkDev
                                                                            const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    Get<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters)->Update(pUpdateInfo);
+    Get<vvl::VideoSessionParameters>(videoSessionParameters)->Update(pUpdateInfo);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyVideoSessionParametersKHR(VkDevice device,
                                                                            VkVideoSessionParametersKHR videoSessionParameters,
                                                                            const VkAllocationCallbacks *pAllocator,
                                                                            const RecordObject &record_obj) {
-    Destroy<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters);
+    Destroy<vvl::VideoSessionParameters>(videoSessionParameters);
 }
 
 void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
@@ -3043,9 +3052,9 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer
     PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
 }
 
-void ValidationStateTracker::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
-                                                                 const VkVideoBeginCodingInfoKHR *pBeginInfo,
-                                                                 const RecordObject &record_obj) {
+void ValidationStateTracker::PostCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                                                  const VkVideoBeginCodingInfoKHR *pBeginInfo,
+                                                                  const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->BeginVideoCoding(pBeginInfo);
 }
@@ -5243,6 +5252,12 @@ void ValidationStateTracker::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer com
                                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->DecodeVideo(pDecodeInfo);
+}
+
+void ValidationStateTracker::PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
+                                                             const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    cb_state->EncodeVideo(pEncodeInfo);
 }
 
 void ValidationStateTracker::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice, const VkShaderModule shaderModule,

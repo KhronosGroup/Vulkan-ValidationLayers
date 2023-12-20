@@ -38,7 +38,7 @@ struct CommandBufferSubmitState {
     // tracking state accross *all* submissions to the same queue.
     QueryMap local_query_to_state_map;
     EventToStageMap local_event_signal_info;
-    vvl::unordered_map<VkVideoSessionKHR, VideoSessionDeviceState> local_video_session_state{};
+    vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks *c, const vvl::Queue *q) : core(c), queue_state(q) {}
 
@@ -72,7 +72,7 @@ struct CommandBufferSubmitState {
         }
 
         for (const auto &it : cb_state.video_session_updates) {
-            auto video_session_state = core->Get<VIDEO_SESSION_STATE>(it.first);
+            auto video_session_state = core->Get<vvl::VideoSession>(it.first);
             auto local_state_it = local_video_session_state.find(it.first);
             if (local_state_it == local_video_session_state.end()) {
                 local_state_it = local_video_session_state.insert({it.first, video_session_state->DeviceStateCopy()}).first;

@@ -50,8 +50,6 @@ struct ValidateBeginQueryVuids {
     const char* vuid_primitives_generated = kVUIDUndefined;
     const char* vuid_result_status_support = kVUIDUndefined;
     const char* vuid_no_active_in_vc_scope = kVUIDUndefined;
-    const char* vuid_result_status_profile_in_vc_scope = kVUIDUndefined;
-    const char* vuid_vc_scope_query_type = kVUIDUndefined;
 };
 
 struct ValidateEndQueryVuids {
@@ -498,28 +496,84 @@ class CoreChecks : public ValidationStateTracker {
     std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                      const VkVideoProfileInfoKHR* profile) const;
     bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage, const VkVideoProfileInfoKHR* profile) const;
-    bool ValidateVideoPictureResource(const VideoPictureResource& picture_resource, VkCommandBuffer cmdbuf,
-                                      const VIDEO_SESSION_STATE& vs_state, const char* api_name, const char* where,
+    bool IsBufferCompatibleWithVideoProfile(const vvl::Buffer& buffer_state,
+                                            const std::shared_ptr<const vvl::VideoProfileDesc>& video_profile) const;
+    bool IsImageCompatibleWithVideoProfile(const vvl::Image& image_state,
+                                           const std::shared_ptr<const vvl::VideoProfileDesc>& video_profile) const;
+    void EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer& cb_state, vvl::VideoSession& vs_state, const char* vuid);
+    void EnqueueVerifyVideoInlineQueryUnavailable(vvl::CommandBuffer& cb_state, const VkVideoInlineQueryInfoKHR& query_info,
+                                                  Func command);
+    bool ValidateVideoInlineQueryInfo(const vvl::QueryPool& query_pool_state, const VkVideoInlineQueryInfoKHR& query_info,
+                                      const Location& loc) const;
+    bool ValidateVideoEncodeRateControlInfo(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,
+                                            VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state, const Location& loc) const;
+    bool ValidateVideoEncodeRateControlInfoH264(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,
+                                                VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                const Location& loc) const;
+    bool ValidateVideoEncodeRateControlInfoH265(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,
+                                                VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                const Location& loc) const;
+    bool ValidateVideoEncodeRateControlLayerInfo(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
+                                                 const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                 const Location& rc_info_loc) const;
+    template <typename RateControlLayerInfo>
+    bool ValidateVideoEncodeRateControlH26xQp(VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                              const RateControlLayerInfo& rc_layer_info, const char* min_qp_range_vuid,
+                                              const char* max_qp_range_vuid, int32_t min_qp, int32_t max_qp,
+                                              const char* min_qp_per_pic_type_vuid, const char* max_qp_per_pic_type_vuid,
+                                              bool qp_per_picture_type, const char* min_max_qp_compare_vuid,
+                                              const Location& loc) const;
+    bool ValidateVideoEncodeRateControlLayerInfoH264(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
+                                                     const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                     const Location& rc_layer_info_loc) const;
+    bool ValidateVideoEncodeRateControlLayerInfoH265(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
+                                                     const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                     const Location& rc_layer_info_loc) const;
+    bool ValidateVideoPictureResource(const vvl::VideoPictureResource& picture_resource, VkCommandBuffer cmdbuf,
+                                      const vvl::VideoSession& vs_state, const Location& loc,
                                       const char* coded_offset_vuid = nullptr, const char* coded_extent_vuid = nullptr) const;
-    template <typename T1>
-    bool ValidateVideoProfileInfo(const VkVideoProfileInfoKHR* profile, const T1 object, const char* api_name,
-                                  const char* where) const;
-    template <typename T1>
-    bool ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR* profile_list, const T1 object, const char* api_name,
+    template <typename HandleT>
+    bool ValidateVideoProfileInfo(const VkVideoProfileInfoKHR* profile, const HandleT object, const Location& loc) const;
+    template <typename HandleT>
+    bool ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR* profile_list, const HandleT object, const Location& loc,
                                       bool expect_decode_profile, const char* missing_decode_profile_msg_code,
                                       bool expect_encode_profile, const char* missing_encode_profile_msg_code) const;
-    bool ValidateDecodeH264ParametersAddInfo(const VkVideoDecodeH264SessionParametersAddInfoKHR* add_info, VkDevice device,
-                                             const char* api_name, const char* where,
+    bool ValidateDecodeH264ParametersAddInfo(const vvl::VideoSession& vs_state,
+                                             const VkVideoDecodeH264SessionParametersAddInfoKHR* add_info, VkDevice device,
+                                             const Location& loc,
                                              const VkVideoDecodeH264SessionParametersCreateInfoKHR* create_info = nullptr,
-                                             const VIDEO_SESSION_PARAMETERS_STATE* template_state = nullptr) const;
-    bool ValidateDecodeH265ParametersAddInfo(const VkVideoDecodeH265SessionParametersAddInfoKHR* add_info, VkDevice device,
-                                             const char* api_name, const char* where,
+                                             const vvl::VideoSessionParameters* template_state = nullptr) const;
+    bool ValidateDecodeH265ParametersAddInfo(const vvl::VideoSession& vs_state,
+                                             const VkVideoDecodeH265SessionParametersAddInfoKHR* add_info, VkDevice device,
+                                             const Location& loc,
                                              const VkVideoDecodeH265SessionParametersCreateInfoKHR* create_info = nullptr,
-                                             const VIDEO_SESSION_PARAMETERS_STATE* template_state = nullptr) const;
-    bool ValidateVideoDecodeInfoH264(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    bool ValidateVideoDecodeInfoH265(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
+                                             const vvl::VideoSessionParameters* template_state = nullptr) const;
+    bool ValidateEncodeH264ParametersAddInfo(const vvl::VideoSession& vs_state,
+                                             const VkVideoEncodeH264SessionParametersAddInfoKHR* add_info, VkDevice device,
+                                             const Location& loc,
+                                             const VkVideoEncodeH264SessionParametersCreateInfoKHR* create_info = nullptr,
+                                             const vvl::VideoSessionParameters* template_state = nullptr) const;
+    bool ValidateEncodeH265ParametersAddInfo(const vvl::VideoSession& vs_state,
+                                             const VkVideoEncodeH265SessionParametersAddInfoKHR* add_info, VkDevice device,
+                                             const Location& loc,
+                                             const VkVideoEncodeH265SessionParametersCreateInfoKHR* create_info = nullptr,
+                                             const vvl::VideoSessionParameters* template_state = nullptr) const;
+    bool ValidateVideoDecodeInfoH264(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
+                                     const Location& loc) const;
+    bool ValidateVideoDecodeInfoH265(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
+                                     const Location& loc) const;
+    bool ValidateVideoEncodeH264PicType(const vvl::VideoSession& vs_state, StdVideoH264PictureType pic_type,
+                                        const char* where) const;
+    bool ValidateVideoEncodeInfoH264(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
+                                     const Location& loc) const;
+    bool ValidateVideoEncodeH265PicType(const vvl::VideoSession& vs_state, StdVideoH265PictureType pic_type,
+                                        const char* where) const;
+    bool ValidateVideoEncodeInfoH265(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
+                                     const Location& loc) const;
     bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
+    bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info) const;
     bool ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
+    bool ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info) const;
     template <typename HandleT>
     bool ValidateImageSampleCount(const HandleT handle, const vvl::Image& image_state, VkSampleCountFlagBits sample_count,
                                   const Location& loc, const std::string& vuid) const;
@@ -1904,6 +1958,9 @@ class CoreChecks : public ValidationStateTracker {
                                                                   uint32_t* pVideoFormatPropertyCount,
                                                                   VkVideoFormatPropertiesKHR* pVideoFormatProperties,
                                                                   const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+        VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+        VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession,
                                               const ErrorObject& error_obj) const override;
@@ -1924,16 +1981,29 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetEncodedVideoSessionParametersKHR(
+        VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+        VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData,
+        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo,
                                                const ErrorObject& error_obj) const override;
+    void PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo,
+                                             const RecordObject& record_obj) override;
     bool PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo,
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                  const VkVideoCodingControlInfoKHR* pCodingControlInfo,
                                                  const ErrorObject& error_obj) const override;
+    void PreCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoCodingControlInfoKHR* pCodingControlInfo,
+                                               const RecordObject& record_obj) override;
     bool PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                           const ErrorObject& error_obj) const override;
-
+    void PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
+                                        const RecordObject& record_obj) override;
+    bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
+                                          const ErrorObject& error_obj) const override;
+    void PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
+                                        const RecordObject& record_obj) override;
     bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                   uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
                                                   const ErrorObject& error_obj) const override;

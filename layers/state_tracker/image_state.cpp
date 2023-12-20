@@ -199,7 +199,7 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
       fragment_encoder(nullptr),
       store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data->video_profile_cache_.Get(
-          dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+          dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
         bool is_resident = (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
         tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
@@ -242,7 +242,7 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
       fragment_encoder(nullptr),
       store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data->video_profile_cache_.Get(
-          dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+          dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 

@@ -33,10 +33,10 @@ class Fence;
 class Semaphore;
 class Surface;
 class Swapchain;
+class VideoProfileDesc;
 } // namespace vvl
 
 class ValidationStateTracker;
-class VideoProfileDesc;
 
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
     return (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
@@ -141,7 +141,7 @@ class Image : public Bindable {
 
     std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
 
-    vvl::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
+    vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
     Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
           VkFormatFeatureFlags2KHR features);

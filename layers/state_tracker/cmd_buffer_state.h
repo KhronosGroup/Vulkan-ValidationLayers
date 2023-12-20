@@ -32,14 +32,14 @@
 #include "containers/custom_containers.h"
 
 struct SubpassInfo;
-class VIDEO_SESSION_STATE;
-class VIDEO_SESSION_PARAMETERS_STATE;
 class CoreChecks;
 class ValidationStateTracker;
 
 namespace vvl {
 class Framebuffer;
 class RenderPass;
+class VideoSession;
+class VideoSessionParameters;
 }  // namespace vvl
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -458,9 +458,11 @@ class CommandBuffer : public RefcountedStateObject {
     uint32_t small_indexed_draw_call_count;
 
     // Video coding related state tracking
-    std::shared_ptr<VIDEO_SESSION_STATE> bound_video_session;
-    std::shared_ptr<VIDEO_SESSION_PARAMETERS_STATE> bound_video_session_parameters;
+    std::shared_ptr<vvl::VideoSession> bound_video_session;
+    std::shared_ptr<vvl::VideoSessionParameters> bound_video_session_parameters;
     BoundVideoPictureResources bound_video_picture_resources;
+    VideoEncodeRateControlState video_encode_rate_control_state{};
+    std::optional<uint32_t> video_encode_quality_level{};
     VideoSessionUpdateMap video_session_updates;
 
     bool transform_feedback_active{false};
@@ -557,6 +559,7 @@ class CommandBuffer : public RefcountedStateObject {
     void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo);
     void DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo);
+    void EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo);
 
     void ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
@@ -699,6 +702,7 @@ class CommandBuffer : public RefcountedStateObject {
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
+    void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void UnbindResources();
 };
 

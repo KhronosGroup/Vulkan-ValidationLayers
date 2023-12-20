@@ -18,10 +18,18 @@
 #include "state_tracker/state_tracker.h"
 #include "generated/layer_chassis_dispatch.h"
 
-VideoProfileDesc::VideoProfileDesc(const ValidationStateTracker *dev_data, VkVideoProfileInfoKHR const *profile)
-    : std::enable_shared_from_this<VideoProfileDesc>(), profile_(), capabilities_(), cache_(nullptr) {
+#include <sstream>
+
+namespace vvl {
+
+VideoProfileDesc::VideoProfileDesc(VkPhysicalDevice physical_device, VkVideoProfileInfoKHR const *profile)
+    : std::enable_shared_from_this<VideoProfileDesc>(),
+      physical_device_(physical_device),
+      profile_(),
+      capabilities_(),
+      cache_(nullptr) {
     if (InitProfile(profile)) {
-        InitCapabilities(dev_data);
+        InitCapabilities(physical_device);
     }
 }
 
@@ -70,6 +78,34 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
                 profile_.base.pNext = &profile_.decode_h265;
                 break;
             }
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+                auto encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264ProfileInfoKHR>(profile->pNext);
+                if (encode_h264) {
+                    profile_.valid = true;
+                    profile_.encode_h264 = *encode_h264;
+                    profile_.encode_h264.pNext = nullptr;
+                } else {
+                    profile_.valid = false;
+                    profile_.encode_h264 = vku::InitStructHelper();
+                }
+                profile_.is_encode = true;
+                profile_.base.pNext = &profile_.encode_h264;
+                break;
+            }
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+                auto encode_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265ProfileInfoKHR>(profile->pNext);
+                if (encode_h265) {
+                    profile_.valid = true;
+                    profile_.encode_h265 = *encode_h265;
+                    profile_.encode_h265.pNext = nullptr;
+                } else {
+                    profile_.valid = false;
+                    profile_.encode_h265 = vku::InitStructHelper();
+                }
+                profile_.is_encode = true;
+                profile_.base.pNext = &profile_.encode_h265;
+                break;
+            }
             default:
                 profile_.valid = false;
                 break;
@@ -85,6 +121,16 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
                 profile_.decode_usage = vku::InitStructHelper();
             }
         }
+        if (profile_.is_encode) {
+            auto usage = vku::FindStructInPNextChain<VkVideoEncodeUsageInfoKHR>(profile->pNext);
+            if (usage) {
+                profile_.encode_usage = *usage;
+                profile_.encode_usage.pNext = profile_.base.pNext;
+                profile_.base.pNext = &profile_.encode_usage;
+            } else {
+                profile_.encode_usage = vku::InitStructHelper();
+            }
+        }
     } else {
         profile_.valid = false;
         profile_.base = vku::InitStructHelper();
@@ -93,7 +139,7 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
     return profile_.valid;
 }
 
-void VideoProfileDesc::InitCapabilities(const ValidationStateTracker *dev_data) {
+void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
     capabilities_.base = vku::InitStructHelper();
     switch (profile_.base.videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
@@ -110,27 +156,42 @@ void VideoProfileDesc::InitCapabilities(const ValidationStateTracker *dev_data) 
             capabilities_.decode_h265 = vku::InitStructHelper();
             break;
 
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+            capabilities_.base.pNext = &capabilities_.encode;
+            capabilities_.encode = vku::InitStructHelper();
+            capabilities_.encode.pNext = &capabilities_.encode_h264;
+            capabilities_.encode_h264 = vku::InitStructHelper();
+            break;
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+            capabilities_.base.pNext = &capabilities_.encode;
+            capabilities_.encode = vku::InitStructHelper();
+            capabilities_.encode.pNext = &capabilities_.encode_h265;
+            capabilities_.encode_h265 = vku::InitStructHelper();
+            break;
+
         default:
             return;
     }
 
-    VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(dev_data->physical_device, &profile_.base, &capabilities_.base);
+    VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physical_device, &profile_.base, &capabilities_.base);
     if (result == VK_SUCCESS) {
         capabilities_.supported = true;
     }
 }
 
-std::shared_ptr<const VideoProfileDesc> VideoProfileDesc::Cache::GetOrCreate(const ValidationStateTracker *dev_data,
+std::shared_ptr<const VideoProfileDesc> VideoProfileDesc::Cache::GetOrCreate(VkPhysicalDevice physical_device,
                                                                              VkVideoProfileInfoKHR const *profile) {
-    VideoProfileDesc desc(dev_data, profile);
+    VideoProfileDesc desc(physical_device, profile);
     if (desc.GetProfile().valid) {
-        auto it = set_.find(&desc);
-        if (it != set_.end()) {
+        auto &set = entries_[physical_device];
+        auto it = set.find(&desc);
+        if (it != set.end()) {
             return (*it)->shared_from_this();
         } else {
             auto desc_ptr = std::make_shared<VideoProfileDesc>(desc);
             desc_ptr->cache_ = this;
-            set_.emplace(desc_ptr.get());
+            set.emplace(desc_ptr.get());
             return desc_ptr;
         }
     } else {
@@ -138,23 +199,23 @@ std::shared_ptr<const VideoProfileDesc> VideoProfileDesc::Cache::GetOrCreate(con
     }
 }
 
-std::shared_ptr<const VideoProfileDesc> VideoProfileDesc::Cache::Get(const ValidationStateTracker *dev_data,
+std::shared_ptr<const VideoProfileDesc> VideoProfileDesc::Cache::Get(VkPhysicalDevice physical_device,
                                                                      VkVideoProfileInfoKHR const *profile) {
     if (profile) {
         std::unique_lock<std::mutex> lock(mutex_);
-        return GetOrCreate(dev_data, profile);
+        return GetOrCreate(physical_device, profile);
     } else {
         return nullptr;
     }
 }
 
-SupportedVideoProfiles VideoProfileDesc::Cache::Get(const ValidationStateTracker *dev_data,
+SupportedVideoProfiles VideoProfileDesc::Cache::Get(VkPhysicalDevice physical_device,
                                                     VkVideoProfileListInfoKHR const *profile_list) {
     SupportedVideoProfiles supported_profiles{};
     if (profile_list) {
         std::unique_lock<std::mutex> lock(mutex_);
         for (uint32_t i = 0; i < profile_list->profileCount; ++i) {
-            auto profile_desc = GetOrCreate(dev_data, &profile_list->pProfiles[i]);
+            auto profile_desc = GetOrCreate(physical_device, &profile_list->pProfiles[i]);
             if (profile_desc) {
                 supported_profiles.insert(std::move(profile_desc));
             }
@@ -165,25 +226,26 @@ SupportedVideoProfiles VideoProfileDesc::Cache::Get(const ValidationStateTracker
 
 void VideoProfileDesc::Cache::Release(VideoProfileDesc const *desc) {
     std::unique_lock<std::mutex> lock(mutex_);
-    set_.erase(desc);
+    entries_[desc->physical_device_].erase(desc);
 }
 
 VideoPictureResource::VideoPictureResource()
     : image_view_state(nullptr), image_state(nullptr), base_array_layer(0), range(), coded_offset(), coded_extent() {}
 
 VideoPictureResource::VideoPictureResource(ValidationStateTracker const *dev_data, VkVideoPictureResourceInfoKHR const &res)
-    : image_view_state(dev_data->Get<vvl::ImageView>(res.imageViewBinding)),
+    : image_view_state(dev_data->Get<ImageView>(res.imageViewBinding)),
       image_state(image_view_state ? image_view_state->image_state : nullptr),
       base_array_layer(res.baseArrayLayer),
       range(GetImageSubresourceRange(image_view_state.get(), res.baseArrayLayer)),
       coded_offset(res.codedOffset),
       coded_extent(res.codedExtent) {}
 
-VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(vvl::ImageView const *image_view_state, uint32_t layer) {
+VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(ImageView const *image_view_state, uint32_t layer) {
     VkImageSubresourceRange range{};
     if (image_view_state) {
         range = image_view_state->normalized_subresource_range;
         range.baseArrayLayer += layer;
+        range.layerCount = 1;
     }
     return range;
 }
@@ -200,6 +262,8 @@ VideoPictureID::VideoPictureID(VideoProfileDesc const &profile, VkVideoReference
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
             break;
 
         default:
@@ -214,6 +278,8 @@ void VideoSessionDeviceState::Reset() {
         all_pictures_[i].clear();
         pictures_per_id_[i].clear();
     }
+    encode_.quality_level = 0;
+    encode_.rate_control_state = VideoEncodeRateControlState();
 }
 
 void VideoSessionDeviceState::Activate(int32_t slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) {
@@ -237,16 +303,238 @@ void VideoSessionDeviceState::Activate(int32_t slot_index, const VideoPictureID 
     pictures_per_id_[slot_index][picture_id] = res;
 }
 
+void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureID &picture_id) {
+    assert(!picture_id.IsBothFields());
+
+    bool previous_is_frame = pictures_per_id_[slot_index].find(VideoPictureID::Frame()) != pictures_per_id_[slot_index].end();
+    if (picture_id.IsFrame() || previous_is_frame) {
+        // If invalidation happens due to a non-reference setup frame then it invalidates all previous pictures
+        // Also invalidate all if the previous picture reference was a frame (e.g. a field invalidates a previous frame)
+        all_pictures_[slot_index].clear();
+        pictures_per_id_[slot_index].clear();
+    } else {
+        // Invalidate any existing picture reference with the specified id by removing it
+        auto prev_res_it = pictures_per_id_[slot_index].find(picture_id);
+        if (prev_res_it != pictures_per_id_[slot_index].end()) {
+            VideoPictureResource res = prev_res_it->second;
+            pictures_per_id_[slot_index].erase(picture_id);
+            // Check if there are any more references to the previous resource
+            auto other_ref_it = std::find_if(std::begin(pictures_per_id_[slot_index]), std::end(pictures_per_id_[slot_index]),
+                                             [&res](const auto &it) { return it.second == res; });
+            if (other_ref_it == pictures_per_id_[slot_index].end()) {
+                // If there are no remaining references to the resource, remove it
+                all_pictures_[slot_index].erase(prev_res_it->second);
+            }
+        }
+    }
+
+    // If there are no remaining picture references then deactivate the slot
+    if (pictures_per_id_[slot_index].size() == 0) {
+        is_active_[slot_index] = false;
+    }
+}
+
 void VideoSessionDeviceState::Deactivate(int32_t slot_index) {
     is_active_[slot_index] = false;
     all_pictures_[slot_index].clear();
     pictures_per_id_[slot_index].clear();
 }
 
-VIDEO_SESSION_STATE::VIDEO_SESSION_STATE(ValidationStateTracker *dev_data, VkVideoSessionKHR vs,
-                                         VkVideoSessionCreateInfoKHR const *pCreateInfo,
-                                         std::shared_ptr<const VideoProfileDesc> &&profile_desc)
-    : vvl::StateObject(vs, kVulkanObjectTypeVideoSessionKHR),
+class RateControlStateMismatchRecorder {
+  public:
+    RateControlStateMismatchRecorder() : has_mismatch_{false}, stream_{}, string_{} {}
+
+    template <typename T>
+    void Record(const char *where, T actual, T expected) {
+        has_mismatch_ = true;
+        stream_ << where << " (" << actual << ") does not match current device state (" << expected << ")." << std::endl;
+    }
+
+    template <typename T>
+    void RecordDefault(const char *missing_struct, const char *member, T expected) {
+        has_mismatch_ = true;
+        stream_ << missing_struct << " is not in the pNext chain but the current device state for its " << member
+                << " member is set (" << expected << ")." << std::endl;
+    }
+
+    template <typename T>
+    void RecordLayer(uint32_t layer_idx, const char *where, T actual, T expected) {
+        has_mismatch_ = true;
+        stream_ << where << " (" << actual << ") in VkVideoEncodeRateControlLayerInfoKHR::pLayers[" << layer_idx
+                << "] does not match current device state (" << expected << ")." << std::endl;
+    }
+
+    template <typename T>
+    void RecordLayerDefault(uint32_t layer_idx, const char *missing_struct, const char *member, T expected) {
+        has_mismatch_ = true;
+        stream_ << missing_struct << " is not in the pNext chain of VkVideoEncodeRateControlLayerInfoKHR::pLayers[" << layer_idx
+                << "] but the current device state for its " << member << " member is set (" << expected << ")." << std::endl;
+    }
+
+    bool HasMismatch() const { return has_mismatch_; }
+
+    const char *c_str() const {
+        string_ = stream_.str();
+        return string_.c_str();
+    }
+
+  private:
+    bool has_mismatch_{};
+    std::stringstream stream_{};
+    mutable std::string string_{};
+};
+
+bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTracker *dev_data, const VideoSession *vs_state,
+                                                       const safe_VkVideoBeginCodingInfoKHR &begin_info) const {
+    bool skip = false;
+
+    assert(vs_state->IsEncode());
+
+    auto rc_base = vku::FindStructInPNextChain<VkVideoEncodeRateControlInfoKHR>(begin_info.pNext);
+
+    if (rc_base != nullptr) {
+        const auto &ref_base = encode_.rate_control_state.base;
+        RateControlStateMismatchRecorder mismatch_recorder{};
+
+        auto string_bool = [](VkBool32 value) { return value ? "VK_TRUE" : "VK_FALSE"; };
+
+#define CHECK_RC_INFO(SCOPE, STRUCT_NAME, MEMBER, CONVERTER)                                                                   \
+    if (rc_##SCOPE != nullptr) {                                                                                               \
+        if (rc_##SCOPE->MEMBER != ref_##SCOPE.MEMBER) {                                                                        \
+            mismatch_recorder.Record(#STRUCT_NAME "::" #MEMBER, CONVERTER(rc_##SCOPE->MEMBER), CONVERTER(ref_##SCOPE.MEMBER)); \
+        }                                                                                                                      \
+    } else {                                                                                                                   \
+        if (ref_##SCOPE.MEMBER != decltype(ref_##SCOPE.MEMBER)()) {                                                            \
+            mismatch_recorder.RecordDefault(#STRUCT_NAME, #MEMBER, CONVERTER(ref_##SCOPE.MEMBER));                             \
+        }                                                                                                                      \
+    }
+
+#define CHECK_RC_LAYER_INFO(SCOPE, STRUCT_NAME, MEMBER, CONVERTER)                                                       \
+    if (rc_layer_##SCOPE != nullptr) {                                                                                   \
+        if (rc_layer_##SCOPE->MEMBER != ref_layer_##SCOPE.MEMBER) {                                                      \
+            mismatch_recorder.RecordLayer(layer_idx, #STRUCT_NAME "::" #MEMBER, CONVERTER(rc_layer_##SCOPE->MEMBER),     \
+                                          CONVERTER(ref_layer_##SCOPE.MEMBER));                                          \
+        }                                                                                                                \
+    } else {                                                                                                             \
+        if (ref_layer_##SCOPE.MEMBER != decltype(ref_layer_##SCOPE.MEMBER)()) {                                          \
+            mismatch_recorder.RecordLayerDefault(layer_idx, #STRUCT_NAME, #MEMBER, CONVERTER(ref_layer_##SCOPE.MEMBER)); \
+        }                                                                                                                \
+    }
+
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, rateControlMode, string_VkVideoEncodeRateControlModeFlagBitsKHR);
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, layerCount, uint32_t);
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, virtualBufferSizeInMs, uint32_t);
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, initialVirtualBufferSizeInMs, uint32_t);
+
+        switch (vs_state->GetCodecOp()) {
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+                auto rc_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264RateControlInfoKHR>(begin_info.pNext);
+                const auto &ref_h264 = encode_.rate_control_state.h264;
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, flags, string_VkVideoEncodeH264RateControlFlagsKHR);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, gopFrameCount, uint32_t);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, idrPeriod, uint32_t);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, consecutiveBFrameCount, uint32_t);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, temporalLayerCount, uint32_t);
+                break;
+            }
+
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+                auto rc_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265RateControlInfoKHR>(begin_info.pNext);
+                const auto &ref_h265 = encode_.rate_control_state.h265;
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, flags, string_VkVideoEncodeH265RateControlFlagsKHR);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, gopFrameCount, uint32_t);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, idrPeriod, uint32_t);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, consecutiveBFrameCount, uint32_t);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, subLayerCount, uint32_t);
+                break;
+            }
+
+            default:
+                assert(false);
+                break;
+        }
+
+        for (uint32_t layer_idx = 0; layer_idx < std::min(rc_base->layerCount, ref_base.layerCount); ++layer_idx) {
+            const auto rc_layer_base = &rc_base->pLayers[layer_idx];
+            const auto &ref_layer_base = encode_.rate_control_state.layers[layer_idx].base;
+
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, averageBitrate, uint64_t);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, maxBitrate, uint64_t);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, frameRateNumerator, uint32_t);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, frameRateDenominator, uint32_t);
+
+            switch (vs_state->GetCodecOp()) {
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+                    auto rc_layer_h264 =
+                        vku::FindStructInPNextChain<VkVideoEncodeH264RateControlLayerInfoKHR>(rc_layer_base->pNext);
+                    const auto &ref_layer_h264 = encode_.rate_control_state.layers[layer_idx].h264;
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, useMinQp, string_bool);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpI, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpP, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, useMaxQp, string_bool);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpI, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpP, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, useMaxFrameSize, string_bool);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.frameISize, uint32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.framePSize, uint32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.frameBSize, uint32_t);
+                    break;
+                }
+
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+                    auto rc_layer_h265 =
+                        vku::FindStructInPNextChain<VkVideoEncodeH265RateControlLayerInfoKHR>(rc_layer_base->pNext);
+                    const auto &ref_layer_h265 = encode_.rate_control_state.layers[layer_idx].h265;
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, useMinQp, string_bool);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpI, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpP, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, useMaxQp, string_bool);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpI, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpP, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, useMaxFrameSize, string_bool);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameISize, uint32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.framePSize, uint32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameBSize, uint32_t);
+                    break;
+                }
+
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+
+#undef CHECK_RC_INFO
+#undef CHECK_RC_LAYER_INFO
+
+        if (mismatch_recorder.HasMismatch()) {
+            skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254",
+                                       "The video encode rate control information specified when beginning the video coding scope "
+                                       "does not match the currently configured video encode rate control state for %s:\n%s",
+                                       dev_data->FormatHandle(vs_state->Handle()).c_str(), mismatch_recorder.c_str());
+        }
+
+    } else {
+        if (encode_.rate_control_state.base.rateControlMode != VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR) {
+            skip |=
+                dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08253",
+                                   "No VkVideoEncodeRateControlInfoKHR structure was specified when beginning the "
+                                   "video coding scope but the currently set video encode rate control mode for %s is %s.",
+                                   dev_data->FormatHandle(vs_state->Handle()).c_str(),
+                                   string_VkVideoEncodeRateControlModeFlagBitsKHR(encode_.rate_control_state.base.rateControlMode));
+        }
+    }
+
+    return skip;
+}
+
+VideoSession::VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR vs, VkVideoSessionCreateInfoKHR const *pCreateInfo,
+                           std::shared_ptr<const VideoProfileDesc> &&profile_desc)
+    : StateObject(vs, kVulkanObjectTypeVideoSessionKHR),
       create_info(pCreateInfo),
       profile(std::move(profile_desc)),
       memory_binding_count_queried(false),
@@ -256,8 +544,7 @@ VIDEO_SESSION_STATE::VIDEO_SESSION_STATE(ValidationStateTracker *dev_data, VkVid
       device_state_mutex_(),
       device_state_(pCreateInfo->maxDpbSlots) {}
 
-VIDEO_SESSION_STATE::MemoryBindingMap VIDEO_SESSION_STATE::GetMemoryBindings(ValidationStateTracker *dev_data,
-                                                                             VkVideoSessionKHR vs) {
+VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(ValidationStateTracker *dev_data, VkVideoSessionKHR vs) {
     uint32_t memory_requirement_count;
     DispatchGetVideoSessionMemoryRequirementsKHR(dev_data->device, vs, &memory_requirement_count, nullptr);
 
@@ -273,16 +560,56 @@ VIDEO_SESSION_STATE::MemoryBindingMap VIDEO_SESSION_STATE::GetMemoryBindings(Val
     return memory_bindings;
 }
 
-VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionParametersKHR vsp,
-                                                               VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
-                                                               std::shared_ptr<VIDEO_SESSION_STATE> &&vsstate,
-                                                               std::shared_ptr<VIDEO_SESSION_PARAMETERS_STATE> &&vsp_template)
-    : vvl::StateObject(vsp, kVulkanObjectTypeVideoSessionParametersKHR), createInfo(pCreateInfo), vs_state(vsstate), mutex_(), data_() {
+bool VideoSession::ReferenceSetupRequested(VkVideoDecodeInfoKHR const &decode_info) const {
+    switch (GetCodecOp()) {
+        case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
+            auto pic_info = vku::FindStructInPNextChain<VkVideoDecodeH264PictureInfoKHR>(decode_info.pNext);
+            return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr && pic_info->pStdPictureInfo->flags.is_reference;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
+            auto pic_info = vku::FindStructInPNextChain<VkVideoDecodeH265PictureInfoKHR>(decode_info.pNext);
+            return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr && pic_info->pStdPictureInfo->flags.IsReference;
+        }
+
+        default:
+            return false;
+    }
+}
+
+bool VideoSession::ReferenceSetupRequested(VkVideoEncodeInfoKHR const &encode_info) const {
+    switch (GetCodecOp()) {
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+            auto pic_info = vku::FindStructInPNextChain<VkVideoEncodeH264PictureInfoKHR>(encode_info.pNext);
+            return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr && pic_info->pStdPictureInfo->flags.is_reference;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+            auto pic_info = vku::FindStructInPNextChain<VkVideoEncodeH265PictureInfoKHR>(encode_info.pNext);
+            return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr && pic_info->pStdPictureInfo->flags.is_reference;
+        }
+
+        default:
+            return false;
+    }
+}
+
+VideoSessionParameters::VideoSessionParameters(VkVideoSessionParametersKHR vsp,
+                                               VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
+                                               std::shared_ptr<VideoSession> &&vsstate,
+                                               std::shared_ptr<VideoSessionParameters> &&vsp_template)
+    : StateObject(vsp, kVulkanObjectTypeVideoSessionParametersKHR),
+      create_info(pCreateInfo),
+      vs_state(vsstate),
+      mutex_(),
+      data_(),
+      config_(InitConfig(pCreateInfo)) {
     data_.update_sequence_counter = 0;
 
     switch (vs_state->GetCodecOp()) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            const auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264SessionParametersCreateInfoKHR>(createInfo.pNext);
+            const auto decode_h264 =
+                vku::FindStructInPNextChain<VkVideoDecodeH264SessionParametersCreateInfoKHR>(create_info.pNext);
             if (vsp_template) {
                 auto template_data = vsp_template->Lock();
                 data_.h264.sps = template_data->h264.sps;
@@ -291,13 +618,14 @@ VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionPar
             if (decode_h264->pParametersAddInfo) {
                 AddDecodeH264(decode_h264->pParametersAddInfo);
             }
-            data_.h264.spsCapacity = decode_h264->maxStdSPSCount;
-            data_.h264.ppsCapacity = decode_h264->maxStdPPSCount;
+            data_.h264.sps_capacity = decode_h264->maxStdSPSCount;
+            data_.h264.pps_capacity = decode_h264->maxStdPPSCount;
             break;
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-            const auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265SessionParametersCreateInfoKHR>(createInfo.pNext);
+            const auto decode_h265 =
+                vku::FindStructInPNextChain<VkVideoDecodeH265SessionParametersCreateInfoKHR>(create_info.pNext);
             if (vsp_template) {
                 auto template_data = vsp_template->Lock();
                 data_.h265.vps = template_data->h265.vps;
@@ -307,9 +635,43 @@ VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionPar
             if (decode_h265->pParametersAddInfo) {
                 AddDecodeH265(decode_h265->pParametersAddInfo);
             }
-            data_.h265.vpsCapacity = decode_h265->maxStdVPSCount;
-            data_.h265.spsCapacity = decode_h265->maxStdSPSCount;
-            data_.h265.ppsCapacity = decode_h265->maxStdPPSCount;
+            data_.h265.vps_capacity = decode_h265->maxStdVPSCount;
+            data_.h265.sps_capacity = decode_h265->maxStdSPSCount;
+            data_.h265.pps_capacity = decode_h265->maxStdPPSCount;
+            break;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+            const auto encode_h264 =
+                vku::FindStructInPNextChain<VkVideoEncodeH264SessionParametersCreateInfoKHR>(create_info.pNext);
+            if (vsp_template) {
+                auto template_data = vsp_template->Lock();
+                data_.h264.sps = template_data->h264.sps;
+                data_.h264.pps = template_data->h264.pps;
+            }
+            if (encode_h264->pParametersAddInfo) {
+                AddEncodeH264(encode_h264->pParametersAddInfo);
+            }
+            data_.h264.sps_capacity = encode_h264->maxStdSPSCount;
+            data_.h264.pps_capacity = encode_h264->maxStdPPSCount;
+            break;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+            const auto encode_h265 =
+                vku::FindStructInPNextChain<VkVideoEncodeH265SessionParametersCreateInfoKHR>(create_info.pNext);
+            if (vsp_template) {
+                auto template_data = vsp_template->Lock();
+                data_.h265.vps = template_data->h265.vps;
+                data_.h265.sps = template_data->h265.sps;
+                data_.h265.pps = template_data->h265.pps;
+            }
+            if (encode_h265->pParametersAddInfo) {
+                AddEncodeH265(encode_h265->pParametersAddInfo);
+            }
+            data_.h265.vps_capacity = encode_h265->maxStdVPSCount;
+            data_.h265.sps_capacity = encode_h265->maxStdSPSCount;
+            data_.h265.pps_capacity = encode_h265->maxStdPPSCount;
             break;
         }
 
@@ -318,7 +680,20 @@ VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionPar
     }
 }
 
-void VIDEO_SESSION_PARAMETERS_STATE::Update(VkVideoSessionParametersUpdateInfoKHR const *info) {
+VideoSessionParameters::Config VideoSessionParameters::InitConfig(VkVideoSessionParametersCreateInfoKHR const *pCreateInfo) {
+    Config config{};
+
+    if (vs_state->IsEncode()) {
+        auto quality_level_info = vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(pCreateInfo->pNext);
+        if (quality_level_info != nullptr) {
+            config.encode.quality_level = quality_level_info->qualityLevel;
+        }
+    }
+
+    return config;
+}
+
+void VideoSessionParameters::Update(VkVideoSessionParametersUpdateInfoKHR const *info) {
     auto lock = Lock();
 
     data_.update_sequence_counter = info->updateSequenceCount;
@@ -340,12 +715,28 @@ void VIDEO_SESSION_PARAMETERS_STATE::Update(VkVideoSessionParametersUpdateInfoKH
             break;
         }
 
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+            auto add_info = vku::FindStructInPNextChain<VkVideoEncodeH264SessionParametersAddInfoKHR>(info->pNext);
+            if (add_info) {
+                AddEncodeH264(add_info);
+            }
+            break;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+            auto add_info = vku::FindStructInPNextChain<VkVideoEncodeH265SessionParametersAddInfoKHR>(info->pNext);
+            if (add_info) {
+                AddEncodeH265(add_info);
+            }
+            break;
+        }
+
         default:
             break;
     }
 }
 
-void VIDEO_SESSION_PARAMETERS_STATE::AddDecodeH264(VkVideoDecodeH264SessionParametersAddInfoKHR const *info) {
+void VideoSessionParameters::AddDecodeH264(VkVideoDecodeH264SessionParametersAddInfoKHR const *info) {
     for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
         const auto &entry = info->pStdSPSs[i];
         data_.h264.sps[GetH264SPSKey(entry)] = entry;
@@ -356,7 +747,7 @@ void VIDEO_SESSION_PARAMETERS_STATE::AddDecodeH264(VkVideoDecodeH264SessionParam
     }
 }
 
-void VIDEO_SESSION_PARAMETERS_STATE::AddDecodeH265(VkVideoDecodeH265SessionParametersAddInfoKHR const *info) {
+void VideoSessionParameters::AddDecodeH265(VkVideoDecodeH265SessionParametersAddInfoKHR const *info) {
     for (uint32_t i = 0; i < info->stdVPSCount; ++i) {
         const auto &entry = info->pStdVPSs[i];
         data_.h265.vps[GetH265VPSKey(entry)] = entry;
@@ -370,3 +761,31 @@ void VIDEO_SESSION_PARAMETERS_STATE::AddDecodeH265(VkVideoDecodeH265SessionParam
         data_.h265.pps[GetH265PPSKey(entry)] = entry;
     }
 }
+
+void VideoSessionParameters::AddEncodeH264(VkVideoEncodeH264SessionParametersAddInfoKHR const *info) {
+    for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
+        const auto &entry = info->pStdSPSs[i];
+        data_.h264.sps[GetH264SPSKey(entry)] = entry;
+    }
+    for (uint32_t i = 0; i < info->stdPPSCount; ++i) {
+        const auto &entry = info->pStdPPSs[i];
+        data_.h264.pps[GetH264PPSKey(entry)] = entry;
+    }
+}
+
+void VideoSessionParameters::AddEncodeH265(VkVideoEncodeH265SessionParametersAddInfoKHR const *info) {
+    for (uint32_t i = 0; i < info->stdVPSCount; ++i) {
+        const auto &entry = info->pStdVPSs[i];
+        data_.h265.vps[GetH265VPSKey(entry)] = entry;
+    }
+    for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
+        const auto &entry = info->pStdSPSs[i];
+        data_.h265.sps[GetH265SPSKey(entry)] = entry;
+    }
+    for (uint32_t i = 0; i < info->stdPPSCount; ++i) {
+        const auto &entry = info->pStdPPSs[i];
+        data_.h265.pps[GetH265PPSKey(entry)] = entry;
+    }
+}
+
+}  // namespace vvl
