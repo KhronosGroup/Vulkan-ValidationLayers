@@ -2454,9 +2454,15 @@ class CoreChecks : public ValidationStateTracker {
                                                          VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                          const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
                                                          const ErrorObject& error_obj) const override;
+    bool ValidateCmdBindDescriptorBufferEmbeddedSamplers(const vvl::CommandBuffer& cb_state, VkPipelineLayout layout, uint32_t set,
+                                                         const Location& loc) const;
     bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
                                                                    VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
                                                                    uint32_t set, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+        VkCommandBuffer commandBuffer,
+        const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                     const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                     const ErrorObject& error_obj) const override;
