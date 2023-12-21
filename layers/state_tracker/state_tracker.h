@@ -1673,6 +1673,9 @@ class ValidationStateTracker : public ValidationObject {
                                                        VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                        const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
                                                        const RecordObject& record_obj) override;
+    void PreCallRecordCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
+                                                        const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+                                                        const RecordObject& record_obj) override;
     void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj) override;
