@@ -5655,49 +5655,55 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
         GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
     }
 
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
     vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
-    ASSERT_TRUE(command_pool.initialized());
     vkt::CommandBuffer command_buffer(m_device, &command_pool);
-
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count.descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.flags = 0;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-    ASSERT_TRUE(ds_pool.initialized());
-
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
-
-    VkDescriptorSet descriptorSet;
-    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
-    alloc_info.pSetLayouts = &ds_layout.handle();
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
-
-    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {dsl_binding});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
-
     command_buffer.begin();
-    // Set invalid set
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361");
     vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptorSet, 0, nullptr);
+                              &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
-    command_buffer.end();
+}
+
+TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+
+    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!no_gfx_qfi) {
+        GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
+    }
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
+    vkt::CommandBuffer command_buffer(m_device, &command_pool);
+    command_buffer.begin();
+
+    VkBindDescriptorSetsInfoKHR bind_ds_info = vku::InitStructHelper();
+    bind_ds_info.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bind_ds_info.layout = pipeline_layout.handle();
+    bind_ds_info.firstSet = 0;
+    bind_ds_info.descriptorSetCount = 1;
+    bind_ds_info.pDescriptorSets = &descriptor_set.set_;
+    bind_ds_info.dynamicOffsetCount = 0;
+    bind_ds_info.pDynamicOffsets = nullptr;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467");
+    vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeCommand, CmdClearColorImageNullColor) {

@@ -444,6 +444,9 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer *cb_state, V
                 case Func::vkCmdBindDescriptorSets:
                     vuid = "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361";
                     break;
+                case Func::vkCmdBindDescriptorSets2KHR:
+                    vuid = "VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467";
+                    break;
                 case Func::vkCmdSetDescriptorBufferOffsetsEXT:
                     vuid = "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067";
                     break;

@@ -175,27 +175,32 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::PipelineLayout &layout_
     return true;
 }
 
-bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                      const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                      const uint32_t *pDynamicOffsets, const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
+bool CoreChecks::ValidateBindDescriptorSets(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout, uint32_t firstSet,
+                                            uint32_t setCount, const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                            const uint32_t *pDynamicOffsets, const Location &loc) const {
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, error_obj.location);
-    // Track total count of dynamic descriptor types to make sure we have an offset for each one
-    uint32_t total_dynamic_descriptors = 0;
-    std::string error_string = "";
+    const bool is_2 = loc.function != Func::vkCmdBindDescriptorSets;
 
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
+    if (!pipeline_layout) {
+        return skip;  // dynamicPipelineLayout feature
+    }
+
+    // Track total count of dynamic descriptor types to make sure we have an offset for each one
+    uint32_t total_dynamic_descriptors = 0;
+
     for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
-        const Location set_loc = error_obj.location.dot(Field::pDescriptorSets, set_idx);
+        const Location set_loc = loc.dot(Field::pDescriptorSets, set_idx);
         auto descriptor_set = Get<vvl::DescriptorSet>(pDescriptorSets[set_idx]);
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
+            std::string error_string = "";
             if (!VerifySetLayoutCompatibility(*descriptor_set, pipeline_layout->set_layouts,
                                               pipeline_layout->Handle(), set_idx + firstSet, error_string)) {
-                skip |= LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358", pDescriptorSets[set_idx], set_loc,
+                const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx]);
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-00358"
+                                        : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358";
+                skip |= LogError(vuid, objlist, set_loc,
                                  "(%s) being bound is not compatible with overlapping "
                                  "descriptorSetLayout at index %" PRIu32
                                  " of "
@@ -204,13 +209,25 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                  error_string.c_str());
             }
 
+            const auto &dsl = descriptor_set->GetLayout();
+            if (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx], dsl->VkHandle());
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-08010"
+                                        : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-08010";
+                skip |= LogError(vuid, objlist, set_loc, "was allocated from VkDescriptorSetLayout with %s flags.",
+                                 string_VkDescriptorSetLayoutCreateFlags(dsl->GetCreateFlags()).c_str());
+            }
+
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
             if (set_dynamic_descriptor_count) {
                 // First make sure we won't overstep bounds of pDynamicOffsets array
                 if ((total_dynamic_descriptors + set_dynamic_descriptor_count) > dynamicOffsetCount) {
                     // Test/report this here, such that we don't run past the end of pDynamicOffsets in the else clause
+                    const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx]);
+                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359"
+                                            : "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359";
                     skip |=
-                        LogError("VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359", pDescriptorSets[set_idx], set_loc,
+                        LogError(vuid, objlist, set_loc,
                                  "(%s) requires %" PRIu32 " dynamicOffsets, but only %" PRIu32
                                  " "
                                  "dynamicOffsets are left in "
@@ -225,7 +242,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     uint32_t cur_dyn_offset = total_dynamic_descriptors;
                     // offset into this descriptor set
                     uint32_t set_dyn_offset = 0;
-                    const auto &dsl = descriptor_set->GetLayout();
                     const auto binding_count = dsl->GetBindingCount();
                     const auto &limits = phys_dev_props.limits;
                     for (uint32_t i = 0; i < binding_count; i++) {
@@ -253,8 +269,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                             // Validate alignment with limit
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
                                 (SafeModulo(offset, limits.minUniformBufferOffsetAlignment) != 0)) {
-                                skip |= LogError("VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971", commandBuffer,
-                                                 error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDynamicOffsets-01971"
+                                                        : "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971";
+                                skip |= LogError(vuid, cb_state.commandBuffer(), loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32
                                                  ", but must be a multiple of "
                                                  "device limit minUniformBufferOffsetAlignment %" PRIu64 ".",
@@ -262,8 +279,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                             }
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
                                 (SafeModulo(offset, limits.minStorageBufferOffsetAlignment) != 0)) {
-                                skip |= LogError("VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972", commandBuffer,
-                                                 error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDynamicOffsets-01972"
+                                                        : "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972";
+                                skip |= LogError(vuid, cb_state.commandBuffer(), loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32
                                                  ", but must be a multiple of "
                                                  "device limit minStorageBufferOffsetAlignment %" PRIu64 ".",
@@ -282,10 +300,11 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 
                                 // Validate offset didn't go over buffer
                                 if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
-                                    const LogObjectList objlist(commandBuffer, pDescriptorSets[set_idx],
+                                    const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx],
                                                                 buffer_descriptor->GetBuffer());
-                                    skip |= LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715", objlist,
-                                                     error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-06715"
+                                                            : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715";
+                                    skip |= LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                      "is %" PRIu32
                                                      ", but must be zero since "
                                                      "the buffer descriptor's range is VK_WHOLE_SIZE in descriptorSet #%" PRIu32
@@ -296,11 +315,12 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 
                                 } else if (buffer_state && (bound_range != VK_WHOLE_SIZE) &&
                                            ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
-                                    const LogObjectList objlist(commandBuffer, pDescriptorSets[set_idx],
+                                    const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx],
                                                                 buffer_descriptor->GetBuffer());
+                                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-01979"
+                                                            : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979";
                                     skip |=
-                                        LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979", objlist,
-                                                 error_obj.location.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                        LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32 ", which when added to the buffer descriptor's range (%" PRIu64
                                                  ") and offset (%" PRIu64 ") is greater than the size of the buffer (%" PRIu64
                                                  ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
@@ -317,12 +337,18 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 }
             }
             if (descriptor_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
-                const LogObjectList objlist(pDescriptorSets[set_idx], descriptor_set->GetPoolState()->Handle());
-                skip |= LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616", objlist, set_loc,
+                const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx],
+                                            descriptor_set->GetPoolState()->Handle());
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-04616"
+                                        : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616";
+                skip |= LogError(vuid, objlist, set_loc,
                                  "was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
             }
         } else if (!enabled_features.graphicsPipelineLibrary) {
-            skip |= LogError("VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754", pDescriptorSets[set_idx], set_loc,
+            const LogObjectList objlist(cb_state.commandBuffer(), pDescriptorSets[set_idx]);
+            const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-06563"
+                                    : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
+            skip |= LogError(vuid, objlist, set_loc,
                              "(%s) that does not exist, and the layout was not created "
                              "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
                              FormatHandle(pDescriptorSets[set_idx]).c_str());
@@ -330,7 +356,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     }
     //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound
     if (total_dynamic_descriptors != dynamicOffsetCount) {
-        skip |= LogError("VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359", commandBuffer, error_obj.location,
+        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359"
+                                : "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359";
+        skip |= LogError(vuid, cb_state.commandBuffer(), loc,
                          "Attempting to bind %" PRIu32 " descriptorSets with %" PRIu32
                          " dynamic descriptors, but "
                          "dynamicOffsetCount is %" PRIu32
@@ -340,7 +368,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     }
     // firstSet and descriptorSetCount sum must be less than setLayoutCount
     if ((firstSet + setCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
-        skip |= LogError("VUID-vkCmdBindDescriptorSets-firstSet-00360", commandBuffer, error_obj.location,
+        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
+        skip |= LogError(vuid, cb_state.commandBuffer(), loc,
                          "Sum of firstSet (%" PRIu32 ") and descriptorSetCount (%" PRIu32
                          ") is greater than "
                          "VkPipelineLayoutCreateInfo::setLayoutCount "
@@ -348,7 +377,51 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                          firstSet, setCount, pipeline_layout->set_layouts.size());
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                      const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                      const uint32_t *pDynamicOffsets, const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateBindDescriptorSets(*cb_state, layout, firstSet, setCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets,
+                                       error_obj.location);
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                          const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateBindDescriptorSets(*cb_state, pBindDescriptorSetsInfo->layout, pBindDescriptorSetsInfo->firstSet,
+                                       pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets,
+                                       pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets,
+                                       error_obj.location.dot(Field::pBindDescriptorSetsInfo));
+
+    if (!enabled_features.dynamicPipelineLayout && pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
+        skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", device,
+                         error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout), "is not valid.");
+    }
+
+    if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    }
+    if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    }
+    if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    }
 
     return skip;
 }
@@ -3593,16 +3666,16 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         }
         if (set_layouts[i]->IsPushDescriptor()) {
             if (push_descriptor_set_found < pCreateInfo->setLayoutCount) {
-                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293", device,
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293", set_layouts[i]->VkHandle(),
                                  create_info_loc.dot(Field::pSetLayouts, i),
                                  "and pSetLayouts[%" PRIu32 "] both have push descriptor sets.", push_descriptor_set_found);
             }
             push_descriptor_set_found = i;
         }
         if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) {
-            skip |=
-                LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606", device, create_info_loc.dot(Field::pSetLayouts, i),
-                         "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT bit.");
+            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606", set_layouts[i]->VkHandle(),
+                             create_info_loc.dot(Field::pSetLayouts, i),
+                             "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT bit.");
         }
         ++valid_set_count;
         if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {

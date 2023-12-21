@@ -140,6 +140,9 @@
                 "VkPhysicalDeviceMaintenance5FeaturesKHR": {
                     "maintenance5": true
                 },
+                "VkPhysicalDeviceMaintenance6FeaturesKHR": {
+                    "maintenance6": true
+                },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {
                     "shaderDrawParameters": true
                 },
@@ -1127,6 +1130,11 @@
                 "VkPhysicalDeviceMaintenance4Properties": {
                     "maxBufferSize": 1073741824
                 },
+                "VkPhysicalDeviceMaintenance6PropertiesKHR": {
+                    "blockTexelViewCompatibleMultipleLayers": true,
+                    "maxCombinedImageSamplerDescriptorCount": 1073741824,
+                    "fragmentShadingRateClampCombinerInputs": true
+                },
                 "VkPhysicalDeviceFloatControlsProperties": {
                     "shaderSignedZeroInfNanPreserveFloat16": true,
                     "shaderSignedZeroInfNanPreserveFloat32": true,
@@ -1900,6 +1908,7 @@
                 "VK_KHR_maintenance3": 1,
                 "VK_KHR_maintenance4": 1,
                 "VK_KHR_maintenance5": 1,
+                "VK_KHR_maintenance6": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
                 "VK_KHR_pipeline_executable_properties": 1,
