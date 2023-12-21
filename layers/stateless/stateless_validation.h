@@ -981,6 +981,9 @@ class StatelessValidation : public ValidationObject {
                                                     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions,
                                                     const ErrorObject &error_obj) const;
 
+    bool ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size, const Location &loc) const;
+    bool manual_PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                    const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
                                                 const ErrorObject &error_obj) const;

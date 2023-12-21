@@ -143,6 +143,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateDisplayModeKHR',
             'vkCmdSetVertexInputEXT',
             'vkCmdPushConstants',
+            'vkCmdPushConstants2KHR',
             'vkMergePipelineCaches',
             'vkCmdClearColorImage',
             'vkCmdBeginRenderPass',

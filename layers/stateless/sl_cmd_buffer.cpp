@@ -260,36 +260,49 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                                 const void *pValues, const ErrorObject &error_obj) const {
+bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size,
+                                                   const Location &loc) const {
     bool skip = false;
+    const bool is_2 = loc.function != Func::vkCmdPushConstants;
     const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
     // Check that offset + size don't exceed the max.
     // Prevent arithetic overflow here by avoiding addition and testing in this order.
     if (offset >= max_push_constants_size) {
-        skip |= LogError("VUID-vkCmdPushConstants-offset-00370", device, error_obj.location.dot(Field::offset),
+        const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-offset-00370" : "VUID-vkCmdPushConstants-offset-00370";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset),
                          "(%" PRIu32 ") that exceeds this device's maxPushConstantSize of %" PRIu32 ".", offset,
                          max_push_constants_size);
     }
     if (size > max_push_constants_size - offset) {
-        skip |= LogError("VUID-vkCmdPushConstants-size-00371", device, error_obj.location.dot(Field::offset),
+        const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-size-00371" : "VUID-vkCmdPushConstants-size-00371";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset),
                          "(%" PRIu32 ") and size (%" PRIu32 ") that exceeds this device's maxPushConstantSize of %" PRIu32 ".",
                          offset, size, max_push_constants_size);
     }
 
-    // size needs to be non-zero and a multiple of 4.
-    if (size & 0x3) {
-        skip |= LogError("VUID-vkCmdPushConstants-size-00369", device, error_obj.location.dot(Field::size),
-                         "(%" PRIu32 ") must be a multiple of 4.", size);
+    if (SafeModulo(size, 4) != 0) {
+        const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-size-00369" : "VUID-vkCmdPushConstants-size-00369";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::size), "(%" PRIu32 ") must be a multiple of 4.", size);
     }
 
-    // offset needs to be a multiple of 4.
-    if ((offset & 0x3) != 0) {
-        skip |= LogError("VUID-vkCmdPushConstants-offset-00368", device, error_obj.location.dot(Field::offset),
-                         "(%" PRIu32 ") must be a multiple of 4.", offset);
+    if (SafeModulo(offset, 4) != 0) {
+        const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-offset-00368" : "VUID-vkCmdPushConstants-offset-00368";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset), "(%" PRIu32 ") must be a multiple of 4.", offset);
     }
     return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                                 const void *pValues, const ErrorObject &error_obj) const {
+    return ValidateCmdPushConstants(commandBuffer, offset, size, error_obj.location);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                                     const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                                     const ErrorObject &error_obj) const {
+    return ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size,
+                                    error_obj.location.dot(Field::pPushConstantsInfo));
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
