@@ -3145,7 +3145,7 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCo
     auto image_state = Get<vvl::Image>(dst_image);
 
     skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, copy_loc);
-    auto *props = &phys_dev_ext_props.host_image_copy_properties;
+    auto *props = &phys_dev_ext_props.host_image_copy_props;
     skip |= ValidateHostCopyImageLayout(device, dst_image, props->copyDstLayoutCount, props->pCopyDstLayouts,
                                         pCopyMemoryToImageInfo->dstImageLayout, copy_loc.dot(Field::dstImageLayout),
                                         "pCopyDstLayouts", "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
@@ -3160,7 +3160,7 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCo
     auto image_state = Get<vvl::Image>(src_image);
 
     skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, copy_loc);
-    auto *props = &phys_dev_ext_props.host_image_copy_properties;
+    auto *props = &phys_dev_ext_props.host_image_copy_props;
     skip |= ValidateHostCopyImageLayout(device, src_image, props->copySrcLayoutCount, props->pCopySrcLayouts,
                                         pCopyImageToMemoryInfo->srcImageLayout, copy_loc.dot(Field::srcImageLayout),
                                         "pCopySrcLayouts", "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
@@ -3249,7 +3249,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
                                 "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970", true);
     skip |= ValidateImageBounds(device, *dst_image_state, regionCount, pRegions, loc,
                                 "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970", false);
-    auto *props = &phys_dev_ext_props.host_image_copy_properties;
+    auto *props = &phys_dev_ext_props.host_image_copy_props;
     skip |= ValidateHostCopyImageLayout(device, info_ptr->srcImage, props->copySrcLayoutCount, props->pCopySrcLayouts,
                                         info_ptr->srcImageLayout, loc.dot(Field::srcImageLayout), "pCopySrcLayouts",
                                         "VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09072");

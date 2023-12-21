@@ -2617,13 +2617,13 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
             }
         }
         if ((transition.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED) && (transition.oldLayout != VK_IMAGE_LAYOUT_PREINITIALIZED)) {
-            auto *props = &phys_dev_ext_props.host_image_copy_properties;
+            auto *props = &phys_dev_ext_props.host_image_copy_props;
             skip |= ValidateHostCopyImageLayout(device, transition.image, props->copySrcLayoutCount, props->pCopySrcLayouts,
                                                 transition.oldLayout, transition_loc.dot(Field::oldLayout), "pCopySrcLayouts",
                                                 "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09230");
         }
 
-        const auto *props = &phys_dev_ext_props.host_image_copy_properties;
+        const auto *props = &phys_dev_ext_props.host_image_copy_props;
         skip |= ValidateHostCopyImageLayout(device, transition.image, props->copyDstLayoutCount, props->pCopyDstLayouts,
                                             transition.newLayout, transition_loc.dot(Field::newLayout), "pCopyDstLayouts",
                                             "VUID-VkHostImageLayoutTransitionInfoEXT-newLayout-09057");

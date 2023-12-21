@@ -939,21 +939,21 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_properties);
-    if ((phys_dev_props->host_image_copy_properties.copySrcLayoutCount > 0) ||
-        (phys_dev_props->host_image_copy_properties.copyDstLayoutCount > 0)) {
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_props);
+    if ((phys_dev_props->host_image_copy_props.copySrcLayoutCount > 0) ||
+        (phys_dev_props->host_image_copy_props.copyDstLayoutCount > 0)) {
         // Have to allocate memory for the layout lists
-        host_image_copy_src_layouts.resize(phys_dev_props->host_image_copy_properties.copySrcLayoutCount);
-        host_image_copy_dst_layouts.resize(phys_dev_props->host_image_copy_properties.copyDstLayoutCount);
-        if (phys_dev_props->host_image_copy_properties.copySrcLayoutCount > 0) {
-            phys_dev_props->host_image_copy_properties.pCopySrcLayouts = host_image_copy_src_layouts.data();
+        host_image_copy_src_layouts.resize(phys_dev_props->host_image_copy_props.copySrcLayoutCount);
+        host_image_copy_dst_layouts.resize(phys_dev_props->host_image_copy_props.copyDstLayoutCount);
+        if (phys_dev_props->host_image_copy_props.copySrcLayoutCount > 0) {
+            phys_dev_props->host_image_copy_props.pCopySrcLayouts = host_image_copy_src_layouts.data();
         }
-        if (phys_dev_props->host_image_copy_properties.copyDstLayoutCount > 0) {
-            phys_dev_props->host_image_copy_properties.pCopyDstLayouts = host_image_copy_dst_layouts.data();
+        if (phys_dev_props->host_image_copy_props.copyDstLayoutCount > 0) {
+            phys_dev_props->host_image_copy_props.pCopyDstLayouts = host_image_copy_dst_layouts.data();
         }
         // Call again (without init) to fill in lists
         GetPhysicalDeviceExtProperties<false>(physical_device, dev_ext.vk_ext_host_image_copy,
-                                              &phys_dev_props->host_image_copy_properties);
+                                              &phys_dev_props->host_image_copy_props);
     }
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_props);
