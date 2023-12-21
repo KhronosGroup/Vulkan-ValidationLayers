@@ -3447,54 +3447,60 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice devi
     return PreCallValidateUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData, error_obj);
 }
 
-bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                                    VkPipelineLayout layout, uint32_t set, const void *pData,
-                                                                    const ErrorObject &error_obj) const {
+bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                          VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                          const Location &loc) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCmd(*cb_state, loc);
 
+    const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetWithTemplateKHR;
     auto layout_data = Get<vvl::PipelineLayout>(layout);
     const auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
     // Validate the set index points to a push descriptor set and is in range
     if (dsl) {
         if (!dsl->IsPushDescriptor()) {
-            skip = LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305", layout, error_obj.location,
-                            "Set index %" PRIu32 " does not match push descriptor set layout index for %s.", set,
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07305"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305";
+            skip = LogError(vuid, layout, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.", set,
                             FormatHandle(layout).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
-        skip = LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304", layout, error_obj.location,
-                        "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set, FormatHandle(layout).c_str(),
-                        static_cast<uint32_t>(layout_data->set_layouts.size()));
+        const char *vuid =
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304";
+        skip = LogError(vuid, layout, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
+                        FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     if (template_state) {
         const auto &template_ci = template_state->create_info;
 
-        skip |= ValidatePipelineBindPoint(cb_state.get(), template_ci.pipelineBindPoint, error_obj.location);
+        skip |= ValidatePipelineBindPoint(cb_state.get(), template_ci.pipelineBindPoint, loc);
 
         if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
-            skip |= LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994", commandBuffer,
-                             error_obj.location.dot(Field::descriptorUpdateTemplate),
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-descriptorUpdateTemplate-07994"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994";
+            skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
                              "%s was not created with flag "
                              "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR.",
                              FormatHandle(descriptorUpdateTemplate).c_str());
         }
         if (template_ci.set != set) {
-            skip |= LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995", commandBuffer,
-                             error_obj.location.dot(Field::descriptorUpdateTemplate),
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07995"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995";
+            skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
                              "%s created with set %" PRIu32 " does not match command parameter set %" PRIu32 ".",
                              FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
         }
         auto template_layout = Get<vvl::PipelineLayout>(template_ci.pipelineLayout);
         if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
-            skip |= LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993", objlist,
-                             error_obj.location.dot(Field::descriptorUpdateTemplate),
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-07993"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993";
+            skip |= LogError(vuid, objlist, loc.dot(Field::descriptorUpdateTemplate),
                              "%s created with %s is incompatible "
                              "with command parameter "
                              "%s for set %" PRIu32,
@@ -3506,10 +3512,11 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     if (dsl && template_state) {
         if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
-            skip |=
-                LogError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686", objlist, error_obj.location.dot(Field::pData),
-                         "does not point to a valid layout, it possible the "
-                         "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-pData-01686"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686";
+            skip |= LogError(vuid, objlist, loc.dot(Field::pData),
+                             "does not point to a valid layout, it possible the "
+                             "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
         } else {
             // Create an empty proxy in order to use the existing descriptor set update validation
             vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
@@ -3518,10 +3525,32 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                                                                     dsl->VkHandle());
             // Validate the decoded update against the proxy_ds
             skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
-                                                  decoded_template.desc_writes.data(), error_obj.location);
+                                                  decoded_template.desc_writes.data(), loc);
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
+                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                    VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                                    const ErrorObject &error_obj) const {
+    return ValidateCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
+                                                    error_obj.location);
+}
+
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateCmdPushDescriptorSetWithTemplate(
+        commandBuffer, pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate, pPushDescriptorSetWithTemplateInfo->layout,
+        pPushDescriptorSetWithTemplateInfo->set, pPushDescriptorSetWithTemplateInfo->pData, error_obj.location);
+    if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
+        skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", device,
+                         error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout), "is not valid.");
+    }
     return skip;
 }
 

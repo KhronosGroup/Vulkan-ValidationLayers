@@ -4180,6 +4180,27 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
                                      decoded_template.desc_writes.data());
 }
 
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto template_state = Get<vvl::DescriptorUpdateTemplate>(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+    auto layout_data = Get<vvl::PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
+    if (!cb_state || !template_state || !layout_data) {
+        return;
+    }
+
+    cb_state->RecordCmd(record_obj.location.function);
+    auto dsl = layout_data->GetDsl(pPushDescriptorSetWithTemplateInfo->set);
+    const auto &template_ci = template_state->create_info;
+    // Decode the template into a set of write updates
+    vvl::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(),
+                                                pPushDescriptorSetWithTemplateInfo->pData, dsl->VkHandle());
+    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *layout_data, pPushDescriptorSetWithTemplateInfo->set,
+                                     static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                     decoded_template.desc_writes.data());
+}
+
 void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount, void *pProperties) {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);

@@ -53,6 +53,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
             'vkCmdPushDescriptorSetWithTemplateKHR',
+            'vkCmdPushDescriptorSetWithTemplate2KHR',
             'vkDebugMarkerSetObjectTagEXT',
             'vkDebugMarkerSetObjectNameEXT',
             'vkCreateRenderPass',
