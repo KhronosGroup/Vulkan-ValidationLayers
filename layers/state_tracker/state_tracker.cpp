@@ -2753,6 +2753,32 @@ void ValidationStateTracker::PreCallRecordCmdSetDescriptorBufferOffsetsEXT(
     cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, *pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
 }
 
+void ValidationStateTracker::PreCallRecordCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT *pSetDescriptorBufferOffsetsInfo,
+    const RecordObject &record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(pSetDescriptorBufferOffsetsInfo->layout);
+
+    if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        cb_state->UpdateLastBoundDescriptorBuffers(
+            VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+            pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
+            pSetDescriptorBufferOffsetsInfo->pOffsets);
+    }
+    if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        cb_state->UpdateLastBoundDescriptorBuffers(
+            VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+            pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
+            pSetDescriptorBufferOffsetsInfo->pOffsets);
+    }
+    if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        cb_state->UpdateLastBoundDescriptorBuffers(
+            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+            pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
+            pSetDescriptorBufferOffsetsInfo->pOffsets);
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                             VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
                                                             const void *pValues, const RecordObject &record_obj) {
