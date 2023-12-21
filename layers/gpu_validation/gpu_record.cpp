@@ -510,6 +510,29 @@ void gpuav::Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer com
     }
 }
 
+void gpuav::Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                                const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
+                                                                const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
+    gpuav_settings.validate_descriptors = false;
+}
+
+void gpuav::Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                               VkPipelineBindPoint pipelineBindPoint,
+                                                                               VkPipelineLayout layout, uint32_t set,
+                                                                               const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set, record_obj);
+    gpuav_settings.validate_descriptors = false;
+}
+
+void gpuav::Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer, pBindDescriptorBufferEmbeddedSamplersInfo,
+                                                                        record_obj);
+    gpuav_settings.validate_descriptors = false;
+}
+
 void gpuav::Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                             uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);

@@ -2186,35 +2186,80 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
-                                                                           VkPipelineBindPoint pipelineBindPoint,
-                                                                           VkPipelineLayout layout, uint32_t set,
-                                                                           const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-
+bool CoreChecks::ValidateCmdBindDescriptorBufferEmbeddedSamplers(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout,
+                                                                 uint32_t set, const Location &loc) const {
     bool skip = false;
+    const bool is_2 = loc.function != Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT;
 
     if (!enabled_features.descriptorBuffer) {
-        skip |= LogError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-None-08068", device, error_obj.location,
-                         "descriptorBuffer feature was not enabled.");
+        const char *vuid = is_2 ? "VUID-vkCmdBindDescriptorBufferEmbeddedSamplers2EXT-descriptorBuffer-09472"
+                                : "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-None-08068";
+        skip |= LogError(vuid, cb_state.commandBuffer(), loc, "descriptorBuffer feature was not enabled.");
     }
-    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
 
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
+    if (!pipeline_layout) {
+        return skip;  // dynamicPipelineLayout
+    }
+
     if (set >= pipeline_layout->set_layouts.size()) {
-        skip |= LogError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08071", commandBuffer, error_obj.location,
-                         "set (%" PRIu32
+        const char *vuid = is_2 ? "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-set-08071"
+                                : "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08071";
+        skip |= LogError(vuid, cb_state.commandBuffer(), loc.dot(Field::set),
+                         "(%" PRIu32
                          ") is greater than "
                          "VkPipelineLayoutCreateInfo::setLayoutCount (%" PRIuLEAST64 ") when layout was created.",
                          set, (uint64_t)pipeline_layout->set_layouts.size());
     } else {
         auto set_layout = pipeline_layout->set_layouts[set];
         if (!(set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT)) {
-            skip |= LogError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070", commandBuffer, error_obj.location,
+            const char *vuid = is_2 ? "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-set-08070"
+                                    : "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070";
+            skip |= LogError(vuid, cb_state.commandBuffer(), loc,
                              "layout must have been created with the "
                              "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT flag set.");
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                           VkPipelineBindPoint pipelineBindPoint,
+                                                                           VkPipelineLayout layout, uint32_t set,
+                                                                           const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+
+    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
+    skip |= ValidateCmdBindDescriptorBufferEmbeddedSamplers(*cb_state, layout, set, error_obj.location);
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
+    const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+
+    skip |= ValidateCmdBindDescriptorBufferEmbeddedSamplers(*cb_state, pBindDescriptorBufferEmbeddedSamplersInfo->layout,
+                                                            pBindDescriptorBufferEmbeddedSamplersInfo->set, error_obj.location);
+    if (!enabled_features.dynamicPipelineLayout && pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE) {
+        skip |=
+            LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-None-09495", device,
+                     error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout), "is not valid.");
+    }
+
+    if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    }
+    if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    }
+    if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
     }
 
     return skip;
