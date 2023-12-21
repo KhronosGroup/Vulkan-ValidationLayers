@@ -1269,6 +1269,9 @@ class ValidationStateTracker : public ValidationObject {
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet* pDescriptorWrites,
                                               const RecordObject& record_obj) override;
+    void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                               const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                               const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                           VkPipelineLayout layout, uint32_t set, const void* pData,

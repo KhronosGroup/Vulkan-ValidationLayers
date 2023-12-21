@@ -630,7 +630,7 @@ class StatelessValidation : public ValidationObject {
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
     bool ValidateWriteDescriptorSet(const Location &loc, const uint32_t descriptorWriteCount,
-                                    const VkWriteDescriptorSet *pDescriptorWrites, const bool isPushDescriptor) const;
+                                    const VkWriteDescriptorSet *pDescriptorWrites) const;
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                     const VkCopyDescriptorSet *pDescriptorCopies,
@@ -732,6 +732,9 @@ class StatelessValidation : public ValidationObject {
                                                        VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                        const VkWriteDescriptorSet *pDescriptorWrites,
                                                        const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                        const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                        const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                         uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors,
                                                         const ErrorObject &error_obj) const;

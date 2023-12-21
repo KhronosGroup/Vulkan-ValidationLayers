@@ -494,19 +494,20 @@ void gpuav::Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer comm
     UpdateBoundDescriptors(commandBuffer, pipelineBindPoint);
 }
 
-void gpuav::Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                                const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
-                                                                const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
-    gpuav_settings.validate_descriptors = false;
-}
+void gpuav::Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                             const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                             const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, record_obj);
 
-void gpuav::Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
-                                                                               VkPipelineBindPoint pipelineBindPoint,
-                                                                               VkPipelineLayout layout, uint32_t set,
-                                                                               const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set, record_obj);
-    gpuav_settings.validate_descriptors = false;
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    }
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+    }
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        UpdateBoundDescriptors(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    }
 }
 
 void gpuav::Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,

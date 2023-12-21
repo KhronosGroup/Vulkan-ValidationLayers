@@ -335,13 +335,26 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer com
                                                              const ErrorObject &error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-parameter"
-    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSetKHR-commonparent"
     skip |= ValidateObject(layout, kVulkanObjectTypePipelineLayout, false, "VUID-vkCmdPushDescriptorSetKHR-layout-parameter",
                            "VUID-vkCmdPushDescriptorSetKHR-commonparent", error_obj.location.dot(Field::layout));
     if (pDescriptorWrites) {
         for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
             skip |=
                 ValidateDescriptorWrite(&pDescriptorWrites[index0], true, error_obj.location.dot(Field::pDescriptorWrites, index0));
+        }
+    }
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                              const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                              const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (pPushDescriptorSetInfo->pDescriptorWrites) {
+        for (uint32_t index0 = 0; index0 < pPushDescriptorSetInfo->descriptorWriteCount; ++index0) {
+            skip |= ValidateDescriptorWrite(
+                &pPushDescriptorSetInfo->pDescriptorWrites[index0], true,
+                error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::pDescriptorWrites, index0));
         }
     }
     return skip;

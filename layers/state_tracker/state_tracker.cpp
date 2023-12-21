@@ -2715,6 +2715,25 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
     cb_state->PushDescriptorSetState(pipelineBindPoint, *pipeline_layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                                   const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                                   const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto pipeline_layout = Get<vvl::PipelineLayout>(pPushDescriptorSetInfo->layout);
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, pPushDescriptorSetInfo->set,
+                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites);
+    }
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, pPushDescriptorSetInfo->set,
+                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites);
+    }
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, pPushDescriptorSetInfo->set,
+                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites);
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                                       const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                                       const RecordObject &record_obj) {

@@ -821,7 +821,14 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
 bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(
     VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
     uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, const ErrorObject &error_obj) const {
-    return ValidateWriteDescriptorSet(error_obj.location, descriptorWriteCount, pDescriptorWrites, true);
+    return ValidateWriteDescriptorSet(error_obj.location, descriptorWriteCount, pDescriptorWrites);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                                         const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                                         const ErrorObject &error_obj) const {
+    return ValidateWriteDescriptorSet(error_obj.location, pPushDescriptorSetInfo->descriptorWriteCount,
+                                      pPushDescriptorSetInfo->pDescriptorWrites);
 }
 
 bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const {

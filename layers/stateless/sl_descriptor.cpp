@@ -637,12 +637,13 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
 }
 
 bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const uint32_t descriptorWriteCount,
-                                                     const VkWriteDescriptorSet *pDescriptorWrites,
-                                                     const bool isPushDescriptor) const {
+                                                     const VkWriteDescriptorSet *pDescriptorWrites) const {
     bool skip = false;
     if (!pDescriptorWrites) {
         return skip;
     }
+    const bool is_push_descriptor =
+        loc.function == Func::vkCmdPushDescriptorSetKHR || loc.function == Func::vkCmdPushDescriptorSet2KHR;
 
     for (uint32_t i = 0; i < descriptorWriteCount; ++i) {
         const Location writes_loc = loc.dot(Field::pDescriptorWrites, i);
@@ -654,7 +655,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
         }
 
         // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
-        if (!isPushDescriptor) {
+        if (!is_push_descriptor) {
             // dstSet must be a valid VkDescriptorSet handle
             skip |= ValidateRequiredHandle(loc.dot(Field::pDescriptorWrites, i).dot(Field::dstSet), descriptor_writes.dstSet);
         }
@@ -664,8 +665,10 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
             (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
             (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             if (descriptor_writes.pImageInfo == nullptr) {
-                const char *vuid = isPushDescriptor ? "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494"
-                                                    : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
+                const char *vuid =
+                    loc.function == Func::vkCmdPushDescriptorSetKHR     ? "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494"
+                    : (loc.function == Func::vkCmdPushDescriptorSetKHR) ? "VUID-VkPushDescriptorSetInfoKHR-pDescriptorWrites-06494"
+                                                                        : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
                 skip |= LogError(vuid, device, writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
                                  string_VkDescriptorType(descriptor_type));
             } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
@@ -825,7 +828,7 @@ bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice de
                                                                      uint32_t descriptorCopyCount,
                                                                      const VkCopyDescriptorSet *pDescriptorCopies,
                                                                      const ErrorObject &error_obj) const {
-    return ValidateWriteDescriptorSet(error_obj.location, descriptorWriteCount, pDescriptorWrites, false);
+    return ValidateWriteDescriptorSet(error_obj.location, descriptorWriteCount, pDescriptorWrites);
 }
 
 static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {

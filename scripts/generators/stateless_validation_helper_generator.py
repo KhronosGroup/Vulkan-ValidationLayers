@@ -86,6 +86,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkQueuePresentKHR',
             'vkCreateDescriptorPool',
             'vkCmdPushDescriptorSetKHR',
+            'vkCmdPushDescriptorSet2KHR',
             'vkCmdSetExclusiveScissorNV',
             'vkCmdSetViewportShadingRatePaletteNV',
             'vkCmdSetCoarseSampleOrderNV',
