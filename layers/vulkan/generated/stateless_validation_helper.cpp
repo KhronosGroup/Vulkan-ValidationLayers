@@ -18515,6 +18515,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer co
                               pPushConstantsInfo->size, &pPushConstantsInfo->pValues, true, true,
                               "VUID-VkPushConstantsInfoKHR-size-arraylength", "VUID-VkPushConstantsInfoKHR-pValues-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdPushConstants2KHR(commandBuffer, pPushConstantsInfo, error_obj);
     return skip;
 }
 

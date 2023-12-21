@@ -645,10 +645,7 @@ void BestPractices::RecordCmdNextSubpass(VkCommandBuffer commandBuffer) {
     }
 }
 
-void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                   VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                   const void* pValues, const RecordObject& record_obj) {
-    StateTracker::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
+void BestPractices::RecordCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size) {
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
         if (cb_state->push_constant_data_ranges && !cb_state->push_constant_data_ranges->empty()) {
@@ -668,6 +665,20 @@ void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer
                       1);
         }
     }
+}
+
+void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                   VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                   const void* pValues, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
+    RecordCmdPushConstants(commandBuffer, offset, size);
+}
+
+void BestPractices::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                       const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                                       const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdPushConstants2KHR(commandBuffer, pPushConstantsInfo, record_obj);
+    RecordCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size);
 }
 
 void BestPractices::PostRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin) {

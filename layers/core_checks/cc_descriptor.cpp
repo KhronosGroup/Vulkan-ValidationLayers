@@ -175,9 +175,10 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::PipelineLayout &layout_
     return true;
 }
 
-bool CoreChecks::ValidateBindDescriptorSets(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout, uint32_t firstSet,
-                                            uint32_t setCount, const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                            const uint32_t *pDynamicOffsets, const Location &loc) const {
+bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout, uint32_t firstSet,
+                                               uint32_t setCount, const VkDescriptorSet *pDescriptorSets,
+                                               uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets,
+                                               const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdBindDescriptorSets;
 
@@ -388,8 +389,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    skip |= ValidateBindDescriptorSets(*cb_state, layout, firstSet, setCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets,
-                                       error_obj.location);
+    skip |= ValidateCmdBindDescriptorSets(*cb_state, layout, firstSet, setCount, pDescriptorSets, dynamicOffsetCount,
+                                          pDynamicOffsets, error_obj.location);
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
 
     return skip;
@@ -403,10 +404,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
     bool skip = false;
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    skip |= ValidateBindDescriptorSets(*cb_state, pBindDescriptorSetsInfo->layout, pBindDescriptorSetsInfo->firstSet,
-                                       pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets,
-                                       pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets,
-                                       error_obj.location.dot(Field::pBindDescriptorSetsInfo));
+    skip |= ValidateCmdBindDescriptorSets(*cb_state, pBindDescriptorSetsInfo->layout, pBindDescriptorSetsInfo->firstSet,
+                                          pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets,
+                                          pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets,
+                                          error_obj.location.dot(Field::pBindDescriptorSetsInfo));
 
     if (!enabled_features.dynamicPipelineLayout && pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
         skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", device,
@@ -4158,13 +4159,12 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
-                                                 const ErrorObject &error_obj) const {
+bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                          uint32_t offset, uint32_t size, const Location &loc) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
-    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCmd(*cb_state, loc);
 
     // Check if pipeline_layout VkPushConstantRange(s) overlapping offset, size have stageFlags set for each stage in the command
     // stageFlags argument, *and* that the command stageFlags argument has bits set for the stageFlags in each overlapping range.
@@ -4172,13 +4172,19 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
         return skip;
     }
     auto layout_state = Get<vvl::PipelineLayout>(layout);
+    if (!layout_state) {
+        return skip;  // dynamicPipelineLayout feature
+    }
+
+    const bool is_2 = loc.function != Func::vkCmdPushConstants;
     const auto &ranges = *layout_state->push_constant_ranges;
     VkShaderStageFlags found_stages = 0;
     for (const auto &range : ranges) {
         if ((offset >= range.offset) && (offset + size <= range.offset + range.size)) {
             VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
             if (matching_stages != range.stageFlags) {
-                skip |= LogError("VUID-vkCmdPushConstants-offset-01796", commandBuffer, error_obj.location,
+                const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-offset-01796" : "VUID-vkCmdPushConstants-offset-01796";
+                skip |= LogError(vuid, commandBuffer, loc,
                                  "stageFlags (%s, offset (%" PRIu32 "), and size (%" PRIu32
                                  "),  must contain all stages in overlapping VkPushConstantRange stageFlags (%s), offset (%" PRIu32
                                  "), and size (%" PRIu32 ") in %s.",
@@ -4193,11 +4199,33 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
     }
     if (found_stages != stageFlags) {
         uint32_t missing_stages = ~found_stages & stageFlags;
+        const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-offset-01795" : "VUID-vkCmdPushConstants-offset-01795";
         skip |=
-            LogError("VUID-vkCmdPushConstants-offset-01795", commandBuffer, error_obj.location,
+            LogError(vuid, commandBuffer, loc,
                      "%s, VkPushConstantRange in %s overlapping offset = %" PRIu32 " and size = %" PRIu32 ", do not contain %s.",
                      string_VkShaderStageFlags(stageFlags).c_str(), FormatHandle(layout).c_str(), offset, size,
                      string_VkShaderStageFlags(missing_stages).c_str());
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
+                                                 const ErrorObject &error_obj) const {
+    return ValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, error_obj.location);
+}
+
+bool CoreChecks::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                     const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->layout, pPushConstantsInfo->stageFlags,
+                                     pPushConstantsInfo->offset, pPushConstantsInfo->size,
+                                     error_obj.location.dot(Field::pPushConstantsInfo));
+
+    if (!enabled_features.dynamicPipelineLayout && pPushConstantsInfo->layout == VK_NULL_HANDLE) {
+        skip |= LogError("VUID-VkPushConstantsInfoKHR-None-09495", device,
+                         error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout), "is not valid.");
     }
     return skip;
 }

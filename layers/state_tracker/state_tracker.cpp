@@ -2749,6 +2749,22 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     }
 }
 
+void ValidationStateTracker::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                                const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                                const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (cb_state) {
+        cb_state->RecordCmd(record_obj.location.function);
+        auto layout_state = Get<vvl::PipelineLayout>(pPushConstantsInfo->layout);
+        cb_state->ResetPushConstantDataIfIncompatible(layout_state.get());
+
+        auto &push_constant_data = cb_state->push_constant_data;
+        assert((pPushConstantsInfo->offset + pPushConstantsInfo->size) <= static_cast<uint32_t>(push_constant_data.size()));
+        std::memcpy(push_constant_data.data() + pPushConstantsInfo->offset, pPushConstantsInfo->pValues,
+                    static_cast<std::size_t>(pPushConstantsInfo->size));
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              VkIndexType indexType, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
