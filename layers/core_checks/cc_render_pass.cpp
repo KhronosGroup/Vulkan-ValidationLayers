@@ -3339,7 +3339,6 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
 
     const VkComponentMapping components = view_state->create_info.components;
     if (!IsIdentitySwizzle(components)) {
-        const LogObjectList objlist(commandBuffer, view_state->image_view());
         skip |= LogError("VUID-VkRenderingInfo-imageView-09485", objlist,
                          rendering_info.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                          "has a non-identiy swizzle component, here are the actual swizzle values:\n"
@@ -3922,6 +3921,14 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                  string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
                                  string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
                 }
+
+                const VkImageUsageFlags image_usage = resolve_view_state->image_state->createInfo.usage;
+                if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
+                    const LogObjectList objlist(commandBuffer, resolve_view_state->image_view(),
+                                                resolve_view_state->image_state->image());
+                    skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09477", objlist, color_loc.dot(Field::resolveImageView),
+                                     "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
+                }
             }
         }
     }
@@ -3984,6 +3991,14 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                      "a swizzle = %s\n",
                                      string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
                                      string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                }
+                const VkImageUsageFlags image_usage = depth_resolve_view_state->image_state->createInfo.usage;
+                if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                    const LogObjectList objlist(commandBuffer, depth_resolve_view_state->image_view(),
+                                                depth_resolve_view_state->image_state->image());
+                    skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09477", objlist,
+                                     rendering_info.dot(Field::pDepthAttachment).dot(Field::resolveImageView),
+                                     "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
                 }
             }
         }
@@ -4048,6 +4063,14 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                      string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
                                      string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
                 }
+            }
+            const VkImageUsageFlags image_usage = stencil_resolve_view_state->image_state->createInfo.usage;
+            if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->image_view(),
+                                            stencil_resolve_view_state->image_state->image());
+                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09478", objlist,
+                                 rendering_info.dot(Field::pStencilAttachment).dot(Field::resolveImageView),
+                                 "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
             }
         }
     }
