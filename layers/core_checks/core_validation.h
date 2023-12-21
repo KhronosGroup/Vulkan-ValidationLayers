@@ -1938,7 +1938,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                            VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                            const ErrorObject& error_obj) const override;
-
+    bool ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                  VkDescriptorUpdateTemplate descriptorUpdateTemplate, VkPipelineLayout layout,
+                                                  uint32_t set, const void* pData, const Location& loc) const;
+    bool PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                             VkPipelineLayout layout, uint32_t set, const void* pData,

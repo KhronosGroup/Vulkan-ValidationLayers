@@ -5206,33 +5206,6 @@ void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
                                                                (const VkPushDescriptorSetInfoKHR*)local_pPushDescriptorSetInfo);
 }
 
-void DispatchCmdPushDescriptorSetWithTemplate2KHR(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer,
-                                                                                      pPushDescriptorSetWithTemplateInfo);
-    safe_VkPushDescriptorSetWithTemplateInfoKHR var_local_pPushDescriptorSetWithTemplateInfo;
-    safe_VkPushDescriptorSetWithTemplateInfoKHR* local_pPushDescriptorSetWithTemplateInfo = nullptr;
-    {
-        if (pPushDescriptorSetWithTemplateInfo) {
-            local_pPushDescriptorSetWithTemplateInfo = &var_local_pPushDescriptorSetWithTemplateInfo;
-            local_pPushDescriptorSetWithTemplateInfo->initialize(pPushDescriptorSetWithTemplateInfo);
-
-            if (pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate) {
-                local_pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate =
-                    layer_data->Unwrap(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
-            }
-            if (pPushDescriptorSetWithTemplateInfo->layout) {
-                local_pPushDescriptorSetWithTemplateInfo->layout = layer_data->Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
-            }
-            WrapPnextChainHandles(layer_data, local_pPushDescriptorSetWithTemplateInfo->pNext);
-        }
-    }
-    layer_data->device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(
-        commandBuffer, (const VkPushDescriptorSetWithTemplateInfoKHR*)local_pPushDescriptorSetWithTemplateInfo);
-}
-
 void DispatchCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
                                                const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);

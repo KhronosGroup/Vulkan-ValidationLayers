@@ -872,6 +872,27 @@ void DispatchCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
     free(unwrapped_buffer);
 }
 
+void DispatchCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer,
+                                                                                      pPushDescriptorSetWithTemplateInfo);
+    uint64_t template_handle = CastToUint64(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+    void *unwrapped_buffer = nullptr;
+    {
+        ReadLockGuard lock(dispatch_lock);
+        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->descriptorUpdateTemplate =
+            layer_data->Unwrap(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->layout =
+            layer_data->Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
+        unwrapped_buffer =
+            BuildUnwrappedUpdateTemplateBuffer(layer_data, template_handle, pPushDescriptorSetWithTemplateInfo->pData);
+    }
+    layer_data->device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+    free(unwrapped_buffer);
+}
+
 VkResult DispatchGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                        VkDisplayPropertiesKHR *pProperties) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
