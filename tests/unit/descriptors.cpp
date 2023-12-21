@@ -258,14 +258,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     m_errorMonitor->VerifyFound();
 
     // Create a buffer to update the descriptor with
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 1024;
-    buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffCI.queueFamilyIndexCount = 1;
-    buffCI.pQueueFamilyIndices = &qfi;
-
-    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffInfo[5] = {};
     for (int i = 0; i < 5; ++i) {
@@ -413,19 +406,10 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
                                                      {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 2048;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer0;
-    buffer0.init(*m_device, bci);
+    vkt::Buffer buffer0(*m_device, 2048, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     CreatePipelineHelper pipe(*this);
     {  // Scope 2nd buffer to cause early destruction
-        vkt::Buffer buffer1;
-        bci.size = 1024;
-        buffer1.init(*m_device, bci);
+        vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
         VkDescriptorBufferInfo buffer_info[3] = {};
         buffer_info[0].buffer = buffer0.handle();
@@ -492,14 +476,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
     CreatePipelineHelper pipe(*this);
     {
         // Create a buffer to update the descriptor with
-        uint32_t qfi = 0;
-        VkBufferCreateInfo buffCI = vku::InitStructHelper();
-        buffCI.size = 1024;
-        buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffCI.queueFamilyIndexCount = 1;
-        buffCI.pQueueFamilyIndices = &qfi;
-
-        vkt::Buffer buffer(*m_device, buffCI);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
         // Create PSO to be used for draw-time errors below
         char const *fsSource = R"glsl(
@@ -548,14 +525,7 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
     CreatePipelineHelper pipe(*this);
     {
         // Create a buffer to update the descriptor with
-        uint32_t qfi = 0;
-        VkBufferCreateInfo buffCI = vku::InitStructHelper();
-        buffCI.size = 1024;
-        buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffCI.queueFamilyIndexCount = 1;
-        buffCI.pQueueFamilyIndices = &qfi;
-
-        vkt::Buffer buffer(*m_device, buffCI);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
         // Create PSO to be used for draw-time errors below
         char const *fsSource = R"glsl(
@@ -1199,7 +1169,6 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
     // 1. No dynamicOffset supplied
     // 2. Too many dynamicOffsets supplied
     // 3. Dynamic offset oversteps buffer being updated
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1212,14 +1181,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     // Create a buffer to update the descriptor with
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 1024;
-    buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffCI.queueFamilyIndexCount = 1;
-    buffCI.pQueueFamilyIndices = &qfi;
-
-    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Correctly update descriptor to avoid "NOT_UPDATED" error
     descriptor_set.WriteDescriptorBufferInfo(0, dynamic_uniform_buffer.handle(), 0, 1024,
@@ -1228,8 +1190,9 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
+                              &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
     uint32_t pDynOff[2] = {0, 756};
     // Now cause error b/c too many dynOffsets in array for # of dyn descriptors
@@ -1257,6 +1220,84 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeDescriptors, DynamicOffsetCasesMaintenance6) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    // Correctly update descriptor to avoid "NOT_UPDATED" error
+    descriptor_set.WriteDescriptorBufferInfo(0, dynamic_uniform_buffer.handle(), 0, 1024,
+                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkBindDescriptorSetsInfoKHR bind_ds_info = vku::InitStructHelper();
+    bind_ds_info.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bind_ds_info.layout = pipeline_layout.handle();
+    bind_ds_info.firstSet = 0;
+    bind_ds_info.descriptorSetCount = 1;
+    bind_ds_info.pDescriptorSets = &descriptor_set.set_;
+    bind_ds_info.dynamicOffsetCount = 0;
+    bind_ds_info.pDynamicOffsets = nullptr;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359");
+    vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, BindDescriptorSetsInfoPipelineLayout) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    // Correctly update descriptor to avoid "NOT_UPDATED" error
+    descriptor_set.WriteDescriptorBufferInfo(0, dynamic_uniform_buffer.handle(), 0, 1024,
+                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkBindDescriptorSetsInfoKHR bind_ds_info = vku::InitStructHelper();
+    bind_ds_info.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bind_ds_info.layout = CastToHandle<VkPipelineLayout, uintptr_t>(0xbaadb1be);
+    bind_ds_info.firstSet = 0;
+    bind_ds_info.descriptorSetCount = 1;
+    bind_ds_info.pDescriptorSets = &descriptor_set.set_;
+    bind_ds_info.dynamicOffsetCount = 0;
+    bind_ds_info.pDynamicOffsets = nullptr;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-layout-parameter");
+    vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
+    m_errorMonitor->VerifyFound();
+
+    bind_ds_info.layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-None-09495");
+    vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
@@ -1296,13 +1337,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     const VkDeviceSize buffer_size = partial_size * 10;  // make sure way more then alignment multiple
 
     // Create a buffer to update the descriptor with
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = buffer_size;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_ci.queueFamilyIndexCount = 1;
-    buffer_ci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // test various uses of offsets and size
     // The non-dynamic binds are there to make sure pDynamicOffsets are matched correctly at bind time
@@ -1499,13 +1534,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
 TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     RETURN_IF_SKIP(Init());
 
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = m_device->phy().limits_.minUniformBufferOffsetAlignment;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_ci.queueFamilyIndexCount = 1;
-    buffer_ci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, m_device->phy().limits_.minUniformBufferOffsetAlignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1622,13 +1651,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     const vkt::PipelineLayout pipe_layout_bad_set0(*m_device, {&ds_layout_fs_only, &ds_layouts[1]});
 
     // Add buffer binding for UBO
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = vku::InitStructHelper();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 8;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
-    vkt::Buffer buffer(*m_device, bci);
+    vkt::Buffer buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     VkDescriptorBufferInfo buffer_info;
     buffer_info.buffer = buffer.handle();
     buffer_info.offset = 0;
@@ -3421,16 +3444,12 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
     VkResult err = vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 32;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer.handle();
     buffer_info.offset = 0;
-    buffer_info.range = buffer_ci.size;
+    buffer_info.range = 32;
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set;
@@ -4203,16 +4222,12 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         VkDescriptorSet descriptor_sets[2];
         vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
-        VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-        buffer_ci.size = 32;
-        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-        vkt::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;
-        buffer_info.range = buffer_ci.size;
+        buffer_info.range = 32;
 
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_sets[0];
@@ -4287,16 +4302,12 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         VkDescriptorSet descriptor_sets[2];
         vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
-        VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-        buffer_ci.size = 32;
-        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-        vkt::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;
-        buffer_info.range = buffer_ci.size;
+        buffer_info.range = 32;
 
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_sets[0];
@@ -4375,11 +4386,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         VkDescriptorSet descriptor_sets[2];
         vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
-        VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-        buffer_ci.size = 32;
-        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-        vkt::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
         VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
         vkt::Sampler sampler(*m_device, sci);
@@ -4387,7 +4394,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;
-        buffer_info.range = buffer_ci.size;
+        buffer_info.range = 32;
 
         VkDescriptorImageInfo image_info = {};
         image_info.sampler = sampler.handle();
