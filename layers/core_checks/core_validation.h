@@ -1590,10 +1590,16 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                   const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
                                                   const ErrorObject& error_obj) const override;
+    bool ValidateCmdPushDescriptorSet(const vvl::CommandBuffer& cb_state, VkPipelineLayout layout, uint32_t set,
+                                      uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites,
+                                      const Location& loc) const;
     bool PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites,
                                                 const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                 const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                                 const ErrorObject& error_obj) const override;
     bool ValidateCmdBindIndexBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, VkDeviceSize offset,
                                     VkIndexType indexType, const Location& loc) const;
     bool PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

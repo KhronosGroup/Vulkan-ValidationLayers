@@ -220,6 +220,9 @@ class Validator : public gpu_tracker::Validator {
     void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject&) override;
+    void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                               const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                               const RecordObject& record_obj) override;
     void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj) override;

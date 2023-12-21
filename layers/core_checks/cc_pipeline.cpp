@@ -456,6 +456,9 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer *cb_state, V
                 case Func::vkCmdPushDescriptorSetKHR:
                     vuid = "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363";
                     break;
+                case Func::vkCmdPushDescriptorSet2KHR:
+                    vuid = "VUID-vkCmdPushDescriptorSet2KHR-pPushDescriptorSetInfo-09468";
+                    break;
                 case Func::vkCmdPushDescriptorSetWithTemplateKHR:
                     vuid = "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366";
                     break;

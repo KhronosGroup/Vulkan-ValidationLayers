@@ -87,6 +87,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkDestroySwapchainKHR',
             'vkGetSwapchainImagesKHR',
             'vkCmdPushDescriptorSetKHR',
+            'vkCmdPushDescriptorSet2KHR',
             'vkDestroyDevice',
             'vkResetDescriptorPool',
             'vkGetPhysicalDeviceDisplayPropertiesKHR',

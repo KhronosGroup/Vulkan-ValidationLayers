@@ -18577,6 +18577,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffe
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, error_obj);
     return skip;
 }
 

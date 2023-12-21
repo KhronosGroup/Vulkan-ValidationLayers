@@ -3262,6 +3262,45 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t d
                                         error_obj.location);
 }
 
+bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout, uint32_t set,
+                                              uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites,
+                                              const Location &loc) const {
+    bool skip = false;
+    const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetKHR;
+
+    auto layout_data = Get<vvl::PipelineLayout>(layout);
+    if (!layout_data) {
+        return skip;  // dynamicPipelineLayout
+    }
+
+    // Validate the set index points to a push descriptor set and is in range
+    const LogObjectList objlist(cb_state.commandBuffer(), layout);
+    const auto &set_layouts = layout_data->set_layouts;
+    if (set < set_layouts.size()) {
+        const auto &dsl = set_layouts[set];
+        if (dsl) {
+            if (!dsl->IsPushDescriptor()) {
+                const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfoKHR-set-00365" : "VUID-vkCmdPushDescriptorSetKHR-set-00365";
+                skip = LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
+                                set, FormatHandle(layout).c_str());
+            } else {
+                // Create an empty proxy in order to use the existing descriptor set update validation
+                // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
+                // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
+                // the state tracker. The proxy here could get away with const.
+                vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+                skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, loc);
+            }
+        }
+    } else {
+        const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfoKHR-set-00364" : "VUID-vkCmdPushDescriptorSetKHR-set-00364";
+        skip = LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
+                        FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                         VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                         const VkWriteDescriptorSet *pDescriptorWrites,
@@ -3271,33 +3310,34 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
-    auto layout_data = Get<vvl::PipelineLayout>(layout);
+    skip |= ValidateCmdPushDescriptorSet(*cb_state, layout, set, descriptorWriteCount, pDescriptorWrites, error_obj.location);
+    return skip;
+}
 
-    // Validate the set index points to a push descriptor set and is in range
-    if (layout_data) {
-        const LogObjectList objlist(commandBuffer, layout);
-        const auto &set_layouts = layout_data->set_layouts;
-        if (set < set_layouts.size()) {
-            const auto &dsl = set_layouts[set];
-            if (dsl) {
-                if (!dsl->IsPushDescriptor()) {
-                    skip = LogError("VUID-vkCmdPushDescriptorSetKHR-set-00365", objlist, error_obj.location,
-                                    "Set index %" PRIu32 " does not match push descriptor set layout index for %s.", set,
-                                    FormatHandle(layout).c_str());
-                } else {
-                    // Create an empty proxy in order to use the existing descriptor set update validation
-                    // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
-                    // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
-                    // the state tracker. The proxy here could get away with const.
-                    vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
-                    skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, error_obj.location);
-                }
-            }
-        } else {
-            skip = LogError("VUID-vkCmdPushDescriptorSetKHR-set-00364", objlist, error_obj.location,
-                            "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
-                            FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
-        }
+bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                         const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                         const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+
+    skip |= ValidateCmdPushDescriptorSet(*cb_state, pPushDescriptorSetInfo->layout, pPushDescriptorSetInfo->set,
+                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites,
+                                         error_obj.location);
+    if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetInfo->layout == VK_NULL_HANDLE) {
+        skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-None-09495", device,
+                         error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout), "is not valid.");
+    }
+
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    }
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    }
+    if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
     }
 
     return skip;
