@@ -1346,3 +1346,49 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     vk::CmdBlitImage(m_commandBuffer->handle(), image.image(), image.Layout(), image.image(), image.Layout(), 1, &blitRegion,
                      VK_FILTER_NEAREST);
 }
+
+TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMaintenance6PropertiesKHR maintenance6_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance6_props);
+    if (!maintenance6_props.blockTexelViewCompatibleMultipleLayers) {
+        GTEST_SKIP() << "blockTexelViewCompatibleMultipleLayers is not enabled";
+    }
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 4;
+    image_create_info.arrayLayers = 2;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageObj image(m_device);
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);
+    if (!image.IsCompatible(image_create_info.usage, image_fmt.optimalTilingFeatures)) {
+        GTEST_SKIP() << "Image usage and format not compatible on device";
+    }
+    image.Init(image_create_info, 0);
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.layerCount = 2;
+    vkt::ImageView view(*m_device, ivci);
+}
