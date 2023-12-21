@@ -166,7 +166,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
 
     image_ci.pNext = &external_format;
     image_ci.format = VK_FORMAT_UNDEFINED;
-    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageObj resolve_image(m_device);
     resolve_image.Init(image_ci);
 
@@ -202,7 +202,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     framebuffer_attachment_image_info[0].pViewFormats = &format_resolve_prop.colorAttachmentFormat;
 
     framebuffer_attachment_image_info[1] = framebuffer_attachment_image_info[0];
-    framebuffer_attachment_image_info[1].usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    framebuffer_attachment_image_info[1].usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     framebuffer_attachment_image_info[1].pViewFormats = &ivci.format;
 
     VkFramebufferAttachmentsCreateInfo framebuffer_attachments = vku::InitStructHelper();
@@ -275,7 +275,7 @@ TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     image_ci.pNext = &external_format;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.format = VK_FORMAT_UNDEFINED;
-    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageObj resolve_image(m_device);
     resolve_image.Init(image_ci);
 

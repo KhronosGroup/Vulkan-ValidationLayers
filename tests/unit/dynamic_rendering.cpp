@@ -6691,3 +6691,51 @@ TEST_F(NegativeDynamicRendering, IdentitySwizzleFragmentDensityMap) {
     m_commandBuffer->BeginRendering(rendering_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDynamicRendering, ResolveAttachmentUsage) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = depth_format;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    VkImageObj image(m_device);
+    image.Init(image_create_info);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkImageObj resolve_image(m_device);
+    resolve_image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkRenderingAttachmentInfoKHR attachment = vku::InitStructHelper();
+    attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachment.imageView = image_view.handle();
+    attachment.resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachment.resolveImageView = resolve_image_view.handle();
+    attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &attachment;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06865");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-09477");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    rendering_info.pStencilAttachment = &attachment;
+    rendering_info.pDepthAttachment = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06865");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pStencilAttachment-09478");
+    m_commandBuffer->BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}

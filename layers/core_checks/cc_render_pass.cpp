@@ -3926,8 +3926,9 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                 if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
                     const LogObjectList objlist(commandBuffer, resolve_view_state->image_view(),
                                                 resolve_view_state->image_state->image());
-                    skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09477", objlist, color_loc.dot(Field::resolveImageView),
-                                     "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
+                    skip |=
+                        LogError("VUID-VkRenderingInfo-colorAttachmentCount-09476", objlist, color_loc.dot(Field::resolveImageView),
+                                 "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
                 }
             }
         }
@@ -4063,14 +4064,14 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                      string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
                                      string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
                 }
-            }
-            const VkImageUsageFlags image_usage = stencil_resolve_view_state->image_state->createInfo.usage;
-            if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->image_view(),
-                                            stencil_resolve_view_state->image_state->image());
-                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09478", objlist,
-                                 rendering_info.dot(Field::pStencilAttachment).dot(Field::resolveImageView),
-                                 "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
+                const VkImageUsageFlags image_usage = stencil_resolve_view_state->image_state->createInfo.usage;
+                if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                    const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->image_view(),
+                                                stencil_resolve_view_state->image_state->image());
+                    skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09478", objlist,
+                                     rendering_info.dot(Field::pStencilAttachment).dot(Field::resolveImageView),
+                                     "image was created with %s.", string_VkImageUsageFlags(image_usage).c_str());
+                }
             }
         }
     }
