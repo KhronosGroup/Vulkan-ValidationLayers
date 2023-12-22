@@ -1060,8 +1060,6 @@ class BestPractices : public ValidationStateTracker {
     void RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_state, uint32_t draw_count);
     void RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cb_state);
 
-    void AddDeferredQueueOperations(bp_state::CommandBuffer& cb);
-
     // Get BestPractices-specific for the current instance
     bp_state::PhysicalDevice* GetPhysicalDeviceState() { return static_cast<bp_state::PhysicalDevice*>(physical_device_state); }
     const bp_state::PhysicalDevice* GetPhysicalDeviceState() const {

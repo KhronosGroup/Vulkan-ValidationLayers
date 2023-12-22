@@ -181,7 +181,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     auto slot = variable.decorations.input_attachment_index_start;
                     if (!rpci->pSubpasses[subpass].pInputAttachments || slot >= rpci->pSubpasses[subpass].inputAttachmentCount) {
                         const LogObjectList objlist(stage.module_state->Handle(), pipeline.PipelineLayoutState()->layout());
-                        skip |= LogWarning(kVUID_BestPractices_Shader_MissingInputAttachment, device, error_obj.location,
+                        skip |= LogWarning(kVUID_BestPractices_Shader_MissingInputAttachment, device, create_info_loc,
                                            "Shader consumes input attachment index %" PRIu32 " but not provided in subpass", slot);
                     }
                 }
