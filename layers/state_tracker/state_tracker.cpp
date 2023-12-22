@@ -2813,6 +2813,9 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer 
 
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              VkIndexType indexType, const RecordObject &record_obj) {
+    if (buffer == VK_NULL_HANDLE) {
+        return;  // allowed in maintenance6
+    }
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     cb_state->index_buffer_binding = IndexBufferBinding(Get<vvl::Buffer>(buffer), offset, indexType);
@@ -2826,6 +2829,9 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                  VkDeviceSize offset, VkDeviceSize size, VkIndexType indexType,
                                                                  const RecordObject &record_obj) {
+    if (buffer == VK_NULL_HANDLE) {
+        return;  // allowed in maintenance6
+    }
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     cb_state->index_buffer_binding = IndexBufferBinding(Get<vvl::Buffer>(buffer), size, offset, indexType);

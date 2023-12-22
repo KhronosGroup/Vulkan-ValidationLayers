@@ -682,6 +682,31 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeBuffer, IndexBufferNull) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-None-09493");
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeBuffer, IndexBufferNullOffset) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-None-09494");
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), VK_NULL_HANDLE, 4, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeBuffer, BufferUsageFlags2) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with bad flags.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
