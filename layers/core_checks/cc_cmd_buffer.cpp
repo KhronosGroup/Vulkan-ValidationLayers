@@ -376,17 +376,31 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
-                                            VkDeviceSize offset, VkIndexType indexType, const Location &loc) const {
+bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, VkBuffer buffer, VkDeviceSize offset,
+                                            VkIndexType indexType, const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function == Func::vkCmdBindIndexBuffer2KHR;
-    const LogObjectList objlist(cb_state.commandBuffer(), buffer_state.buffer());
-    skip |= ValidateCmd(cb_state, loc);
+    const char *vuid;
 
-    const char *vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
-    skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, vuid, loc.dot(Field::buffer));
+    if (buffer == VK_NULL_HANDLE) {
+        if (!enabled_features.maintenance6) {
+            vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-None-09493" : "VUID-vkCmdBindIndexBuffer-None-09493";
+            skip |= LogError(vuid, cb_state.commandBuffer(), loc.dot(Field::buffer), "is VK_NULL_HANDLE.");
+        } else if (offset != 0) {
+            vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-None-09494" : "VUID-vkCmdBindIndexBuffer-None-09494";
+            skip |= LogError(vuid, cb_state.commandBuffer(), loc.dot(Field::buffer),
+                             "is VK_NULL_HANDLE but offset is (%" PRIu64 ").", offset);
+        }
+        return skip;  // no buffer state to validate
+    }
+
+    auto buffer_state = Get<vvl::Buffer>(buffer);
+    const LogObjectList objlist(cb_state.commandBuffer(), buffer);
+
+    vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
+    skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, vuid, loc.dot(Field::buffer));
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
-    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), buffer_state, loc.dot(Field::buffer), vuid);
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), *buffer_state, loc.dot(Field::buffer), vuid);
 
     const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
     if (!IsIntegerMultipleOf(offset, offset_align)) {
@@ -394,10 +408,10 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
         skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") does not fall on alignment (%s) boundary.", offset,
                          string_VkIndexType(indexType));
     }
-    if (offset >= buffer_state.createInfo.size) {
+    if (offset >= buffer_state->createInfo.size) {
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-offset-08782" : "VUID-vkCmdBindIndexBuffer-offset-08782";
         skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", offset,
-                         buffer_state.createInfo.size);
+                         buffer_state->createInfo.size);
     }
 
     return skip;
@@ -405,19 +419,23 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType, const ErrorObject &error_obj) const {
-    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    return ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, error_obj.location);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCmdBindIndexBuffer(*cb_state, buffer, offset, indexType, error_obj.location);
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkDeviceSize size, VkIndexType indexType,
                                                        const ErrorObject &error_obj) const {
-    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    skip |= ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, error_obj.location);
-    if (size != VK_WHOLE_SIZE) {
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCmdBindIndexBuffer(*cb_state, buffer, offset, indexType, error_obj.location);
+
+    if (size != VK_WHOLE_SIZE && buffer != VK_NULL_HANDLE) {
+        auto buffer_state = Get<vvl::Buffer>(buffer);
         const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
         if (!IsIntegerMultipleOf(size, offset_align)) {
             skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08767", commandBuffer, error_obj.location.dot(Field::size),

@@ -27,7 +27,7 @@ using vvl::GetDrawDispatchVuid;
 bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    if (!cb_state.index_buffer_binding.bound()) {
+    if (!cb_state.index_buffer_binding.bound() && !enabled_features.maintenance6) {
         skip |= LogError(vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "Index buffer object has not been bound to this command buffer.");
     }

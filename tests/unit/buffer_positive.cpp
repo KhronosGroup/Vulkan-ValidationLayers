@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/barrier_queue_family.h"
+#include "../framework/pipeline_helper.h"
 #include "generated/vk_extension_helper.h"
 
 TEST_F(PositiveBuffer, OwnershipTranfers) {
@@ -180,6 +181,28 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
 
     vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer_size, VK_INDEX_TYPE_UINT32);
 
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveBuffer, IndexBufferNull) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 0, 1, 0, 0, 0);
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 0, 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
