@@ -289,7 +289,11 @@ void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer,
     ValidationStateTracker::PreCallRecordCmdEndRenderPass(commandBuffer, record_obj);
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
-        AddDeferredQueueOperations(*cb_state);
+        // Add Deferred Queue
+        cb_state->queue_submit_functions.insert(cb_state->queue_submit_functions.end(),
+                                                cb_state->queue_submit_functions_after_render_pass.begin(),
+                                                cb_state->queue_submit_functions_after_render_pass.end());
+        cb_state->queue_submit_functions_after_render_pass.clear();
     }
 }
 
@@ -300,7 +304,11 @@ void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo, record_obj);
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
-        AddDeferredQueueOperations(*cb_state);
+        // Add Deferred Queue
+        cb_state->queue_submit_functions.insert(cb_state->queue_submit_functions.end(),
+                                                cb_state->queue_submit_functions_after_render_pass.begin(),
+                                                cb_state->queue_submit_functions_after_render_pass.end());
+        cb_state->queue_submit_functions_after_render_pass.clear();
     }
 }
 
@@ -851,4 +859,48 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     }
 
     return skip;
+}
+
+void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
+    auto& rp_state = cb_state.render_pass_state;
+    // Called when we have a partial clear attachment, or a normal draw call which accesses an attachment.
+    auto itr =
+        std::find_if(rp_state.touchesAttachments.begin(), rp_state.touchesAttachments.end(),
+                     [fb_attachment](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == fb_attachment; });
+
+    if (itr != rp_state.touchesAttachments.end()) {
+        itr->aspects |= aspects;
+    } else {
+        rp_state.touchesAttachments.push_back({fb_attachment, aspects});
+    }
+}
+
+void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cmd_state, uint32_t fb_attachment,
+                                                     uint32_t color_attachment, VkImageAspectFlags aspects, uint32_t rectCount,
+                                                     const VkClearRect* pRects) {
+    auto& rp_state = cmd_state.render_pass_state;
+    // If we observe a full clear before any other access to a frame buffer attachment,
+    // we have candidate for redundant clear attachments.
+    auto itr =
+        std::find_if(rp_state.touchesAttachments.begin(), rp_state.touchesAttachments.end(),
+                     [fb_attachment](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == fb_attachment; });
+
+    uint32_t new_aspects = aspects;
+    if (itr != rp_state.touchesAttachments.end()) {
+        new_aspects = aspects & ~itr->aspects;
+        itr->aspects |= aspects;
+    } else {
+        rp_state.touchesAttachments.push_back({fb_attachment, aspects});
+    }
+
+    if (new_aspects == 0) {
+        return;
+    }
+
+    if (cmd_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+        // The first command might be a clear, but might not be the first in the render pass, defer any checks until
+        // CmdExecuteCommands.
+        rp_state.earlyClearAttachments.push_back(
+            {fb_attachment, color_attachment, new_aspects, std::vector<VkClearRect>{pRects, pRects + rectCount}});
+    }
 }

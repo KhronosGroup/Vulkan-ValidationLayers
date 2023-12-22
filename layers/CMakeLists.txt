@@ -117,6 +117,7 @@ target_sources(vvl PRIVATE
     best_practices/best_practices_utils.cpp
     best_practices/bp_buffer.cpp
     best_practices/bp_cmd_buffer.cpp
+    best_practices/bp_cmd_buffer_nv.cpp
     best_practices/bp_copy_blit_resolve.cpp
     best_practices/bp_descriptor.cpp
     best_practices/bp_device_memory.cpp

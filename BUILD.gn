@@ -100,6 +100,7 @@ vvl_sources = [
   "layers/best_practices/best_practices_validation.h",
   "layers/best_practices/bp_buffer.cpp",
   "layers/best_practices/bp_cmd_buffer.cpp",
+  "layers/best_practices/bp_cmd_buffer_nv.cpp",
   "layers/best_practices/bp_copy_blit_resolve.cpp",
   "layers/best_practices/bp_descriptor.cpp",
   "layers/best_practices/bp_device_memory.cpp",
