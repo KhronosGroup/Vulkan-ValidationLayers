@@ -3606,3 +3606,21 @@ TEST_F(NegativePipeline, ViewportStateScissorNegative) {
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp_y, kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-x-02821");
 }
+
+TEST_F(NegativePipeline, PipelineCreateFlags2) {
+    TEST_DESCRIPTION("Test using VkPipelineCreateFlags2CreateInfoKHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &flags2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
