@@ -50,7 +50,7 @@ bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBu
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if ((cb_node->GetQueueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
             skip |= LogPerformanceWarning(kVUID_BestPractices_AccelerationStructure_NotAsync, commandBuffer, loc,
-                                          "%s Performance warning: Prefer building acceleration structures on an asynchronous "
+                                          "%s Prefer building acceleration structures on an asynchronous "
                                           "compute queue, instead of using the universal graphics queue.",
                                           VendorSpecificTag(kBPVendorNVIDIA));
         }
