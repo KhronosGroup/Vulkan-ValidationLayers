@@ -120,11 +120,10 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
     }
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-        skip |=
-            LogWarning(kVUID_BestPractices_SharingModeExclusive, device, error_obj.location,
-                       "Warning: A Swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while "
-                       "specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
-                       pCreateInfo->queueFamilyIndexCount);
+        skip |= LogWarning(kVUID_BestPractices_SharingModeExclusive, device, error_obj.location,
+                           "A Swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while "
+                           "specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
+                           pCreateInfo->queueFamilyIndexCount);
     }
 
     const auto present_mode = pCreateInfo->presentMode;
@@ -132,7 +131,7 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
         (pCreateInfo->minImageCount == 2)) {
         skip |= LogPerformanceWarning(
             kVUID_BestPractices_SuboptimalSwapchainImageCount, device, error_obj.location,
-            "Warning: A Swapchain is being created with minImageCount set to %" PRIu32
+            "A Swapchain is being created with minImageCount set to %" PRIu32
             ", which means double buffering is going "
             "to be used. Using double buffering and vsync locks rendering to an integer fraction of the vsync rate. In turn, "
             "reducing the performance of the application if rendering is slower than vsync. Consider setting minImageCount to "
@@ -151,7 +150,7 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
 
     if (VendorCheckEnabled(kBPVendorArm) && (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR)) {
         skip |= LogWarning(kVUID_BestPractices_CreateSwapchain_PresentMode, device, error_obj.location,
-                           "%s Warning: Swapchain is not being created with presentation mode \"VK_PRESENT_MODE_FIFO_KHR\". "
+                           "%s Swapchain is not being created with presentation mode \"VK_PRESENT_MODE_FIFO_KHR\". "
                            "Prefer using \"VK_PRESENT_MODE_FIFO_KHR\" to avoid unnecessary CPU and GPU load and save power. "
                            "Presentation modes which are not FIFO will present the latest available frame and discard other "
                            "frame(s) if any.",
@@ -171,7 +170,7 @@ bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
         if ((pCreateInfos[i].queueFamilyIndexCount > 1) && (pCreateInfos[i].imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
             skip |= LogWarning(
                 kVUID_BestPractices_SharingModeExclusive, device, error_obj.location,
-                "Warning: A shared swapchain (index %" PRIu32
+                "A shared swapchain (index %" PRIu32
                 ") is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple "
                 "queues (queueFamilyIndexCount of %" PRIu32 ").",
                 i, pCreateInfos[i].queueFamilyIndexCount);
@@ -238,7 +237,7 @@ bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
         auto num = num_queue_submissions_.load();
         if (num > kNumberOfSubmissionWarningLimitAMD) {
             skip |= LogPerformanceWarning(kVUID_BestPractices_Submission_ReduceNumberOfSubmissions, device, error_obj.location,
-                                          "%s %s Performance warning: command buffers submitted %" PRId32
+                                          "%s %s command buffers submitted %" PRId32
                                           " times this frame. Submitting command buffers has a CPU "
                                           "and GPU overhead. Submit fewer times to incur less overhead.",
                                           VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), num);

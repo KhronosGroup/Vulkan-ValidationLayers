@@ -26,21 +26,19 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-        std::stringstream image_hex;
-        image_hex << "0x" << std::hex << HandleToUint64(pImage);
-
-        skip |=
-            LogWarning(kVUID_BestPractices_SharingModeExclusive, device, error_obj.location,
-                       "Warning: Image (%s) specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues "
-                       "(queueFamilyIndexCount of %" PRIu32 ").",
-                       image_hex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
+        skip |= LogWarning(kVUID_BestPractices_SharingModeExclusive, device,
+                           error_obj.location.dot(Field::pCreateInfo).dot(Field::sharingMode),
+                           "is VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues "
+                           "(queueFamilyIndexCount of %" PRIu32 ").",
+                           pCreateInfo->queueFamilyIndexCount);
     }
 
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) && !(pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-        skip |= LogWarning(kVUID_BestPractices_ImageCreateFlags, device, error_obj.location,
-                           "pCreateInfo->flags has VK_IMAGE_CREATE_EXTENDED_USAGE_BIT set, but not "
-                           "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, therefore image views created from this image will have to use the "
-                           "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
+        skip |=
+            LogWarning(kVUID_BestPractices_ImageCreateFlags, device, error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
+                       "has VK_IMAGE_CREATE_EXTENDED_USAGE_BIT set, but not "
+                       "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, therefore image views created from this image will have to use the "
+                       "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
     }
 
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
@@ -87,56 +85,49 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        std::stringstream image_hex;
-        image_hex << "0x" << std::hex << HandleToUint64(pImage);
-
         if ((pCreateInfo->usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT)) {
-            skip |= LogPerformanceWarning(
-                kVUID_BestPractices_vkImage_AvoidConcurrentRenderTargets, device, error_obj.location,
-                "%s Performance warning: image (%s) is created as a render target with VK_SHARING_MODE_CONCURRENT. "
-                "Using a SHARING_MODE_CONCURRENT "
-                "is not recommended with color and depth targets",
-                VendorSpecificTag(kBPVendorAMD), image_hex.str().c_str());
+            skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidConcurrentRenderTargets, device, error_obj.location,
+                                          "%s Trying to create an image as a render target with VK_SHARING_MODE_CONCURRENT. "
+                                          "Using a SHARING_MODE_CONCURRENT "
+                                          "is not recommended with color and depth targets",
+                                          VendorSpecificTag(kBPVendorAMD));
         }
 
         if ((pCreateInfo->usage &
              (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-            skip |= LogPerformanceWarning(
-                kVUID_BestPractices_vkImage_DontUseMutableRenderTargets, device, error_obj.location,
-                "%s Performance warning: image (%s) is created as a render target with VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT. "
-                "Using a MUTABLE_FORMAT is not recommended with color, depth, and storage targets",
-                VendorSpecificTag(kBPVendorAMD), image_hex.str().c_str());
+            skip |=
+                LogPerformanceWarning(kVUID_BestPractices_vkImage_DontUseMutableRenderTargets, device, error_obj.location,
+                                      "%s Trying to create an image as a render target with VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT. "
+                                      "Using a MUTABLE_FORMAT is not recommended with color, depth, and storage targets",
+                                      VendorSpecificTag(kBPVendorAMD));
         }
 
         if ((pCreateInfo->usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
-            skip |= LogPerformanceWarning(
-                kVUID_BestPractices_vkImage_DontUseStorageRenderTargets, device, error_obj.location,
-                "%s Performance warning: image (%s) is created as a render target with VK_IMAGE_USAGE_STORAGE_BIT. Using a "
-                "VK_IMAGE_USAGE_STORAGE_BIT is not recommended with color and depth targets",
-                VendorSpecificTag(kBPVendorAMD), image_hex.str().c_str());
+            skip |=
+                LogPerformanceWarning(kVUID_BestPractices_vkImage_DontUseStorageRenderTargets, device, error_obj.location,
+                                      "%s Trying to create an image as a render target with VK_IMAGE_USAGE_STORAGE_BIT. Using a "
+                                      "VK_IMAGE_USAGE_STORAGE_BIT is not recommended with color and depth targets",
+                                      VendorSpecificTag(kBPVendorAMD));
         }
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        std::stringstream image_hex;
-        image_hex << "0x" << std::hex << HandleToUint64(pImage);
-
         if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
             skip |= LogPerformanceWarning(kVUID_BestPractices_CreateImage_TilingLinear, device, error_obj.location,
-                                          "%s Performance warning: image (%s) is created with tiling VK_IMAGE_TILING_LINEAR. "
+                                          "%s Trying to create an image with tiling VK_IMAGE_TILING_LINEAR. "
                                           "Use VK_IMAGE_TILING_OPTIMAL instead.",
-                                          VendorSpecificTag(kBPVendorNVIDIA), image_hex.str().c_str());
+                                          VendorSpecificTag(kBPVendorNVIDIA));
         }
 
         if (pCreateInfo->format == VK_FORMAT_D32_SFLOAT || pCreateInfo->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
-            skip |= LogPerformanceWarning(
-                kVUID_BestPractices_CreateImage_Depth32Format, device, error_obj.location,
-                "%s Performance warning: image (%s) is created with a 32-bit depth format. Use VK_FORMAT_D24_UNORM_S8_UINT or "
-                "VK_FORMAT_D16_UNORM instead, unless the extra precision is needed.",
-                VendorSpecificTag(kBPVendorNVIDIA), image_hex.str().c_str());
+            skip |=
+                LogPerformanceWarning(kVUID_BestPractices_CreateImage_Depth32Format, device, error_obj.location,
+                                      "%s Trying to create an image with a 32-bit depth format. Use VK_FORMAT_D24_UNORM_S8_UINT or "
+                                      "VK_FORMAT_D16_UNORM instead, unless the extra precision is needed.",
+                                      VendorSpecificTag(kBPVendorNVIDIA));
         }
     }
 

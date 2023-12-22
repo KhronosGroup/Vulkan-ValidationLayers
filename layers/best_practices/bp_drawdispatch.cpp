@@ -83,26 +83,26 @@ bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Loca
 }
 
 void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count) {
-    auto cb_node = GetWrite<bp_state::CommandBuffer>(cmd_buffer);
-    assert(cb_node);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(cmd_buffer);
+    assert(cb_state);
     if (VendorCheckEnabled(kBPVendorArm)) {
-        RecordCmdDrawTypeArm(*cb_node, draw_count);
+        RecordCmdDrawTypeArm(*cb_state, draw_count);
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        RecordCmdDrawTypeNVIDIA(*cb_node);
+        RecordCmdDrawTypeNVIDIA(*cb_state);
     }
 
-    if (cb_node->render_pass_state.drawTouchAttachments) {
-        for (auto& touch : cb_node->render_pass_state.nextDrawTouchesAttachments) {
-            RecordAttachmentAccess(*cb_node, touch.framebufferAttachment, touch.aspects);
+    if (cb_state->render_pass_state.drawTouchAttachments) {
+        for (auto& touch : cb_state->render_pass_state.nextDrawTouchesAttachments) {
+            RecordAttachmentAccess(*cb_state, touch.framebufferAttachment, touch.aspects);
         }
         // No need to touch the same attachments over and over.
-        cb_node->render_pass_state.drawTouchAttachments = false;
+        cb_state->render_pass_state.drawTouchAttachments = false;
     }
 }
 
-void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_node, uint32_t draw_count) {
-    auto& render_pass_state = cb_node.render_pass_state;
+void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_state, uint32_t draw_count) {
+    auto& render_pass_state = cb_state.render_pass_state;
     // Each TBDR vendor requires a depth pre-pass draw call to have a minimum number of vertices/indices before it counts towards
     // depth prepass warnings First find the lowest enabled draw count
     uint32_t lowestEnabledMinDrawCount = 0;
@@ -359,12 +359,12 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     ValidationStateTracker::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset,
                                                         firstInstance, record_obj);
 
-    auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
-        cmd_state->small_indexed_draw_call_count++;
+        cb_state->small_indexed_draw_call_count++;
     }
 
-    ValidateBoundDescriptorSets(*cmd_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -666,20 +666,20 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
 
 void BestPractices::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                          uint32_t firstVertex, uint32_t firstInstance, const RecordObject& record_obj) {
-    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    const auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
 }
 
 void BestPractices::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
-    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    const auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
 }
 
 void BestPractices::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
-    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    const auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
 }
 
 bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
@@ -698,12 +698,12 @@ bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
 
 void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
                                              const RecordObject& record_obj) {
-    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
+    const auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
 }
 
 void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      const RecordObject& record_obj) {
-    const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
+    const auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
 }
