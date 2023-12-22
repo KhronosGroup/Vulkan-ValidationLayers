@@ -886,6 +886,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_vertex_attribute_divisor, &vtx_attrib_divisor_props_ext);
         phys_dev_props->vtx_attrib_divisor_props = vku::InitStructHelper();
         phys_dev_props->vtx_attrib_divisor_props.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
+        phys_dev_props->vtx_attrib_divisor_props.supportsNonZeroFirstInstance = VK_TRUE;
     }
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props_nv);
