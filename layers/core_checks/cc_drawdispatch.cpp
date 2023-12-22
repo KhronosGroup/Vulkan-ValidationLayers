@@ -88,7 +88,10 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                 }
             }
             if (non_1_divisor) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
+                LogObjectList objlist(cb_state.Handle());
+                if (pipeline_state) {
+                    objlist.add(pipeline_state->Handle());
+                }
                 skip |= LogError(vuid.vertex_input_09462, objlist, loc,
                                  "VkPipelineVertexInputDivisorStateCreateInfoKHR::pVertexBindingDivisors[%" PRIu32
                                  "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
