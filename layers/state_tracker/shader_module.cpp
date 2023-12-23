@@ -791,7 +791,7 @@ Module::StaticData::StaticData(const Module& module_state) {
     {
         std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
         it += 5;  // skip first 5 word of header
-        while (it != module_state.words_.cend()) {
+        while (it < module_state.words_.cend()) {
             Instruction insn(it);
             const uint32_t opcode = insn.Opcode();
 
