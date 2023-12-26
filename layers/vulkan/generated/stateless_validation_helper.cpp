@@ -39,9 +39,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateReservedFlags(pNext_loc.dot(Field::flags), structure->flags,
                                               "VUID-VkShaderModuleCreateInfo-flags-zerobitmask");
 
-                skip |=
-                    ValidateArray(pNext_loc.dot(Field::codeSize), pNext_loc.dot(Field::pCode), structure->codeSize / 4,
-                                  &structure->pCode, true, true, kVUIDUndefined, "VUID-VkShaderModuleCreateInfo-pCode-parameter");
+                skip |= ValidateArray(pNext_loc.dot(Field::codeSize), pNext_loc.dot(Field::pCode), structure->codeSize / 4,
+                                      &structure->pCode, true, true, "VUID-VkShaderModuleCreateInfo-codeSize-01085",
+                                      "VUID-VkShaderModuleCreateInfo-pCode-parameter");
             }
         } break;
 
@@ -9344,7 +9344,8 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(VkDevice device, con
                                       "VUID-VkShaderModuleCreateInfo-flags-zerobitmask");
 
         skip |= ValidateArray(pCreateInfo_loc.dot(Field::codeSize), pCreateInfo_loc.dot(Field::pCode), pCreateInfo->codeSize / 4,
-                              &pCreateInfo->pCode, true, true, kVUIDUndefined, "VUID-VkShaderModuleCreateInfo-pCode-parameter");
+                              &pCreateInfo->pCode, true, true, "VUID-VkShaderModuleCreateInfo-codeSize-01085",
+                              "VUID-VkShaderModuleCreateInfo-pCode-parameter");
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -24963,7 +24964,8 @@ bool StatelessValidation::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(
                                       "VUID-VkShaderModuleCreateInfo-flags-zerobitmask");
 
         skip |= ValidateArray(pCreateInfo_loc.dot(Field::codeSize), pCreateInfo_loc.dot(Field::pCode), pCreateInfo->codeSize / 4,
-                              &pCreateInfo->pCode, true, true, kVUIDUndefined, "VUID-VkShaderModuleCreateInfo-pCode-parameter");
+                              &pCreateInfo->pCode, true, true, "VUID-VkShaderModuleCreateInfo-codeSize-01085",
+                              "VUID-VkShaderModuleCreateInfo-pCode-parameter");
     }
     skip |= ValidateStructType(loc.dot(Field::pIdentifier), "VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT", pIdentifier,
                                VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT, true,

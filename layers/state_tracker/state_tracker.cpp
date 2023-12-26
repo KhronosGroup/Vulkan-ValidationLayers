@@ -4526,6 +4526,10 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuf
 void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                              const RecordObject &record_obj, void *csm_state_data) {
+    if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
+        return;
+    }
+
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     csm_state->module_state = std::make_shared<spirv::Module>(pCreateInfo->codeSize, pCreateInfo->pCode);
     if (csm_state->module_state && csm_state->module_state->static_data_.has_group_decoration) {
@@ -4553,6 +4557,9 @@ void ValidationStateTracker::PreCallRecordCreateShadersEXT(VkDevice device, uint
                                                            const RecordObject &record_obj, void *csm_state_data) {
     create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (pCreateInfos[i].codeSize == 0 || !pCreateInfos[i].pCode) {
+            continue;
+        }
         // don't need to worry about GroupDecoration with VK_EXT_shader_object
         if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             csm_state->module_states[i] =
