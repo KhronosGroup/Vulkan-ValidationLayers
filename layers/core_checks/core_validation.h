@@ -703,6 +703,8 @@ class CoreChecks : public ValidationStateTracker {
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelinePortability(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
+    bool ValidatePipelineLibraryCreateInfo(const vvl::Pipeline& pipeline, const VkPipelineLibraryCreateInfoKHR& library_create_info,
+                                           const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const vvl::Pipeline& pipeline, const vvl::CommandBuffer& cb_state,
                                                     const Location& loc, const vvl::DrawDispatchVuid& vuids) const;
