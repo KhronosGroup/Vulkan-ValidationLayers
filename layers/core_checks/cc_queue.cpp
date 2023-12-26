@@ -623,18 +623,19 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const Location bind_loc = bind_info_loc.dot(Field::pImageBinds, image_idx);
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
                 auto image_state = Get<vvl::Image>(image_bind.image);
+                if (!image_state) {
+                    continue;
+                }
 
-                if (image_state && !(image_state->sparse_residency)) {
+                if (!image_state->sparse_residency) {
                     skip |= LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),
                                      "must have been created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set.");
                 }
 
-                if (image_bind.pBinds) {
-                    for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
-                        const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
-                        skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, bind_loc,
-                                                              bind_loc.dot(Field::pBinds, image_bind_idx));
-                    }
+                for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
+                    const Location image_bind_loc = bind_loc.dot(Field::pBinds, image_bind_idx);
+                    const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
+                    skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, bind_loc, image_bind_loc);
                 }
             }
         }

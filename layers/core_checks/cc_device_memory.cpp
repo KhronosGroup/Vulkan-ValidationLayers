@@ -1793,16 +1793,16 @@ bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const 
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
         skip |=
-            LogError("VUID-VkSparseImageMemoryBind-subresource-01106", image_state.Handle(), subresource_loc.dot(Field::mipLevel),
-                     "(%" PRIu32 ") is not less than mipLevels (%" PRIu32 ") of %s.image.", subresource.mipLevel,
-                     image_state.createInfo.mipLevels, bind_loc.Fields().c_str());
+            LogError("VUID-VkSparseImageMemoryBindInfo-subresource-01722", image_state.Handle(),
+                     subresource_loc.dot(Field::mipLevel), "(%" PRIu32 ") is not less than mipLevels (%" PRIu32 ") of %s.image.",
+                     subresource.mipLevel, image_state.createInfo.mipLevels, bind_loc.Fields().c_str());
     }
 
     if (subresource.arrayLayer >= image_state.createInfo.arrayLayers) {
-        skip |=
-            LogError("VUID-VkSparseImageMemoryBind-subresource-01106", image_state.Handle(), subresource_loc.dot(Field::arrayLayer),
-                     "(%" PRIu32 ") is not less than arrayLayers (%" PRIu32 ") of %s.image.", subresource.arrayLayer,
-                     image_state.createInfo.arrayLayers, bind_loc.Fields().c_str());
+        skip |= LogError("VUID-VkSparseImageMemoryBindInfo-subresource-01723", image_state.Handle(),
+                         subresource_loc.dot(Field::arrayLayer),
+                         "(%" PRIu32 ") is not less than arrayLayers (%" PRIu32 ") of %s.image.", subresource.arrayLayer,
+                         image_state.createInfo.arrayLayers, bind_loc.Fields().c_str());
     }
 
     return skip;
