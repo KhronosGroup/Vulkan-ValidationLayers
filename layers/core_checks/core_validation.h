@@ -49,6 +49,7 @@ struct ValidateBeginQueryVuids {
     const char* vuid_compute_support = kVUIDUndefined;
     const char* vuid_primitives_generated = kVUIDUndefined;
     const char* vuid_result_status_support = kVUIDUndefined;
+    const char* vuid_performance_queue_index_07289 = kVUIDUndefined;
     const char* vuid_no_active_in_vc_scope = kVUIDUndefined;
 };
 

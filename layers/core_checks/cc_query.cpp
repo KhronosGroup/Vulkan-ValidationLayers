@@ -458,6 +458,16 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                                  "VK_QUERY_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
                                  FormatHandle(query_obj.pool).c_str(), loc.StringFunc());
             }
+
+            if (cb_state.command_pool->queueFamilyIndex != query_pool_state->perf_counter_queue_family_index) {
+                const LogObjectList objlist(cb_state.commandBuffer(), cb_state.command_pool->commandPool(), query_obj.pool);
+                skip |= LogError(vuids->vuid_performance_queue_index_07289, objlist, loc.dot(Field::queryPool),
+                                 "was created with VkQueryPoolPerformanceCreateInfoKHR::queueFamilyIndex (%" PRIu32
+                                 ") but the command buffer is from a comment pool created with "
+                                 "VkCommandPoolCreateInfo::queueFamilyIndex (%" PRIu32 ").",
+                                 query_pool_state->perf_counter_queue_family_index, cb_state.command_pool->queueFamilyIndex);
+            }
+            break;
         } break;
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR: {
@@ -720,6 +730,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
             vuid_compute_support = "VUID-vkCmdBeginQuery-queryType-00805";
             vuid_primitives_generated = "VUID-vkCmdBeginQuery-queryType-06687";
             vuid_result_status_support = "VUID-vkCmdBeginQuery-queryType-07126";
+            vuid_performance_queue_index_07289 = "VUID-vkCmdBeginQuery-queryPool-07289";
             vuid_no_active_in_vc_scope = "VUID-vkCmdBeginQuery-None-07127";
         }
     };
@@ -1326,6 +1337,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             vuid_compute_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00805";
             vuid_primitives_generated = "VUID-vkCmdBeginQueryIndexedEXT-queryType-06689";
             vuid_result_status_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-07126";
+            vuid_performance_queue_index_07289 = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-07289";
             vuid_no_active_in_vc_scope = "VUID-vkCmdBeginQueryIndexedEXT-None-07127";
         }
     };
