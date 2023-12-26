@@ -331,3 +331,42 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSparseImage, BindImage) {
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
+    RETURN_IF_SKIP(Init());
+
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {512, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkSparseImageMemoryBind image_memory_bind = {};
+    image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_memory_bind.extent = image_create_info.extent;
+
+    VkSparseImageMemoryBindInfo image_memory_bind_info = {};
+    image_memory_bind_info.image = image.handle();
+    image_memory_bind_info.bindCount = 1;
+    image_memory_bind_info.pBinds = &image_memory_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.imageBindCount = 1;
+    bind_info.pImageBinds = &image_memory_bind_info;
+
+    vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+}
