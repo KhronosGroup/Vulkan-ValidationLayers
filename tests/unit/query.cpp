@@ -2707,3 +2707,63 @@ TEST_F(NegativeQuery, Stride) {
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 8, 8,
                                 VK_QUERY_RESULT_64_BIT);
 }
+
+TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
+    if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
+        GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
+    }
+
+    uint32_t counterCount = 0u;
+    vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), 0, &counterCount, nullptr, nullptr);
+    std::vector<VkPerformanceCounterKHR> counters(counterCount, vku::InitStruct<VkPerformanceCounterKHR>());
+    std::vector<VkPerformanceCounterDescriptionKHR> counterDescriptions(counterCount,
+                                                                        vku::InitStruct<VkPerformanceCounterDescriptionKHR>());
+    vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), 0, &counterCount, counters.data(),
+                                                                      counterDescriptions.data());
+
+    std::vector<uint32_t> enabledCounters(128);
+    const uint32_t enabledCounterCount = std::min(counterCount, static_cast<uint32_t>(enabledCounters.size()));
+    for (uint32_t i = 0; i < enabledCounterCount; ++i) {
+        enabledCounters[i] = i;
+    }
+
+    auto query_pool_performance_ci = vku::InitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
+    query_pool_performance_ci.queueFamilyIndex = 0;
+    query_pool_performance_ci.counterIndexCount = enabledCounterCount;
+    query_pool_performance_ci.pCounterIndices = enabledCounters.data();
+
+    uint32_t num_passes = 0;
+    vk::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(m_device->phy(), &query_pool_performance_ci, &num_passes);
+
+    auto query_pool_ci = vku::InitStruct<VkQueryPoolCreateInfo>(&query_pool_performance_ci);
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1;
+    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
+    pool_create_info.queueFamilyIndex = 1;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    vkt::CommandPool command_pool(*m_device, pool_create_info);
+
+    vkt::Queue *queue = m_device->queue_family_queues(1)[0].get();
+    vkt::CommandBuffer cb(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+
+    auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
+    acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
+    vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
+
+    cb.begin();
+    vk::CmdResetQueryPool(cb.handle(), query_pool.handle(), 0u, 1u);
+    cb.end();
+
+    cb.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryPool-07289");
+    vk::CmdBeginQuery(cb.handle(), query_pool, 0, 0);
+    m_errorMonitor->VerifyFound();
+    cb.end();
+    vk::ReleaseProfilingLockKHR(*m_device);
+}
