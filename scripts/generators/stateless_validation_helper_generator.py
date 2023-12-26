@@ -569,6 +569,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     if member.type != 'char':
                         # A valid VU can't use '->' in the middle so the generated VUID from the spec uses '::' instead
                         count_required_vuid = self.GetVuid(vuid_tag_name, f"{member.length.replace('->', '::')}-arraylength")
+                        if structTypeName == 'VkShaderModuleCreateInfo' and member.name == 'pCode':
+                            count_required_vuid = '"VUID-VkShaderModuleCreateInfo-codeSize-01085"' # exception due to unique lenValue
+
                         # TODO - some length have unhandled symbols
                         count_loc = f'{errorLoc}.dot(Field::{member.length})'
                         if '->' in member.length:
