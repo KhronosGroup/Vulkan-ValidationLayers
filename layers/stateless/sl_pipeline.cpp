@@ -284,6 +284,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             }
         }
 
+        if (graphics_lib_info && (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                              VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT))) {
+            skip |= ValidateArray(create_info_loc.dot(Field::stageCount), create_info_loc.dot(Field::pStages),
+                                  create_info.stageCount, &create_info.pStages, true, true,
+                                  "VUID-VkGraphicsPipelineCreateInfo-flags-06644", "VUID-VkGraphicsPipelineCreateInfo-flags-06640");
+        }
+
         // <VkDynamicState, index in pDynamicStates, hash for enum key>
         vvl::unordered_map<VkDynamicState, uint32_t, std::hash<int>> dynamic_state_map;
         // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"

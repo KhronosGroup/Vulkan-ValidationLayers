@@ -588,8 +588,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     }
 
     if (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags) {
-        const auto layout_state = Get<vvl::PipelineLayout>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
-        if (!layout_state) {
+        auto create_info = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
+        if (Get<vvl::PipelineLayout>(create_info.layout) == nullptr) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
                              "is a graphics library created with %s state, but does not have a valid layout specified.",
                              string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
