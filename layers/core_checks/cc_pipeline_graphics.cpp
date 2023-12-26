@@ -536,46 +536,35 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
     }
 
-    // The PreRaster and FragmentShading can be declared in two different ways
-    enum GPLInitInfo : uint8_t {
+    // The PreRaster and FragmentShader can be declared in two different ways
+    enum GPLInitType : uint8_t {
         uninitialized = 0,
-        from_gpl_info,   // VkGraphicsPipelineLibraryCreateInfoEXT::flags
-        from_link_info,  // VkPipelineLibraryCreateInfoKHR::pLibraries
+        gpl_flags,       // VkGraphicsPipelineLibraryCreateInfoEXT::flags
+        link_libraries,  // VkPipelineLibraryCreateInfoKHR::pLibraries
     };
+
     struct GPLValidInfo {
-        GPLValidInfo() = default;
-        GPLValidInfo(GPLInitInfo ii, const vvl::PipelineLayout *pls) : init_type(ii), layout_state(pls) {}
-        GPLInitInfo init_type = GPLInitInfo::uninitialized;
-        const vvl::PipelineLayout *layout_state = nullptr;
+        GPLInitType init = GPLInitType::uninitialized;
+        VkPipelineLayoutCreateFlags flags = VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM;
+        const vvl::PipelineLayout *layout = nullptr;
     };
-    std::pair<VkPipelineLayoutCreateFlags, GPLValidInfo> pre_raster_flags = std::make_pair(
-                                                             VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM, GPLValidInfo{}),
-                                                         fs_flags = std::make_pair(VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM,
-                                                                                   GPLValidInfo{});
+
+    GPLValidInfo pre_raster_info;
+    GPLValidInfo frag_shader_info;
+
     const auto gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.PNext());
     if (gpl_info) {
-        const bool has_pre_raster_flag = gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
-        const bool has_fs_flag = gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
-
-        if (has_pre_raster_flag || has_fs_flag) {
-            // NOTE: 06642 only refers to the create flags, not the sub-state, so look at the "raw layout" rather than the
-            // layout associated with the sub-state
-            const auto layout_state = Get<vvl::PipelineLayout>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
-            if (!layout_state) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
-                                 "is a graphics library created with %s state, but does not have a valid layout specified.",
-                                 string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
-            }
-        }
-
-        if (has_pre_raster_flag && !has_fs_flag) {
-            pre_raster_flags.first =
+        if (gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
+            pre_raster_info.init = GPLInitType::gpl_flags;
+            pre_raster_info.flags =
                 (pipeline.PreRasterPipelineLayoutState()) ? pipeline.PreRasterPipelineLayoutState()->CreateFlags() : 0;
-            pre_raster_flags.second = {GPLInitInfo::from_gpl_info, pipeline.PreRasterPipelineLayoutState().get()};
-        } else if (has_fs_flag && !has_pre_raster_flag) {
-            fs_flags.first =
+            pre_raster_info.layout = pipeline.PreRasterPipelineLayoutState().get();
+        }
+        if (gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
+            frag_shader_info.init = GPLInitType::gpl_flags;
+            frag_shader_info.flags =
                 (pipeline.FragmentShaderPipelineLayoutState()) ? pipeline.FragmentShaderPipelineLayoutState()->CreateFlags() : 0;
-            fs_flags.second = {GPLInitInfo::from_gpl_info, pipeline.FragmentShaderPipelineLayoutState().get()};
+            frag_shader_info.layout = pipeline.FragmentShaderPipelineLayoutState().get();
         }
     }
 
@@ -586,22 +575,32 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
             if (lib && lib->PipelineLayoutState()) {
                 if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-                    pre_raster_flags.first = lib->PreRasterPipelineLayoutState()->CreateFlags();
-                    pre_raster_flags.second = {GPLInitInfo::from_link_info, lib->PreRasterPipelineLayoutState().get()};
+                    pre_raster_info.init = GPLInitType::link_libraries;
+                    pre_raster_info.flags = lib->PreRasterPipelineLayoutState()->CreateFlags();
+                    pre_raster_info.layout = lib->PreRasterPipelineLayoutState().get();
                 } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-                    fs_flags.first = lib->FragmentShaderPipelineLayoutState()->CreateFlags();
-                    fs_flags.second = {GPLInitInfo::from_link_info, lib->FragmentShaderPipelineLayoutState().get()};
+                    frag_shader_info.init = GPLInitType::link_libraries;
+                    frag_shader_info.flags = lib->FragmentShaderPipelineLayoutState()->CreateFlags();
+                    frag_shader_info.layout = lib->FragmentShaderPipelineLayoutState().get();
                 }
             }
         }
     }
 
-    if ((pre_raster_flags.second.init_type != GPLInitInfo::uninitialized) &&
-        (fs_flags.second.init_type != GPLInitInfo::uninitialized)) {
+    if (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags) {
+        const auto layout_state = Get<vvl::PipelineLayout>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
+        if (!layout_state) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
+                             "is a graphics library created with %s state, but does not have a valid layout specified.",
+                             string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
+        }
+    }
+
+    if ((pre_raster_info.init != GPLInitType::uninitialized) && (frag_shader_info.init != GPLInitType::uninitialized)) {
         const char *vuid = nullptr;
-        const bool only_libs = (pre_raster_flags.second.init_type == GPLInitInfo::from_link_info) &&
-                               (fs_flags.second.init_type == GPLInitInfo::from_link_info);
-        if (pre_raster_flags.second.init_type != fs_flags.second.init_type) {
+        const bool only_libs =
+            (pre_raster_info.init == GPLInitType::link_libraries) && (frag_shader_info.init == GPLInitType::link_libraries);
+        if (pre_raster_info.init != frag_shader_info.init) {
             vuid = "VUID-VkGraphicsPipelineCreateInfo-flags-06614";
         } else if (only_libs) {
             vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615";
@@ -610,8 +609,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         // vuid != null => pre-raster and fragemnt shader state is defined by some combination of this library and pLibraries
         if (vuid) {
             // Check for consistent independent sets across libraries
-            const auto pre_raster_indset = (pre_raster_flags.first & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-            const auto fs_indset = (fs_flags.first & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+            const auto pre_raster_indset = (pre_raster_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+            const auto fs_indset = (frag_shader_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
             if (pre_raster_indset ^ fs_indset) {
                 const char *pre_raster_str = (pre_raster_indset != 0) ? "defined with" : "not defined with";
                 const char *fs_str = (fs_indset != 0) ? "defined with" : "not defined with";
@@ -621,14 +620,14 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     "the "
                     "pre-raster layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, and the "
                     "fragment shader layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT",
-                    string_VkPipelineLayoutCreateFlags(pre_raster_flags.first).c_str(), pre_raster_str,
-                    string_VkPipelineLayoutCreateFlags(fs_flags.first).c_str(), fs_str);
+                    string_VkPipelineLayoutCreateFlags(pre_raster_info.flags).c_str(), pre_raster_str,
+                    string_VkPipelineLayoutCreateFlags(frag_shader_info.flags).c_str(), fs_str);
             }
 
             // Check for consistent shader bindings + layout across libraries
             const char *const vuid_only_libs_binding = (only_libs) ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758" : nullptr;
-            const auto &pre_raster_set_layouts = pre_raster_flags.second.layout_state->set_layouts;
-            const auto &fs_set_layouts = fs_flags.second.layout_state->set_layouts;
+            const auto &pre_raster_set_layouts = pre_raster_info.layout->set_layouts;
+            const auto &fs_set_layouts = frag_shader_info.layout->set_layouts;
             const auto num_set_layouts = std::max(pre_raster_set_layouts.size(), fs_set_layouts.size());
             for (size_t i = 0; i < num_set_layouts; ++i) {
                 const auto pre_raster_dsl = (i < pre_raster_set_layouts.size())
@@ -643,9 +642,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     // fragment shader state do not overlap.
                     for (const auto &fs_binding : fs_dsl->GetBindings()) {
                         if (fs_binding.stageFlags & (PreRasterState::ValidShaderStages())) {
-                            const auto pre_raster_layout_handle_str = FormatHandle(pre_raster_flags.second.layout_state->Handle());
-                            const auto fs_layout_handle_str = FormatHandle(fs_flags.second.layout_state->Handle());
-                            if (pre_raster_flags.second.init_type == GPLInitInfo::from_gpl_info) {
+                            const auto pre_raster_layout_handle_str = FormatHandle(pre_raster_info.layout->Handle());
+                            const auto fs_layout_handle_str = FormatHandle(frag_shader_info.layout->Handle());
+                            if (pre_raster_info.init == GPLInitType::gpl_flags) {
                                 vuid_tmp = "VUID-VkGraphicsPipelineCreateInfo-flags-06756";
                                 msg << "represents a library containing pre-raster state, and descriptor set layout (from "
                                        "layout "
@@ -655,7 +654,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                                        "same pSetLayouts index ("
                                     << i << ") from layout " << fs_layout_handle_str << " and bindings ("
                                     << string_VkShaderStageFlags(fs_binding.stageFlags) << ") that overlap with pre-raster state.";
-                            } else if (fs_flags.second.init_type == GPLInitInfo::from_gpl_info) {
+                            } else if (frag_shader_info.init == GPLInitType::gpl_flags) {
                                 vuid_tmp = "VUID-VkGraphicsPipelineCreateInfo-flags-06757";
                                 msg << "represents a library containing fragment shader state, and descriptor set layout (from "
                                        "layout "
@@ -683,9 +682,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     // state do not overlap.
                     for (const auto &pre_raster_binding : pre_raster_dsl->GetBindings()) {
                         if (pre_raster_binding.stageFlags & (FragmentShaderState::ValidShaderStages())) {
-                            const auto pre_raster_layout_handle_str = FormatHandle(pre_raster_flags.second.layout_state->Handle());
-                            const auto fs_layout_handle_str = FormatHandle(fs_flags.second.layout_state->Handle());
-                            if (fs_flags.second.init_type == GPLInitInfo::from_gpl_info) {
+                            const auto pre_raster_layout_handle_str = FormatHandle(pre_raster_info.layout->Handle());
+                            const auto fs_layout_handle_str = FormatHandle(frag_shader_info.layout->Handle());
+                            if (frag_shader_info.init == GPLInitType::gpl_flags) {
                                 vuid_tmp = "VUID-VkGraphicsPipelineCreateInfo-flags-06756";
                                 msg << "represents a library containing fragment shader state, and descriptor set layout (from "
                                        "layout "
@@ -697,7 +696,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                                     << string_VkShaderStageFlags(pre_raster_binding.stageFlags)
                                     << ") that overlap with fragment shader state.";
                                 break;
-                            } else if (pre_raster_flags.second.init_type == GPLInitInfo::from_gpl_info) {
+                            } else if (pre_raster_info.init == GPLInitType::gpl_flags) {
                                 vuid_tmp = "VUID-VkGraphicsPipelineCreateInfo-flags-06757";
                                 msg << "represents a library containing pre-raster state, and descriptor set layout (from "
                                        "layout "
