@@ -1729,13 +1729,16 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
                                                            const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    uint32_t index_count = 0, n_perf_pass = 0;
+    uint32_t index_count = 0;
+    uint32_t perf_queue_family_index = 0;
+    uint32_t n_perf_pass = 0;
     bool has_cb = false, has_rb = false;
     if (pCreateInfo->queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         const auto *perf = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
+        perf_queue_family_index = perf->queueFamilyIndex;
         index_count = perf->counterIndexCount;
 
-        const QueueFamilyPerfCounters &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
+        const QueueFamilyPerfCounters &counters = *physical_device_state->perf_counters[perf_queue_family_index];
         for (uint32_t i = 0; i < perf->counterIndexCount; i++) {
             const auto &counter = counters.counters[perf->pCounterIndices[i]];
             switch (counter.scope) {
@@ -1762,7 +1765,7 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
     }
 
     Add(std::make_shared<vvl::QueryPool>(
-        *pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb,
+        *pQueryPool, pCreateInfo, index_count, perf_queue_family_index, n_perf_pass, has_cb, has_rb,
         video_profile_cache_.Get(physical_device, vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext)),
         video_encode_feedback_flags));
 }

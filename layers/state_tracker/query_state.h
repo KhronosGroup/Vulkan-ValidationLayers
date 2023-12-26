@@ -36,8 +36,8 @@ class VideoProfileDesc;
 
 class QueryPool : public StateObject {
   public:
-    QueryPool(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t n_perf_pass, bool has_cb,
-              bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
+    QueryPool(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t perf_queue_family_index,
+              uint32_t n_perf_pass, bool has_cb, bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
               VkVideoEncodeFeedbackFlagsKHR enabled_video_encode_feedback_flags)
         : StateObject(qp, kVulkanObjectTypeQueryPool),
           createInfo(*pCreateInfo),
@@ -45,6 +45,7 @@ class QueryPool : public StateObject {
           has_perf_scope_render_pass(has_rb),
           n_performance_passes(n_perf_pass),
           perf_counter_index_count(index_count),
+          perf_counter_queue_family_index(perf_queue_family_index),
           supported_video_profile(std::move(supp_video_profile)),
           video_encode_feedback_flags(enabled_video_encode_feedback_flags),
           query_states_(pCreateInfo->queryCount) {
@@ -86,6 +87,7 @@ class QueryPool : public StateObject {
     const bool has_perf_scope_render_pass;
     const uint32_t n_performance_passes;
     const uint32_t perf_counter_index_count;
+    const uint32_t perf_counter_queue_family_index;
 
     std::shared_ptr<const vvl::VideoProfileDesc> supported_video_profile;
     VkVideoEncodeFeedbackFlagsKHR video_encode_feedback_flags;
