@@ -1534,3 +1534,81 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
+
+TEST_F(PositiveGraphicsLibrary, PushConstant) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.pipeline_layout_ci_.pushConstantRangeCount = 1;
+        pre_raster_lib.pipeline_layout_ci_.pPushConstantRanges = &pc_range;
+        pre_raster_lib.InitState();
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.pipeline_layout_ci_.pushConstantRangeCount = 0;
+        frag_shader_lib.pipeline_layout_ci_.pPushConstantRanges = &pc_range;
+        frag_shader_lib.InitState();
+        frag_shader_lib.CreateGraphicsPipeline();
+    }
+
+    VkPipeline libraries[2] = {
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    vkt::Pipeline lib(*m_device, lib_ci);
+}
+
+TEST_F(PositiveGraphicsLibrary, PushConstantOneLibrary) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        VkPushConstantRange pc_range = {VK_SHADER_STAGE_ALL, 0, 4};
+        pre_raster_lib.pipeline_layout_ci_.pushConstantRangeCount = 1;
+        pre_raster_lib.pipeline_layout_ci_.pPushConstantRanges = &pc_range;
+        pre_raster_lib.InitState();
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.pipeline_layout_ci_.pushConstantRangeCount = 0;
+        frag_shader_lib.InitState();
+        frag_shader_lib.CreateGraphicsPipeline();
+    }
+
+    VkPipeline libraries[2] = {
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    vkt::Pipeline lib(*m_device, lib_ci);
+}

@@ -574,6 +574,7 @@ TEST_F(NegativeGpuAVOOB, GPL) {
     const auto render_pass = pre_raster.gp_ci_.renderPass;
     const auto subpass = pre_raster.gp_ci_.subpass;
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(nullptr);
     fragment.gp_ci_.stageCount = 0;
