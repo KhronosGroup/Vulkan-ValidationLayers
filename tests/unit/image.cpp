@@ -4431,7 +4431,7 @@ TEST_F(NegativeImage, BlockTexelViewLevelOrLayerCount) {
     // Test for error message
     ivci.subresourceRange.layerCount = 2;
     ivci.subresourceRange.levelCount = 1;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-09487");
 }
 
 TEST_F(NegativeImage, BlockTexelViewCompatibleMultipleLayers) {
@@ -4477,7 +4477,7 @@ TEST_F(NegativeImage, BlockTexelViewCompatibleMultipleLayers) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.layerCount = 2;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-09487");
 }
 
 TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {

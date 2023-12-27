@@ -666,9 +666,9 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
             (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             if (descriptor_writes.pImageInfo == nullptr) {
                 const char *vuid =
-                    loc.function == Func::vkCmdPushDescriptorSetKHR     ? "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494"
-                    : (loc.function == Func::vkCmdPushDescriptorSetKHR) ? "VUID-VkPushDescriptorSetInfoKHR-pDescriptorWrites-06494"
-                                                                        : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
+                    loc.function == Func::vkCmdPushDescriptorSetKHR      ? "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494"
+                    : (loc.function == Func::vkCmdPushDescriptorSet2KHR) ? "VUID-VkPushDescriptorSetInfoKHR-pDescriptorWrites-06494"
+                                                                         : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
                 skip |= LogError(vuid, device, writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
                                  string_VkDescriptorType(descriptor_type));
             } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
