@@ -201,6 +201,46 @@ bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAlloca
     return false;
 }
 
+// There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the import has
+// dedicated Image/Buffer, we can at least validate that it has import support
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
+bool CoreChecks::HasExternalMemoryImportSupport(VkBuffer buffer, VkImage image,
+                                                VkExternalMemoryHandleTypeFlagBits handle_type) const {
+    // TODO - Add VkBufferUsageFlags2CreateInfoKHR support
+    if (buffer != VK_NULL_HANDLE) {
+        const auto &buffer_state = *Get<vvl::Buffer>(buffer);
+        VkPhysicalDeviceExternalBufferInfo info = vku::InitStructHelper();
+        info.flags = buffer_state.createInfo.flags;
+        info.usage = buffer_state.createInfo.usage;
+        info.handleType = handle_type;
+        VkExternalBufferProperties properties = vku::InitStructHelper();
+        DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &info, &properties);
+        return (properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
+    } else if (image != VK_NULL_HANDLE) {
+        const auto &image_state = *Get<vvl::Image>(image);
+        VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
+        external_info.handleType = handle_type;
+        VkPhysicalDeviceImageFormatInfo2 info = vku::InitStructHelper(&external_info);
+        info.format = image_state.createInfo.format;
+        info.type = image_state.createInfo.imageType;
+        info.tiling = image_state.createInfo.tiling;
+        info.usage = image_state.createInfo.usage;
+        info.flags = image_state.createInfo.flags;
+
+        VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
+        VkImageFormatProperties2 properties = vku::InitStructHelper(&external_properties);
+        if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
+            DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties);
+        } else {
+            DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &properties);
+        }
+
+        return (external_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) !=
+               0;
+    }
+    return false;
+}
+
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                                const ErrorObject &error_obj) const {
@@ -348,8 +388,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     const bool imported_opaque_fd =
         import_memory_fd_info && import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     if (imported_opaque_fd) {
+        const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd);
         if (const auto payload_info = GetOpaqueInfoFromFdHandle(import_memory_fd_info->fd)) {
-            const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd);
             if (pAllocateInfo->allocationSize != payload_info->allocation_size) {
                 skip |=
                     LogError("VUID-VkMemoryAllocateInfo-allocationSize-01742", device, allocate_info_loc.dot(Field::allocationSize),
@@ -397,6 +437,23 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                      FormatHandle(payload_info->dedicated_buffer).c_str());
                 }
             }
+        }
+
+        if (dedicated_image != VK_NULL_HANDLE &&
+            !HasExternalMemoryImportSupport(VK_NULL_HANDLE, dedicated_image, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+            skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_image,
+                             allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                             "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
+                             "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
+                             FormatHandle(dedicated_image).c_str());
+        }
+        if (dedicated_buffer != VK_NULL_HANDLE &&
+            !HasExternalMemoryImportSupport(dedicated_buffer, VK_NULL_HANDLE, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+            skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_buffer,
+                             allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                             "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
+                             "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
+                             FormatHandle(dedicated_buffer).c_str());
         }
     }
 

@@ -2094,6 +2094,67 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferSupport) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    RETURN_IF_SKIP(Init());
+
+    auto buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    if (FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
+        GTEST_SKIP() << "Need buffer with no import support";
+    }
+
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_info);
+
+    VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = VK_NULL_HANDLE;
+    dedicated_info.buffer = buffer.handle();
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    import_info.fd = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportMemoryFdInfoKHR-handleType-00667");
+    VkMemoryAllocateInfo alloc_info =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkImageObj image(m_device);
+    auto image_info = VkImageObj::create_info();
+    image_info.extent.width = 1024;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image.init_no_mem(*m_device, image_info);
+
+    if (FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
+        GTEST_SKIP() << "Need image with no import support";
+    }
+
+    VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = image.handle();
+    dedicated_info.buffer = VK_NULL_HANDLE;
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    import_info.fd = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportMemoryFdInfoKHR-handleType-00667");
+    VkMemoryAllocateInfo alloc_info =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}
+
 // Because of aligned_alloc
 #if defined(__linux__) && !defined(__ANDROID__)
 TEST_F(NegativeExternalMemorySync, GetMemoryHostHandleType) {
