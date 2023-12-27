@@ -888,6 +888,7 @@ void DispatchCmdPushDescriptorSetWithTemplate2KHR(
             layer_data->Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
         unwrapped_buffer =
             BuildUnwrappedUpdateTemplateBuffer(layer_data, template_handle, pPushDescriptorSetWithTemplateInfo->pData);
+        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->pData = unwrapped_buffer;
     }
     layer_data->device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
     free(unwrapped_buffer);

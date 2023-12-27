@@ -2160,7 +2160,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             if (pCreateInfo->subresourceRange.layerCount != 1 &&
                 (!IsExtEnabled(device_extensions.vk_khr_maintenance6) ||
                  !phys_dev_ext_props.maintenance6_props.blockTexelViewCompatibleMultipleLayers)) {
-                skip |= LogError("VUID-VkImageViewCreateInfo-image-07072", pCreateInfo->image, create_info_loc.dot(Field::image),
+                skip |= LogError("VUID-VkImageViewCreateInfo-image-09487", pCreateInfo->image, create_info_loc.dot(Field::image),
                                  "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
                                  "and format (%s) is not compressed, but subresourcesRange.layerCount (%" PRIu32 ") is not 1.",
                                  string_VkFormat(view_format), pCreateInfo->subresourceRange.layerCount);
