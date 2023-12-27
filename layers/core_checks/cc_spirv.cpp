@@ -2410,7 +2410,6 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
                                                    const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    spv_result_t spv_valid = SPV_SUCCESS;
 
     if (disabled[shader_validation]) {
         return false;
@@ -2444,7 +2443,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         spv_diagnostic diag = nullptr;
         spvtools::ValidatorOptions options;
         AdjustValidatorOptions(device_extensions, enabled_features, options);
-        spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
+        const spv_result_t spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 if (spv_valid == SPV_WARNING) {
