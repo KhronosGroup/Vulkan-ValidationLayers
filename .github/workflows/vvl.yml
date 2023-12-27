@@ -157,9 +157,6 @@ jobs:
         run: python scripts/tests.py --test
 
   android:
-      env:
-        CMAKE_C_COMPILER_LAUNCHER: ccache
-        CMAKE_CXX_COMPILER_LAUNCHER: ccache
       runs-on: ubuntu-22.04
       strategy:
         matrix:
@@ -189,11 +186,12 @@ jobs:
             -D BUILD_TESTS=${{ matrix.build_tests }} \
             -D UPDATE_DEPS=ON \
             -D BUILD_WERROR=ON
-        - name: Build
-          run: cmake --build build/
-        - name: Test
-          working-directory: ./build
-          run: ctest --output-on-failure -C Debug
+          env:
+            CMAKE_C_COMPILER_LAUNCHER: ccache
+            CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        - run: cmake --build build/
+        - run: cmake --install build/ --prefix /tmp
+        - run: ctest --output-on-failure -C Debug --test-dir build/
 
   iOS:
     runs-on: macos-12
@@ -227,9 +225,6 @@ jobs:
       - run: vtool -show-build /tmp/lib/libVkLayer_khronos_validation.dylib
 
   mingw:
-    env:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     runs-on: windows-latest
     defaults:
       run:
@@ -244,18 +239,17 @@ jobs:
         with:
           python-version: '3.10'
       - uses: lukka/get-cmake@latest
-      - name: GCC Version
-        run: gcc --version # If this fails MINGW is not setup correctly
-      - name: Configure
-        run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
+      - run: |
+          cmake -S. -B build \
+          -D BUILD_WERROR=ON \
+          -D UPDATE_DEPS=ON \
+          -D CMAKE_BUILD_TYPE=Release
         env:
           LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
-      - name: Build
-        run: cmake --build build -- --quiet
-      - name: Install
-        run: cmake --install build --prefix build/install
-      - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
-        run: ccache --show-stats
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - run: cmake --build build
+      - run: cmake --install build --prefix /tmp
 
   chromium:
     runs-on: ubuntu-latest
