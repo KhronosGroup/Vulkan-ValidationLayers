@@ -972,11 +972,11 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
         skip |= LogError(vuid.viewport_and_scissor_with_count_08635, cb_state.commandBuffer(), loc,
                          "Graphics shader objects are bound, but vkCmdSetViewportWithCount() and "
-                         "vkCmdSetViewportWithCount() were not both called.");
+                         "vkCmdSetScissorWithCount() were not both called.");
     } else if (cb_state.dynamic_state_value.viewport_count != cb_state.dynamic_state_value.scissor_count) {
         skip |= LogError(vuid.viewport_and_scissor_with_count_08635, cb_state.commandBuffer(), loc,
                          "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                         " and scissorCount set with vkCmdSetViewportWithCount() was %" PRIu32 ".",
+                         " and scissorCount set with vkCmdSetScissorWithCount() was %" PRIu32 ".",
                          cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
     }
     if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling) &&
