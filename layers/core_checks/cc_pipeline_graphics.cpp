@@ -600,10 +600,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             (pre_raster_info.init == GPLInitType::link_libraries) && (frag_shader_info.init == GPLInitType::link_libraries);
 
         // Check for consistent independent sets across libraries
-        const auto pre_raster_indset = (pre_raster_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-        const auto fs_indset = (frag_shader_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-        const bool not_independent_sets = !pre_raster_indset && !fs_indset;
-        if (pre_raster_indset ^ fs_indset) {
+        const auto pre_raster_independant_set = (pre_raster_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+        const auto fs_independant_set = (frag_shader_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+        const bool not_independent_sets = !pre_raster_independant_set && !fs_independant_set;
+        if (pre_raster_independant_set ^ fs_independant_set) {
             const char *vuid =
                 only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615" : "VUID-VkGraphicsPipelineCreateInfo-flags-06614";
             LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
@@ -613,8 +613,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 "the pre-raster layout create flags (%s) are %s defined with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, "
                 "and the fragment shader layout create flags (%s) are %s defined with "
                 "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT",
-                string_VkPipelineLayoutCreateFlags(pre_raster_info.flags).c_str(), (pre_raster_indset != 0) ? "" : "not",
-                string_VkPipelineLayoutCreateFlags(frag_shader_info.flags).c_str(), (fs_indset != 0) ? "" : "not");
+                string_VkPipelineLayoutCreateFlags(pre_raster_info.flags).c_str(), (pre_raster_independant_set != 0) ? "" : "not",
+                string_VkPipelineLayoutCreateFlags(frag_shader_info.flags).c_str(), (fs_independant_set != 0) ? "" : "not");
         } else if (not_independent_sets) {
             // "layout used by this pipeline and the library must be identically defined"
             // Inside VkPipelineLayoutCreateInfo, |pSetLayouts| and |pPushConstantRanges| are checked below, this leaves this VU to
@@ -844,15 +844,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     const uint32_t binding_count = pre_raster_dsl->GetBindingCount();
                     const auto &pre_raster_bindings = pre_raster_dsl->GetBindings();
                     const auto &fs_bindings = fs_dsl->GetBindings();
-                    for (uint32_t k = 0; k < binding_count; k++) {
-                        const auto &pre_raster_binding = pre_raster_bindings[k];
-                        const auto &fs_binding = fs_bindings[k];
-                        // TODO - have way to do struct compare and pretty-print struct automatically
-                        if (pre_raster_binding.binding != fs_binding.binding ||
-                            pre_raster_binding.descriptorType != fs_binding.descriptorType ||
-                            pre_raster_binding.descriptorCount != fs_binding.descriptorCount ||
-                            pre_raster_binding.stageFlags != fs_binding.stageFlags ||
-                            pre_raster_binding.pImmutableSamplers != fs_binding.pImmutableSamplers) {
+                    for (uint32_t binding_index = 0; binding_index < binding_count; binding_index++) {
+                        const auto &pre_raster_binding = pre_raster_bindings[binding_index];
+                        const auto &fs_binding = fs_bindings[binding_index];
+                        if (memcmp(pre_raster_binding.ptr(), fs_binding.ptr(), sizeof(VkDescriptorSetLayoutCreateInfo)) != 0) {
                             const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617"
                                                          : "VUID-VkGraphicsPipelineCreateInfo-flags-06616";
                             LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
@@ -878,10 +873,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                                 "\n"
                                 "\tstageFlags: %s\n"
                                 "\tpImmutableSamplers: 0x%p\n",
-                                i, k, pre_raster_binding.binding, string_VkDescriptorType(pre_raster_binding.descriptorType),
-                                pre_raster_binding.descriptorCount,
+                                i, binding_index, pre_raster_binding.binding,
+                                string_VkDescriptorType(pre_raster_binding.descriptorType), pre_raster_binding.descriptorCount,
                                 string_VkShaderStageFlags(pre_raster_binding.stageFlags).c_str(),
-                                pre_raster_binding.pImmutableSamplers, i, k, fs_binding.binding,
+                                pre_raster_binding.pImmutableSamplers, i, binding_index, fs_binding.binding,
                                 string_VkDescriptorType(fs_binding.descriptorType), fs_binding.descriptorCount,
                                 string_VkShaderStageFlags(fs_binding.stageFlags).c_str(), fs_binding.pImmutableSamplers);
                         }
