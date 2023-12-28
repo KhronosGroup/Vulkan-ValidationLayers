@@ -1435,3 +1435,40 @@ bool ObjectLifetimes::PreCallValidateGetDescriptorEXT(VkDevice device, const VkD
 
     return skip;
 }
+
+// Need to manually check if objectType and objectHandle are valid
+bool ObjectLifetimes::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                                    VkPrivateDataSlot privateDataSlot, uint64_t data,
+                                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
+        skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectType), "is %s.",
+                         string_VkObjectType(objectType));
+    } else {
+        skip |= ValidateAnonymousObject(objectHandle, objectType, "VUID-vkSetPrivateData-objectHandle-04017",
+                                        error_obj.location.dot(Field::objectHandle));
+    }
+
+    skip |=
+        ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, false, "VUID-vkSetPrivateData-privateDataSlot-parameter",
+                       "VUID-vkSetPrivateData-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                                    VkPrivateDataSlot privateDataSlot, uint64_t *pData,
+                                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
+        skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType), "is %s.",
+                         string_VkObjectType(objectType));
+    }
+
+    skip |=
+        ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, false, "VUID-vkGetPrivateData-privateDataSlot-parameter",
+                       "VUID-vkGetPrivateData-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
+
+    return skip;
+}

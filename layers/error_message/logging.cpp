@@ -221,7 +221,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
                 object_name_infos.emplace_back(null_object_name);
             }
             if (current_callback.debug_report_callback_function_ptr(
-                    msg_flags, convertCoreObjectToDebugReportObject(object_name_infos[0].objectType),
+                    msg_flags, ConvertCoreObjectToDebugReportObject(object_name_infos[0].objectType),
                     object_name_infos[0].objectHandle, message_id_number, 0, layer_prefix, composite.c_str(),
                     current_callback.pUserData)) {
                 bail = true;

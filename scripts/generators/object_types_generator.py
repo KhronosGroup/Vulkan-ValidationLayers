@@ -110,7 +110,7 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
 }\n''')
 
         out.append('''
-static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {
+static inline VkDebugReportObjectTypeEXT ConvertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {
     switch (core_report_obj) {
         case VK_OBJECT_TYPE_UNKNOWN: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n''')
         for handle in self.vk.handles.values():
@@ -118,6 +118,16 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
             if object != 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT':
                 out.append(f'        case {handle.type}: return {object};\n')
         out.append('''        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    }
+}\n''')
+
+        out.append('''
+// Helper function to get Instance object types
+static inline bool IsInstanceVkObjectType(VkObjectType type) {
+    switch (type) {\n''')
+        out.extend([f'        case {handle.type}:\n' for handle in self.vk.handles.values() if handle.instance])
+        out.append('''            return true;''')
+        out.append('''        default: return false;
     }
 }\n''')
 
