@@ -74,6 +74,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkEnumerateDeviceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateInstanceVersion',
+            'vkGetPhysicalDeviceToolProperties',
             'vkGetPhysicalDeviceToolPropertiesEXT',
             'vkSetPrivateDataEXT',
             'vkGetPrivateDataEXT',
