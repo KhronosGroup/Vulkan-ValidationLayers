@@ -256,7 +256,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: python scripts/gn.py
+      - run: python scripts/gn/gn.py
 
   check_vvl:
     runs-on: ubuntu-latest
