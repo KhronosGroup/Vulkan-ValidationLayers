@@ -1245,10 +1245,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
         // initial layout usage of secondary command buffers resources must match parent command buffer
         for (const auto &sub_layout_map_entry : sub_cb_state.image_layout_map) {
-            const auto *image_state = sub_layout_map_entry.first;
-            const auto image = image_state->image();
+            const auto image = sub_layout_map_entry.first;
 
-            const auto *cb_subres_map = cb_state.GetImageSubresourceLayoutMap(*image_state);
+            const auto *cb_subres_map = cb_state.GetImageSubresourceLayoutMap(image);
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 
@@ -1281,6 +1280,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     // We can report all the errors for the intersected range directly
                     for (auto index = iter->range.begin; index < iter->range.end; index++) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                        const auto image_state = Get<vvl::Image>(image);
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
                         skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, cb_loc,

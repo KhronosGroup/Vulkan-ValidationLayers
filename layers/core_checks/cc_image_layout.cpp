@@ -70,7 +70,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
                                         const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
                                         bool *error) const {
     bool skip = false;
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state);
+    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.image());
     if (!subresource_map) return skip;
 
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
@@ -194,7 +194,11 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
     // Iterate over the layout maps for each referenced image
     GlobalImageLayoutRangeMap empty_map(1);
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const auto *image_state = layout_map_entry.first;
+        const auto image = layout_map_entry.first;
+        const auto image_state = Get<vvl::Image>(image);
+        if (!image_state) {
+            continue;
+        }
         const auto &subres_map = layout_map_entry.second;
         const auto &layout_map = subres_map->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
@@ -265,10 +269,13 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 
 void CoreChecks::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const auto *image_state = layout_map_entry.first;
+        const auto image = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
-        auto guard = image_state->layout_range_map->WriteLock();
-        sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+        const auto image_state = Get<vvl::Image>(image);
+        if (image_state) {
+            auto guard = image_state->layout_range_map->WriteLock();
+            sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+        }
     }
 }
 
@@ -560,7 +567,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                 continue;
             }
             if (!has_queried_map) {
-                subresource_map = cb_state.GetImageSubresourceLayoutMap(*image_state);
+                subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state->image());
                 has_queried_map = true;
             }
             if (!subresource_map) {
@@ -788,7 +795,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state);
+    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.image());
     if (subresource_map) {
         LayoutUseCheckAndMessage layout_check(dest_image_layout);
         auto normalized_isr = image_state.NormalizeSubresourceRange(range);
@@ -819,13 +826,13 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer *cb_
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(img_barrier.image);
-    auto &write_subresource_map = layout_updates[image_state.get()];
+    auto &write_subresource_map = layout_updates[image_state->image()];
     bool new_write = false;
     if (!write_subresource_map) {
         write_subresource_map = std::make_shared<ImageSubresourceLayoutMap>(*image_state);
         new_write = true;
     }
-    const auto &current_subresource_map = current_map.find(image_state.get());
+    const auto &current_subresource_map = current_map.find(image_state->image());
     const auto &read_subresource_map =
         (new_write && current_subresource_map != current_map.end()) ? (*current_subresource_map).second : write_subresource_map;
     // Validate aspects in isolation.
