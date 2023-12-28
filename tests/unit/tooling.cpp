@@ -103,6 +103,47 @@ TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
 }
 
+TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
+    TEST_DESCRIPTION("Use Private Data a non valid handle.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::privateData);
+    RETURN_IF_SKIP(Init());
+
+    VkPrivateDataSlot data_slot;
+    VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
+    vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
+
+    uint64_t data;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetPrivateData-objectHandle");
+    // valid handle, but not a vkSample
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)m_device->device(), data_slot, &data);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
+}
+
+TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
+    TEST_DESCRIPTION("Use Private Data a non valid handle.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::privateData);
+    RETURN_IF_SKIP(Init());
+
+    VkPrivateDataSlot data_slot;
+    VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
+    vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    sampler.destroy();
+
+    uint64_t data;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetPrivateData-objectHandle");
+    // valid handle, but not a vkSample
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
+}
+
 TEST_F(NegativeTooling, ValidateNVDeviceDiagnosticCheckpoints) {
     TEST_DESCRIPTION("General testing of VK_NV_device_diagnostic_checkpoints");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

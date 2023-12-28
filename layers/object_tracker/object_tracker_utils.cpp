@@ -1464,6 +1464,9 @@ bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectTyp
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType), "is %s.",
                          string_VkObjectType(objectType));
+    } else {
+        skip |= ValidateAnonymousObject(objectHandle, objectType, "UNASSIGNED-vkGetPrivateData-objectHandle",
+                                        error_obj.location.dot(Field::objectHandle));
     }
 
     skip |=
