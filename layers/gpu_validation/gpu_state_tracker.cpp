@@ -587,7 +587,6 @@ void gpu_tracker::Queue::PostSubmit(vvl::QueueSubmission &submission) {
 }
 
 void gpu_tracker::Queue::Retire(vvl::QueueSubmission &submission) {
-    vvl::Queue::Retire(submission);
     retiring_.emplace_back(submission.cbs);
     if (submission.end_batch) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
@@ -611,6 +610,7 @@ void gpu_tracker::Queue::Retire(vvl::QueueSubmission &submission) {
         }
         retiring_.clear();
     }
+    vvl::Queue::Retire(submission);
 }
 
 // Just gives a warning about a possible deadlock.

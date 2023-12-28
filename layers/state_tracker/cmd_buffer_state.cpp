@@ -287,7 +287,7 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
                     break;
                 case kVulkanObjectTypeImage:
                     if (unlink) {
-                        image_layout_map.erase(static_cast<vvl::Image *>(obj.get()));
+                        image_layout_map.erase(obj->Handle().Cast<VkImage>());
                     }
                     break;
                 default:
@@ -309,8 +309,8 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
 const CommandBufferImageLayoutMap &CommandBuffer::GetImageSubresourceLayoutMap() const { return image_layout_map; }
 
 // The const variant only need the image as it is the key for the map
-const ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(const vvl::Image &image_state) const {
-    auto it = image_layout_map.find(&image_state);
+const ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(VkImage image) const {
+    auto it = image_layout_map.find(image);
     if (it == image_layout_map.cend()) {
         return nullptr;
     }
@@ -319,7 +319,7 @@ const ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(con
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
 ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(const vvl::Image &image_state) {
-    auto &layout_map = image_layout_map[&image_state];
+    auto &layout_map = image_layout_map[image_state.image()];
     if (!layout_map) {
         // Make sure we don't create a nullptr keyed entry for a zombie Image
         if (image_state.Destroyed() || !image_state.layout_range_map) {
@@ -958,8 +958,10 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
         // for those other classes.
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
-            const auto *image_state = sub_layout_map_entry.first;
-
+            const auto image_state = dev_data->Get<vvl::Image>(sub_layout_map_entry.first);
+            if (!image_state || image_state->Destroyed()) {
+                continue;
+            }
             auto *cb_subres_map = GetImageSubresourceLayoutMap(*image_state);
             if (cb_subres_map) {
                 const auto &sub_cb_subres_map = sub_layout_map_entry.second;

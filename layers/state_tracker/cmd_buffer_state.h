@@ -162,7 +162,7 @@ struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
-typedef vvl::unordered_map<const vvl::Image *, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
+typedef vvl::unordered_map<VkImage, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
 typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
     CommandBufferAliasedLayoutMap;
@@ -509,7 +509,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     void ResetPushConstantDataIfIncompatible(const vvl::PipelineLayout *pipeline_layout_state);
 
-    const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const vvl::Image &image_state) const;
+    const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(VkImage image) const;
     ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const vvl::Image &image_state);
     const CommandBufferImageLayoutMap &GetImageSubresourceLayoutMap() const;
 
