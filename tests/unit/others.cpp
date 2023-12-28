@@ -88,89 +88,6 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     }
 }
 
-TEST_F(VkLayerTest, PrivateDataExtTest) {
-    TEST_DESCRIPTION("Test private data extension use.");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
-    VkPhysicalDevicePrivateDataFeaturesEXT private_data_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(private_data_features);
-    if (private_data_features.privateData == VK_FALSE) {
-        GTEST_SKIP() << "privateData feature is not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    VkPrivateDataSlotEXT data_slot;
-    VkPrivateDataSlotCreateInfoEXT data_create_info = vku::InitStructHelper();
-    data_create_info.flags = 0;
-    VkResult err = vk::CreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
-    if (err != VK_SUCCESS) {
-        printf("Failed to create private data slot, VkResult %d.\n", err);
-    }
-
-    VkSamplerCreateInfo sampler_info = vku::InitStructHelper();
-    sampler_info.flags = 0;
-    sampler_info.magFilter = VK_FILTER_LINEAR;
-    sampler_info.minFilter = VK_FILTER_LINEAR;
-    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.mipLodBias = 0.0f;
-    sampler_info.anisotropyEnable = VK_FALSE;
-    sampler_info.maxAnisotropy = 16;
-    sampler_info.compareEnable = VK_FALSE;
-    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
-    sampler_info.minLod = 0.0f;
-    sampler_info.maxLod = 0.0f;
-    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    sampler_info.unnormalizedCoordinates = VK_FALSE;
-    vkt::Sampler sampler(*m_device, sampler_info);
-
-    static const uint64_t data_value = 0x70AD;
-    err = vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
-    if (err != VK_SUCCESS) {
-        printf("Failed to set private data. VkResult = %d\n", err);
-    }
-    uint64_t data;
-    vk::GetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
-    if (data != data_value) {
-        m_errorMonitor->SetError("Got unexpected private data, %s.\n");
-    }
-    vk::DestroyPrivateDataSlotEXT(m_device->handle(), data_slot, NULL);
-}
-
-TEST_F(VkLayerTest, PrivateDataFeature) {
-    TEST_DESCRIPTION("Test privateData feature not being enabled.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
-    // feature not enabled
-    RETURN_IF_SKIP(Init());
-
-    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-
-    VkPrivateDataSlotEXT data_slot;
-    VkPrivateDataSlotCreateInfoEXT data_create_info = vku::InitStructHelper();
-    data_create_info.flags = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
-    vk::CreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
-    m_errorMonitor->VerifyFound();
-    if (vulkan_13) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
-        vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
-        m_errorMonitor->VerifyFound();
-    }
-}
-
 TEST_F(VkLayerTest, CustomStypeStructString) {
     TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a list (string)");
 
@@ -1288,19 +1205,6 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
     // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
     m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
     vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
-    TEST_DESCRIPTION("General testing of VK_NV_device_diagnostic_checkpoints");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-
-    uint32_t data = 100;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
-    vk::CmdSetCheckpointNV(m_commandBuffer->handle(), &data);
     m_errorMonitor->VerifyFound();
 }
 

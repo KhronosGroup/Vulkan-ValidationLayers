@@ -185,6 +185,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/sync_val_positive.cpp
     unit/threading.cpp
     unit/threading_positive.cpp
+    unit/tooling.cpp
     unit/tooling_positive.cpp
     unit/transform_feedback.cpp
     unit/vertex_input.cpp

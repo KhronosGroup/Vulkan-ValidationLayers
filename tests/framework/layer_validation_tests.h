@@ -593,7 +593,9 @@ class NegativeTransformFeedback : public VkLayerTest {
     void InitBasicTransformFeedback();
 };
 
-class PositiveTooling : public VkLayerTest {};
+class ToolingTest : public VkLayerTest {};
+class NegativeTooling : public ToolingTest {};
+class PositiveTooling : public ToolingTest {};
 
 class VertexInputTest : public VkLayerTest {};
 class NegativeVertexInput : public VertexInputTest {};
