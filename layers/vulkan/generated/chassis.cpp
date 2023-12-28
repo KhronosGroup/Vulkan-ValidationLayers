@@ -1037,6 +1037,58 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+                                                               VkPhysicalDeviceToolProperties* pToolProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceToolProperties,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+
+    static const VkPhysicalDeviceToolProperties khronos_layer_tool_props = {
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES,
+        nullptr,
+        "Khronos Validation Layer",
+        STRINGIFY(VK_HEADER_VERSION),
+        VK_TOOL_PURPOSE_VALIDATION_BIT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT | VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT |
+            VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT,
+        "Khronos Validation Layer",
+        OBJECT_LAYER_NAME};
+
+    auto original_pToolProperties = pToolProperties;
+
+    if (pToolProperties != nullptr) {
+        *pToolProperties = khronos_layer_tool_props;
+        pToolProperties = ((*pToolCount > 1) ? &pToolProperties[1] : nullptr);
+        (*pToolCount)--;
+    }
+
+    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, error_obj);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolProperties);
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
+    }
+
+    VkResult result = DispatchGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
+    record_obj.result = result;
+
+    if (original_pToolProperties != nullptr) {
+        pToolProperties = original_pToolProperties;
+    }
+    (*pToolCount)++;
+
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
+    }
+    return result;
+}
+
 // ValidationCache APIs do not dispatch
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
@@ -4849,31 +4901,6 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddress(VkDevice devi
          layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceMemoryOpaqueCaptureAddress]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, record_obj);
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
-                                                               VkPhysicalDeviceToolProperties* pToolProperties) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceToolProperties,
-                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
-    for (const ValidationObject* intercept : layer_data->object_dispatch) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, error_obj);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolProperties);
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
-    }
-    VkResult result = DispatchGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
-    record_obj.result = result;
-    for (ValidationObject* intercept : layer_data->object_dispatch) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
     return result;
 }

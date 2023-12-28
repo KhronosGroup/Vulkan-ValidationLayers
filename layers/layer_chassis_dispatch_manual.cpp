@@ -1074,6 +1074,20 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
     return result;
 }
 
+VkResult DispatchGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
+                                                 VkPhysicalDeviceToolProperties *pToolProperties) {
+    VkResult result = VK_SUCCESS;
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    if (layer_data->instance_dispatch_table.GetPhysicalDeviceToolProperties == nullptr) {
+        // This layer is the terminator. Set pToolCount to zero.
+        *pToolCount = 0;
+    } else {
+        result = layer_data->instance_dispatch_table.GetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
+    }
+
+    return result;
+}
+
 bool NotDispatchableHandle(VkObjectType object_type) {
     bool not_dispatchable = true;
     if ((object_type == VK_OBJECT_TYPE_INSTANCE)        ||
