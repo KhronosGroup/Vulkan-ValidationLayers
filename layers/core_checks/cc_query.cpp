@@ -129,6 +129,12 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                                                     VkQueryResultFlags flags, const ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
+
+    if (queryCount > 1 && stride == 0) {
+        skip |= LogError("VUID-vkGetQueryPoolResults-queryCount-09438", queryPool, error_obj.location.dot(Field::queryCount),
+                         "is %" PRIu32 " but stride is zero.", queryCount);
+    }
+
     const auto &query_pool_state = *Get<vvl::QueryPool>(queryPool);
     skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, error_obj.location,
                                    "VUID-vkGetQueryPoolResults-firstQuery-09436", "VUID-vkGetQueryPoolResults-firstQuery-09437");
@@ -1124,6 +1130,11 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-09443", commandBuffer, error_obj.location.dot(Field::flags),
                          "(%s) include both STATUS_BIT and AVAILABILITY_BIT.", string_VkQueryResultFlags(flags).c_str());
+    }
+
+    if (queryCount > 1 && stride == 0) {
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438", queryPool, error_obj.location.dot(Field::queryCount),
+                         "is %" PRIu32 " but stride is zero.", queryCount);
     }
 
     const auto &query_pool_state = *Get<vvl::QueryPool>(queryPool);

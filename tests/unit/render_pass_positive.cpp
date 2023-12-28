@@ -872,7 +872,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_commandBuffer->EndRenderPass();
 
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 2, buffer.handle(), 0, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 2, buffer.handle(), 0, 4, 0);
     m_commandBuffer->end();
 
     m_default_queue->submit(*m_commandBuffer);

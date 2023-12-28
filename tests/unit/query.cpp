@@ -1166,6 +1166,7 @@ TEST_F(NegativeQuery, Sizes) {
 
     // sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryCount-09438");
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), 1, query_pool_size, buffer.handle(), 0, 0,
                                 0);
     m_errorMonitor->VerifyFound();
@@ -1551,6 +1552,19 @@ TEST_F(NegativeQuery, GetResultsFlags) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-09443");
     vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, data + 1, 4, flags);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeQuery, GetResultsStride) {
+    TEST_DESCRIPTION("Test GetQueryPoolResults with invalid queryCount and stride");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
+    uint8_t data[8];
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryCount-09438");
+    vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 2, 8, data, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
