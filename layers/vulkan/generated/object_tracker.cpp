@@ -2296,30 +2296,6 @@ void ObjectLifetimes::PreCallRecordDestroyPrivateDataSlot(VkDevice device, VkPri
     RecordDestroyObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot);
 }
 
-bool ObjectLifetimes::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                                    VkPrivateDataSlot privateDataSlot, uint64_t data,
-                                                    const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkSetPrivateData-device-parameter"
-    skip |=
-        ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, false, "VUID-vkSetPrivateData-privateDataSlot-parameter",
-                       "VUID-vkSetPrivateData-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
-
-    return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                                    VkPrivateDataSlot privateDataSlot, uint64_t* pData,
-                                                    const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkGetPrivateData-device-parameter"
-    skip |=
-        ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlot, false, "VUID-vkGetPrivateData-privateDataSlot-parameter",
-                       "VUID-vkGetPrivateData-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
-
-    return skip;
-}
-
 bool ObjectLifetimes::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                   const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
     bool skip = false;
@@ -4766,9 +4742,11 @@ bool ObjectLifetimes::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkD
     bool skip = false;
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-commonparent"
-    skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkDisplayPowerControlEXT-display-parameter",
-                           "VUID-vkDisplayPowerControlEXT-commonparent", error_obj.location.dot(Field::display),
-                           kVulkanObjectTypePhysicalDevice);
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+    skip |= instance_object_lifetimes->ValidateObject(
+        display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkDisplayPowerControlEXT-display-parameter",
+        "VUID-vkDisplayPowerControlEXT-commonparent", error_obj.location.dot(Field::display), kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }
@@ -4790,9 +4768,11 @@ bool ObjectLifetimes::PreCallValidateRegisterDisplayEventEXT(VkDevice device, Vk
     bool skip = false;
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-commonparent"
-    skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkRegisterDisplayEventEXT-display-parameter",
-                           "VUID-vkRegisterDisplayEventEXT-commonparent", error_obj.location.dot(Field::display),
-                           kVulkanObjectTypePhysicalDevice);
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+    skip |= instance_object_lifetimes->ValidateObject(
+        display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkRegisterDisplayEventEXT-display-parameter",
+        "VUID-vkRegisterDisplayEventEXT-commonparent", error_obj.location.dot(Field::display), kVulkanObjectTypePhysicalDevice);
 
     return skip;
 }

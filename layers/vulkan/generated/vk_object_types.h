@@ -406,7 +406,7 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
     }
 }
 
-static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {
+static inline VkDebugReportObjectTypeEXT ConvertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {
     switch (core_report_obj) {
         case VK_OBJECT_TYPE_UNKNOWN:
             return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
@@ -492,6 +492,22 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
             return VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT;
         default:
             return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    }
+}
+
+// Helper function to get Instance object types
+static inline bool IsInstanceVkObjectType(VkObjectType type) {
+    switch (type) {
+        case VK_OBJECT_TYPE_INSTANCE:
+        case VK_OBJECT_TYPE_PHYSICAL_DEVICE:
+        case VK_OBJECT_TYPE_SURFACE_KHR:
+        case VK_OBJECT_TYPE_DISPLAY_KHR:
+        case VK_OBJECT_TYPE_DISPLAY_MODE_KHR:
+        case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
+        case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
+            return true;
+        default:
+            return false;
     }
 }
 
