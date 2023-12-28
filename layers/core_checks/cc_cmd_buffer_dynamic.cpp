@@ -444,6 +444,31 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         }
     }
 
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+        if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT]) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(vuid.color_blend_equation_07628, objlist, loc,
+                             "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT dynamic state, but "
+                             "vkCmdSetColorBlendEquationEXT() was not called.");
+        }
+    }
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+        if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT]) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(vuid.color_write_mask_07629, objlist, loc,
+                             "Pipeline was created with VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic state, but "
+                             "vkCmdSetColorWriteMaskEXT() was not called.");
+        }
+    }
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
+        if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT]) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(vuid.color_blend_advanced_07635, objlist, loc,
+                             "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT dynamic state, but "
+                             "vkCmdSetColorBlendAdvancedEXT() was not called.");
+        }
+    }
+
     // must set the state for all active color attachments in the current subpass
     for (const uint32_t &color_index : cb_state.active_color_attachments_index) {
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
@@ -480,6 +505,13 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         }
     }
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+        if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT]) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(vuid.color_blend_enable_07627, objlist, loc,
+                             "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT dynamic state, but "
+                             "vkCmdSetColorBlendEnableEXT() was not called.");
+        }
+
         const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments->size());
 
         bool advanced_blend = false;
