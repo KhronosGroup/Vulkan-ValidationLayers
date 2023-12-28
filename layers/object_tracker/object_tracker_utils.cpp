@@ -154,9 +154,9 @@ void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
 }
 
 bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
-                                              const Location &loc) const {
+                                              const char *wrong_parent_vuid, const Location &loc) const {
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-    return CheckObjectValidity(object, object_type, invalid_handle_vuid, kVUIDUndefined, loc, kVulkanObjectTypeDevice);
+    return CheckObjectValidity(object, object_type, invalid_handle_vuid, wrong_parent_vuid, loc, kVulkanObjectTypeDevice);
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -1176,9 +1176,9 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectNameEXT-device-parameter"
 
-    skip |= ValidateAnonymousObject(pNameInfo->objectHandle, pNameInfo->objectType,
-                                    "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590",
-                                    error_obj.location.dot(Field::pNameInfo).dot(Field::objectHandle));
+    skip |= ValidateAnonymousObject(
+        pNameInfo->objectHandle, pNameInfo->objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590",
+        "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874", error_obj.location.dot(Field::pNameInfo).dot(Field::objectHandle));
 
     return skip;
 }
@@ -1188,9 +1188,9 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectTagEXT-device-parameter"
 
-    skip |= ValidateAnonymousObject(pTagInfo->objectHandle, pTagInfo->objectType,
-                                    "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910",
-                                    error_obj.location.dot(Field::pTagInfo).dot(Field::objectHandle));
+    skip |= ValidateAnonymousObject(
+        pTagInfo->objectHandle, pTagInfo->objectType, "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910",
+        "VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07877", error_obj.location.dot(Field::pTagInfo).dot(Field::objectHandle));
 
     return skip;
 }
@@ -1458,9 +1458,16 @@ bool ObjectLifetimes::PreCallValidateSetPrivateData(VkDevice device, VkObjectTyp
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectType), "is %s.",
                          string_VkObjectType(objectType));
+    } else if (objectType == VK_OBJECT_TYPE_DEVICE) {
+        // Need to check device handle as has no parent to check as the caller is the same device object
+        if (HandleToUint64(device) != objectHandle) {
+            skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectHandle),
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", objectHandle,
+                             FormatHandle(device).c_str());
+        }
     } else {
         skip |= ValidateAnonymousObject(objectHandle, objectType, "VUID-vkSetPrivateData-objectHandle-04017",
-                                        error_obj.location.dot(Field::objectHandle));
+                                        "VUID-vkSetPrivateData-objectHandle-04016", error_obj.location.dot(Field::objectHandle));
     }
 
     skip |=
@@ -1477,9 +1484,16 @@ bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectTyp
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType), "is %s.",
                          string_VkObjectType(objectType));
+    } else if (objectType == VK_OBJECT_TYPE_DEVICE) {
+        // Need to check device handle as has no parent to check as the caller is the same device object
+        if (HandleToUint64(device) != objectHandle) {
+            skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectHandle),
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", objectHandle,
+                             FormatHandle(device).c_str());
+        }
     } else {
         skip |= ValidateAnonymousObject(objectHandle, objectType, "UNASSIGNED-vkGetPrivateData-objectHandle",
-                                        error_obj.location.dot(Field::objectHandle));
+                                        "VUID-vkGetPrivateData-objectType-04018", error_obj.location.dot(Field::objectHandle));
     }
 
     skip |=
