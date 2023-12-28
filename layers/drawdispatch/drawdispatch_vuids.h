@@ -318,6 +318,10 @@ struct DrawDispatchVuid {
     const char* primitives_generated_query_07481 = kVUIDUndefined;
     const char* vertex_input_09461 = kVUIDUndefined;
     const char* vertex_input_09462 = kVUIDUndefined;
+    const char* color_blend_enable_07627 = kVUIDUndefined;
+    const char* color_blend_equation_07628 = kVUIDUndefined;
+    const char* color_write_mask_07629 = kVUIDUndefined;
+    const char* color_blend_advanced_07635 = kVUIDUndefined;
     // Ray tracing
     const char* ray_tracing_pipeline_stack_size_09458 = kVUIDUndefined;
 };
