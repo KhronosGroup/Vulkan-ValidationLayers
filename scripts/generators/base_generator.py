@@ -590,7 +590,7 @@ class BaseGenerator(OutputGenerator):
                 return
             type = typeElem.get('objtypeenum')
 
-            # will resolve later these later, the VulkanObjectType doesn't list things in dependent order
+            # will resolve these later, the VulkanObjectType doesn't list things in dependent order
             parent = typeElem.get('parent')
             instance = typeName == 'VkInstance'
             device = typeName == 'VkDevice'

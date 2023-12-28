@@ -76,8 +76,33 @@ TEST_F(NegativeTooling, PrivateDataSetBadHandle) {
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
 }
 
+TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
+    TEST_DESCRIPTION("Test private data can set VkDevice.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::privateData);
+    RETURN_IF_SKIP(Init());
+
+    auto features = m_device->phy().features();
+    vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
+
+    VkPrivateDataSlot data_slot;
+    VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
+    vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
+
+    static const uint64_t data_value = 0x70AD;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetPrivateData-objectHandle-04016");
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)second_device.device(), data_slot, data_value);
+    m_errorMonitor->VerifyFound();
+
+    vkt::Sampler sampler(second_device, SafeSaneSamplerCreateInfo());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetPrivateData-objectHandle-04016");
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
+}
+
 TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
-    TEST_DESCRIPTION("Basic usage calling private data as core.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
@@ -104,7 +129,6 @@ TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
 }
 
 TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
-    TEST_DESCRIPTION("Use Private Data a non valid handle.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
@@ -123,7 +147,6 @@ TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
 }
 
 TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
-    TEST_DESCRIPTION("Use Private Data a non valid handle.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());

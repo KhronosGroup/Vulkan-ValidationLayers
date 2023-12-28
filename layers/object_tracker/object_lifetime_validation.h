@@ -114,7 +114,7 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const Location &loc) const;
     bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const;
     bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
-                                 const Location &loc) const;
+                                 const char *wrong_parent_vuid, const Location &loc) const;
     bool ValidateAccelerationStructures(const char *dst_handle_vuid, uint32_t count,
                                         const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const;
 
