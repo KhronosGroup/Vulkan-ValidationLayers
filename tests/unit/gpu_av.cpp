@@ -411,16 +411,6 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
     bvci.range = VK_WHOLE_SIZE;
     vkt::BufferView buffer_view(*m_device, bvci);
 
-    char const *vsSource = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        void main(){
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
     char const *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=3, r32f) uniform image2D si0;
@@ -436,7 +426,7 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
         }
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
@@ -490,16 +480,6 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        void main(){
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
     //#version 450
     //layout (set = 0, binding = 0) uniform sampler2D tex[2];
     //layout(location=0) out vec4 color;
@@ -555,7 +535,7 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
                OpReturn
                OpFunctionEnd
     )";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper g_pipe(*this);
@@ -612,17 +592,7 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesCopyObject) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        void main(){
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     // layout (set = 0, binding = 0) uniform sampler2D tex[2];
     // void main() {
@@ -724,16 +694,6 @@ TEST_F(NegativeGpuAV, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     InitRenderTarget();
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
-    char const *vsSource = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        void main(){
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
     const char fsSource[] = R"glsl(
         #version 450
         // VK_DESCRIPTOR_TYPE_SAMPLER
@@ -749,7 +709,7 @@ TEST_F(NegativeGpuAV, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
             color = vec4(x + y);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
@@ -804,6 +764,113 @@ TEST_F(NegativeGpuAV, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAV, ShareOpSampledImage) {
+    TEST_DESCRIPTION(
+        "Have two OpImageSampleImplicitLod share the same OpSampledImage. This needs to be in the same block post-shader "
+        "instrumentation.");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // #version 450
+    // layout(set = 0, binding = 0) uniform sampler s1;
+    // layout(set = 0, binding = 1) uniform texture2D si_good;
+    // layout(location=0) out vec4 color;
+    // void main() {
+    //     color = texture(sampler2D(si_good, s1), vec2(0));
+    //     color += texture(sampler2D(si_good, s1), vec2(color.x));
+    // }
+    const char *fsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %color Location 0
+               OpDecorate %si_good DescriptorSet 0
+               OpDecorate %si_good Binding 1
+               OpDecorate %s1 DescriptorSet 0
+               OpDecorate %s1 Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float 2D 0 0 0 1 Unknown
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+    %si_good = OpVariable %_ptr_UniformConstant_10 UniformConstant
+         %14 = OpTypeSampler
+%_ptr_UniformConstant_14 = OpTypePointer UniformConstant %14
+         %s1 = OpVariable %_ptr_UniformConstant_14 UniformConstant
+         %18 = OpTypeSampledImage %10
+    %v2float = OpTypeVector %float 2
+    %float_0 = OpConstant %float 0
+         %22 = OpConstantComposite %v2float %float_0 %float_0
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Output_float = OpTypePointer Output %float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %si_good
+         %17 = OpLoad %14 %s1
+              ; the results (%19) needs to be in same block as what consumes it
+         %19 = OpSampledImage %18 %13 %17
+         %23 = OpImageSampleImplicitLod %v4float %19 %22
+               OpStore %color %23
+         %30 = OpAccessChain %_ptr_Output_float %color %uint_0
+         %31 = OpLoad %float %30
+         %32 = OpCompositeConstruct %v2float %31 %31
+         %33 = OpImageSampleImplicitLod %v4float %19 %32
+         %34 = OpLoad %v4float %color
+         %35 = OpFAdd %v4float %34 %33
+               OpStore %color %35
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.gp_ci_.layout = pipeline_layout.handle();
+    g_pipe.CreateGraphicsPipeline();
+
+    VkImageObj image(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.Init(image_ci);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.maxLod = 0;
+    vkt::Sampler sampler(*m_device, sampler_ci);
+
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08610");
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();

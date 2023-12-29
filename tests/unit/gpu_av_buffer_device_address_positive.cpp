@@ -303,7 +303,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
-    TEST_DESCRIPTION("Do a OpLoad through a padded struct PhysicalStorageBuffer");
     SetTargetApiVersion(VK_API_VERSION_1_2);  // need to use 12Feature struct
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());

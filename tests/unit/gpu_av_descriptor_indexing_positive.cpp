@@ -344,7 +344,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
-    TEST_DESCRIPTION("Make sure there's not a crash if the sampler of a combined image sampler is initialized by the image isn't.");
+    TEST_DESCRIPTION(
+        "Make sure there's not a crash if the sampler of a combined image sampler is initialized but the image isn't.");
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
