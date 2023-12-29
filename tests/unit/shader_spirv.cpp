@@ -1759,8 +1759,8 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(false, &test_device);
-    fs.InitFromGLSLTry(false, &test_device);
+    vs.InitFromGLSLTry(&test_device);
+    fs.InitFromGLSLTry(&test_device);
 
     RenderPassSingleSubpass rp(*this, &test_device);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
@@ -1812,8 +1812,8 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(false, &test_device);
-    fs.InitFromGLSLTry(false, &test_device);
+    vs.InitFromGLSLTry(&test_device);
+    fs.InitFromGLSLTry(&test_device);
 
     RenderPassSingleSubpass rp(*this, &test_device);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
@@ -1868,7 +1868,7 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     )glsl";
 
     VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    cs.InitFromGLSLTry(false, &test_device);
+    cs.InitFromGLSLTry(&test_device);
 
     VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
                                         nullptr,
@@ -1923,8 +1923,8 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(false, &test_device);
-    fs.InitFromGLSLTry(false, &test_device);
+    vs.InitFromGLSLTry(&test_device);
+    fs.InitFromGLSLTry(&test_device);
 
     RenderPassSingleSubpass rp(*this, &test_device);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
@@ -1970,8 +1970,8 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(false, &test_device);
-    fs.InitFromGLSLTry(false, &test_device);
+    vs.InitFromGLSLTry(&test_device);
+    fs.InitFromGLSLTry(&test_device);
 
     RenderPassSingleSubpass rp(*this, &test_device);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);

@@ -59,12 +59,11 @@ class VkShaderObj : public vkt::ShaderModule {
     // optional arguments listed order of most likely to be changed manually by a test
     VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
                 const spv_target_env env = SPV_ENV_VULKAN_1_0, SpvSourceType source_type = SPV_SOURCE_GLSL,
-                const VkSpecializationInfo *spec_info = nullptr, char const *entry_point = "main", bool debug = false,
-                const void *pNext = nullptr);
+                const VkSpecializationInfo *spec_info = nullptr, char const *entry_point = "main", const void *pNext = nullptr);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
-    bool InitFromGLSL(bool debug = false, const void *pNext = nullptr);
-    VkResult InitFromGLSLTry(bool debug = false, const vkt::Device *custom_device = nullptr);
+    bool InitFromGLSL(const void *pNext = nullptr);
+    VkResult InitFromGLSLTry(const vkt::Device *custom_device = nullptr);
     bool InitFromASM();
     VkResult InitFromASMTry();
 
@@ -73,7 +72,7 @@ class VkShaderObj : public vkt::ShaderModule {
     static std::unique_ptr<VkShaderObj> CreateFromGLSL(VkRenderFramework *framework, const char *source,
                                                        VkShaderStageFlagBits stage, const spv_target_env = SPV_ENV_VULKAN_1_0,
                                                        const VkSpecializationInfo *spec_info = nullptr,
-                                                       const char *entry_point = "main", bool debug = false);
+                                                       const char *entry_point = "main");
     static std::unique_ptr<VkShaderObj> CreateFromASM(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
                                                       const spv_target_env spv_env = SPV_ENV_VULKAN_1_0,
                                                       const VkSpecializationInfo *spec_info = nullptr,

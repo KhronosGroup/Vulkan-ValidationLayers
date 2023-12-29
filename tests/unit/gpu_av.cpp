@@ -334,7 +334,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
     VkShaderObj instrumented_vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
-                                false, &features);
+                                &features);
     CreatePipelineHelper pipe2(*this);
     pipe2.InitState();
     pipe2.shader_stages_[0] = instrumented_vs.GetStageCreateInfo();

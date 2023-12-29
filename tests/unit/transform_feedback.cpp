@@ -607,8 +607,8 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(false, &test_device);
-    fs.InitFromGLSLTry(false, &test_device);
+    vs.InitFromGLSLTry(&test_device);
+    fs.InitFromGLSLTry(&test_device);
 
     CreatePipelineHelper pipeline(*this);
     pipeline.device_ = &test_device;
