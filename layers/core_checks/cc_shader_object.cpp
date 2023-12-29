@@ -278,6 +278,11 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
+
+            // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7211
+            // spv_const_binary_t binary{static_cast<const uint32_t*>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize /
+            // sizeof(uint32_t)}; skip |= RunSpirvValidation(binary, create_info_loc);
+
             const StageCreateInfo stage_create_info(pCreateInfos[i]);
             const auto spirv =
                 std::make_shared<spirv::Module>(pCreateInfos[i].codeSize, static_cast<const uint32_t*>(pCreateInfos[i].pCode));

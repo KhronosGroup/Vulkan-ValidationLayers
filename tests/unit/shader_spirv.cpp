@@ -70,9 +70,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
 
 TEST_F(NegativeShaderSpirv, Magic) {
     TEST_DESCRIPTION("Test that an error is produced for a spirv module with a bad magic number");
-
     RETURN_IF_SKIP(Init());
-    InitRenderTarget();
 
     VkShaderModule module;
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
@@ -83,7 +81,7 @@ TEST_F(NegativeShaderSpirv, Magic) {
     module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
     module_create_info.codeSize = sizeof(spv);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid SPIR-V magic number");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-07912");
     vk::CreateShaderModule(m_device->device(), &module_create_info, nullptr, &module);
     m_errorMonitor->VerifyFound();
 }

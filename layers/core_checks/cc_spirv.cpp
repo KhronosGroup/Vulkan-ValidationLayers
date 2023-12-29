@@ -2406,6 +2406,34 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
     csm_state->valid_spirv = true;
 }
 
+bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &loc) const {
+    bool skip = false;
+    // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
+    // the default values will be used during validation.
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    spv_context ctx = spvContextCreate(spirv_environment);
+    spv_diagnostic diag = nullptr;
+    spvtools::ValidatorOptions options;
+    AdjustValidatorOptions(device_extensions, enabled_features, options);
+    const spv_result_t spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
+    if (spv_valid != SPV_SUCCESS) {
+        const char *vuid = loc.function == Func::vkCreateShaderModule ? "VUID-VkShaderModuleCreateInfo-pCode-08737"
+                                                                      : "VUID-VkShaderCreateInfoEXT-pCode-08737";
+        if (spv_valid == SPV_WARNING) {
+            skip |= LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s",
+                               diag && diag->error ? diag->error : "(no error text)");
+        } else {
+            skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s",
+                             diag && diag->error ? diag->error : "(no error text)");
+        }
+    }
+
+    spvDiagnosticDestroy(diag);
+    spvContextDestroy(ctx);
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                    const ErrorObject &error_obj) const {
@@ -2416,53 +2444,38 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    auto have_glsl_shader = IsExtEnabled(device_extensions.vk_nv_glsl_shader);
 
-    if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
+    if (pCreateInfo->pCode[0] != spv::MagicNumber) {
+        if (!IsExtEnabled(device_extensions.vk_nv_glsl_shader)) {
+            skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-07912", device, create_info_loc.dot(Field::pCode),
+                             "doesn't point to a SPIR-V module.");
+        }
+    } else if (SafeModulo(pCreateInfo->codeSize, 4) != 0) {
         skip |= LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
                          "(%zu) must be a multiple of 4.", pCreateInfo->codeSize);
-    } else {
-        auto cache = GetValidationCacheInfo(pCreateInfo);
-        uint32_t hash = 0;
-        // If app isn't using a shader validation cache, use the default one from CoreChecks
-        if (!cache) {
-            cache = CastFromHandle<ValidationCache *>(core_validation_cache);
-        }
-        if (cache) {
-            hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-            if (cache->Contains(hash)) {
-                return false;
-            }
-        }
+    }
 
-        // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
-        // the default values will be used during validation.
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-        spv_context ctx = spvContextCreate(spirv_environment);
-        spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
-        spv_diagnostic diag = nullptr;
-        spvtools::ValidatorOptions options;
-        AdjustValidatorOptions(device_extensions, enabled_features, options);
-        const spv_result_t spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
-        if (spv_valid != SPV_SUCCESS) {
-            if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
-                if (spv_valid == SPV_WARNING) {
-                    skip |=
-                        LogWarning("VUID-VkShaderModuleCreateInfo-pCode-08737", device, create_info_loc.dot(Field::pCode),
-                                   "(spirv-val produced a warning):\n%s", diag && diag->error ? diag->error : "(no error text)");
-                } else {
-                    skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-08737", device, create_info_loc.dot(Field::pCode),
-                                     "(spirv-val produced an error):\n%s", diag && diag->error ? diag->error : "(no error text)");
-                }
-            }
-        } else {
-            if (cache) {
-                cache->Insert(hash);
-            }
-        }
+    if (skip) {
+        return skip;  // if pCode is garbage, don't pass along to spirv-val
+    }
 
-        spvDiagnosticDestroy(diag);
-        spvContextDestroy(ctx);
+    ValidationCache *cache = GetValidationCacheInfo(pCreateInfo);
+    uint32_t hash = 0;
+    // If app isn't using a shader validation cache, use the default one from CoreChecks
+    if (!cache) {
+        cache = CastFromHandle<ValidationCache *>(core_validation_cache);
+    }
+    if (cache) {
+        hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
+        if (cache->Contains(hash)) {
+            return false;
+        }
+    }
+
+    spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
+    skip |= RunSpirvValidation(binary, create_info_loc);
+    if (!skip && cache) {
+        cache->Insert(hash);
     }
 
     return skip;
