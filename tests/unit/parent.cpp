@@ -170,7 +170,7 @@ TEST_F(NegativeParent, BindPipeline) {
     vkt::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
 
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    cs.InitFromGLSLTry(false, m_second_device);
+    cs.InitFromGLSLTry(m_second_device);
 
     VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
     pipeline_ci.layout = pipeline_layout.handle();

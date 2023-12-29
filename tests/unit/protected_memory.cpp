@@ -585,7 +585,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     // Create device without protected access features
     vkt::Device test_device(gpu());
     VkShaderObj vs2(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs2.InitFromGLSLTry(false, &test_device);
+    vs2.InitFromGLSLTry(&test_device);
 
     const vkt::PipelineLayout test_pipeline_layout(test_device);
 

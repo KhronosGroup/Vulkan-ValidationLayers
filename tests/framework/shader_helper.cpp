@@ -657,7 +657,7 @@ struct GlslangTargetEnv {
 // Return value of false means an error was encountered.
 //
 bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type,
-                                const char *pshader, std::vector<uint32_t> &spirv, bool debug, const spv_target_env spv_env) {
+                                const char *pshader, std::vector<uint32_t> &spirv, const spv_target_env spv_env) {
     glslang::TProgram program;
     const char *shaderStrings[1];
 
@@ -670,9 +670,6 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
     EShMessages messages = EShMsgDefault;
     SetMessageOptions(messages);
     messages = static_cast<EShMessages>(messages | EShMsgSpvRules | EShMsgVulkanRules);
-    if (debug) {
-        messages = static_cast<EShMessages>(messages | EShMsgDebugInfo);
-    }
 
     EShLanguage stage = FindLanguage(shader_type);
     glslang::TShader *shader = new glslang::TShader(stage);
@@ -713,9 +710,6 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
     }
 
     glslang::SpvOptions spv_options;
-    if (debug) {
-        spv_options.generateDebugInfo = true;
-    }
     glslang::GlslangToSpv(*program.getIntermediate(stage), spirv, &spv_options);
 
     //
@@ -763,7 +757,7 @@ bool VkTestFramework::ASMtoSPV(const spv_target_env target_env, const uint32_t o
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage, const spv_target_env env,
-                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *entry_point, bool debug,
+                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *entry_point,
                          const void *pNext)
     : m_framework(*framework), m_device(*(framework->DeviceObj())), m_source(source), m_spv_env(env) {
     m_stage_info = vku::InitStructHelper();
@@ -773,15 +767,15 @@ VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkSha
     m_stage_info.pName = entry_point;
     m_stage_info.pSpecializationInfo = spec_info;
     if (source_type == SPV_SOURCE_GLSL) {
-        InitFromGLSL(debug, pNext);
+        InitFromGLSL(pNext);
     } else if (source_type == SPV_SOURCE_ASM) {
         InitFromASM();
     }
 }
 
-bool VkShaderObj::InitFromGLSL(bool debug, const void *pNext) {
+bool VkShaderObj::InitFromGLSL(const void *pNext) {
     std::vector<uint32_t> spv;
-    m_framework.GLSLtoSPV(&m_device.phy().limits_, m_stage_info.stage, m_source, spv, debug, m_spv_env);
+    m_framework.GLSLtoSPV(&m_device.phy().limits_, m_stage_info.stage, m_source, spv, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
     moduleCreateInfo.pNext = pNext;
@@ -796,12 +790,12 @@ bool VkShaderObj::InitFromGLSL(bool debug, const void *pNext) {
 // Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module
 // creation due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when
 // tests are found to crash on a CI device
-VkResult VkShaderObj::InitFromGLSLTry(bool debug, const vkt::Device *custom_device) {
+VkResult VkShaderObj::InitFromGLSLTry(const vkt::Device *custom_device) {
     std::vector<uint32_t> spv;
     // 99% of tests just use the framework's VkDevice, but this allows for tests to use custom device object
     // Can't set at contructor time since all reference members need to be initialized then.
     VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->phy().limits_ : m_device.phy().limits_;
-    m_framework.GLSLtoSPV(&limits, m_stage_info.stage, m_source, spv, debug, m_spv_env);
+    m_framework.GLSLtoSPV(&limits, m_stage_info.stage, m_source, spv, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
@@ -841,11 +835,9 @@ VkResult VkShaderObj::InitFromASMTry() {
 // static
 std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromGLSL(VkRenderFramework *framework, const char *source,
                                                          VkShaderStageFlagBits stage, const spv_target_env spv_env,
-                                                         const VkSpecializationInfo *spec_info, const char *entry_point,
-                                                         bool debug) {
-    auto shader =
-        std::make_unique<VkShaderObj>(framework, source, stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info, entry_point, debug);
-    if (VK_SUCCESS == shader->InitFromGLSLTry(debug)) {
+                                                         const VkSpecializationInfo *spec_info, const char *entry_point) {
+    auto shader = std::make_unique<VkShaderObj>(framework, source, stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info, entry_point);
+    if (VK_SUCCESS == shader->InitFromGLSLTry()) {
         return shader;
     }
     return {};

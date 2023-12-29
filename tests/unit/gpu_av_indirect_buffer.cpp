@@ -112,8 +112,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
         };
         taskPayloadSharedEXT Task IN;
         void main() {})glsl";
-        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
-                                nullptr, "main", true);
+        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
         CreatePipelineHelper mesh_pipe(*this);
         mesh_pipe.InitState();
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
@@ -340,8 +339,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         };
         taskPayloadSharedEXT Task IN;
         void main() {})glsl";
-        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
-                                nullptr, "main", true);
+        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
         CreatePipelineHelper mesh_pipe(*this);
         mesh_pipe.InitState();
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
@@ -433,8 +431,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         };
         taskPayloadSharedEXT Task IN;
         void main() {})glsl";
-    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, nullptr,
-                            "main", true);
+    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper mesh_pipe(*this);
     mesh_pipe.InitState();
     mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
@@ -495,8 +492,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         void main () {
         }
     )glsl";
-    VkShaderObj task_shader(this, task_shader_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, nullptr,
-                            "main", true);
+    VkShaderObj task_shader(this, task_shader_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper task_pipe(*this);
     task_pipe.InitState();
     task_pipe.shader_stages_[0] = task_shader.GetStageCreateInfo();

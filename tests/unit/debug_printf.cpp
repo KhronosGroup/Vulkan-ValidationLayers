@@ -57,8 +57,7 @@ TEST_F(NegativeDebugPrintf, BasicCompute) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                             nullptr, "main", true);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
@@ -162,7 +161,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     // Two error messages have to be last in the vector
     messages.push_back("First printf with a % and no value");
     messages.push_back("Second printf with a value -135");
-    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -272,8 +271,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
                 gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
             }
             )glsl";
-        VkShaderObj vs_int64(this, shader_source_int64, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
-                             "main", true);
+        VkShaderObj vs_int64(this, shader_source_int64, VK_SHADER_STAGE_VERTEX_BIT);
 
         CreatePipelineHelper pipe2(*this);
         pipe2.InitState();

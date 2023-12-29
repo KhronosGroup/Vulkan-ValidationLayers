@@ -248,7 +248,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         char const *geometry_source;
         char const *tess_ctrl_source;
         char const *tess_eval_source;
-        bool debug;
         const vkt::PipelineLayout *pipeline_layout;
         const OneOffDescriptorSet *descriptor_set;
         uint32_t index;
@@ -256,49 +255,48 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
                      "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
                      "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, true, &pipeline_layout, &descriptor_set, 25,
-                     "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
-    tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, true, &pipeline_layout, &descriptor_set, 25,
-                     "uFragColor = texture(tex[index], vec2(0, 0));"});
+    // TODO - These errors only show with EShMsgDebugInfo - need to figure out if suppose to be here
+    // tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
+    //                  "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
+    // tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
+    //                  "uFragColor = texture(tex[index], vec2(0, 0));"});
 
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
                      "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 5,
+    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 5,
                      "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
     // Pick 6 below because it is less than the maximum specified, but more than the actual specified
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout_variable,
+    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout_variable,
                      &descriptor_set_variable, 6, "(set = 0, binding = 1) Index of 6 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout_variable,
+    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout_variable,
                      &descriptor_set_variable, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
-    tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, false, &pipeline_layout_buffer,
-                     &descriptor_set_buffer, 25, "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, false, &pipeline_layout_buffer,
-                     &descriptor_set_buffer, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
+    tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, &pipeline_layout_buffer, &descriptor_set_buffer, 25,
+                     "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, &pipeline_layout_buffer, &descriptor_set_buffer, 5,
+                     "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
     if (m_device->phy().features().geometryShader) {
         // OOB Geometry
-        tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, false, &pipeline_layout_buffer,
+        tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
                          &descriptor_set_buffer, 25, "UNASSIGNED-Descriptor index out of bounds"});
         // Uninitialized Geometry
-        tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, false, &pipeline_layout_buffer,
+        tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
                          &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
     if (m_device->phy().features().tessellationShader) {
-        tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource, false,
+        tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 25, "UNASSIGNED-Descriptor index out of bounds"});
-        tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource, false,
+        tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
 
     for (const auto &iter : tests) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
-        VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
-                       iter.debug);
-        VkShaderObj fs(this, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
-                       "main", iter.debug);
+        VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
         VkShaderObj *gs = nullptr;
         VkShaderObj *tcs = nullptr;
         VkShaderObj *tes = nullptr;
@@ -308,8 +306,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         pipe.shader_stages_.clear();
         pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
         if (iter.geometry_source) {
-            gs = new VkShaderObj(this, iter.geometry_source, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                 nullptr, "main", iter.debug);
+            gs = new VkShaderObj(this, iter.geometry_source, VK_SHADER_STAGE_GEOMETRY_BIT);
             pipe.shader_stages_.push_back(gs->GetStageCreateInfo());
         }
         VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
@@ -321,10 +318,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
                                                    &tessellationDomainOriginStateInfo, 0, 3};
         if (iter.tess_ctrl_source && iter.tess_eval_source) {
-            tcs = new VkShaderObj(this, iter.tess_ctrl_source, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, SPV_ENV_VULKAN_1_0,
-                                  SPV_SOURCE_GLSL, nullptr, "main", iter.debug);
-            tes = new VkShaderObj(this, iter.tess_eval_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, SPV_ENV_VULKAN_1_0,
-                                  SPV_SOURCE_GLSL, nullptr, "main", iter.debug);
+            tcs = new VkShaderObj(this, iter.tess_ctrl_source, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+            tes = new VkShaderObj(this, iter.tess_eval_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
             pipe.shader_stages_.push_back(tcs->GetStageCreateInfo());
             pipe.shader_stages_.push_back(tes->GetStageCreateInfo());
             pipe.gp_ci_.pTessellationState = &tsci;

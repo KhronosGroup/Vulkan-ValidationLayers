@@ -408,8 +408,7 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
-    VkShaderObj fs(this, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", false,
-                   &features);
+    VkShaderObj fs(this, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", &features);
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_.clear();
