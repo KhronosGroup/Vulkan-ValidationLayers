@@ -758,10 +758,8 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     VkShaderStageFlagBits shaderStages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    const vkt::Shader taskShader(*m_device, shaderStages[0],
-                                 GLSLToSPV(shaderStages[0], task_src, "main", nullptr, SPV_ENV_VULKAN_1_3));
-    const vkt::Shader meshShader(*m_device, shaderStages[1],
-                                 GLSLToSPV(shaderStages[1], mesh_src, "main", nullptr, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader taskShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], task_src, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader meshShader(*m_device, shaderStages[1], GLSLToSPV(shaderStages[1], mesh_src, SPV_ENV_VULKAN_1_3));
     const vkt::Shader fragShader(*m_device, shaderStages[2], GLSLToSPV(shaderStages[2], frag_src));
 
     VkShaderEXT shaders[3] = {taskShader.handle(), meshShader.handle(), fragShader.handle()};
