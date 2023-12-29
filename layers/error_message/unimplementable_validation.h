@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #pragma once
+// clang-format off
 
 // This file list all VUID that are not possible to validate.
 // This file should never be included, but here for searchability and statistics
@@ -35,4 +36,11 @@ const char* unimplementable_validation[] = {
     "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912",
 
     // These VUIDs cannot be validated beyond making sure the pointer is not null
-    "VUID-VkMemoryToImageCopyEXT-pHostPointer-09061", "VUID-VkImageToMemoryCopyEXT-pHostPointer-09066"};
+    "VUID-VkMemoryToImageCopyEXT-pHostPointer-09061", "VUID-VkImageToMemoryCopyEXT-pHostPointer-09066"
+
+    // these are already taken care in spirv-val for 08737
+    "VUID-VkShaderModuleCreateInfo-pCode-08736", "VUID-VkShaderCreateInfoEXT-pCode-08736",
+    "VUID-VkShaderModuleCreateInfo-pCode-08738", "VUID-VkShaderCreateInfoEXT-pCode-08738"
+};
+
+// clang-format on
