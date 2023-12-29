@@ -1273,9 +1273,9 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     )glsl";
 
     const vkt::Shader ts(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT,
-                         GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
+                         GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, SPV_ENV_VULKAN_1_3));
     const vkt::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
-                         GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
+                         GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, SPV_ENV_VULKAN_1_3));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
