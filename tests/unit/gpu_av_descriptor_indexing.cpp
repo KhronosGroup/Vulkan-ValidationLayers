@@ -860,18 +860,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     // Create a dummy pipeline, since VL inspects which bindings are actually used at draw time
-    char const *vs_source = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        void main(){
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-
     char const *fs_source = R"glsl(
         #version 450
         layout(location=0) out vec4 color;
@@ -882,6 +870,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
            color = vec4(bar0.x0 + bar1.x1 + bar2.x2);
         }
     )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
@@ -924,18 +913,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBindImageViewTypeMismatch) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        void main(){
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-
     char const *fs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler3D s;
@@ -944,6 +921,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBindImageViewTypeMismatch) {
            color = texture(s, vec3(0));
         }
     )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkImageObj image(m_device);

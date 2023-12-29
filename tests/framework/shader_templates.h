@@ -25,6 +25,19 @@ static const char kVertexMinimalGlsl[] = R"glsl(
     }
 )glsl";
 
+// for GPU-AV tests, we need the vertex shader to actually run and produce
+// work for the next shader stages
+static const char kVertexDrawPassthroughGlsl[] = R"glsl(
+    #version 450
+    vec2 vertices[3];
+    void main(){
+        vertices[0] = vec2(-1.0, -1.0);
+        vertices[1] = vec2( 1.0, -1.0);
+        vertices[2] = vec2( 0.0,  1.0);
+        gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+    }
+)glsl";
+
 static const char kVertexPointSizeGlsl[] = R"glsl(
     #version 460
     out gl_PerVertex {
