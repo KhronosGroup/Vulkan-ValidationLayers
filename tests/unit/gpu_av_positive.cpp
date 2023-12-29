@@ -160,21 +160,13 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
     pipeline_info.stage = cs.GetStageCreateInfo();
-
-    VkPipeline pipeline;
-    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
+    vkt::Pipeline pipeline(*m_device, pipeline_info);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     vkt::Buffer buffer_0(*m_device, buffer_ci);
     vkt::Buffer buffer_1(*m_device, buffer_ci);
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set_0.layout_});
-    pipe.InitState();
-    pipe.CreateComputePipeline();
 
     VkWriteDescriptorSet descriptor_writes[2];
     descriptor_writes[0] = vku::InitStructHelper();
@@ -201,8 +193,6 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
 
     m_default_queue->submit(*m_commandBuffer);
     m_default_queue->wait();
-
-    vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
 
 // Regression test for semaphore timeout with GPU-AV enabled:
@@ -289,11 +279,15 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
                                           {1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
                                          0, &mdtci);
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set_0.layout_});
-    pipe.InitState();
-    pipe.CreateComputePipeline();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
+
+    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
+    pipeline_info.flags = 0;
+    pipeline_info.layout = pipeline_layout.handle();
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+    pipeline_info.stage = cs.GetStageCreateInfo();
+    vkt::Pipeline pipeline(*m_device, pipeline_info);
 
     VkBufferUsageFlags buffer_usage =
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -330,8 +324,8 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &descriptor_copy);
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &descriptor_set_0.set_, 0, nullptr);
 
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
