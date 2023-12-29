@@ -191,9 +191,10 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     self.typeOps.append(opname)
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
-                        if operand['kind'] == 'IdResultType':
+                        kind = operand['kind']
+                        if kind == 'IdResultType':
                             self.hasType.append(opname)
-                        elif operand['kind'] == 'IdResult':
+                        elif kind == 'IdResult':
                             self.hasResult.append(opname)
                         else:
                             # Operands are anything that isn't a result or result type
@@ -203,23 +204,32 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                                 if operand['quantifier'] == '*':
                                     self.opcodes[opcode]['hasVariableLength'] = True
 
-                            if operand['kind'] in self.kindId:
-                                self.opcodes[opcode]['operands'].append('Id')
-                            elif operand['kind'] in self.kindLiteral:
-                                if operand['kind'] == 'LiteralString':
-                                    self.opcodes[opcode]['operands'].append('LiteralString')
+                            operands = self.opcodes[opcode]['operands']
+                            if kind in self.kindId:
+                                if opname in ['OpLoopMerge', 'OpSelectionMerge', 'OpBranch']:
+                                    operands.append('Label')
+                                elif opname == 'OpBranchConditional' and 'Condition' not in operand['name']:
+                                    operands.append('Label')
                                 else:
-                                    self.opcodes[opcode]['operands'].append('Literal')
-                            elif operand['kind'] in self.kindComposite:
-                                self.opcodes[opcode]['operands'].append('Composite')
-                            elif operand['kind'] in self.kindValueEnum:
-                                self.opcodes[opcode]['operands'].append('ValueEnum')
-                            elif operand['kind'] in self.kindBitEnum:
-                                self.opcodes[opcode]['operands'].append('BitEnum')
+                                    operands.append('Id')
+                            elif kind in self.kindLiteral:
+                                if kind == 'LiteralString':
+                                    operands.append('LiteralString')
+                                else:
+                                    operands.append('Literal')
+                            elif kind in self.kindComposite:
+                                if opname == 'OpSwitch':
+                                    operands.append('Label')
+                                else:
+                                    operands.append('Composite')
+                            elif kind in self.kindValueEnum:
+                                operands.append('ValueEnum')
+                            elif kind in self.kindBitEnum:
+                                operands.append('BitEnum')
 
                         # some instructions have both types of IdScope
                         # OpReadClockKHR has the wrong 'name' as 'Scope'
-                        if operand['kind'] == 'IdScope':
+                        if kind == 'IdScope':
                             if operand['name'] == '\'Execution\'' or operand['name'] == '\'Scope\'':
                                 self.executionScopePosition[index + 1].append(opname)
                             elif operand['name'] == '\'Memory\'':
@@ -229,9 +239,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                             else:
                                 print(f'Error: unknown operand {opname} with IdScope {operand["name"]} not handled correctly\n')
                                 sys.exit(1)
-                        if operand['kind'] == 'ImageOperands':
+                        if kind == 'ImageOperands':
                             self.imageOperandsPosition[index + 1].append(opname)
-                        if operand['kind'] == 'IdRef':
+                        if kind == 'IdRef':
                             if operand['name'] == '\'Image\'':
                                 self.opcodes[opcode]['imageRefPosition'] = index + 1
                             elif operand['name'] == '\'Sampled Image\'':
@@ -527,6 +537,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         out.append('''
             enum class OperandKind {
                 Id,
+                Label, // Id but for Control Flow
                 Literal,
                 LiteralString,
                 Composite,
