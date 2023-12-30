@@ -741,3 +741,19 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     m_commandBuffer->QueueCommandBuffer();
     m_device->wait();
 }
+
+TEST_F(PositiveRayTracing, CmdBuildAccelerationStructuresIndirect) {
+    TEST_DESCRIPTION("basic useage of vkCmdBuildAccelerationStructuresIndirectKHR.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    m_commandBuffer->begin();
+    build_info.BuildCmdBufferIndirect(*m_device, m_commandBuffer->handle());
+    m_commandBuffer->end();
+}

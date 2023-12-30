@@ -2340,9 +2340,41 @@ TEST_F(NegativeRayTracing, IndirectCmdBuildAccelerationStructuresKHR) {
     // Command buffer indirect build
     auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull());
+
+    m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03800");
     build_info_null_dst.BuildCmdBufferIndirect(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, IndirectStridesMultiple) {
+    TEST_DESCRIPTION("pIndirectStrides not a multiple of 4.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    const auto &geometries = build_geometry_info.GetGeometries()[0].GetVkObj();
+    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries = {&geometries};
+
+    auto build_info = build_geometry_info.GetInfo();
+    build_info.geometryCount = 1;
+    build_info.ppGeometries = pGeometries.data();
+
+    VkDeviceAddress indirect_device_addresses{};
+    uint32_t indirect_strides = 5;
+    uint32_t max_prim_counts[1] = {1};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectStrides-03787");
+    vk::CmdBuildAccelerationStructuresIndirectKHR(m_commandBuffer->handle(), 1, &build_info, &indirect_device_addresses,
+                                                  &indirect_strides, reinterpret_cast<uint32_t **>(&max_prim_counts));
     m_errorMonitor->VerifyFound();
 }
 

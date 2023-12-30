@@ -1402,6 +1402,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                 }
             }
         }
+
+        if (SafeModulo(pIndirectStrides[i], 4) != 0) {
+            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectStrides-03787", commandBuffer,
+                             error_obj.location.dot(Field::pIndirectStrides, i), "is %" PRIu32 ".", pIndirectStrides[i]);
+        }
     }
     return skip;
 }
