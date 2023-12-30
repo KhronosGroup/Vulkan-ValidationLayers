@@ -1292,6 +1292,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                              pInfos[i].scratchData.deviceAddress,
                              phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
         }
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", pInfos[i].mode,
+                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-mode-04628");
+
         for (uint32_t k = 0; k < infoCount; ++k) {
             if (i == k) continue;
             if (pInfos[i].srcAccelerationStructure == pInfos[k].dstAccelerationStructure) {
@@ -1420,18 +1423,22 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
                          error_obj.location, "accelerationStructureHostCommands feature was not enabled.");
     }
     for (uint32_t i = 0; i < infoCount; ++i) {
+        const Location info_loc = error_obj.location.dot(Field::pInfos, i);
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", pInfos[i].mode,
+                                   "VUID-vkBuildAccelerationStructuresKHR-mode-04628");
+
         for (uint32_t j = 0; j < infoCount; ++j) {
             if (i == j) continue;
             if (pInfos[i].dstAccelerationStructure == pInfos[j].dstAccelerationStructure) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03698", device,
-                                 error_obj.location.dot(Field::pInfos, i).dot(Field::dstAccelerationStructure),
+                                 info_loc.dot(Field::dstAccelerationStructure),
                                  "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", j,
                                  FormatHandle(pInfos[i].dstAccelerationStructure).c_str());
                 break;
             }
             if (pInfos[i].srcAccelerationStructure == pInfos[j].dstAccelerationStructure) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03403", device,
-                                 error_obj.location.dot(Field::pInfos, i).dot(Field::srcAccelerationStructure),
+                                 info_loc.dot(Field::srcAccelerationStructure),
                                  "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", j,
                                  FormatHandle(pInfos[i].srcAccelerationStructure).c_str());
                 break;
