@@ -742,7 +742,8 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     m_device->wait();
 }
 
-TEST_F(PositiveRayTracing, CmdBuildAccelerationStructuresIndirect) {
+// TODO - crashes on AMD Windows and Android, very possible the test isn't valid, need to investigate
+TEST_F(PositiveRayTracing, DISABLED_CmdBuildAccelerationStructuresIndirect) {
     TEST_DESCRIPTION("basic useage of vkCmdBuildAccelerationStructuresIndirectKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -757,3 +758,31 @@ TEST_F(PositiveRayTracing, CmdBuildAccelerationStructuresIndirect) {
     build_info.BuildCmdBufferIndirect(*m_device, m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+// Because of aligned_alloc
+#if defined(__linux__) && !defined(__ANDROID__)
+TEST_F(PositiveRayTracing, CopyMemoryToAccelerationStructureKHR) {
+    TEST_DESCRIPTION("basic useage of vkCopyMemoryToAccelerationStructureKHR.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    RETURN_IF_SKIP(Init());
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(4096);
+    blas->Build(*m_device);
+
+    void* output = std::aligned_alloc(16, 4096);
+    VkDeviceOrHostAddressConstKHR output_data;
+    output_data.hostAddress = output;
+
+    VkCopyMemoryToAccelerationStructureInfoKHR info = vku::InitStructHelper();
+    info.dst = blas->handle();
+    info.src = output_data;
+    info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    vk::CopyMemoryToAccelerationStructureKHR(device(), VK_NULL_HANDLE, &info);
+    std::free(output);
+}
+#endif

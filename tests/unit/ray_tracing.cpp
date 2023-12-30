@@ -17,6 +17,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/shader_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
+#include <cstdlib>
 
 void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1768,6 +1769,32 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracing, CopyMemoryToAccelerationStructureHostAddress) {
+    TEST_DESCRIPTION("vkCopyMemoryToAccelerationStructureKHR but the hostAddress is not aligned to 16.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    RETURN_IF_SKIP(Init());
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(4096);
+    blas->Build(*m_device);
+
+    VkDeviceOrHostAddressConstKHR output_data;
+    output_data.hostAddress = reinterpret_cast<void *>(0x00000021);
+
+    VkCopyMemoryToAccelerationStructureInfoKHR info = vku::InitStructHelper();
+    info.dst = blas->handle();
+    info.src = output_data;
+    info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03750");
+    vk::CopyMemoryToAccelerationStructureKHR(device(), VK_NULL_HANDLE, &info);
+    m_errorMonitor->VerifyFound();
+}
+
+// Because of aligned_alloc
+#if defined(__linux__) && !defined(__ANDROID__)
 TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     TEST_DESCRIPTION("Test invalid buffer used in vkCopyMemoryToAccelerationStructureKHR.");
 
@@ -1801,9 +1828,9 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     blas->SetDeviceBuffer(std::move(non_host_visible_buffer));
     blas->Build(*m_device);
 
-    uint8_t output[4096];
+    void *output = std::aligned_alloc(16, 4096);
     VkDeviceOrHostAddressConstKHR output_data;
-    output_data.hostAddress = reinterpret_cast<void *>(output);
+    output_data.hostAddress = output;
 
     VkCopyMemoryToAccelerationStructureInfoKHR info = vku::InitStructHelper();
     info.dst = blas->handle();
@@ -1814,7 +1841,9 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyMemoryToAccelerationStructureKHR-buffer-03730");
     vk::CopyMemoryToAccelerationStructureKHR(device(), VK_NULL_HANDLE, &info);
     m_errorMonitor->VerifyFound();
+    std::free(output);
 }
+#endif
 
 TEST_F(NegativeRayTracing, ArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
