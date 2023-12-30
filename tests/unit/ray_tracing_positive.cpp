@@ -426,6 +426,28 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     m_device->wait();
 }
 
+TEST_F(PositiveRayTracing, BuildAccelerationStructuresDeferredOperation) {
+    TEST_DESCRIPTION("Call vkBuildAccelerationStructuresKHR with a valid VkDeferredOperationKHR object");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "vkGetDeferredOperationResultKHR not supported by MockICD";
+    }
+
+    VkDeferredOperationKHR deferred_op = VK_NULL_HANDLE;
+    vk::CreateDeferredOperationKHR(m_device->handle(), 0, &deferred_op);
+
+    vkt::as::BuildGeometryInfoKHR as_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    as_build_info.SetDeferredOp(deferred_op);
+    as_build_info.BuildHost(instance(), *m_device);
+
+    vk::DestroyDeferredOperationKHR(m_device->handle(), deferred_op, nullptr);
+}
+
 TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     TEST_DESCRIPTION(
         "Validate acceleration structure building when source/destination acceleration structures and scratch buffers may "

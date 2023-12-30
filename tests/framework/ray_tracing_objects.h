@@ -166,6 +166,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetInfoCount(uint32_t info_count);
     BuildGeometryInfoKHR& SetNullInfos(bool use_null_infos);
     BuildGeometryInfoKHR& SetNullBuildRangeInfos(bool use_null_build_range_infos);
+    BuildGeometryInfoKHR& SetDeferredOp(VkDeferredOperationKHR deferred_op);
 
     // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
     // then one the build acceleration structure function.
@@ -204,6 +205,7 @@ class BuildGeometryInfoKHR {
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
     std::unique_ptr<vkt::Buffer> indirect_buffer_;
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos_;
+    VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;
 };
 
 // Helper functions

@@ -377,6 +377,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeferredOp(VkDeferredOperationKHR deferred_op) {
+    deferred_op_ = deferred_op;
+    return *this;
+}
+
 void BuildGeometryInfoKHR::BuildCmdBuffer(const vkt::Device &device, VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     if (blas_) {
         blas_->BuildCmdBuffer(device, cmd_buffer, use_ppGeometries);
@@ -504,7 +509,7 @@ void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR(VkInstance instance,
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos = use_null_infos_ ? nullptr : &vk_info_;
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos =
         use_null_build_range_infos_ ? nullptr : pRange_infos.data();
-    vk::BuildAccelerationStructuresKHR(device.handle(), VK_NULL_HANDLE, vk_info_count_, pInfos, ppBuildRangeInfos);
+    vk::BuildAccelerationStructuresKHR(device.handle(), deferred_op_, vk_info_count_, pInfos, ppBuildRangeInfos);
 
     // pGeometries is going to be destroyed
     vk_info_.geometryCount = 0;
