@@ -2340,6 +2340,22 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
     }
 }
 
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresDeferredOperation) {
+    TEST_DESCRIPTION("Call vkBuildAccelerationStructuresKHR with a valid VkDeferredOperationKHR object");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-deferredOperation-parameter");
+    vkt::as::BuildGeometryInfoKHR as_build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    as_build_info.SetDeferredOp(CastFromUint64<VkDeferredOperationKHR>(0xdeadbeef));
+    as_build_info.BuildHost(instance(), *m_device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidMode) {
     TEST_DESCRIPTION("Build an acceleration structure with an invalid mode");
 
