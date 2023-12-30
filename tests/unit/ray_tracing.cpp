@@ -2986,8 +2986,6 @@ TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
 
     vkt::as::BuildGeometryInfoKHR build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_geometry_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-    // computed scratch buffer size is empty, so scratch buffer address can be 0 and invalid
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
     // Update acceleration structure, with .srcAccelerationStructure == VK_NULL_HANDLE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630");
     build_geometry_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
