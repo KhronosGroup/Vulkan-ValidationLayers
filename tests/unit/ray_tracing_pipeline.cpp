@@ -19,19 +19,17 @@
 TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(ray_tracing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState());
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
-    VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
-    VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
-    VkShaderObj chit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    VkShaderObj miss_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_MISS_BIT_KHR);
-    VkShaderObj intr_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
-    VkShaderObj call_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CALLABLE_BIT_KHR);
+    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ahit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj miss_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj intr_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_INTERSECTION_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj call_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CALLABLE_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -176,11 +174,9 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
 TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(ray_tracing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState());
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
 
@@ -668,7 +664,6 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
@@ -783,7 +778,6 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
@@ -1026,13 +1020,9 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(ray_tracing_features);
-    if (!ray_tracing_features.rayTraversalPrimitiveCulling) {
-        GTEST_SKIP() << "Feature rayTraversalPrimitiveCulling is not supported.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
+    RETURN_IF_SKIP(Init());
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kMinimalShaderGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
@@ -1068,9 +1058,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineType) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1086,20 +1074,12 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddDisabledFeature(vkt::Feature::pipelineLibraryGroupHandles);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper();
-    bda_features.bufferDeviceAddress = VK_TRUE;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&bda_features);
-    VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles_features =
-        vku::InitStructHelper(&ray_tracing_features);
-    pipeline_library_group_handles_features.pipelineLibraryGroupHandles = VK_TRUE;
-    GetPhysicalDeviceFeatures2(pipeline_library_group_handles_features);
-    if (!ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
-        GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
-    }
-    pipeline_library_group_handles_features.pipelineLibraryGroupHandles = false;
-    RETURN_IF_SKIP(InitState(nullptr, &pipeline_library_group_handles_features));
+    RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
     rt_pipe_lib.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);

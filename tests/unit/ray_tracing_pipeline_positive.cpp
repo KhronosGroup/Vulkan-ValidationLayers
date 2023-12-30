@@ -19,11 +19,9 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(ray_tracing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState());
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
@@ -113,12 +111,10 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper(&features13);
-    GetPhysicalDeviceFeatures2(ray_tracing_features);
-    RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
+    RETURN_IF_SKIP(InitState());
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
