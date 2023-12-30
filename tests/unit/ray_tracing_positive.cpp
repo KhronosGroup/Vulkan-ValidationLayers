@@ -107,6 +107,25 @@ TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
     top_level_build_geometry.BuildHost(instance(), *m_device);
 }
 
+TEST_F(PositiveRayTracing, CreateAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Validate acceleration structure creation.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
+    VkAccelerationStructureKHR as;
+    VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
+    as_create_info.buffer = buffer.handle();
+    as_create_info.size = 4096;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
+    vk::CreateAccelerationStructureKHR(device(), &as_create_info, nullptr, &as);
+    vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
+}
+
 TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     TEST_DESCRIPTION("Test different valid VkStridedDeviceAddressRegionKHR");
 
