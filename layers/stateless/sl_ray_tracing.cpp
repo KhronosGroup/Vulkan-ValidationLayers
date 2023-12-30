@@ -1359,6 +1359,14 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
 
         for (uint32_t k = 0; k < infoCount; ++k) {
             if (i == k) continue;
+            if (pInfos[i].dstAccelerationStructure == pInfos[k].dstAccelerationStructure) {
+                const LogObjectList objlist(commandBuffer, pInfos[i].dstAccelerationStructure);
+                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03698", objlist,
+                                 info_loc.dot(Field::dstAccelerationStructure),
+                                 "and pInfos[%" PRIu32 "].dstAccelerationStructure are both %s.", k,
+                                 FormatHandle(pInfos[i].dstAccelerationStructure).c_str());
+                break;
+            }
             if (pInfos[i].srcAccelerationStructure == pInfos[k].dstAccelerationStructure) {
                 const LogObjectList objlist(commandBuffer, pInfos[i].srcAccelerationStructure);
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03403", objlist,
