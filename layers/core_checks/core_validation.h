@@ -1333,6 +1333,8 @@ class CoreChecks : public ValidationStateTracker {
                                                 VkDeviceAddress indirectDeviceAddress, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                  const ErrorObject& error_obj) const override;
+    bool ValidateDeferredOperation(VkDevice device, VkDeferredOperationKHR deferred_operation, const Location& loc,
+                                   const char* vuid) const;
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                      const ErrorObject& error_obj) const override;
@@ -2187,9 +2189,15 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateDestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
+                                                    const VkAllocationCallbacks* pAllocator,
+                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
+                                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                                                 const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                                 const ErrorObject& error_obj) const override;

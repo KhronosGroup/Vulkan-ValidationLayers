@@ -780,6 +780,9 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
     bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkBuildAccelerationStructuresKHR-deferredOperation-03678");
+
     for (uint32_t i = 0; i < infoCount; ++i) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, i);
         auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfos[i].srcAccelerationStructure);
@@ -1330,10 +1333,22 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     return skip;
 }
 
+bool CoreChecks::PreCallValidateDestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
+                                                            const VkAllocationCallbacks *pAllocator,
+                                                            const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateDeferredOperation(device, operation, error_obj.location.dot(Field::operation),
+                                      "VUID-vkDestroyDeferredOperationKHR-operation-03436");
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                              const ErrorObject &error_obj) const {
     bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkCopyAccelerationStructureKHR-deferredOperation-03678");
+
     if (pInfo) {
         const Location info_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
@@ -1350,6 +1365,16 @@ bool CoreChecks::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, Vk
     }
     return skip;
 }
+
+bool CoreChecks::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                     const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
+                                                                     const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkCopyAccelerationStructureToMemoryKHR-deferredOperation-03678");
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                                                         const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
                                                                         const ErrorObject &error_obj) const {
@@ -1371,6 +1396,8 @@ bool CoreChecks::PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice de
                                                                      const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkCopyMemoryToAccelerationStructureKHR-deferredOperation-03678");
 
     auto accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
     if (accel_state) {
@@ -1697,5 +1724,19 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                                                                   binding_table.deviceAddress);
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateDeferredOperation(VkDevice device, VkDeferredOperationKHR deferred_operation, const Location &loc,
+                                           const char *vuid) const {
+    // validate in core check because need to make sure it is a valid VkDeferredOperationKHR object
+    bool skip = false;
+    if (deferred_operation != VK_NULL_HANDLE) {
+        VkResult result = DispatchGetDeferredOperationResultKHR(device, deferred_operation);
+        if (result == VK_NOT_READY) {
+            skip |= LogError(vuid, deferred_operation, loc.dot(Field::deferredOperation), "%s is not completed.",
+                             FormatHandle(deferred_operation).c_str());
+        }
+    }
     return skip;
 }
