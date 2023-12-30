@@ -491,13 +491,14 @@ class RayTracingTest : public virtual VkLayerTest {
 
     void NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
                                           VkValidationFeaturesEXT *enabled_features = nullptr);
-
-    void OOBRayTracingShadersTestBody(bool gpu_assisted);
 };
 class NegativeRayTracing : public RayTracingTest {};
 class PositiveRayTracing : public RayTracingTest {};
-class NegativeRayTracingNV : public NegativeRayTracing {};
-class PositiveRayTracingNV : public PositiveRayTracing {};
+
+class NegativeRayTracingNV : public RayTracingTest {
+  public:
+    void OOBRayTracingShadersTestBodyNV(bool gpu_assisted);
+};
 
 class RayTracingPipelineTest : public RayTracingTest {};
 class NegativeRayTracingPipeline : public RayTracingPipelineTest {};

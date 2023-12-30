@@ -704,12 +704,12 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
     void init(const Device &dev, const VkImageViewCreateInfo &info);
 };
 
-class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStructureNV> {
+class AccelerationStructureNV : public internal::NonDispHandle<VkAccelerationStructureNV> {
   public:
-    explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
+    explicit AccelerationStructureNV(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
         init(dev, info, init_memory);
     }
-    ~AccelerationStructure() noexcept;
+    ~AccelerationStructureNV() noexcept;
     void destroy() noexcept;
 
     // vkCreateAccelerationStructureNV

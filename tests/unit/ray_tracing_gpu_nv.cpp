@@ -77,7 +77,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationInvalidHan
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructureNV top_level_as(*m_device, top_level_as_create_info);
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
@@ -137,7 +137,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
         uint64_t accelerationStructureHandle;
     };
 
-    vkt::AccelerationStructure bot_level_as_never_built(*m_device, bot_level_as_create_info);
+    vkt::AccelerationStructureNV bot_level_as_never_built(*m_device, bot_level_as_create_info);
 
     VkGeometryInstanceNV instance = {
         {
@@ -162,7 +162,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructureNV top_level_as(*m_device, top_level_as_create_info);
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
@@ -224,7 +224,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
 
     uint64_t destroyed_bot_level_as_handle = 0;
     {
-        vkt::AccelerationStructure destroyed_bot_level_as(*m_device, bot_level_as_create_info);
+        vkt::AccelerationStructureNV destroyed_bot_level_as(*m_device, bot_level_as_create_info);
 
         destroyed_bot_level_as_handle = destroyed_bot_level_as.opaque_handle();
 
@@ -264,7 +264,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationBottomLeve
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructureNV top_level_as(*m_device, top_level_as_create_info);
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
@@ -339,7 +339,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationRestoresSt
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructureNV top_level_as(*m_device, top_level_as_create_info);
 
     const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
