@@ -1201,6 +1201,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
         }
         skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", info->mode,
                                    "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
+        if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR && info->srcAccelerationStructure == VK_NULL_HANDLE) {
+            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630", commandBuffer, info_loc.dot(Field::mode),
+                             "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
+        }
+
         for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos, infoCount)) {
             if (info_i == other_info_j) continue;
             if (info->dstAccelerationStructure == other_info->dstAccelerationStructure) {
@@ -1345,6 +1350,13 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
         skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", pInfos[i].mode,
                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-mode-04628");
 
+        if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
+            pInfos[i].srcAccelerationStructure == VK_NULL_HANDLE) {
+            skip |=
+                LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-04630", commandBuffer, info_loc.dot(Field::mode),
+                         "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
+        }
+
         for (uint32_t k = 0; k < infoCount; ++k) {
             if (i == k) continue;
             if (pInfos[i].srcAccelerationStructure == pInfos[k].dstAccelerationStructure) {
@@ -1476,6 +1488,12 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
         const Location info_loc = error_obj.location.dot(Field::pInfos, i);
         skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", pInfos[i].mode,
                                    "VUID-vkBuildAccelerationStructuresKHR-mode-04628");
+
+        if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
+            pInfos[i].srcAccelerationStructure == VK_NULL_HANDLE) {
+            skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-04630", device, info_loc.dot(Field::mode),
+                             "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
+        }
 
         for (uint32_t j = 0; j < infoCount; ++j) {
             if (i == j) continue;
