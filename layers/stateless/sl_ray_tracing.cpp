@@ -209,17 +209,14 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
     bool skip = false;
     const auto *acceleration_structure_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
-    if (!acceleration_structure_features ||
-        (acceleration_structure_features && acceleration_structure_features->accelerationStructure == VK_FALSE)) {
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
         skip |= LogError("VUID-vkCreateAccelerationStructureKHR-accelerationStructure-03611", device, error_obj.location,
                          "accelerationStructure feature was not enabled.");
     }
     if (pCreateInfo) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
         if (pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR &&
-            (!acceleration_structure_features ||
-             (acceleration_structure_features &&
-              acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE))) {
+            (!acceleration_structure_features || acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE)) {
             skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-03613", device,
                              create_info_loc.dot(Field::createFlags),
                              "includes "
@@ -233,9 +230,8 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                              string_VkAccelerationStructureCreateFlagsKHR(pCreateInfo->createFlags).c_str(),
                              pCreateInfo->deviceAddress);
         }
-        if (pCreateInfo->deviceAddress && (!acceleration_structure_features ||
-                                           (acceleration_structure_features &&
-                                            acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE))) {
+        if (pCreateInfo->deviceAddress &&
+            (!acceleration_structure_features || acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE)) {
             skip |= LogError(
                 "VUID-vkCreateAccelerationStructureKHR-deviceAddress-03488", device, create_info_loc.dot(Field::deviceAddress),
                 "is %" PRIu64 " but accelerationStructureCaptureReplay feature was not enabled.", pCreateInfo->deviceAddress);
@@ -265,6 +261,20 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                          "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but  "
                          "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.");
         }
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
+                                                                                VkAccelerationStructureKHR accelerationStructure,
+                                                                                const VkAllocationCallbacks *pAllocator,
+                                                                                const ErrorObject &error_obj) const {
+    bool skip = false;
+    const auto *acceleration_structure_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
+        skip |= LogError("VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-08934", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
     }
     return skip;
 }
@@ -658,6 +668,14 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
 bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo, const ErrorObject &error_obj) const {
     bool skip = false;
+
+    const auto *acceleration_structure_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
+        skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-accelerationStructure-08926", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
+    }
+
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
         skip |=  // to update VUID to VkCmdCopyAccelerationStructureToMemoryInfoKHR after spec update
@@ -703,6 +721,14 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
                                                                                 const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
+
+    const auto *acceleration_structure_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
+        skip |= LogError("VUID-vkCmdCopyAccelerationStructureKHR-accelerationStructure-08925", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
+    }
+
     skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
     return skip;
 }
@@ -738,6 +764,14 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
 bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo, const ErrorObject &error_obj) const {
     bool skip = false;
+
+    const auto *acceleration_structure_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
+        skip |= LogError("VUID-vkCmdCopyMemoryToAccelerationStructureKHR-accelerationStructure-08927", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
+    }
+
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, error_obj.handle, info_loc);
     if (SafeModulo(pInfo->src.deviceAddress, 256) != 0) {
@@ -752,6 +786,14 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &error_obj) const {
     bool skip = false;
+
+    const auto *acceleration_structure_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
+        skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructure-08924", device,
+                         error_obj.location, "accelerationStructure feature was not enabled.");
+    }
+
     if (!(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
           queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR ||
           queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR ||
@@ -1138,6 +1180,14 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
     bool skip = false;
+
+    const auto *acceleration_structure_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-accelerationStructure-08923", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
+    }
+
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, error_obj.handle, error_obj.location);
     for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);

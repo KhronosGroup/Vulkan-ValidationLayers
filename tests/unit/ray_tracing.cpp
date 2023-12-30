@@ -1911,6 +1911,29 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     }
 }
 
+TEST_F(NegativeRayTracing, CreateAccelerationStructureFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddDisabledFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
+    VkAccelerationStructureKHR as;
+    VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
+    as_create_info.buffer = buffer.handle();
+    as_create_info.size = 4096;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateAccelerationStructureKHR-accelerationStructure-03611");
+    vk::CreateAccelerationStructureKHR(device(), &as_create_info, nullptr, &as);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-08934");
+    vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     TEST_DESCRIPTION("Validate acceleration structure creation replay feature.");
 

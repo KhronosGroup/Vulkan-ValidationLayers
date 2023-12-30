@@ -25732,6 +25732,7 @@ bool StatelessValidation::PreCallValidateDestroyAccelerationStructureKHR(VkDevic
                                             "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator, error_obj);
     return skip;
 }
 
