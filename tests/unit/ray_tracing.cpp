@@ -1665,9 +1665,20 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_structure_features = vku::InitStructHelper(&ray_tracing_features);
+    auto features2 = GetPhysicalDeviceFeatures2(acc_structure_features);
+    if (acc_structure_features.accelerationStructureHostCommands == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructureHostCommands feature not supported";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     // Init a non host visible buffer
     vkt::Buffer non_host_visible_buffer;
@@ -3536,8 +3547,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureMode) {
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     auto bot_level_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
-    unsigned int bad_enum = 0xbadbeef0;
-    memcpy(&bot_level_as.GetInfo().mode, &bad_enum, sizeof(unsigned int));
+    bot_level_as.SetMode(static_cast<VkBuildAccelerationStructureModeKHR>(0xbadbeef0));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-mode-04628");
     bot_level_as.BuildHost(instance(), *m_device);
