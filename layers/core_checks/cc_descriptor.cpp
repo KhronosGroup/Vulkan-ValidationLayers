@@ -4318,7 +4318,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
             if (!pCreateInfo->pSetLayouts[i]) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753", device,
                                  create_info_loc.dot(Field::pSetLayouts, i),
-                                 "is VK_NULL_HANDLE, but tje graphicsPipelineLibrary feature is not enabled.");
+                                 "is VK_NULL_HANDLE, but the graphicsPipelineLibrary feature is not enabled.");
             }
         }
     }
