@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -675,7 +675,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         const uint32_t frag_shader_count = static_cast<uint32_t>(fs_set_layouts.size());
         if (not_independent_sets && pre_raster_count != frag_shader_count) {
             const char *vuid =
-                only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617" : "VUID-VkGraphicsPipelineCreateInfo-flags-06616";
+                only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613" : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
             LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
             skip |= LogError(vuid, objlist, create_info_loc,
                              "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT was not set and the graphics pipeline library "
@@ -818,8 +818,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 // both handles are valid, but without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, need to check everything
                 // is identically defined
                 if (pre_raster_dsl->GetCreateFlags() != fs_dsl->GetCreateFlags()) {
-                    const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617"
-                                                 : "VUID-VkGraphicsPipelineCreateInfo-flags-06616";
+                    const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
+                                                 : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
                     LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
                     skip |= LogError(vuid, objlist, create_info_loc,
                                      "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT was not set and the graphics pipeline "
@@ -830,8 +830,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                                      i, string_VkDescriptorSetLayoutCreateFlags(pre_raster_dsl->GetCreateFlags()).c_str(), i,
                                      string_VkDescriptorSetLayoutCreateFlags(fs_dsl->GetCreateFlags()).c_str());
                 } else if (pre_raster_dsl->GetBindingCount() != fs_dsl->GetBindingCount()) {
-                    const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617"
-                                                 : "VUID-VkGraphicsPipelineCreateInfo-flags-06616";
+                    const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
+                                                 : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
                     LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
                     skip |= LogError(vuid, objlist, create_info_loc,
                                      "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT was not set and the graphics pipeline "
@@ -847,9 +847,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     for (uint32_t binding_index = 0; binding_index < binding_count; binding_index++) {
                         const auto &pre_raster_binding = pre_raster_bindings[binding_index];
                         const auto &fs_binding = fs_bindings[binding_index];
-                        if (memcmp(pre_raster_binding.ptr(), fs_binding.ptr(), sizeof(VkDescriptorSetLayoutCreateInfo)) != 0) {
-                            const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617"
-                                                         : "VUID-VkGraphicsPipelineCreateInfo-flags-06616";
+                        if (memcmp(pre_raster_binding.ptr(), fs_binding.ptr(), sizeof(VkDescriptorSetLayoutBinding)) != 0) {
+                            const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
+                                                         : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
                             LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
                             skip |= LogError(
                                 vuid, objlist, create_info_loc,

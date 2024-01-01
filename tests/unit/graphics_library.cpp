@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2043,7 +2043,7 @@ TEST_F(NegativeGraphicsLibrary, SetLayoutCount) {
         frag_shader_lib.InitState();
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06616");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2093,7 +2093,7 @@ TEST_F(NegativeGraphicsLibrary, SetLayoutCountLinking) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
@@ -2147,7 +2147,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetLayoutCreateFlags) {
         frag_shader_lib.InitState();
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06616");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2192,7 +2192,7 @@ TEST_F(NegativeGraphicsLibrary, BindingCount) {
         frag_shader_lib.InitState();
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06616");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2236,7 +2236,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetLayoutBinding) {
         frag_shader_lib.InitState();
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06616");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
