@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2779,6 +2779,129 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
     return skip;
 }
 
+bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT &descriptor_info, const size_t data_size,
+                                               const Location &descriptor_info_loc) const {
+    bool skip = false;
+
+    size_t size = 0u;
+    Struct struct_name = Struct::VkPhysicalDeviceDescriptorBufferPropertiesEXT;
+    Field field_name = Field::Empty;
+
+    switch (descriptor_info.type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            size = phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorSize;
+            field_name = Field::samplerDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            size = phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize;
+            field_name = Field::combinedImageSamplerDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            size = phys_dev_ext_props.descriptor_buffer_props.sampledImageDescriptorSize;
+            field_name = Field::sampledImageDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            size = phys_dev_ext_props.descriptor_buffer_props.storageImageDescriptorSize;
+            field_name = Field::storageImageDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            size = enabled_features.robustBufferAccess
+                       ? phys_dev_ext_props.descriptor_buffer_props.robustUniformTexelBufferDescriptorSize
+                       : phys_dev_ext_props.descriptor_buffer_props.uniformTexelBufferDescriptorSize;
+            field_name = enabled_features.robustBufferAccess ? Field::robustUniformTexelBufferDescriptorSize
+                                                             : Field::uniformTexelBufferDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            size = enabled_features.robustBufferAccess
+                       ? phys_dev_ext_props.descriptor_buffer_props.robustStorageTexelBufferDescriptorSize
+                       : phys_dev_ext_props.descriptor_buffer_props.storageTexelBufferDescriptorSize;
+            field_name = enabled_features.robustBufferAccess ? Field::robustStorageTexelBufferDescriptorSize
+                                                             : Field::storageTexelBufferDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            size = enabled_features.robustBufferAccess
+                       ? phys_dev_ext_props.descriptor_buffer_props.robustUniformBufferDescriptorSize
+                       : phys_dev_ext_props.descriptor_buffer_props.uniformBufferDescriptorSize;
+            field_name =
+                enabled_features.robustBufferAccess ? Field::robustUniformBufferDescriptorSize : Field::uniformBufferDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            size = enabled_features.robustBufferAccess
+                       ? phys_dev_ext_props.descriptor_buffer_props.robustStorageBufferDescriptorSize
+                       : phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize;
+            field_name =
+                enabled_features.robustBufferAccess ? Field::robustStorageBufferDescriptorSize : Field::storageBufferDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            size = phys_dev_ext_props.descriptor_buffer_props.inputAttachmentDescriptorSize;
+            field_name = Field::inputAttachmentDescriptorSize;
+            break;
+
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            size = phys_dev_ext_props.descriptor_buffer_props.accelerationStructureDescriptorSize;
+            field_name = Field::accelerationStructureDescriptorSize;
+            break;
+        default:
+            return skip;  // nothing to check, unknown descriptor ttype
+            break;
+    }
+
+    if (descriptor_info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && descriptor_info.data.pCombinedImageSampler) {
+        auto combined_image_sampler = descriptor_info.data.pCombinedImageSampler;
+        if (combined_image_sampler->imageView != VK_NULL_HANDLE) {
+            const auto image_view_state = Get<vvl::ImageView>(combined_image_sampler->imageView);
+            if (image_view_state && image_view_state->samplerConversion != VK_NULL_HANDLE) {
+                auto image_info = image_view_state->image_state->createInfo;
+                VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+                image_format_info.type = image_info.imageType;
+                image_format_info.format = image_info.format;
+                image_format_info.tiling = image_info.tiling;
+                image_format_info.usage = image_view_state->inherited_usage;
+                image_format_info.flags = image_info.flags;
+                VkSamplerYcbcrConversionImageFormatProperties sampler_ycbcr_image_format_info = vku::InitStructHelper();
+                VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&sampler_ycbcr_image_format_info);
+                DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
+                size *= static_cast<size_t>(sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount);
+                if (size != data_size) {
+                    skip |= LogError("VUID-vkGetDescriptorEXT-descriptorType-09469", device, descriptor_info_loc.dot(Field::type),
+                                     "(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) has %s and descriptor size is %zu "
+                                     "[combinedImageSamplerDescriptorCount (%" PRIu32
+                                     ") times combinedImageSamplerDescriptorSize (%zu)], but dataSize is %zu",
+                                     FormatHandle(image_view_state->samplerConversion).c_str(), size,
+                                     sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount,
+                                     phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize, data_size);
+                }
+                return skip;  // the 08125 VU doesn't apply if we are using a SamplerYcbcrConversion
+            }
+        }
+
+        if (combined_image_sampler->sampler != VK_NULL_HANDLE) {
+            const auto sampler_state = Get<vvl::Sampler>(combined_image_sampler->sampler);
+            if (sampler_state && (0 != (sampler_state->createInfo.flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT))) {
+                size = phys_dev_ext_props.descriptor_buffer_density_props.combinedImageSamplerDensityMapDescriptorSize;
+                struct_name = Struct::VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT;
+                field_name = Field::combinedImageSamplerDensityMapDescriptorSize;
+            }
+        }
+    }
+
+    if (size != data_size) {
+        skip |= LogError("VUID-vkGetDescriptorEXT-dataSize-08125", device, descriptor_info_loc.dot(Field::type),
+                         "(%s) has a size of %zu (determined by %s:%s), but dataSize is %zu",
+                         string_VkDescriptorType(descriptor_info.type), size, String(struct_name), String(field_name), data_size);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize,
                                                  void *pDescriptor, const ErrorObject &error_obj) const {
     bool skip = false;
@@ -3046,90 +3169,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
     }
 
-    bool checkDataSize = false;
-    std::size_t size = 0u;
-
-    switch (pDescriptorInfo->type) {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
-            checkDataSize = true;
-            size = phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            checkDataSize = true;
-            size = phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            checkDataSize = true;
-            size = phys_dev_ext_props.descriptor_buffer_props.sampledImageDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            checkDataSize = true;
-            size = phys_dev_ext_props.descriptor_buffer_props.storageImageDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            checkDataSize = true;
-            size = enabled_features.robustBufferAccess
-                       ? phys_dev_ext_props.descriptor_buffer_props.robustUniformTexelBufferDescriptorSize
-                       : phys_dev_ext_props.descriptor_buffer_props.uniformTexelBufferDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            checkDataSize = true;
-            size = enabled_features.robustBufferAccess
-                       ? phys_dev_ext_props.descriptor_buffer_props.robustStorageTexelBufferDescriptorSize
-                       : phys_dev_ext_props.descriptor_buffer_props.storageTexelBufferDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            checkDataSize = true;
-            size = enabled_features.robustBufferAccess
-                       ? phys_dev_ext_props.descriptor_buffer_props.robustUniformBufferDescriptorSize
-                       : phys_dev_ext_props.descriptor_buffer_props.uniformBufferDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            checkDataSize = true;
-            size = enabled_features.robustBufferAccess
-                       ? phys_dev_ext_props.descriptor_buffer_props.robustStorageBufferDescriptorSize
-                       : phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            checkDataSize = true;
-            size = phys_dev_ext_props.descriptor_buffer_props.inputAttachmentDescriptorSize;
-            break;
-
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            checkDataSize = true;
-            size = phys_dev_ext_props.descriptor_buffer_props.accelerationStructureDescriptorSize;
-            break;
-        default:
-            break;
-    }
-
-    if (pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && pDescriptorInfo->data.pSampler != nullptr) {
-        const auto sampler_state = Get<vvl::Sampler>(*pDescriptorInfo->data.pSampler);
-
-        if (sampler_state && (0 != (sampler_state->createInfo.flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT))) {
-            dataSize = phys_dev_ext_props.descriptor_buffer_density_props.combinedImageSamplerDensityMapDescriptorSize;
-            checkDataSize = true;
-        }
-    }
-
-    if (checkDataSize && size != dataSize) {
-        skip |= LogError("VUID-vkGetDescriptorEXT-dataSize-08125", device, error_obj.location,
-                         "dataSize (%zu) must equal the size of a descriptor (%zu) of type "
-                         "VkDescriptorGetInfoEXT::type "
-                         "determined by the value in VkPhysicalDeviceDescriptorBufferPropertiesEXT, or "
-                         "VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT::combinedImageSamplerDensityMapDescriptorSize if "
-                         "pDescriptorInfo specifies a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER whose VkSampler was created with "
-                         "VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT set",
-                         dataSize, size);
-    }
+    skip |= ValidateGetDescriptorDataSize(*pDescriptorInfo, dataSize, descriptor_info_loc);
 
     return skip;
 }
