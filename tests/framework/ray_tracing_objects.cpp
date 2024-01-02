@@ -306,6 +306,12 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetGeometries(std::vector<GeometryKH
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetBuildRanges(
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos) {
+    build_range_infos_ = std::move(build_range_infos);
+    return *this;
+}
+
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetType(VkAccelerationStructureTypeKHR type) {
     src_as_->SetType(type);
     dst_as_->SetType(type);
@@ -405,7 +411,8 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vkt::Device
     } else {
         geometries.resize(geometries_.size());
     }
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
+
+    assert(build_range_infos_.size() >= geometries_.size());
     std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(geometries_.size());
     for (size_t i = 0; i < geometries_.size(); ++i) {
         const auto &geometry = geometries_[i];
@@ -414,8 +421,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vkt::Device
         } else {
             geometries[i] = geometry.GetVkObj();
         }
-        range_infos[i] = geometry.GetFullBuildRange();
-        pRange_infos[i] = &range_infos[i];
+        pRange_infos[i] = &build_range_infos_[i];
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
     if (use_ppGeometries) {
@@ -541,6 +547,15 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(VkDev
     vk_info_.pGeometries = nullptr;
 
     return size_info;
+}
+
+std::vector<VkAccelerationStructureBuildRangeInfoKHR> BuildGeometryInfoKHR::GetDefaultBuildRangeInfos() {
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
+    for (const auto [i, geometry] : vvl::enumerate(geometries_.data(), geometries_.size())) {
+        range_infos[i] = geometry->GetFullBuildRange();
+    }
+
+    return range_infos;
 }
 
 void BuildGeometryInfoKHR::BuildCommon(const vkt::Device &device, bool is_on_device_build, bool use_ppGeometries /*= true*/) {
@@ -854,6 +869,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Devic
             break;
     }
     out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetDefaultBuildRangeInfos());
 
     // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
     out_build_info.SetSrcAS(AccelStructNull());
@@ -890,6 +906,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device 
             break;
     }
     out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetDefaultBuildRangeInfos());
 
     // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
     out_build_info.SetSrcAS(AccelStructNull());
@@ -918,6 +935,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(
     std::vector<GeometryKHR> geometries;
     geometries.emplace_back(GeometrySimpleDeviceInstance(device, out_build_info.GetBottomLevelAS()->GetDstAS()->handle()));
     out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetDefaultBuildRangeInfos());
 
     // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
     out_build_info.SetSrcAS(AccelStructNull());
@@ -948,6 +966,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device &de
     std::vector<GeometryKHR> geometries;
     geometries.emplace_back(GeometrySimpleHostInstance(out_build_info.GetBottomLevelAS()->GetDstAS()->handle()));
     out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetDefaultBuildRangeInfos());
 
     // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
     out_build_info.SetSrcAS(AccelStructNull());

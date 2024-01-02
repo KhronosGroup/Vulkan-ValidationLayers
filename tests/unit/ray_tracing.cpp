@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2631,4 +2631,45 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     m_device->wait();
+}
+
+TEST_F(NegativeRayTracing, UpdatedFirstVertex) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "VkAccelerationStructureBuildRangeInfoKHR::firstVertex");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+
+    m_commandBuffer->begin();
+
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetSrcAS(build_info.GetDstAS());
+
+    // Create custom build ranges, with the default valid as a template, then somehow supply it?
+    auto build_range_infos = build_info.GetDefaultBuildRangeInfos();
+    build_range_infos[0].firstVertex = 666;
+    build_info.SetBuildRanges(build_range_infos);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770");
+    build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
 }
