@@ -155,6 +155,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetFlags(VkBuildAccelerationStructureFlagsKHR flags);
     BuildGeometryInfoKHR& AddFlags(VkBuildAccelerationStructureFlagsKHR flags);
     BuildGeometryInfoKHR& SetGeometries(std::vector<GeometryKHR>&& geometries);
+    BuildGeometryInfoKHR& SetBuildRanges(std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos);
     // Using the same pointers for src and dst is supported
     BuildGeometryInfoKHR& SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as);
     BuildGeometryInfoKHR& SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as);
@@ -183,6 +184,7 @@ class BuildGeometryInfoKHR {
     auto& GetBottomLevelAS() { return blas_; }
     const auto& GetScratchBuffer() const { return device_scratch_; }
     VkAccelerationStructureBuildSizesInfoKHR GetSizeInfo(VkDevice device, bool use_ppGeometries = true);
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> GetDefaultBuildRangeInfos();
 
   private:
     friend void BuildAccelerationStructuresKHR(const vkt::Device& device, VkCommandBuffer cmd_buffer,
@@ -201,6 +203,7 @@ class BuildGeometryInfoKHR {
     std::unique_ptr<uint8_t[]> host_scratch_;
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
     std::unique_ptr<vkt::Buffer> indirect_buffer_;
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos_;
 };
 
 // Helper functions
