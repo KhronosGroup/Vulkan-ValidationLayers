@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -200,6 +200,7 @@ class BuildGeometryInfoKHR {
     std::shared_ptr<vkt::Buffer> device_scratch_;
     std::unique_ptr<uint8_t[]> host_scratch_;
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
+    std::unique_ptr<vkt::Buffer> indirect_buffer_;
 };
 
 // Helper functions
