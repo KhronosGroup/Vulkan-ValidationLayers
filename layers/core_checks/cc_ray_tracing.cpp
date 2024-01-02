@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -489,7 +489,8 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
     return skip;
 }
 
-bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccelerationStructureBuildGeometryInfoKHR &info,
+bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_i, const VkAccelerationStructureBuildGeometryInfoKHR &info,
+                                             const VkAccelerationStructureBuildRangeInfoKHR *geometry_build_ranges,
                                              const Location &loc) const {
     bool skip = false;
     const auto geometry_count = info.geometryCount;
@@ -530,25 +531,45 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
     }
 
     if (geom_accessor) {
-        for (uint32_t geom_index = 0; geom_index < geometry_count; ++geom_index) {
-            const Location geom_loc = loc.dot(Field::pGeometries, geom_index);
-            const auto &geom_data = geom_accessor(geom_index);
+        const Location pp_build_range_info_loc(loc.function, Field::ppBuildRangeInfos, info_i);
+        for (uint32_t geom_i = 0; geom_i < geometry_count; ++geom_i) {
+            const Location p_geom_loc = loc.dot(Field::pGeometries, geom_i);
+            const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
+            const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
+            const auto &geom_data = geom_accessor(geom_i);
             switch (geom_data.geometryType) {
                 case VK_GEOMETRY_TYPE_TRIANGLES_KHR:  // == VK_GEOMETRY_TYPE_TRIANGLES_NV
-                    skip |= buffer_check(geom_index, geom_data.geometry.triangles.vertexData,
-                                         geom_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::vertexData));
-                    skip |= buffer_check(geom_index, geom_data.geometry.triangles.indexData,
-                                         geom_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::indexData));
-                    skip |= buffer_check(geom_index, geom_data.geometry.triangles.transformData,
-                                         geom_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::transformData));
+                {
+                    skip |= buffer_check(geom_i, geom_data.geometry.triangles.vertexData,
+                                         p_geom_geom_triangles_loc.dot(Field::vertexData));
+                    skip |= buffer_check(geom_i, geom_data.geometry.triangles.indexData,
+                                         p_geom_geom_triangles_loc.dot(Field::indexData));
+                    skip |= buffer_check(geom_i, geom_data.geometry.triangles.transformData,
+                                         p_geom_geom_triangles_loc.dot(Field::transformData));
+
+                    if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                        if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
+                            const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
+                            if (recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
+                                const LogObjectList objlist(info.srcAccelerationStructure);
+                                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770", objlist,
+                                                 p_geom_loc,
+                                                 " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
+                                                 "], but this build range has its firstVertex member set to (%" PRIu32
+                                                 ") when it was last specified as (%" PRIu32 ").",
+                                                 pp_build_range_info_loc.Fields().c_str(), geom_i,
+                                                 geometry_build_ranges[geom_i].firstVertex, recorded_first_vertex);
+                            }
+                        }
+                    }
                     break;
+                }
                 case VK_GEOMETRY_TYPE_INSTANCES_KHR:
-                    skip |= buffer_check(geom_index, geom_data.geometry.instances.data,
-                                         geom_loc.dot(Field::geometry).dot(Field::instances).dot(Field::data));
+                    skip |= buffer_check(geom_i, geom_data.geometry.instances.data,
+                                         p_geom_geom_loc.dot(Field::instances).dot(Field::data));
                     break;
                 case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
-                    skip |= buffer_check(geom_index, geom_data.geometry.aabbs.data,
-                                         geom_loc.dot(Field::geometry).dot(Field::aabbs).dot(Field::data));
+                    skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
                     break;
                 default:
                     // no-op
@@ -762,7 +783,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
             }
         }
 
-        skip |= ValidateAccelerationBuffers(info_i, *info, info_loc);
+        skip |= ValidateAccelerationBuffers(info_i, *info, ppBuildRangeInfos[info_i], info_loc);
 
         skip |= ValidateAccelerationStructuresMemoryAlisasing(commandBuffer, infoCount, pInfos, info_i, error_obj);
     }

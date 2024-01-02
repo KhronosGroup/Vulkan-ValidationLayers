@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,6 +76,12 @@ class AccelerationStructureKHR : public StateObject {
         : StateObject(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
+    virtual ~AccelerationStructureKHR() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
+
     VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
 
     void LinkChildNodes() override {
@@ -91,17 +97,18 @@ class AccelerationStructureKHR : public StateObject {
         StateObject::Destroy();
     }
 
-    virtual ~AccelerationStructureKHR() {
-        if (!Destroyed()) {
-            Destroy();
-        }
-    }
-
     void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, const bool is_host,
                const VkAccelerationStructureBuildRangeInfoKHR *build_range_info) {
         built = true;
         build_info_khr.initialize(pInfo, is_host, build_range_info);
     };
+
+    void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR *p_build_range_infos, uint32_t geometry_count) {
+        build_range_infos.resize(geometry_count);
+        for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count)) {
+            build_range_infos[i] = *build_range;
+        }
+    }
 
     const safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
     safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
@@ -109,6 +116,7 @@ class AccelerationStructureKHR : public StateObject {
     uint64_t opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state;
     VkDeviceAddress address;
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos;
 };
 
 }  // namespace vvl

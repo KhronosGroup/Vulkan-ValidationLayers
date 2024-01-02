@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -2417,8 +2417,12 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
         return;
     }
     cb_state->RecordCmd(record_obj.location.function);
-    for (uint32_t i = 0; i < infoCount; i++) {
-        RecordDeviceAccelerationStructureBuildInfo(*cb_state, pInfos[i]);
+    for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
+        RecordDeviceAccelerationStructureBuildInfo(*cb_state, *info);
+        auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info->dstAccelerationStructure);
+        if (dst_as_state) {
+            dst_as_state->UpdateBuildRangeInfos(ppBuildRangeInfos[i], info->geometryCount);
+        }
     }
     cb_state->has_build_as_cmd = true;
 }
@@ -2434,6 +2438,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     cb_state->RecordCmd(record_obj.location.function);
     for (uint32_t i = 0; i < infoCount; i++) {
         RecordDeviceAccelerationStructureBuildInfo(*cb_state, pInfos[i]);
+
         // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461
         // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a command
         // buffer
