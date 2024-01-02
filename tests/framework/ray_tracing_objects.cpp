@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -437,23 +437,41 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vkt::Device
 }
 
 void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(const vkt::Device &device, VkCommandBuffer cmd_buffer) {
+    // If vk_info_count is >1, cannot pIndirectDeviceAddresses, pIndirectStrides and ppMaxPrimitiveCounts like done here
+    assert(vk_info_count_ <= 1);  
+
+    vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
+
+    indirect_buffer_ = std::make_unique<vkt::Buffer>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
+    indirect_buffer_->init(device, 1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
+                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+
+    auto *ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR *>(indirect_buffer_->memory().map());
+  
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
 
     pGeometries.reserve(geometries_.size());
-    for (size_t i = 0; i < geometries_.size(); ++i) {
-        const auto &geometry = geometries_[i];
-        pGeometries[i] = &geometry.GetVkObj();
+    for (const auto [i, geometry] : vvl::enumerate(geometries_.data(), geometries_.size())) {
+        pGeometries[i] = &geometry->GetVkObj();
+        ranges_info[i] = geometry->GetFullBuildRange();
     }
-    vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
     vk_info_.ppGeometries = pGeometries.data();
 
-    VkDeviceAddress indirect_device_addresses{};
-    uint32_t indirect_strides = sizeof(VkAccelerationStructureBuildRangeInfoKHR);
-    uint32_t max_prim_counts[1] = {1};
+    indirect_buffer_->memory().unmap();
 
-    vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_device_addresses,
-                                                  &indirect_strides, reinterpret_cast<uint32_t **>(&max_prim_counts));
+    const uint32_t indirect_strides = sizeof(VkAccelerationStructureBuildRangeInfoKHR);
+    std::vector<uint32_t> p_max_primitive_counts(vk_info_.geometryCount, 1);
+    const uint32_t *pp_max_primitive_counts = p_max_primitive_counts.data();
+
+    const VkDeviceAddress indirect_device_address = indirect_buffer_->address();
+
+    vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_device_address,
+                                                  &indirect_strides, &pp_max_primitive_counts);
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
