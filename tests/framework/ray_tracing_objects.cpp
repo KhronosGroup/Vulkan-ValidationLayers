@@ -13,6 +13,8 @@
 
 #include "utils/vk_layer_utils.h"
 
+#include <iostream>
+
 namespace vkt {
 namespace as {
 
@@ -336,6 +338,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetType(VkAccelerationStructureTypeK
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetBuildType(VkAccelerationStructureBuildTypeKHR build_type) {
+    build_type_ = build_type;
+    return *this;
+}
+
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetMode(VkBuildAccelerationStructureModeKHR mode) {
     vk_info_.mode = mode;
     return *this;
@@ -399,6 +406,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeferredOp(VkDeferredOperationKHR
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetUpdateDstAccelStructSizeBeforeBuild(bool update_before_build) {
+    update_dst_as_size_before_build_ = update_before_build;
+    return *this;
+}
+
 void BuildGeometryInfoKHR::BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     if (blas_) {
         blas_->BuildCmdBuffer(cmd_buffer, use_ppGeometries);
@@ -423,10 +435,19 @@ void BuildGeometryInfoKHR::BuildHost() {
     VkBuildAccelerationStructuresKHR();
 }
 
+void BuildGeometryInfoKHR::UpdateDstAccelStructSize() {
+    const VkAccelerationStructureBuildSizesInfoKHR size_info = GetSizeInfo();
+    dst_as_->SetSize(size_info.accelerationStructureSize);
+}
+
 void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeometries /*= true*/) {
     // Build geometries
     for (auto &geometry : geometries_) {
         geometry.Build();
+    }
+
+    if (update_dst_as_size_before_build_ && !dst_as_->IsNull() && !dst_as_->IsBuilt()) {
+        UpdateDstAccelStructSize();
     }
 
     // Build source and destination acceleration structures
@@ -606,6 +627,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
     } else {
         geometries.reserve(geometries_.size());
     }
+
     for (const auto &geometry : geometries_) {
         primitives_count += geometry.GetFullBuildRange().primitiveCount;
         if (use_ppGeometries) {
@@ -623,8 +645,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
 
     // Get VkAccelerationStructureBuildSizesInfoKHR using this->vk_info_
     VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
-    vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &vk_info_,
-                                              &primitives_count, &size_info);
+    vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, &primitives_count, &size_info);
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
@@ -875,6 +896,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Devic
     BuildGeometryInfoKHR out_build_info(&device);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
     out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
 
     // Set geometry
@@ -899,6 +921,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Devic
     out_build_info.SetSrcAS(AccelStructNull(device));
     auto dstAsSize = out_build_info.GetSizeInfo().accelerationStructureSize;
     out_build_info.SetDstAS(AccelStructSimpleOnDeviceBottomLevel(device, dstAsSize));
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
 
     out_build_info.SetInfoCount(1);
     out_build_info.SetNullInfos(false);
@@ -912,6 +935,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device 
     BuildGeometryInfoKHR out_build_info(&device);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR);
     out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
 
     // Set geometry
@@ -936,6 +960,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device 
     out_build_info.SetSrcAS(AccelStructNull(device));
     auto dstAsSize = out_build_info.GetSizeInfo().accelerationStructureSize;
     out_build_info.SetDstAS(AccelStructSimpleOnHostBottomLevel(device, dstAsSize));
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
 
     out_build_info.SetInfoCount(1);
     out_build_info.SetNullInfos(false);
@@ -949,6 +974,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(
     BuildGeometryInfoKHR out_build_info(&device);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
     out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
 
     // Set bottom level acceleration structure
@@ -967,6 +993,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(
     auto dst_as = AccelStructSimpleOnDeviceBottomLevel(device, dstAsSize);
     dst_as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
     out_build_info.SetDstAS(std::move(dst_as));
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
 
     out_build_info.SetInfoCount(1);
     out_build_info.SetNullInfos(false);
@@ -980,6 +1007,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device &de
     BuildGeometryInfoKHR out_build_info(&device);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR);
     out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
 
     // Set bottom level acceleration structure
@@ -998,6 +1026,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device &de
     auto dst_as = AccelStructSimpleOnHostBottomLevel(device, dstAsSize);
     dst_as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
     out_build_info.SetDstAS(std::move(dst_as));
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
 
     out_build_info.SetInfoCount(1);
     out_build_info.SetNullInfos(false);
