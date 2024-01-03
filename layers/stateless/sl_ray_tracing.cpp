@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1240,7 +1240,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
         for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
             if (info->pGeometries) {
                 const VkAccelerationStructureGeometryKHR &as_geometry = info->pGeometries[geom_i];
-                const Location geometry_loc = error_obj.location.dot(Field::pGeometries, geom_i);
+                const Location geometry_loc = info_loc.dot(Field::pGeometries, geom_i);
                 if (as_geometry.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     if (as_geometry.geometry.instances.arrayOfPointers == VK_TRUE) {
                         if (SafeModulo(as_geometry.geometry.instances.data.deviceAddress, 8) != 0) {
@@ -1332,7 +1332,12 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                 }
             }
         }
+
+        skip |= ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
+                              info->geometryCount, &ppBuildRangeInfos[info_i], false, true, kVUIDUndefined,
+                              "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-03676");
     }
+
     return skip;
 }
 
