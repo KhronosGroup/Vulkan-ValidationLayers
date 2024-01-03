@@ -741,21 +741,59 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                          info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") has no buffer is associated with it.", info.scratchData.deviceAddress);
     } else {
-        const bool no_valid_buffer_found = std::none_of(buffer_states.begin(), buffer_states.end(),
-                                                        [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
-                                                            return buffer_state->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-                                                        });
-        if (no_valid_buffer_found) {
-            LogObjectList objlist(device);
-            for (const auto &buffer_state : buffer_states) {
-                objlist.add(buffer_state->Handle());
-            }
-            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674", objlist,
-                             info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                             "(0x%" PRIx64
-                             ") has no buffer is associated with it that was created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
-                             info.scratchData.deviceAddress);
-        }
+        const VkDeviceSize scratch_size = rt::ComputeScratchSize(device, info, geometry_build_ranges);
+        const sparse_container::range<VkDeviceSize> scratch_address_range(info.scratchData.deviceAddress,
+                                                                          info.scratchData.deviceAddress + scratch_size);
+        const char *scratch_address_range_vuid = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
+                                                     ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671"
+                                                     : "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672";
+
+        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+        BufferAddressValidation<5> buffer_address_validator = {{{
+            {"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803", LogObjectList(cmd_buffer),
+             [this, info_loc, cmd_buffer](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                 if (!out_error_msg) {
+                     return !buffer_state->sparse && buffer_state->IsMemoryBound();
+                 } else {
+                     return ValidateMemoryIsBoundToBuffer(cmd_buffer, *buffer_state,
+                                                          info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                                                          "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803");
+                 }
+             }},
+
+            {"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674", LogObjectList(cmd_buffer),
+             [](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                 if (!(buffer_state->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+                     if (out_error_msg) {
+                         *out_error_msg += "buffer usage is " + string_VkBufferUsageFlags2KHR(buffer_state->usage) + '\n';
+                     }
+                     return false;
+                 }
+                 return true;
+             },
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag:"; }},
+
+            {scratch_address_range_vuid, LogObjectList(cmd_buffer),
+             [scratch_address_range](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                 const sparse_container::range<VkDeviceSize> buffer_address_range = buffer_state->DeviceAddressRange();
+
+                 if (!buffer_address_range.includes(scratch_address_range)) {
+                     if (out_error_msg) {
+                         *out_error_msg += "buffer address range is " + string_range(buffer_address_range) + '\n';
+                     }
+                     return false;
+                 }
+                 return true;
+             },
+             [scratch_address_range]() {
+                 return "The following buffers have an address range that does not include scratch address range " +
+                        string_range(scratch_address_range) + ":";
+             }},
+
+        }}};
+
+        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+            *this, buffer_states, info_loc.dot(Field::scratchData).dot(Field::deviceAddress), info.scratchData.deviceAddress);
     }
 
     return skip;
@@ -1850,7 +1888,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              },
              []() {
                  return "The following buffers have not been created with the VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR "
-                        "usage flag:\n";
+                        "usage flag:";
              }},
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04631", LogObjectList(commandBuffer),
@@ -1868,7 +1906,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              },
              [table_loc, requested_range_string = string_range_hex(requested_range)]() {
                  return "The following buffers do not include " + table_loc.Fields() + " buffer device address range " +
-                        requested_range_string + ":\n";
+                        requested_range_string + ':';
              }},
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04632", LogObjectList(commandBuffer),
@@ -1883,7 +1921,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              },
              [table_loc, &binding_table]() {
                  return "The following buffers have a size inferior to " + table_loc.Fields() + "->stride (" +
-                        std::to_string(binding_table.stride) + "):\n";
+                        std::to_string(binding_table.stride) + "):";
                  ;
              }},
         }}};
