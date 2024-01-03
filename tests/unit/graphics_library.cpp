@@ -2338,3 +2338,60 @@ TEST_F(NegativeGraphicsLibrary, NullDSLLinking) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGraphicsLibrary, NullLayoutPreRasterFragShader) {
+    TEST_DESCRIPTION("Null set layout when GPL flags are both Pre-Raster and Frag-Shader");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, nullptr});
+
+    VkGraphicsPipelineLibraryCreateInfoEXT gpl_info = vku::InitStructHelper();
+    gpl_info.flags =
+        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_ = vku::InitStructHelper(&gpl_info);
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    pipe.gp_ci_.pViewportState = &pipe.vp_state_ci_;
+    pipe.gp_ci_.pRasterizationState = &pipe.rs_state_ci_;
+    pipe.gp_ci_.pMultisampleState = &pipe.pipe_ms_state_ci_;
+    pipe.gp_ci_.renderPass = renderPass();
+    pipe.gp_ci_.subpass = 0;
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06682");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06679");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, NullLayoutPreRasterDiscardEnable) {
+    TEST_DESCRIPTION("Null set layout when GPL flags is both Pre-Raster and rasterizerDiscardEnable is true");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, nullptr});
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06683");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
