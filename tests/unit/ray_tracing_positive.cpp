@@ -796,3 +796,51 @@ TEST_F(PositiveRayTracing, CmdBuildAccelerationStructuresIndirect) {
     build_info.BuildCmdBufferIndirect(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
+    TEST_DESCRIPTION(
+        "Have two scratch buffers bound to the same memory, with one of them being not big enough for an acceleration structure "
+        "build, but the other one is. If the buffer addresses of those buffers are the same, 03671 should not fire");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    auto size_info = build_info.GetSizeInfo(*m_device);
+    if (size_info.buildScratchSize <= 64) {
+        GTEST_SKIP() << "Need a big scratch size, skipping test.";
+    }
+
+    // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 4096;
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    VkBufferCreateInfo small_buffer_ci = vku::InitStructHelper();
+    small_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    small_buffer_ci.size = 64;
+    small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    auto small_scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
+    small_scratch_buffer->bind_memory(buffer_memory, 0);
+
+    small_buffer_ci.size = 4096;
+    auto big_scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
+    big_scratch_buffer->bind_memory(buffer_memory, 0);
+    const VkDeviceAddress big_scratch_address = big_scratch_buffer->address();
+    if (big_scratch_address != small_scratch_buffer->address()) {
+        GTEST_SKIP() << "Binding two buffers to the same memory does not yield identical buffer addresses, skipping test.";
+    }
+
+    m_commandBuffer->begin();
+    build_info.SetScratchBuffer(small_scratch_buffer);
+    build_info.BuildCmdBuffer(*m_commandBuffer);
+    m_commandBuffer->end();
+}

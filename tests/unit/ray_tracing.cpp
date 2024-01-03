@@ -335,34 +335,34 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorUpdateAfterBindAccelerationStruc
         GTEST_SKIP() << "maxPerStageDescriptorUpdateAfterBindAccelerationStructures is 1";
     }
 
-            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-            dslb_vec.reserve(max_accel_structs);
+    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+    dslb_vec.reserve(max_accel_structs);
 
-            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
-                VkDescriptorSetLayoutBinding dslb = {};
-                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-                dslb.descriptorCount = 1;
-                dslb.stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-                dslb.binding = i;
-                dslb_vec.push_back(dslb);
-            }
+    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+        VkDescriptorSetLayoutBinding dslb = {};
+        dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        dslb.descriptorCount = 1;
+        dslb.stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        dslb.binding = i;
+        dslb_vec.push_back(dslb);
+    }
 
-            VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-            ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-            ds_layout_ci.bindingCount = dslb_vec.size();
-            ds_layout_ci.pBindings = dslb_vec.data();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.pBindings = dslb_vec.data();
 
-            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-            ASSERT_TRUE(ds_layout.initialized());
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    ASSERT_TRUE(ds_layout.initialized());
 
-            VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-            pipeline_layout_ci.setLayoutCount = 1;
-            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
-            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-            m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRayTracing, MaxDescriptorSetAccelerationStructures) {
@@ -386,35 +386,35 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetAccelerationStructures) {
         GTEST_SKIP() << "maxDescriptorSetAccelerationStructures is 1";
     }
 
-            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-            dslb_vec.reserve(max_accel_structs);
+    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+    dslb_vec.reserve(max_accel_structs);
 
-            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
-                VkDescriptorSetLayoutBinding dslb = {};
-                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-                dslb.descriptorCount = 1;
-                dslb.stageFlags = (i % 2) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : VK_SHADER_STAGE_CALLABLE_BIT_KHR;
-                dslb.binding = i;
-                dslb_vec.push_back(dslb);
-            }
+    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+        VkDescriptorSetLayoutBinding dslb = {};
+        dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        dslb.descriptorCount = 1;
+        dslb.stageFlags = (i % 2) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+        dslb.binding = i;
+        dslb_vec.push_back(dslb);
+    }
 
-            VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-            ds_layout_ci.bindingCount = dslb_vec.size();
-            ds_layout_ci.pBindings = dslb_vec.data();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.pBindings = dslb_vec.data();
 
-            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-            ASSERT_TRUE(ds_layout.initialized());
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    ASSERT_TRUE(ds_layout.initialized());
 
-            VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-            pipeline_layout_ci.setLayoutCount = 1;
-            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
-            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-            m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRayTracing, MaxDescriptorSetUpdateAfterBindAccelerationStructures) {
@@ -438,34 +438,34 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetUpdateAfterBindAccelerationStructures
         GTEST_SKIP() << "maxDescriptorSetUpdateAfterBindAccelerationStructures is 1";
     }
 
-            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-            dslb_vec.reserve(max_accel_structs);
+    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+    dslb_vec.reserve(max_accel_structs);
 
-            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
-                VkDescriptorSetLayoutBinding dslb = {};
-                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-                dslb.descriptorCount = 1;
-                dslb.stageFlags = (i % 2) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : VK_SHADER_STAGE_CALLABLE_BIT_KHR;
-                dslb.binding = i;
-                dslb_vec.push_back(dslb);
-            }
+    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+        VkDescriptorSetLayoutBinding dslb = {};
+        dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        dslb.descriptorCount = 1;
+        dslb.stageFlags = (i % 2) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+        dslb.binding = i;
+        dslb_vec.push_back(dslb);
+    }
 
-            VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-            ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-            ds_layout_ci.bindingCount = dslb_vec.size();
-            ds_layout_ci.pBindings = dslb_vec.data();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.pBindings = dslb_vec.data();
 
-            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-            ASSERT_TRUE(ds_layout.initialized());
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    ASSERT_TRUE(ds_layout.initialized());
 
-            VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-            pipeline_layout_ci.setLayoutCount = 1;
-            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-            m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
@@ -1422,8 +1422,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
 
     // dstAccelerationStructure == VK_NULL_HANDLE
-    {
-        // Command buffer build
+    {  // Command buffer build
         {
             auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull(*m_device));
@@ -2846,7 +2845,128 @@ TEST_F(NegativeRayTracing, UpdatedFirstVertex) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770");
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
 
+TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpBuild) {
+    TEST_DESCRIPTION("Use a scratch buffer that is too small for an acceleration structure build operation");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    auto size_info = build_info.GetSizeInfo(*m_device);
+    if (size_info.buildScratchSize <= 64) {
+        GTEST_SKIP() << "Need a big scratch size, skipping test.";
+    }
+
+    // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 4096;
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    VkBufferCreateInfo small_buffer_ci = vku::InitStructHelper();
+    small_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    small_buffer_ci.size = 64;
+    small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
+    scratch_buffer->bind_memory(buffer_memory, 0);
+
+    m_commandBuffer->begin();
+    build_info.SetScratchBuffer(scratch_buffer);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671");
+    build_info.BuildCmdBuffer(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpUpdate) {
+    TEST_DESCRIPTION("Use a scratch buffer that is too small for an acceleration structure update operation");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    auto size_info = build_info.GetSizeInfo();
+    if (size_info.updateScratchSize <= 64) {
+        GTEST_SKIP() << "Update scratch size too small, skipping test.";
+    }
+
+    // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
+    auto scratch_buffer =
+        std::make_shared<vkt::Buffer>(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+
+    m_commandBuffer->begin();
+    build_info.BuildCmdBuffer(*m_commandBuffer);
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+
+    vk::DeviceWaitIdle(*m_device);
+
+    m_commandBuffer->begin();
+    build_info.SetScratchBuffer(scratch_buffer);
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetSrcAS(build_info.GetDstAS());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672");
+    build_info.BuildCmdBuffer(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
+    TEST_DESCRIPTION("Use a scratch buffer whose memory has been destroyed for an acceleration structure build operation");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 4096;
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    VkBufferCreateInfo small_buffer_ci = vku::InitStructHelper();
+    small_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    small_buffer_ci.size = 4096;
+    small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
+    scratch_buffer->bind_memory(buffer_memory, 0);
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    m_commandBuffer->begin();
+    build_info.SetScratchBuffer(scratch_buffer);
+    build_info.SetupBuild(*m_device, true);
+
+    buffer_memory.destroy();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803");
+    build_info.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
 
