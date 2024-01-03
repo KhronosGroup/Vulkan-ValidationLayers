@@ -492,8 +492,9 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
 bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
                                              const VkAccelerationStructureBuildGeometryInfoKHR &info,
                                              const VkAccelerationStructureBuildRangeInfoKHR *geometry_build_ranges,
-                                             const Location &loc) const {
+                                             const Location &info_loc) const {
     bool skip = false;
+
     const auto geometry_count = info.geometryCount;
     const auto *p_geometries = info.pGeometries;
     const auto *const *const pp_geometries = info.ppGeometries;
@@ -532,9 +533,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
     }
 
     if (geom_accessor) {
-        const Location pp_build_range_info_loc(loc.function, Field::ppBuildRangeInfos, info_i);
+        const Location pp_build_range_info_loc(info_loc.function, Field::ppBuildRangeInfos, info_i);
         for (uint32_t geom_i = 0; geom_i < geometry_count; ++geom_i) {
-            const Location p_geom_loc = loc.dot(pp_geometries ? Field::pGeometries : Field::ppGeometries, geom_i);
+            const Location p_geom_loc = info_loc.dot(pp_geometries ? Field::pGeometries : Field::ppGeometries, geom_i);
             const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
             const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
             const auto &geom_data = geom_accessor(geom_i);
@@ -675,10 +676,23 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         }
     }
 
+    if (const auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
+        const VkDeviceSize as_minimum_size = rt::ComputeAccelerationStructureSize(device, info, geometry_build_ranges);
+        if (dst_as_state->create_infoKHR.size < as_minimum_size) {
+            const LogObjectList objlist(cmd_buffer, info.dstAccelerationStructure);
+            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03675", objlist,
+                             info_loc.dot(Field::dstAccelerationStructure),
+                             " was created with size (%" PRIu64
+                             "), but an acceleration structure build with corresponding ppBuildRangeInfos[%" PRIu32
+                             "] requires a minimum size of (%" PRIu64 ").",
+                             dst_as_state->create_infoKHR.size, info_i, as_minimum_size);
+        }
+    }
+
     const auto buffer_states = GetBuffersByAddress(info.scratchData.deviceAddress);
     if (buffer_states.empty()) {
         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802", device,
-                         loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                         info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") has no buffer is associated with it.", info.scratchData.deviceAddress);
     } else {
         const bool no_valid_buffer_found = std::none_of(buffer_states.begin(), buffer_states.end(),
@@ -691,7 +705,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 objlist.add(buffer_state->Handle());
             }
             skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674", objlist,
-                             loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                             info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
                              "(0x%" PRIx64
                              ") has no buffer is associated with it that was created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
                              info.scratchData.deviceAddress);
