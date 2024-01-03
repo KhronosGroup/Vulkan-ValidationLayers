@@ -2381,7 +2381,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  },
                  [binding_usage = bindingInfo.usage, i]() {
                      return "The following buffers have a usage that does not match pBindingInfos[" + std::to_string(i) +
-                            "].usage (" + string_VkBufferUsageFlags2KHR(binding_usage) + "):\n";
+                            "].usage (" + string_VkBufferUsageFlags2KHR(binding_usage) + "):";
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122", LogObjectList(device),
@@ -2398,9 +2398,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      }
                      return true;
                  },
-                 []() {
-                     return "The following buffers were not created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT:\n";
-                 }},
+                 []() { return "The following buffers were not created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT:"; }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08123", LogObjectList(device),
                  [binding_usage = bindingInfo.usage, &num_resource_buffers](const BUFFER_STATE_PTR &buffer_state,
@@ -2417,7 +2415,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      return true;
                  },
                  []() {
-                     return "The following buffers were not created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT:\n";
+                     return "The following buffers were not created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT:";
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124", LogObjectList(device),
@@ -2436,7 +2434,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  },
                  []() {
                      return "The following buffers were not created with "
-                            "VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT:\n";
+                            "VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT:";
                  }},
             }}};
 

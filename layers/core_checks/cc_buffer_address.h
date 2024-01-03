@@ -202,7 +202,7 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
         error_msg_beginning += "(";
         error_msg_beginning += address_string;
         error_msg_beginning +=
-            ") has no valid buffer associated to it. "
+            ") has no buffer associated to it such that valid usage passes. "
             "At least one buffer associated to this device address must be valid. ";
     }
 
@@ -234,7 +234,7 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
                     error_msg += error_msg_header_suffix_func();
                 }
                 const auto invalid_buffer_index = error_objlist.size() - 1;
-                error_msg += "Object " + std::to_string(invalid_buffer_index) + ": " + buffer_error + '\n';
+                error_msg += "\nObject " + std::to_string(invalid_buffer_index) + ": " + buffer_error;
             }
         }
     }
