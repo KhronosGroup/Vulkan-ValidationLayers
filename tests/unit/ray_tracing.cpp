@@ -2588,6 +2588,74 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureMode) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracing, InstanceBufferBadAddress) {
+    TEST_DESCRIPTION("Use an invalid address for an instance buffer.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto bot_lvl_as =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_commandBuffer->begin();
+    bot_lvl_as->BuildCmdBuffer(*m_commandBuffer);
+    m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+
+    auto top_lvl_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, bot_lvl_as);
+
+    m_commandBuffer->begin();
+    top_lvl_as.SetupBuild(*m_device, true);
+
+    top_lvl_as.GetGeometries()[0].SetInstanceDeviceAddress(0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813");
+    top_lvl_as.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
+    TEST_DESCRIPTION("Use an instance buffer whose memory has been destroyed for an acceleration structure build operation.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto bot_lvl_as =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_commandBuffer->begin();
+    bot_lvl_as->BuildCmdBuffer(*m_commandBuffer);
+    m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+
+    auto top_lvl_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, bot_lvl_as);
+
+    m_commandBuffer->begin();
+    top_lvl_as.SetupBuild(*m_device, true);
+
+    top_lvl_as.GetGeometries()[0].GetInstance().buffer.memory().destroy();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814");
+    top_lvl_as.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     TEST_DESCRIPTION(
         "Setup a ray tracing pipeline and acceleration structure with a dynamic ray tracing stack size, "

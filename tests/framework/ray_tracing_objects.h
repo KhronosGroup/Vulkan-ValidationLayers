@@ -85,6 +85,7 @@ class GeometryKHR {
     // Instance
     GeometryKHR& SetInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR bottom_level_as);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR bottom_level_as);
+    GeometryKHR& SetInstanceDeviceAddress(VkDeviceAddress address);
 
     GeometryKHR& Build();
 
@@ -92,6 +93,7 @@ class GeometryKHR {
     VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
     const auto& GetTriangles() const { return triangles_; }
     const auto& GetAABBs() const { return aabbs_; }
+    auto& GetInstance() { return instance_; }
 
   private:
     VkAccelerationStructureGeometryKHR vk_obj_;
@@ -170,10 +172,14 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetDeferredOp(VkDeferredOperationKHR deferred_op);
 
     // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
-    // then one the build acceleration structure function.
+    // then will build/update an acceleration structure.
     void BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries = true);
     void BuildCmdBufferIndirect(VkCommandBuffer cmd_buffer);
     void BuildHost();
+
+    void SetupBuild(bool is_on_device_build, bool use_ppGeometries = true);
+
+    // These will only setup the geometries lists and the pertaining build ranges
     void VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, bool use_ppGeometries = true);
     // TODO - indirect build not fully implemented, only cared about having a valid call at time of writing
     void VkCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer cmd_buffer);
@@ -190,8 +196,6 @@ class BuildGeometryInfoKHR {
 
   private:
     friend void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR>& infos);
-
-    void BuildCommon(bool is_on_device_build, bool use_ppGeometries = true);
 
     const vkt::Device* device_;
     uint32_t vk_info_count_ = 1;

@@ -188,6 +188,11 @@ GeometryKHR &GeometryKHR::SetInstanceHostAccelStructRef(VkAccelerationStructureK
     return *this;
 }
 
+GeometryKHR &GeometryKHR::SetInstanceDeviceAddress(VkDeviceAddress address) {
+    vk_obj_.geometry.instances.data.deviceAddress = address;
+    return *this;
+}
+
 GeometryKHR &GeometryKHR::Build() { return *this; }
 
 VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const {
@@ -388,7 +393,7 @@ void BuildGeometryInfoKHR::BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_p
     if (blas_) {
         blas_->BuildCmdBuffer(cmd_buffer, use_ppGeometries);
     }
-    BuildCommon(true);
+    SetupBuild(true);
     VkCmdBuildAccelerationStructuresKHR(cmd_buffer, true);
 }
 
@@ -396,7 +401,7 @@ void BuildGeometryInfoKHR::BuildCmdBufferIndirect(VkCommandBuffer cmd_buffer) {
     if (blas_) {
         blas_->BuildCmdBufferIndirect(cmd_buffer);
     }
-    BuildCommon(true);
+    SetupBuild(true);
     VkCmdBuildAccelerationStructuresIndirectKHR(cmd_buffer);
 }
 
@@ -404,11 +409,75 @@ void BuildGeometryInfoKHR::BuildHost() {
     if (blas_) {
         blas_->BuildHost();
     }
-    BuildCommon(false);
+    SetupBuild(false);
     VkBuildAccelerationStructuresKHR();
 }
 
-void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
+void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeometries /*= true*/) {
+    // Build geometries
+    for (auto &geometry : geometries_) {
+        geometry.Build();
+    }
+
+    // Build source and destination acceleration structures
+    if (!src_as_->IsNull() && !src_as_->IsBuilt()) {
+        src_as_->Build();
+    }
+    vk_info_.srcAccelerationStructure = src_as_->handle();
+    if (!dst_as_->IsNull() && !dst_as_->IsBuilt()) {
+        dst_as_->Build();
+    }
+    vk_info_.dstAccelerationStructure = dst_as_->handle();
+
+    const VkAccelerationStructureBuildSizesInfoKHR size_info = GetSizeInfo(use_ppGeometries);
+    const VkDeviceSize scratch_size =
+        vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR ? size_info.updateScratchSize : size_info.buildScratchSize;
+    if (is_on_device_build) {
+        // Allocate device local scratch buffer
+
+        // Get minAccelerationStructureScratchOffsetAlignment
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR as_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&as_props);
+        vk::GetPhysicalDeviceProperties2(device_->phy(), &phys_dev_props);
+
+        assert(device_scratch_);  // So far null pointers are not supported
+        if (!device_scratch_->initialized()) {
+            VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+            alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
+            if (scratch_size > 0) {
+                device_scratch_->init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
+                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+            }
+        }
+        if (device_scratch_->create_info().size != 0 &&
+            device_scratch_->create_info().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+            const VkDeviceAddress scratch_address = device_scratch_->address();
+            const auto aligned_scratch_address =
+                Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
+            assert(aligned_scratch_address >= scratch_address);
+            assert(aligned_scratch_address < (scratch_address + as_props.minAccelerationStructureScratchOffsetAlignment));
+            vk_info_.scratchData.deviceAddress = aligned_scratch_address + device_scratch_offset_;
+            assert(vk_info_.scratchData.deviceAddress <
+                   (scratch_address +
+                    device_scratch_->create_info().size));  // Note: This assert may prove overly conservative in the future
+        } else {
+            vk_info_.scratchData.deviceAddress = 0;
+        }
+    } else {
+        // Allocate on host scratch buffer
+        host_scratch_ = nullptr;
+        if (scratch_size > 0) {
+            assert(scratch_size < vvl::kU32Max);
+            host_scratch_ = std::make_unique<uint8_t[]>(static_cast<size_t>(scratch_size));
+        }
+        vk_info_.scratchData.hostAddress = host_scratch_.get();
+    }
+}
+
+void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer,
+                                                               bool use_ppGeometries /*= true*/) {
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
@@ -564,70 +633,8 @@ std::vector<VkAccelerationStructureBuildRangeInfoKHR> BuildGeometryInfoKHR::GetD
     return range_infos;
 }
 
-void BuildGeometryInfoKHR::BuildCommon(bool is_on_device_build, bool use_ppGeometries /*= true*/) {
-    // Build geometries
-    for (auto &geometry : geometries_) {
-        geometry.Build();
-    }
-
-    // Build source and destination acceleration structures
-    if (!src_as_->IsNull() && !src_as_->IsBuilt()) {
-        src_as_->Build();
-    }
-    vk_info_.srcAccelerationStructure = src_as_->handle();
-    if (!dst_as_->IsNull() && !dst_as_->IsBuilt()) {
-        dst_as_->Build();
-    }
-    vk_info_.dstAccelerationStructure = dst_as_->handle();
-
-    const VkAccelerationStructureBuildSizesInfoKHR size_info = GetSizeInfo(use_ppGeometries);
-    const VkDeviceSize scratch_size =
-        vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR ? size_info.updateScratchSize : size_info.buildScratchSize;
-    if (is_on_device_build) {
-        // Allocate device local scratch buffer
-
-        // Get minAccelerationStructureScratchOffsetAlignment
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR as_props = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&as_props);
-        vk::GetPhysicalDeviceProperties2(device_->phy(), &phys_dev_props);
-
-        assert(device_scratch_);  // So far null pointers are not supported
-        if (!device_scratch_->initialized()) {
-            VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-            alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-
-            if (scratch_size > 0) {
-                device_scratch_->init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
-                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
-            }
-        }
-        if (device_scratch_->create_info().size != 0 &&
-            device_scratch_->create_info().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-            const VkDeviceAddress scratch_address = device_scratch_->address();
-            const auto aligned_scratch_address =
-                Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
-            assert(aligned_scratch_address >= scratch_address);
-            assert(aligned_scratch_address < (scratch_address + as_props.minAccelerationStructureScratchOffsetAlignment));
-            vk_info_.scratchData.deviceAddress = aligned_scratch_address + device_scratch_offset_;
-            assert(vk_info_.scratchData.deviceAddress <
-                   (scratch_address +
-                    device_scratch_->create_info().size));  // Note: This assert may prove overly conservative in the future
-        } else {
-            vk_info_.scratchData.deviceAddress = 0;
-        }
-    } else {
-        // Allocate on host scratch buffer
-        host_scratch_ = nullptr;
-        if (scratch_size > 0) {
-            assert(scratch_size < vvl::kU32Max);
-            host_scratch_ = std::make_unique<uint8_t[]>(static_cast<size_t>(scratch_size));
-        }
-        vk_info_.scratchData.hostAddress = host_scratch_.get();
-    }
-}
-
-void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR> &infos) {
+void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer,
+                                    std::vector<BuildGeometryInfoKHR> &infos) {
     size_t total_geomertry_count = 0;
 
     for (auto &build_info : infos) {
@@ -651,7 +658,7 @@ void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<Buil
         if (build_info.blas_) {
             build_info.blas_->BuildCmdBuffer(cmd_buffer, true);
         }
-        build_info.BuildCommon(true);
+        build_info.SetupBuild(true);
 
         // Fill current vk_info_ with geometry data in ppGeometries, and get build ranges
         for (size_t i = 0; i < build_info.geometries_.size(); ++i) {
