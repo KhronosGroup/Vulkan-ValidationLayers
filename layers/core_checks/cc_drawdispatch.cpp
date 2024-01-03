@@ -1,8 +1,8 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
- * Modifications Copyright (C) 2020-2023 Advanced Micro Devices, Inc. All rights reserved.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
+ * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1538,7 +1538,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                 if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), ds.bound_descriptor_set->Handle());
                     skip |=
-                        LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, loc,
+                        LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, loc,
                                  "pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
                                  string_VkPipelineBindPoint(bind_point), FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
                     break;
@@ -1547,7 +1547,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
             } else {
                 if (ds.bound_descriptor_buffer.has_value()) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
-                    skip |= LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, loc,
+                    skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, loc,
                                      "pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
                                      " (index=%" PRIu32 " offset=%" PRIu64 ")",
                                      string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
@@ -1629,7 +1629,11 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                 }
             }
         }
-    } else {
+    } else if (last_bound_state.cb_state.descriptor_buffer_binding_info.empty()) {
+        // TODO - VkPipeline have VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT (descriptor_buffer_mode) to know if using descriptor
+        // buffers, but VK_EXT_shader_object has no flag. For now, if the command buffer ever calls vkCmdBindDescriptorBuffersEXT,
+        // we just assume things are bound until we add some form of GPU side tracking for descriptor buffers
+
         std::string error_string;
 
         const auto are_bound_sets_compat = [](uint32_t set, const LastBound &last_bound,
@@ -1645,6 +1649,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
             if (!shader_state) {
                 continue;
             }
+
             if (shader_state && !shader_state->active_slots.empty() &&
                 !are_bound_sets_compat(shader_state->max_active_slot, last_bound_state, *shader_state)) {
                 LogObjectList objlist(cb_state.commandBuffer(), shader_state->shader());

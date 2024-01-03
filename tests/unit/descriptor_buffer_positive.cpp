@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 void DescriptorBufferTest::InitBasicDescriptorBuffer(void* pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -51,10 +52,11 @@ TEST_F(PositiveDescriptorBuffer, BasicUsage) {
 }
 
 TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
-    TEST_DESCRIPTION("Bind descriptor buffer and set descriptor offset.");
+    TEST_DESCRIPTION("Bind descriptor buffer and set descriptor offset then draw.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
     RETURN_IF_SKIP(InitBasicDescriptorBuffer(&buffer_device_address_features));
+    InitRenderTarget();
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
@@ -71,11 +73,21 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
 
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
     const uint32_t index = 0;
     const VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &buffer_binding_info);
     vk::CmdSetDescriptorBufferOffsetsEXT(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
