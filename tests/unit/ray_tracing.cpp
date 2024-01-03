@@ -1426,11 +1426,12 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         // Command buffer build
         {
             auto build_info_null_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull(*m_device));
+            build_info_null_dst.SetDstAS(vkt::as::blueprint::AccelStructNull(*m_device));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
-    build_info_null_dst.BuildCmdBuffer(m_commandBuffer->handle());
-    m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
+            build_info_null_dst.BuildCmdBuffer(m_commandBuffer->handle());
+            m_errorMonitor->VerifyFound();
         }
     }
 
@@ -1492,6 +1493,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Invalid flags
     {
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_FLAG_BITS_MAX_ENUM_KHR);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-flags-parameter");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-flags-parameter");
@@ -1516,6 +1518,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetInfo().sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-sType-sType");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-sType-sType");
         build_info.BuildCmdBuffer(m_commandBuffer->handle());
@@ -1525,12 +1528,14 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR);
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03654");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03654");
         build_info.BuildCmdBuffer(m_commandBuffer->handle());
         m_errorMonitor->VerifyFound();
 
         build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR);
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-parameter");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-parameter");
         build_info.BuildCmdBuffer(m_commandBuffer->handle());
@@ -1601,6 +1606,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetGeometries()[0].SetStride(VkDeviceSize(vvl::kU32Max) + 1);
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819");
         build_info.BuildCmdBuffer(m_commandBuffer->handle());
@@ -1610,6 +1616,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     if (index_type_uint8) {
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_UINT8_EXT);
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
         build_info.BuildCmdBuffer(m_commandBuffer->handle());
@@ -1618,6 +1625,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // ppGeometries and pGeometries both valid pointer
     {
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+        build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
         std::vector<VkAccelerationStructureGeometryKHR> geometries;
         for (const auto &geometry : build_info.GetGeometries()) {
             geometries.emplace_back(geometry.GetVkObj());
@@ -2406,7 +2414,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryFl
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTriaglesFormat) {
+TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesFormat) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
         "vertex format for the triangles");
@@ -2740,6 +2748,29 @@ TEST_F(NegativeRayTracing, UpdatedFirstVertex) {
     build_info.SetBuildRanges(build_range_infos);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770");
+    build_info.BuildCmdBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, DstAsTooSmall) {
+    TEST_DESCRIPTION("Try to perform a build on an acceleration structure that was created too small.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.SetUpdateDstAccelStructSizeBeforeBuild(false);
+
+    build_info.GetDstAS()->SetSize(1);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03675");
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 

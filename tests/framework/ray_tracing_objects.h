@@ -155,6 +155,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& operator=(const BuildGeometryInfoKHR&) = delete;
 
     BuildGeometryInfoKHR& SetType(VkAccelerationStructureTypeKHR type);
+    BuildGeometryInfoKHR& SetBuildType(VkAccelerationStructureBuildTypeKHR build_type);
     BuildGeometryInfoKHR& SetMode(VkBuildAccelerationStructureModeKHR mode);
     BuildGeometryInfoKHR& SetFlags(VkBuildAccelerationStructureFlagsKHR flags);
     BuildGeometryInfoKHR& AddFlags(VkBuildAccelerationStructureFlagsKHR flags);
@@ -171,6 +172,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetNullInfos(bool use_null_infos);
     BuildGeometryInfoKHR& SetNullBuildRangeInfos(bool use_null_build_range_infos);
     BuildGeometryInfoKHR& SetDeferredOp(VkDeferredOperationKHR deferred_op);
+    BuildGeometryInfoKHR& SetUpdateDstAccelStructSizeBeforeBuild(bool update_before_build);
 
     // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
     // then will build/update an acceleration structure.
@@ -178,6 +180,7 @@ class BuildGeometryInfoKHR {
     void BuildCmdBufferIndirect(VkCommandBuffer cmd_buffer);
     void BuildHost();
 
+    void UpdateDstAccelStructSize();
     void SetupBuild(bool is_on_device_build, bool use_ppGeometries = true);
 
     // These will only setup the geometries lists and the pertaining build ranges
@@ -202,7 +205,9 @@ class BuildGeometryInfoKHR {
     uint32_t vk_info_count_ = 1;
     bool use_null_infos_ = false;
     bool use_null_build_range_infos_ = false;
+    bool update_dst_as_size_before_build_ = false;
     VkAccelerationStructureBuildGeometryInfoKHR vk_info_;
+    VkAccelerationStructureBuildTypeKHR build_type_;
     std::vector<GeometryKHR> geometries_;
     std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
     VkDeviceAddress device_scratch_offset_ = 0;
