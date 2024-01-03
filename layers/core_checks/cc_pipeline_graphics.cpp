@@ -484,6 +484,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
     }
 
+    // note this is the incoming layout an not ones from the pipeline library
+    const auto pipeline_layout_state = Get<vvl::PipelineLayout>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
+
     if (pipeline.HasFullState()) {
         if (is_create_library) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06608", device, create_info_loc.dot(Field::flags),
@@ -496,8 +499,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         // context
         // If libraries are included then pipeline layout can be NULL. See
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6144
-        auto &pipe_ci = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
-        if (!pipe_ci.layout && (!pipeline.library_create_info || pipeline.library_create_info->libraryCount == 0)) {
+        if (!pipeline_layout_state && (!pipeline.library_create_info || pipeline.library_create_info->libraryCount == 0)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
                              "is not a valid VkPipelineLayout, but defines a complete set of state.");
         }
@@ -513,17 +515,16 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         if (from_libraries_only && no_independent_sets) {
             // The layout defined at link time must be compatible with each (pre-raster and fragment shader) sub state's layout
             // (vertex input and fragment output state do not contain a layout)
-            const auto layout_state = Get<vvl::PipelineLayout>(pipe_ci.layout);
-            if (layout_state) {
+            if (pipeline_layout_state) {
                 if (std::string err_msg;
-                    !VerifySetLayoutCompatibility(*layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
-                    LogObjectList objlist(layout_state->Handle(), pipeline.PreRasterPipelineLayoutState()->Handle());
+                    !VerifySetLayoutCompatibility(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
+                    LogObjectList objlist(pipeline_layout_state->Handle(), pipeline.PreRasterPipelineLayoutState()->Handle());
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
                                      "is incompatible with the layout specified in the pre-raster sub-state: %s", err_msg.c_str());
                 }
                 if (std::string err_msg;
-                    !VerifySetLayoutCompatibility(*layout_state, *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
-                    LogObjectList objlist(layout_state->Handle(), pipeline.FragmentShaderPipelineLayoutState()->Handle());
+                    !VerifySetLayoutCompatibility(*pipeline_layout_state, *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
+                    LogObjectList objlist(pipeline_layout_state->Handle(), pipeline.FragmentShaderPipelineLayoutState()->Handle());
                     skip |=
                         LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
                                  "is incompatible with the layout specified in the fragment shader sub-state: %s", err_msg.c_str());
@@ -584,11 +585,31 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     }
 
     if (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags) {
-        auto create_info = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
-        if (Get<vvl::PipelineLayout>(create_info.layout) == nullptr) {
+        if (!pipeline_layout_state) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
                              "is a graphics library created with %s state, but does not have a valid layout specified.",
                              string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
+        }
+    }
+
+    if (pipeline_layout_state && pre_raster_info.init == GPLInitType::gpl_flags) {
+        for (uint32_t i = 0; i < pipeline_layout_state->set_layouts.size(); i++) {
+            if (pipeline_layout_state->set_layouts[i] != nullptr) {
+                continue;
+            }
+
+            if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) &&
+                pipeline.RasterizationState()->rasterizerDiscardEnable) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06683", device,
+                                 create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags),
+                                 "is %s, but layout was created with pSetLayouts[%" PRIu32 "] == VK_NULL_HANDLE",
+                                 string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), i);
+            } else if (frag_shader_info.init == GPLInitType::gpl_flags) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06682", device,
+                                 create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags),
+                                 "is %s, but layout was created with pSetLayouts[%" PRIu32 "] == VK_NULL_HANDLE",
+                                 string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), i);
+            }
         }
     }
 
