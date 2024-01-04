@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,8 +88,14 @@ class Fence : public RefcountedStateObject {
     const VkFenceCreateFlags flags;
     const VkExternalFenceHandleTypeFlags exportHandleTypes;
 
-    enum Scope Scope() const { return scope_; }
     enum State State() const { return state_; }
+    enum Scope Scope() const { return scope_; }
+
+    VkExternalFenceHandleTypeFlagBits ImportedHandleType() const {
+        auto guard = ReadLock();
+        assert(imported_handle_type_.has_value());
+        return imported_handle_type_.value();
+    }
 
   private:
     static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
@@ -103,6 +109,7 @@ class Fence : public RefcountedStateObject {
     uint64_t seq_{0};
     enum State state_;
     enum Scope scope_{kInternal};
+    std::optional<VkExternalFenceHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
     mutable std::shared_mutex lock_;
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
