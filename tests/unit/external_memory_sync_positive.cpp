@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -447,3 +447,50 @@ TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
     }
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(PositiveExternalMemorySync, ExportFromImportedFence) {
+    TEST_DESCRIPTION("Export from fence with imported payload");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    {
+        const auto handle_types = FindSupportedExternalFenceHandleTypes(
+            gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT);
+        if ((handle_types & VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT is not both exportable and importable";
+        }
+    }
+    VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
+    fence_info.handleType = handle_type;
+    VkExternalFenceProperties fence_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &fence_info, &fence_properties);
+    if ((handle_type & fence_properties.exportFromImportedHandleTypes) == 0) {
+        GTEST_SKIP() << "can't find handle type that can be exported from imported fence";
+    }
+
+    // create fence and export payload
+    VkExportFenceCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;  // at first export handle type, then import it
+    const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Fence fence(*m_device, create_info);
+    HANDLE handle = NULL;
+    fence.export_handle(handle, handle_type);
+
+    // create fence and import payload
+    VkExportFenceCreateInfo export_info2 = vku::InitStructHelper();  // prepare to export from imported fence
+    export_info2.handleTypes = handle_type;
+    const VkFenceCreateInfo create_info2 = vku::InitStructHelper(&export_info2);
+    vkt::Fence import_fence(*m_device, create_info2);
+    import_fence.import_handle(handle, handle_type);
+
+    // export from imported fence
+    HANDLE handle2 = NULL;
+    import_fence.export_handle(handle2, handle_type);
+
+    ::CloseHandle(handle);
+    ::CloseHandle(handle2);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
