@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2023 The Khronos Group Inc.
- * Copyright (c) 2018-2023 Valve Corporation
- * Copyright (c) 2018-2023 LunarG, Inc.
+/* Copyright (c) 2018-2024 The Khronos Group Inc.
+ * Copyright (c) 2018-2024 Valve Corporation
+ * Copyright (c) 2018-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,8 +198,12 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                 // For each used binding ...
                 for (const auto &u : used_descs) {
                     auto iter = set.binding_req.find(u.first);
-                    vvl::DescriptorBindingInfo binding_info{
-                        u.first, (iter != set.binding_req.end()) ? iter->second : DescriptorRequirement()};
+                    vvl::DescriptorBindingInfo binding_info;
+                    binding_info.first = u.first;
+                    while (iter != set.binding_req.end() && iter->first == u.first) {
+                        binding_info.second.emplace_back(iter->second);
+                        ++iter;
+                    }
                     context.ValidateBinding(binding_info, u.second);
                 }
             }
