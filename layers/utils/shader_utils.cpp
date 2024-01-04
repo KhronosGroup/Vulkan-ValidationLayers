@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -81,9 +81,10 @@ void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spi
     // Capture descriptor uses for the pipeline
     for (const auto &variable : entrypoint->resource_interface_variables) {
         // While validating shaders capture which slots are used by the pipeline
-        auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
+        DescriptorRequirement entry;
         entry.variable = &variable;
         entry.revalidate_hash = variable.descriptor_hash;
+        active_slots[variable.decorations.set].emplace(variable.decorations.binding, entry);
     }
 }
 

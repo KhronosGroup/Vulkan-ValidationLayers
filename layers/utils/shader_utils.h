@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -90,7 +90,7 @@ inline bool operator<(const DescriptorRequirement &a, const DescriptorRequiremen
 }
 
 // < binding index (of descriptor set) : meta data >
-typedef vvl::unordered_map<uint32_t, DescriptorRequirement> BindingVariableMap;
+typedef std::unordered_multimap<uint32_t, DescriptorRequirement> BindingVariableMap;
 
 // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
 using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;

@@ -776,7 +776,11 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const Bi
         if (descriptor_set.SkipBinding(*binding)) {
             continue;
         }
-        result |= desc_val.ValidateBinding(binding_pair, *binding);
+        vvl::DescriptorBindingInfo binding_info;
+        binding_info.first = binding_pair.first;
+        binding_info.second.emplace_back(binding_pair.second);
+
+        result |= desc_val.ValidateBinding(binding_info, *binding);
     }
     return result;
 }
