@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2023 Valve Corporation
-# Copyright (c) 2014-2023 LunarG, Inc.
+# Copyright (c) 2014-2024 Valve Corporation
+# Copyright (c) 2014-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/command.cpp
     unit/command_positive.cpp
     unit/debug_extensions.cpp
+    unit/debug_extensions_positive.cpp
     unit/debug_printf.cpp
     unit/descriptor_buffer.cpp
     unit/descriptor_buffer_positive.cpp

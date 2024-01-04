@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,12 +156,13 @@ TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    uint64_t bad_handle = (uint64_t)sampler.handle();
     sampler.destroy();
 
     uint64_t data;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetPrivateData-objectHandle");
     // valid handle, but not a vkSample
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, bad_handle, data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
