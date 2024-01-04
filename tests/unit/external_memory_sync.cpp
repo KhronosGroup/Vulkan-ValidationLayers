@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1701,6 +1701,112 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
     // For NT handle types, the application must release handle ownership using the CloseHandle system call.
     // That's in contrast with the POSIX file descriptor handles, where memory import operation transfers the ownership,
     // so the application does not need to call 'close' system call.
+    ::CloseHandle(handle);
+}
+
+TEST_F(NegativeExternalMemorySync, ExportFromImportedSemaphore) {
+    TEST_DESCRIPTION("Export from semaphore with imported payload that does not support export");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    {
+        const auto handle_types = FindSupportedExternalSemaphoreHandleTypes(
+            gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT);
+        if ((handle_types & handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT is not both exportable and importable";
+        }
+    }
+    const auto export_from_import_handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
+    {
+        const auto handle_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+        if ((handle_types & export_from_import_handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT is not exportable";
+        }
+    }
+    VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.handleType = export_from_import_handle_type;
+    VkExternalSemaphoreProperties semaphore_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &semaphore_info, &semaphore_properties);
+    if ((handle_type & semaphore_properties.exportFromImportedHandleTypes) != 0) {
+        GTEST_SKIP() << "cannot find handle type that does not support export from imported semaphore";
+    }
+
+    // create semaphore and export payload
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
+    HANDLE handle = NULL;
+    semaphore.export_handle(handle, handle_type);
+
+    // create semaphore and import payload
+    VkExportSemaphoreCreateInfo export_info2 = vku::InitStructHelper();  // prepare to export from imported semaphore
+    export_info2.handleTypes = export_from_import_handle_type;
+    const VkSemaphoreCreateInfo create_info2 = vku::InitStructHelper(&export_info2);
+    vkt::Semaphore import_semaphore(*m_device, create_info2);
+    import_semaphore.import_handle(handle, handle_type);
+
+    // export from imported semaphore
+    HANDLE handle2 = NULL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetWin32HandleInfoKHR-semaphore-01128");
+    import_semaphore.export_handle(handle2, export_from_import_handle_type);
+    m_errorMonitor->VerifyFound();
+
+    ::CloseHandle(handle);
+}
+
+TEST_F(NegativeExternalMemorySync, ExportFromImportedFence) {
+    TEST_DESCRIPTION("Export from fence with imported payload that does not support export");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    {
+        const auto handle_types = FindSupportedExternalFenceHandleTypes(
+            gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT);
+        if ((handle_types & VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT is not both exportable and importable";
+        }
+    }
+    const auto export_from_import_handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
+    {
+        const auto handle_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+        if ((handle_types & export_from_import_handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT is not exportable";
+        }
+    }
+    VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
+    fence_info.handleType = export_from_import_handle_type;
+    VkExternalFenceProperties fence_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &fence_info, &fence_properties);
+    if ((handle_type & fence_properties.exportFromImportedHandleTypes) != 0) {
+        GTEST_SKIP() << "cannot find handle type that does not support export from imported fence";
+    }
+
+    // create fence and export payload
+    VkExportFenceCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;  // at first export handle type, then import it
+    const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Fence fence(*m_device, create_info);
+    HANDLE handle = NULL;
+    fence.export_handle(handle, handle_type);
+
+    // create fence and import payload
+    VkExportFenceCreateInfo export_info2 = vku::InitStructHelper();  // prepare to export from imported fence
+    export_info2.handleTypes = export_from_import_handle_type;
+    const VkFenceCreateInfo create_info2 = vku::InitStructHelper(&export_info2);
+    vkt::Fence import_fence(*m_device, create_info2);
+    import_fence.import_handle(handle, handle_type);
+
+    // export from imported fence
+    HANDLE handle2 = NULL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFenceGetWin32HandleInfoKHR-fence-01450");
+    import_fence.export_handle(handle2, export_from_import_handle_type);
+    m_errorMonitor->VerifyFound();
+
     ::CloseHandle(handle);
 }
 #endif
