@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (c) 2022 NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -287,7 +287,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-AllocateMemory-SetPriority");
 
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-AccelerationStructure-NotAsync");
-        build_geometry_info.BuildCmdBuffer(*m_device, cmd_buffer.handle());
+        build_geometry_info.BuildCmdBuffer(cmd_buffer.handle());
 
         if (queue == compute_queue) {
             m_errorMonitor->Finish();

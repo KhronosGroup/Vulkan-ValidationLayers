@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -535,8 +535,8 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     std::array<VkDescriptorSet, layouts.size()> descriptor_sets;
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets.data());
 
-    auto tlas = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(4096);
-    tlas->Build(*m_device);
+    auto tlas = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
+    tlas->Build();
 
     VkWriteDescriptorSetAccelerationStructureKHR blas_descriptor = vku::InitStructHelper();
     blas_descriptor.accelerationStructureCount = 1;

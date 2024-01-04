@@ -449,8 +449,8 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     if (IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-        auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(4096);
-        blas->Build(*m_device);
+        auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+        blas->Build();
 
         uint8_t data[256];
 
