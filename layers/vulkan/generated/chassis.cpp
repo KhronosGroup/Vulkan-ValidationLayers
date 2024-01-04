@@ -3,11 +3,11 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- * Copyright (c) 2023-2023 RasterGrid Kft.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2023-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -983,6 +983,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
 }
 
 // Handle tooling queries manually as this is a request for layer information
+static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
+    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
+    nullptr,
+    "Khronos Validation Layer",
+    STRINGIFY(VK_HEADER_VERSION),
+    VK_TOOL_PURPOSE_VALIDATION_BIT_EXT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT | VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT |
+        VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT,
+    "Khronos Validation Layer",
+    OBJECT_LAYER_NAME};
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                   VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
@@ -991,19 +1000,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
 
-    static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
-        nullptr,
-        "Khronos Validation Layer",
-        STRINGIFY(VK_HEADER_VERSION),
-        VK_TOOL_PURPOSE_VALIDATION_BIT_EXT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT | VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT |
-            VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT,
-        "Khronos Validation Layer",
-        OBJECT_LAYER_NAME};
-
     auto original_pToolProperties = pToolProperties;
 
-    if (pToolProperties != nullptr) {
+    if (pToolProperties != nullptr && *pToolCount > 0) {
         *pToolProperties = khronos_layer_tool_props;
         pToolProperties = ((*pToolCount > 1) ? &pToolProperties[1] : nullptr);
         (*pToolCount)--;
@@ -1028,6 +1027,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
+    assert(*pToolCount != std::numeric_limits<uint32_t>::max());
     (*pToolCount)++;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1044,19 +1044,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceToolProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
 
-    static const VkPhysicalDeviceToolProperties khronos_layer_tool_props = {
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES,
-        nullptr,
-        "Khronos Validation Layer",
-        STRINGIFY(VK_HEADER_VERSION),
-        VK_TOOL_PURPOSE_VALIDATION_BIT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT | VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT |
-            VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT,
-        "Khronos Validation Layer",
-        OBJECT_LAYER_NAME};
-
     auto original_pToolProperties = pToolProperties;
 
-    if (pToolProperties != nullptr) {
+    if (pToolProperties != nullptr && *pToolCount > 0) {
         *pToolProperties = khronos_layer_tool_props;
         pToolProperties = ((*pToolCount > 1) ? &pToolProperties[1] : nullptr);
         (*pToolCount)--;
@@ -1080,6 +1070,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
+    assert(*pToolCount != std::numeric_limits<uint32_t>::max());
     (*pToolCount)++;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
