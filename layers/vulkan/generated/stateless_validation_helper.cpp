@@ -22824,6 +22824,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorEXT(VkDevice device, const
     }
     skip |= ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pDescriptor), dataSize, &pDescriptor, true, true,
                           "VUID-vkGetDescriptorEXT-dataSize-arraylength", "VUID-vkGetDescriptorEXT-pDescriptor-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, error_obj);
     return skip;
 }
 

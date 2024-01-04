@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1118,6 +1118,66 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
                              string_VkSamplerYcbcrModelConversion(pCreateInfo->ycbcrModel), string_VkComponentSwizzle(components.r),
                              string_VkComponentSwizzle(components.g), string_VkComponentSwizzle(components.b));
         }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo,
+                                                                 size_t dataSize, void *pDescriptor,
+                                                                 const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
+    switch (pDescriptorInfo->type) {
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            if (!pDescriptorInfo->data.pCombinedImageSampler) {
+                skip |= LogError("VUID-VkDescriptorGetInfoEXT-pCombinedImageSampler-parameter", device,
+                                 descriptor_info_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but pCombinedImageSampler is null.");
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            if (!pDescriptorInfo->data.pInputAttachmentImage) {
+                skip |= LogError("VUID-VkDescriptorGetInfoEXT-pInputAttachmentImage-parameter", device,
+                                 descriptor_info_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, but pInputAttachmentImage is null.");
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            if (pDescriptorInfo->data.pUniformTexelBuffer) {
+                skip |= ValidateStructType(descriptor_info_loc.dot(Field::data).dot(Field::pUniformTexelBuffer),
+                                           "VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT",
+                                           pDescriptorInfo->data.pUniformTexelBuffer, VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+                                           false, kVUIDUndefined, "VUID-VkDescriptorGetInfoEXT-pUniformTexelBuffer-parameter");
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            if (pDescriptorInfo->data.pStorageTexelBuffer) {
+                skip |= ValidateStructType(descriptor_info_loc.dot(Field::data).dot(Field::pStorageTexelBuffer),
+                                           "VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT",
+                                           pDescriptorInfo->data.pStorageTexelBuffer, VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+                                           false, kVUIDUndefined, "VUID-VkDescriptorGetInfoEXT-pStorageTexelBuffer-parameter");
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            if (pDescriptorInfo->data.pUniformBuffer) {
+                skip |= ValidateStructType(descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer),
+                                           "VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT", pDescriptorInfo->data.pUniformBuffer,
+                                           VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT, false, kVUIDUndefined,
+                                           "VUID-VkDescriptorGetInfoEXT-pUniformBuffer-parameter");
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            if (pDescriptorInfo->data.pStorageBuffer) {
+                skip |= ValidateStructType(descriptor_info_loc.dot(Field::data).dot(Field::pStorageBuffer),
+                                           "VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT", pDescriptorInfo->data.pStorageBuffer,
+                                           VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT, false, kVUIDUndefined,
+                                           "VUID-VkDescriptorGetInfoEXT-pStorageBuffer-parameter");
+            }
+            break;
+        default:
+            break;
     }
 
     return skip;
