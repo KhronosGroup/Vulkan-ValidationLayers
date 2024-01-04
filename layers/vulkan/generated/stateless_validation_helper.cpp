@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22846,6 +22846,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorEXT(VkDevice device, const
     }
     skip |= ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pDescriptor), dataSize, &pDescriptor, true, true,
                           "VUID-vkGetDescriptorEXT-dataSize-arraylength", "VUID-vkGetDescriptorEXT-pDescriptor-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, error_obj);
     return skip;
 }
 

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -1022,6 +1022,33 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoBasic) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08018");
     vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoValidPointer) {
+    TEST_DESCRIPTION("If type is used, need valid pointer to corresponding data.");
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    uint8_t buffer[16];
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+
+    dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    dgi.data.pCombinedImageSampler = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-pCombinedImageSampler-parameter");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, 4, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    dgi.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    dgi.data.pInputAttachmentImage = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-pInputAttachmentImage-parameter");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, 4, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    auto bad_struct = vku::InitStruct<VkBufferCopy2>();
+    dgi.data.pUniformTexelBuffer = (VkDescriptorAddressInfoEXT*)&bad_struct;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-pUniformTexelBuffer-parameter");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, 4, &buffer);
     m_errorMonitor->VerifyFound();
 }
 
