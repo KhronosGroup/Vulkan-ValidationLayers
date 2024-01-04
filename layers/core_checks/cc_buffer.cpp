@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,12 +45,14 @@ bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buf
 }
 
 bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
-                                         const VkPhysicalDeviceLimits *device_limits, const Location &loc) const {
+                                         const Location &loc) const {
     bool skip = false;
 
     const VkDeviceSize &range = pCreateInfo->range;
     const VkFormat format = pCreateInfo->format;
-    const uint32_t format_size = vkuFormatElementSize(format);
+    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(format);
+    // will be 1 most likely because HW don't tend to support texel buffer for compressed formats
+    VkDeviceSize texel_per_block = static_cast<VkDeviceSize>(format_info.texel_per_block);
     if (range != VK_WHOLE_SIZE) {
         // Range must be greater than 0
         if (range <= 0) {
@@ -58,20 +60,21 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const 
                              "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, range must be greater than 0.", range);
         }
         // Range must be a multiple of the element size of format
-        if (SafeModulo(range, format_size) != 0) {
+        if (SafeModulo(range, format_info.block_size) != 0) {
             skip |=
                 LogError("VUID-VkBufferViewCreateInfo-range-00929", buffer_state.buffer(), loc.dot(Field::range),
                          "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, range must be a multiple of the element size (%" PRIu32
                          ") of the format %s.",
-                         range, format_size, string_VkFormat(format));
+                         range, format_info.block_size, string_VkFormat(format));
         }
-        // Range divided by the element size of format must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements
-        if (SafeDivision(range, format_size) > device_limits->maxTexelBufferElements) {
+        const VkDeviceSize texels = SafeDivision(range, format_info.block_size) * texel_per_block;
+        if (texels > static_cast<VkDeviceSize>(phys_dev_props.limits.maxTexelBufferElements)) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-range-00930", buffer_state.buffer(), loc.dot(Field::range),
-                             "(%" PRIuLEAST64
-                             ") does not equal VK_WHOLE_SIZE, range divided by the element size of the format (%" PRIu32
-                             ") must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
-                             range, format_size, device_limits->maxTexelBufferElements);
+                             "(%" PRIuLEAST64 "), %s texel block size (%" PRIu32 "), and texels-per-block (%" PRIuLEAST64
+                             ") is a total of (%" PRIuLEAST64
+                             ") texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
+                             range, string_VkFormat(format), format_info.block_size, texel_per_block, texels,
+                             phys_dev_props.limits.maxTexelBufferElements);
         }
         // The sum of range and offset must be less than or equal to the size of buffer
         if (range + pCreateInfo->offset > buffer_state.createInfo.size) {
@@ -81,17 +84,16 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const 
                              range, pCreateInfo->offset, buffer_state.createInfo.size);
         }
     } else {
-        // Size of buffer - offset, divided by the element size of format must be less than or equal to
-        // VkPhysicalDeviceLimits::maxTexelBufferElements
-        if (SafeDivision(buffer_state.createInfo.size - pCreateInfo->offset, format_size) > device_limits->maxTexelBufferElements) {
-            skip |= LogError(
-                "VUID-VkBufferViewCreateInfo-range-04059", buffer_state.buffer(), loc.dot(Field::range),
-                "(%" PRIuLEAST64 ") equals VK_WHOLE_SIZE, the buffer's size (%" PRIuLEAST64 ") minus the offset (%" PRIuLEAST64
-                "), divided by the element size (%" PRIu32
-                ") of the format %s must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32
-                ").",
-                range, buffer_state.createInfo.size, pCreateInfo->offset, format_size, string_VkFormat(format),
-                device_limits->maxTexelBufferElements);
+        const VkDeviceSize offset_range = buffer_state.createInfo.size - pCreateInfo->offset;
+        const VkDeviceSize texels = SafeDivision(offset_range, format_info.block_size) * texel_per_block;
+        if (texels > static_cast<VkDeviceSize>(phys_dev_props.limits.maxTexelBufferElements)) {
+            skip |= LogError("VUID-VkBufferViewCreateInfo-range-04059", buffer_state.buffer(), loc.dot(Field::range),
+                             "is VK_WHOLE_SIZE, but the buffer's size (%" PRIuLEAST64 "), offset (%" PRIuLEAST64
+                             "), %s texel block size (%" PRIu32 "), and texels-per-block (%" PRIuLEAST64
+                             ") is a total of (%" PRIuLEAST64
+                             ") texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
+                             buffer_state.createInfo.size, pCreateInfo->offset, string_VkFormat(format), format_info.block_size,
+                             texel_per_block, texels, phys_dev_props.limits.maxTexelBufferElements);
         }
     }
     return skip;
@@ -340,13 +342,13 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                          buffer_state.createInfo.size);
     }
 
-    const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
     // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
-    if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0 && !enabled_features.texelBufferAlignment) {
+    if ((pCreateInfo->offset % phys_dev_props.limits.minTexelBufferOffsetAlignment) != 0 &&
+        !enabled_features.texelBufferAlignment) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-offset-02749", objlist, create_info_loc.dot(Field::offset),
                          "(%" PRIuLEAST64
                          ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
-                         pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
+                         pCreateInfo->offset, phys_dev_props.limits.minTexelBufferOffsetAlignment);
     }
 
     if (enabled_features.texelBufferAlignment) {
@@ -416,7 +418,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
     }
 
-    skip |= ValidateBufferViewRange(buffer_state, pCreateInfo, device_limits, create_info_loc);
+    skip |= ValidateBufferViewRange(buffer_state, pCreateInfo, create_info_loc);
 
     skip |= ValidateBufferViewBuffer(buffer_state, pCreateInfo, create_info_loc);
     return skip;

@@ -868,7 +868,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
                                     const Location& region_loc) const;
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
-                                 const VkPhysicalDeviceLimits* device_limits, const Location& loc) const;
+                                 const Location& loc) const;
     bool ValidateBufferViewBuffer(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                   const Location& loc) const;
 
