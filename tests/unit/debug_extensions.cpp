@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -315,4 +315,86 @@ TEST_F(NegativeDebugExtensions, LayerInfoMessages) {
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
     vk::DestroyInstance(local_instance, nullptr);
 #endif
+}
+
+TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
+    TEST_DESCRIPTION("call vkSetDebugUtilsObjectNameEXT with a different VkDevice object");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping object naming test with MockICD.";
+    }
+
+    auto features = m_device->phy().features();
+    vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
+
+    DebugUtilsLabelCheckData callback_data;
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
+        data->count++;
+    };
+    callback_data.count = 0;
+    callback_data.callback = empty_callback;
+
+    VkDebugUtilsMessengerCreateInfoEXT callback_create_info = vku::InitStructHelper();
+    callback_create_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    callback_create_info.pfnUserCallback = DebugUtilsCallback;
+    callback_create_info.pUserData = &callback_data;
+    VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
+    vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
+
+    const char *object_name = "device_object";
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_DEVICE;
+    name_info.objectHandle = (uint64_t)second_device.device();
+    name_info.pObjectName = object_name;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874");
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
+}
+
+TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
+    TEST_DESCRIPTION("call vkSetDebugUtilsObjectNameEXT on a VkBuffer that is destroyed");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping object naming test with MockICD.";
+    }
+
+    DebugUtilsLabelCheckData callback_data;
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
+        data->count++;
+    };
+    callback_data.count = 0;
+    callback_data.callback = empty_callback;
+
+    VkDebugUtilsMessengerCreateInfoEXT callback_create_info = vku::InitStructHelper();
+    callback_create_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    callback_create_info.pfnUserCallback = DebugUtilsCallback;
+    callback_create_info.pUserData = &callback_data;
+    VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
+    vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    uint64_t bad_handle = (uint64_t)sampler.handle();
+    sampler.destroy();
+    const char *object_name = "sampler_object";
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_SAMPLER;
+    name_info.objectHandle = bad_handle;
+    name_info.pObjectName = object_name;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
 }

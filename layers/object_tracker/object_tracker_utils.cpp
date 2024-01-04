@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1187,10 +1187,23 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectNameEXT-device-parameter"
+    const VkObjectType object_type = pNameInfo->objectType;
+    const uint64_t object_handle = pNameInfo->objectHandle;
 
-    skip |= ValidateAnonymousObject(
-        pNameInfo->objectHandle, pNameInfo->objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590",
-        "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874", error_obj.location.dot(Field::pNameInfo).dot(Field::objectHandle));
+    if (IsInstanceVkObjectType(object_type)) {
+        // TODO - need to check if device is from a valid instance/physical device
+        // VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07872 /  VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07873
+    } else if (object_type == VK_OBJECT_TYPE_DEVICE) {
+        if (HandleToUint64(device) != object_handle) {
+            skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874", device, error_obj.location.dot(Field::objectType),
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", object_handle,
+                             FormatHandle(device).c_str());
+        }
+    } else {
+        skip |= ValidateAnonymousObject(object_handle, object_type, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590",
+                                        "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874",
+                                        error_obj.location.dot(Field::pNameInfo).dot(Field::objectHandle));
+    }
 
     return skip;
 }
@@ -1200,9 +1213,24 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectTagEXT-device-parameter"
 
-    skip |= ValidateAnonymousObject(
-        pTagInfo->objectHandle, pTagInfo->objectType, "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910",
-        "VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07877", error_obj.location.dot(Field::pTagInfo).dot(Field::objectHandle));
+    const VkObjectType object_type = pTagInfo->objectType;
+    const uint64_t object_handle = pTagInfo->objectHandle;
+
+    if (IsInstanceVkObjectType(object_type)) {
+        // TODO - need to check if device is from a valid instance/physical device
+        // VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07875 / VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07876
+    } else if (object_type == VK_OBJECT_TYPE_DEVICE) {
+        if (HandleToUint64(device) != object_handle) {
+            skip |= LogError("VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07877", device,
+                             error_obj.location.dot(Field::pTagInfo).dot(Field::objectType),
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", object_handle,
+                             FormatHandle(device).c_str());
+        }
+    } else {
+        skip |= ValidateAnonymousObject(object_handle, object_type, "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910",
+                                        "VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07877",
+                                        error_obj.location.dot(Field::pTagInfo).dot(Field::objectHandle));
+    }
 
     return skip;
 }
@@ -1477,7 +1505,7 @@ bool ObjectLifetimes::PreCallValidateSetPrivateData(VkDevice device, VkObjectTyp
     } else if (objectType == VK_OBJECT_TYPE_DEVICE) {
         // Need to check device handle as has no parent to check as the caller is the same device object
         if (HandleToUint64(device) != objectHandle) {
-            skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectHandle),
+            skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectType),
                              "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", objectHandle,
                              FormatHandle(device).c_str());
         }
@@ -1503,7 +1531,7 @@ bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectTyp
     } else if (objectType == VK_OBJECT_TYPE_DEVICE) {
         // Need to check device handle as has no parent to check as the caller is the same device object
         if (HandleToUint64(device) != objectHandle) {
-            skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectHandle),
+            skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType),
                              "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", objectHandle,
                              FormatHandle(device).c_str());
         }
