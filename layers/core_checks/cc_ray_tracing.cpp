@@ -489,7 +489,8 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
     return skip;
 }
 
-bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_i, const VkAccelerationStructureBuildGeometryInfoKHR &info,
+bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
+                                             const VkAccelerationStructureBuildGeometryInfoKHR &info,
                                              const VkAccelerationStructureBuildRangeInfoKHR *geometry_build_ranges,
                                              const Location &loc) const {
     bool skip = false;
@@ -533,7 +534,7 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_i, const VkAccelerati
     if (geom_accessor) {
         const Location pp_build_range_info_loc(loc.function, Field::ppBuildRangeInfos, info_i);
         for (uint32_t geom_i = 0; geom_i < geometry_count; ++geom_i) {
-            const Location p_geom_loc = loc.dot(Field::pGeometries, geom_i);
+            const Location p_geom_loc = loc.dot(pp_geometries ? Field::pGeometries : Field::ppGeometries, geom_i);
             const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
             const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
             const auto &geom_data = geom_accessor(geom_i);
@@ -564,10 +565,38 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_i, const VkAccelerati
                     }
                     break;
                 }
-                case VK_GEOMETRY_TYPE_INSTANCES_KHR:
-                    skip |= buffer_check(geom_i, geom_data.geometry.instances.data,
-                                         p_geom_geom_loc.dot(Field::instances).dot(Field::data));
+                case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
+                    const Location instances_loc = p_geom_geom_loc.dot(Field::instances);
+                    const Location instances_data_loc = instances_loc.dot(Field::data);
+
+                    skip |= buffer_check(geom_i, geom_data.geometry.instances.data, instances_data_loc);
+                    auto buffer_states = GetBuffersByAddress(geom_data.geometry.instances.data.deviceAddress);
+                    if (buffer_states.empty()) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813", cmd_buffer,
+                                         instances_data_loc.dot(Field::deviceAddress), "(%" PRIu64 ") is not a valid address.",
+                                         geom_data.geometry.instances.data.deviceAddress);
+                    } else {
+                        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+                        BufferAddressValidation<1> buffer_address_validator = {
+                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814", LogObjectList(cmd_buffer),
+                               [this, instances_data_loc, cmd_buffer](const BUFFER_STATE_PTR &buffer_state,
+                                                                      std::string *out_error_msg) {
+                                   if (!out_error_msg) {
+                                       return !buffer_state->sparse && buffer_state->IsMemoryBound();
+                                   } else {
+                                       return ValidateMemoryIsBoundToBuffer(
+                                           cmd_buffer, *buffer_state, instances_data_loc.dot(Field::deviceAddress),
+                                           "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814");
+                                   }
+                               }}}}};
+
+                        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states,
+                                                                                  instances_data_loc.dot(Field::deviceAddress),
+                                                                                  geom_data.geometry.instances.data.deviceAddress);
+                    }
+
                     break;
+                }
                 case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
                     skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
                     break;
@@ -783,7 +812,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
             }
         }
 
-        skip |= ValidateAccelerationBuffers(info_i, *info, ppBuildRangeInfos[info_i], info_loc);
+        skip |= ValidateAccelerationBuffers(commandBuffer, info_i, *info, ppBuildRangeInfos[info_i], info_loc);
 
         skip |= ValidateAccelerationStructuresMemoryAlisasing(commandBuffer, infoCount, pInfos, info_i, error_obj);
     }
