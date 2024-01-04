@@ -1535,3 +1535,37 @@ TEST_F(NegativeDescriptorBuffer, Binding) {
     vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {
+    TEST_DESCRIPTION("texel buffers must be less than maxTexelBufferElements.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
+    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
+    }
+    VkDeviceSize format_size = static_cast<VkDeviceSize>(vkuFormatElementSize(VK_FORMAT_R8G8B8A8_UNORM));
+
+    VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
+    dai.address = 0;
+    dai.range = 2 * format_size * static_cast<VkDeviceSize>(m_device->phy().limits_.maxTexelBufferElements);
+    dai.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    dgi.data.pUniformTexelBuffer = &dai;
+
+    uint8_t out;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-address-08043");  // null address
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-09427");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
+    m_errorMonitor->VerifyFound();
+}
