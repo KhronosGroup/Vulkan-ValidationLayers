@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -188,6 +188,7 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
         timeline_.erase(timeline_.begin());
         if (scope_ == kExternalTemporary) {
             scope_ = kInternal;
+            imported_handle_type_.reset();
         }
     } else {
         // Wait for some other queue or a host operation to retire
@@ -265,6 +266,7 @@ void vvl::Semaphore::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, V
             scope_ = kExternalPermanent;
         }
     }
+    imported_handle_type_ = handle_type;
 }
 
 void vvl::Semaphore::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {

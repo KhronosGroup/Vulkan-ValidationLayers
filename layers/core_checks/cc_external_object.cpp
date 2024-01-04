@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -203,6 +203,20 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                              string_VkExternalSemaphoreHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
+        auto can_export_from_imported = [this, pGetWin32HandleInfo, &sem_state]() {
+            VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
+            semaphore_info.handleType = pGetWin32HandleInfo->handleType;
+            VkExternalSemaphoreProperties semaphore_properties = vku::InitStructHelper();
+            DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &semaphore_info, &semaphore_properties);
+            return (sem_state->ImportedHandleType() & semaphore_properties.exportFromImportedHandleTypes) != 0;
+        };
+        if (sem_state->Scope() != vvl::Semaphore::kInternal && !can_export_from_imported()) {
+            skip |= LogError("VUID-VkSemaphoreGetWin32HandleInfoKHR-semaphore-01128", sem_state->Handle(),
+                             error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
+                             "(%s) cannot be exported from semaphore with imported payload with handle type %s",
+                             string_VkExternalSemaphoreHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
+                             string_VkExternalSemaphoreHandleTypeFlagBits(sem_state->ImportedHandleType()));
+        }
     }
     return skip;
 }
@@ -225,6 +239,20 @@ bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const Vk
                              "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s)",
                              string_VkExternalFenceHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
+        }
+        auto can_export_from_imported = [this, pGetWin32HandleInfo, &fence_state]() {
+            VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
+            fence_info.handleType = pGetWin32HandleInfo->handleType;
+            VkExternalFenceProperties fence_properties = vku::InitStructHelper();
+            DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &fence_info, &fence_properties);
+            return (fence_state->ImportedHandleType() & fence_properties.exportFromImportedHandleTypes) != 0;
+        };
+        if (fence_state->Scope() != vvl::Fence::kInternal && !can_export_from_imported()) {
+            skip |= LogError("VUID-VkFenceGetWin32HandleInfoKHR-fence-01450", fence_state->Handle(),
+                             error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
+                             "(%s) cannot be exported from fence with imported payload with handle type %s",
+                             string_VkExternalFenceHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
+                             string_VkExternalFenceHandleTypeFlagBits(fence_state->ImportedHandleType()));
         }
     }
     return skip;

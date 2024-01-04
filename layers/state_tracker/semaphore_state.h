@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -144,6 +144,11 @@ class Semaphore : public RefcountedStateObject {
         auto guard = ReadLock();
         return scope_;
     }
+    VkExternalSemaphoreHandleTypeFlagBits ImportedHandleType() const {
+        auto guard = ReadLock();
+        assert(imported_handle_type_.has_value());
+        return imported_handle_type_.value();
+    }
     // This is the most recently completed operation. It is returned by value so that the caller
     // has a correct copy even if something else is completing on this queue in a different thread.
     SemOp Completed() const {
@@ -196,7 +201,9 @@ class Semaphore : public RefcountedStateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    enum Scope scope_{kInternal};
+    enum Scope scope_ { kInternal };
+    std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
+
     // the most recently completed operation
     SemOp completed_;
     // next payload value for binary semaphore operations
