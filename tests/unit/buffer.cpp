@@ -736,10 +736,10 @@ TEST_F(NegativeBuffer, BufferUsageFlagsUsage) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;
     buffer_ci.usage = 0;
-    CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09206"});
+    CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09500"});
 
     buffer_ci.usage = 0xBAD0000;
-    CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09205"});
+    CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09499"});
 }
 
 TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
