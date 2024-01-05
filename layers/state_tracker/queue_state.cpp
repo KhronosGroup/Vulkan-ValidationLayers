@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,7 +50,9 @@ void vvl::QueueSubmission::EndUse() {
 }
 
 uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
-    submissions.back().end_batch = true;
+    if (!submissions.empty()) {
+        submissions.back().end_batch = true;
+    }
     uint64_t retire_early_seq = 0;
     for (auto &submission : submissions) {
         for (auto &cb_state : submission.cbs) {
