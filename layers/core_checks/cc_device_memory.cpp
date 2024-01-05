@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -530,6 +530,24 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                          reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
                                          FormatHandle(payload_info->dedicated_buffer).c_str());
                     }
+                }
+            }
+        } else {  // Handle created by non-Vulkan API (as opposite to using vkGetMemoryWin32HandleKHR)
+            constexpr VkExternalMemoryHandleTypeFlags nt_handles =
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT |
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+            constexpr VkExternalMemoryHandleTypeFlags global_share_handles =
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT;
+
+            if ((import_memory_win32_info->handleType & (nt_handles | global_share_handles)) != 0) {
+                VkMemoryWin32HandlePropertiesKHR handle_properties = vku::InitStructHelper();
+                DispatchGetMemoryWin32HandlePropertiesKHR(device, import_memory_win32_info->handleType,
+                                                          import_memory_win32_info->handle, &handle_properties);
+                if (((1 << pAllocateInfo->memoryTypeIndex) & handle_properties.memoryTypeBits) == 0) {
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645", device,
+                                     allocate_info_loc.dot(Field::memoryTypeIndex),
+                                     "is %" PRIu32 " but VkMemoryWin32HandlePropertiesKHR::memoryTypeBits is 0x%" PRIx32 ".",
+                                     pAllocateInfo->memoryTypeIndex, handle_properties.memoryTypeBits);
                 }
             }
         }
