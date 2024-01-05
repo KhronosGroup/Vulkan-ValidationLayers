@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Collabora, Inc.
+ * Copyright (c) 2024 The Khronos Group Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024 Collabora, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -262,7 +262,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
 }
 
 TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
-    TEST_DESCRIPTION("Test coyping from a range that spans two different memory chunks");
+    TEST_DESCRIPTION("Test copying from a range that spans two different memory chunks");
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
@@ -340,4 +340,18 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     // Wait for operations to finish before destroying anything
     m_default_queue->wait();
     sparse_queue->wait();
+}
+
+TEST_F(PositiveSparseBuffer, BindSparseEmpty) {
+    TEST_DESCRIPTION("Test submitting empty queue bind sparse");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
+    vk::QueueBindSparse(sparse_queue, 0u, nullptr, VK_NULL_HANDLE);
 }
