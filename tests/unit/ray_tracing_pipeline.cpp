@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1053,7 +1053,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracingPipeline, PipelineType) {
+TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupStackSize) {
     TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupStackSizeKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1066,6 +1066,41 @@ TEST_F(NegativeRayTracingPipeline, PipelineType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622");
     vk::GetRayTracingShaderGroupStackSizeKHR(device(), pipe.pipeline_, 0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {
+    TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupHandlesKHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    int data = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-04619");
+    vk::GetRayTracingShaderGroupHandlesKHR(device(), pipe.pipeline_, 0, 0, 4, &data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingPipeline, PipelineTypeCaptureReplay) {
+    TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingCaptureReplayShaderGroupHandlesKHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
+    RETURN_IF_SKIP(Init());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    int data = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-04620");
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(device(), pipe.pipeline_, 0, 0, 4, &data);
     m_errorMonitor->VerifyFound();
 }
 

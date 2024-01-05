@@ -1501,7 +1501,13 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
     auto pPipeline = Get<vvl::Pipeline>(pipeline);
     if (!pPipeline) {
         return skip;
+    } else if (pPipeline->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        skip |=
+            LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-04619", pipeline, error_obj.location.dot(Field::pipeline),
+                     "is a %s pipeline.", string_VkPipelineBindPoint(pPipeline->pipeline_type));
+        return skip;
     }
+
     const vvl::Pipeline &pipeline_state = *pPipeline;
     if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
@@ -1553,7 +1559,13 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     auto pipeline_state = Get<vvl::Pipeline>(pipeline);
     if (!pipeline_state) {
         return skip;
+    } else if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        skip |= LogError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-04620", pipeline,
+                         error_obj.location.dot(Field::pipeline), "is a %s pipeline.",
+                         string_VkPipelineBindPoint(pipeline_state->pipeline_type));
+        return skip;
     }
+
     const auto &create_info = pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
     if (create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
@@ -1603,7 +1615,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
     if (pipeline_state) {
         if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622", pipeline,
-                             error_obj.location.dot(Field::pipeline), "must be a ray-tracing pipeline, but is a %s pipeline.",
+                             error_obj.location.dot(Field::pipeline), "is a %s pipeline.",
                              string_VkPipelineBindPoint(pipeline_state->pipeline_type));
         } else if (group >= pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>().groupCount) {
             skip |=
