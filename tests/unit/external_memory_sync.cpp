@@ -2124,6 +2124,70 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     // longer needed."
     ::CloseHandle(handle);
 }
+
+TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferSupport) {
+    TEST_DESCRIPTION("Memory imported from handle type that is not reported as importable by VkExternalBufferProperties.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+    auto buffer_ci = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
+    external_info.flags = buffer_ci.flags;
+    external_info.usage = buffer_ci.usage;
+    external_info.handleType = handle_type;
+    VkExternalBufferProperties external_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_properties);
+
+    if ((external_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0) {
+        GTEST_SKIP() << "Need buffer with no import support";
+    }
+
+    // allocate memory and export payload as win32 handle
+    VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&export_info);
+    alloc_info.allocationSize = 4096;
+    alloc_info.memoryTypeIndex = 0;
+    vkt::DeviceMemory memory;
+    memory.init(*m_device, alloc_info);
+
+    HANDLE handle = NULL;
+    VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
+    get_handle_info.memory = memory;
+    get_handle_info.handleType = handle_type;
+    vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle);
+
+    // create memory object by importing payload through win32 handle
+    VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper();
+    import_info.handleType = handle_type;
+    import_info.handle = handle;
+    VkMemoryAllocateInfo alloc_info_with_import = vku::InitStructHelper(&import_info);
+    alloc_info_with_import.allocationSize = 4096;
+    alloc_info_with_import.memoryTypeIndex = 0;
+    vkt::DeviceMemory imported_memory;
+    imported_memory.init(*m_device, alloc_info_with_import);
+
+    VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
+    external_buffer_info.handleTypes = handle_type;
+    buffer_ci.pNext = &external_buffer_info;
+
+    // It's hard to get configuration with current Windows drivers for this test.
+    // Protected memory feature is not supported that is used on Linux to get non-importable memory.
+    // D3D11_TEXTURE handle type does job that is does not report import capability but
+    // also it's not supported for this usage, so disable that error message and sacrifice some
+    // correctness with a purpose to reach code path we need to test.
+    // NOTE: the approach with D3D11_TEXTURE does not work for images, that's why no similar test for images
+    m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-pNext-00920");
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-00658");
+    buffer.bind_memory(imported_memory, 0);
+    m_errorMonitor->VerifyFound();
+    ::CloseHandle(handle);
+}
 #endif
 
 TEST_F(NegativeExternalMemorySync, FdMemoryHandleProperties) {
