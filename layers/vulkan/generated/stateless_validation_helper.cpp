@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -9634,10 +9634,6 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(VkDevice device,
                 allowed_structs_VkComputePipelineCreateInfo.data(), GeneratedVulkanHeaderVersion,
                 "VUID-VkComputePipelineCreateInfo-pNext-pNext", "VUID-VkComputePipelineCreateInfo-sType-unique", false, true);
 
-            skip |= ValidateFlags(pCreateInfos_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                                  pCreateInfos[createInfoIndex].flags, kOptionalFlags,
-                                  "VUID-VkComputePipelineCreateInfo-flags-parameter");
-
             skip |= ValidateStructType(pCreateInfos_loc.dot(Field::stage), "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO",
                                        &(pCreateInfos[createInfoIndex].stage), VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                                        false, kVUIDUndefined, "VUID-VkPipelineShaderStageCreateInfo-sType-sType");
@@ -12444,10 +12440,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
         skip |=
             ValidateFlags(pExternalBufferInfo_loc.dot(Field::flags), "VkBufferCreateFlagBits", AllVkBufferCreateFlagBits,
                           pExternalBufferInfo->flags, kOptionalFlags, "VUID-VkPhysicalDeviceExternalBufferInfo-flags-parameter");
-
-        skip |= ValidateFlags(pExternalBufferInfo_loc.dot(Field::usage), "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits,
-                              pExternalBufferInfo->usage, kRequiredFlags, "VUID-VkPhysicalDeviceExternalBufferInfo-usage-parameter",
-                              "VUID-VkPhysicalDeviceExternalBufferInfo-usage-requiredbitmask");
 
         skip |= ValidateFlags(pExternalBufferInfo_loc.dot(Field::handleType), "VkExternalMemoryHandleTypeFlagBits",
                               AllVkExternalMemoryHandleTypeFlagBits, pExternalBufferInfo->handleType, kRequiredSingleBit,
@@ -20254,10 +20246,6 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
                                         "VUID-VkExecutionGraphPipelineCreateInfoAMDX-pNext-pNext",
                                         "VUID-VkExecutionGraphPipelineCreateInfoAMDX-sType-unique", false, true);
 
-            skip |= ValidateFlags(pCreateInfos_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                                  pCreateInfos[createInfoIndex].flags, kOptionalFlags,
-                                  "VUID-VkExecutionGraphPipelineCreateInfoAMDX-flags-parameter");
-
             skip |= ValidateStructTypeArray(pCreateInfos_loc.dot(Field::stageCount), pCreateInfos_loc.dot(Field::pStages),
                                             "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO",
                                             pCreateInfos[createInfoIndex].stageCount, pCreateInfos[createInfoIndex].pStages,
@@ -21051,10 +21039,6 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
                                         allowed_structs_VkRayTracingPipelineCreateInfoNV.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext",
                                         "VUID-VkRayTracingPipelineCreateInfoNV-sType-unique", false, true);
-
-            skip |= ValidateFlags(pCreateInfos_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                                  pCreateInfos[createInfoIndex].flags, kOptionalFlags,
-                                  "VUID-VkRayTracingPipelineCreateInfoNV-flags-parameter");
 
             skip |= ValidateStructTypeArray(
                 pCreateInfos_loc.dot(Field::stageCount), pCreateInfos_loc.dot(Field::pStages),
@@ -22779,12 +22763,6 @@ bool StatelessValidation::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer c
                                     "VUID-VkCudaLaunchInfoNV-pNext-pNext", kVUIDUndefined, false, true);
 
         skip |= ValidateRequiredHandle(pLaunchInfo_loc.dot(Field::function), pLaunchInfo->function);
-
-        skip |= ValidateArray(pLaunchInfo_loc.dot(Field::paramCount), pLaunchInfo_loc.dot(Field::pParams), pLaunchInfo->paramCount,
-                              &pLaunchInfo->pParams, false, true, kVUIDUndefined, "VUID-VkCudaLaunchInfoNV-pParams-parameter");
-
-        skip |= ValidateArray(pLaunchInfo_loc.dot(Field::extraCount), pLaunchInfo_loc.dot(Field::pExtras), pLaunchInfo->extraCount,
-                              &pLaunchInfo->pExtras, false, true, kVUIDUndefined, "VUID-VkCudaLaunchInfoNV-pExtras-parameter");
     }
     return skip;
 }
@@ -22872,11 +22850,6 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBu
                                         allowed_structs_VkDescriptorBufferBindingInfoEXT.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkDescriptorBufferBindingInfoEXT-pNext-pNext",
                                         "VUID-VkDescriptorBufferBindingInfoEXT-sType-unique", false, true);
-
-            skip |= ValidateFlags(pBindingInfos_loc.dot(Field::usage), "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits,
-                                  pBindingInfos[bufferIndex].usage, kRequiredFlags,
-                                  "VUID-VkDescriptorBufferBindingInfoEXT-usage-parameter",
-                                  "VUID-VkDescriptorBufferBindingInfoEXT-usage-requiredbitmask");
         }
     }
     return skip;
@@ -24389,9 +24362,6 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectMemoryRequirementsNV
                                     allowed_structs_VkComputePipelineCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                     "VUID-VkComputePipelineCreateInfo-pNext-pNext", "VUID-VkComputePipelineCreateInfo-sType-unique",
                                     false, true);
-
-        skip |= ValidateFlags(pCreateInfo_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                              pCreateInfo->flags, kOptionalFlags, "VUID-VkComputePipelineCreateInfo-flags-parameter");
 
         skip |= ValidateStructType(pCreateInfo_loc.dot(Field::stage), "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO",
                                    &(pCreateInfo->stage), VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, false,
@@ -26394,10 +26364,6 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                                         allowed_structs_VkRayTracingPipelineCreateInfoKHR.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkRayTracingPipelineCreateInfoKHR-pNext-pNext",
                                         "VUID-VkRayTracingPipelineCreateInfoKHR-sType-unique", false, true);
-
-            skip |= ValidateFlags(pCreateInfos_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                                  pCreateInfos[createInfoIndex].flags, kOptionalFlags,
-                                  "VUID-VkRayTracingPipelineCreateInfoKHR-flags-parameter");
 
             skip |= ValidateStructTypeArray(pCreateInfos_loc.dot(Field::stageCount), pCreateInfos_loc.dot(Field::pStages),
                                             "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO",

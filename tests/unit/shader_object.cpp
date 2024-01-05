@@ -1,6 +1,6 @@
 ﻿/*
- * Copyright (c) 2023 Nintendo
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Nintendo
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -898,29 +898,6 @@ TEST_F(NegativeShaderObject, InvalidShaderCreateInfoFlags) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08489");
     createInfo.flags = VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT;
     vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeShaderObject, LinkSingleStage) {
-    TEST_DESCRIPTION("Create a single linked shader object.");
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateShadersEXT-pCreateInfos-08401");
-
-    RETURN_IF_SKIP(InitBasicShaderObject());
-
-    const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-    createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
-
-    VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
     m_errorMonitor->VerifyFound();
 }
 

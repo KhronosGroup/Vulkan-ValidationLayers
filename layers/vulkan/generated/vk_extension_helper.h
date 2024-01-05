@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1102,7 +1102,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_calibrated_timestamps,
                                                                      {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {VK_KHR_MAINTENANCE_6_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance6, {})},
+            {VK_KHR_MAINTENANCE_6_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_maintenance6, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
             {VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
             {VK_IMG_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})},
@@ -1451,10 +1452,7 @@ struct DeviceExtensions : public InstanceExtensions {
              DeviceInfo(&DeviceExtensions::vk_ext_texel_buffer_alignment,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
-             DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform,
-                        {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
-                          {&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
+            {VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {})},
             {VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_bias_control,
                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1522,8 +1520,7 @@ struct DeviceExtensions : public InstanceExtensions {
                         {{{&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
             {VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_qcom_rotated_copy_commands,
-                        {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
-                          {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})},
+                        {{{&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})},
             {VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_ext_image_robustness, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
