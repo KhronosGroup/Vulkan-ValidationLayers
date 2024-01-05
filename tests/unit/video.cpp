@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2023 The Khronos Group Inc.
- * Copyright (c) 2022-2023 RasterGrid Kft.
+ * Copyright (c) 2022-2024 The Khronos Group Inc.
+ * Copyright (c) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11901,10 +11901,6 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeIncompatibleQueryType) {
 
     RETURN_IF_SKIP(Init());
 
-    const char* expected_vuid = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME)
-                                    ? "VUID-vkCmdBeginQuery-queryType-07131"
-                                    : "VUID-vkCmdBeginQuery-queryType-07132";
-
     VideoConfig config = GetConfig();
     if (!config) {
         GTEST_SKIP() << "Test requires video support";
@@ -11922,7 +11918,7 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeIncompatibleQueryType) {
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryType-00803");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryType-07128");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, expected_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-07131");
     vk::CmdBeginQuery(cb.handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 

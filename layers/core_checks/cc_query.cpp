@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -683,12 +683,9 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
             }
 
             default: {
-                const char *vuid =
-                    IsExtEnabled(device_extensions.vk_khr_video_encode_queue)
-                        ? (loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07131"
-                                                                           : "VUID-vkCmdBeginQuery-queryType-07131")
-                        : (loc.function == Func::vkCmdBeginQueryIndexedEXT ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07132"
-                                                                           : "VUID-vkCmdBeginQuery-queryType-07132");
+                const char *vuid = loc.function == Func::vkCmdBeginQueryIndexedEXT
+                                       ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07131"
+                                       : "VUID-vkCmdBeginQuery-queryType-07131";
                 const LogObjectList objlist(cb_state.commandBuffer(), cb_state.bound_video_session->Handle());
                 skip |= LogError(vuid, objlist, loc, "invalid query type used in a video coding scope (%s is bound).",
                                  FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
