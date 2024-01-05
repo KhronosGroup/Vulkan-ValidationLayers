@@ -201,44 +201,39 @@ bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAlloca
     return false;
 }
 
-// There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the import has
-// dedicated Image/Buffer, we can at least validate that it has import support
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
-bool CoreChecks::HasExternalMemoryImportSupport(VkBuffer buffer, VkImage image,
-                                                VkExternalMemoryHandleTypeFlagBits handle_type) const {
+bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Buffer &buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const {
+    VkPhysicalDeviceExternalBufferInfo info = vku::InitStructHelper();
+    info.flags = buffer.createInfo.flags;
     // TODO - Add VkBufferUsageFlags2CreateInfoKHR support
-    if (buffer != VK_NULL_HANDLE) {
-        const auto &buffer_state = *Get<vvl::Buffer>(buffer);
-        VkPhysicalDeviceExternalBufferInfo info = vku::InitStructHelper();
-        info.flags = buffer_state.createInfo.flags;
-        info.usage = buffer_state.createInfo.usage;
-        info.handleType = handle_type;
-        VkExternalBufferProperties properties = vku::InitStructHelper();
-        DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &info, &properties);
-        return (properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
-    } else if (image != VK_NULL_HANDLE) {
-        const auto &image_state = *Get<vvl::Image>(image);
-        VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
-        external_info.handleType = handle_type;
-        VkPhysicalDeviceImageFormatInfo2 info = vku::InitStructHelper(&external_info);
-        info.format = image_state.createInfo.format;
-        info.type = image_state.createInfo.imageType;
-        info.tiling = image_state.createInfo.tiling;
-        info.usage = image_state.createInfo.usage;
-        info.flags = image_state.createInfo.flags;
+    info.usage = buffer.createInfo.usage;
+    info.handleType = handle_type;
+    VkExternalBufferProperties properties = vku::InitStructHelper();
+    DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &info, &properties);
+    return (properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
+}
 
-        VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
-        VkImageFormatProperties2 properties = vku::InitStructHelper(&external_properties);
-        if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
-            DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties);
-        } else {
-            DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &properties);
+bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image &image, VkExternalMemoryHandleTypeFlagBits handle_type) const {
+    VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
+    external_info.handleType = handle_type;
+    VkPhysicalDeviceImageFormatInfo2 info = vku::InitStructHelper(&external_info);
+    info.format = image.createInfo.format;
+    info.type = image.createInfo.imageType;
+    info.tiling = image.createInfo.tiling;
+    info.usage = image.createInfo.usage;
+    info.flags = image.createInfo.flags;
+
+    VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
+    VkImageFormatProperties2 properties = vku::InitStructHelper(&external_properties);
+    if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
+        if (DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties) != VK_SUCCESS) {
+            return false;
         }
-
-        return (external_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) !=
-               0;
+    } else {
+        if (DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &properties) != VK_SUCCESS) {
+            return false;
+        }
     }
-    return false;
+    return (external_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
 }
 
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
@@ -439,8 +434,11 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             }
         }
 
+        // There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the import
+        // has dedicated Image/Buffer, we can at least validate that it has import support
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
         if (dedicated_image != VK_NULL_HANDLE &&
-            !HasExternalMemoryImportSupport(VK_NULL_HANDLE, dedicated_image, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+            !HasExternalMemoryImportSupport(*Get<vvl::Image>(dedicated_image), VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
             skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_image,
                              allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
                              "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
@@ -448,7 +446,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                              FormatHandle(dedicated_image).c_str());
         }
         if (dedicated_buffer != VK_NULL_HANDLE &&
-            !HasExternalMemoryImportSupport(dedicated_buffer, VK_NULL_HANDLE, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+            !HasExternalMemoryImportSupport(*Get<vvl::Buffer>(dedicated_buffer), VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
             skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_buffer,
                              allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
                              "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
@@ -669,7 +667,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         if (mem_info->IsExport()) {
             VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
             external_info.flags = buffer_state->createInfo.flags;
-            // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
+            // TODO: for now, there is no VkBufferUsageFlags2KHR flag that exceeds 32-bit but should be revisited later
             external_info.usage = VkBufferUsageFlags(buffer_state->usage);
             VkExternalBufferProperties external_properties = vku::InitStructHelper();
             bool export_supported = true;
@@ -816,18 +814,27 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         // Validate import memory handles
         if (mem_info->IsImportAHB()) {
             skip |= ValidateBufferImportedHandleANDROID(buffer_state->external_memory_handle_types, memory, buffer, loc);
-        } else if (mem_info->IsImport() &&
-                   (mem_info->import_handle_type.value() & buffer_state->external_memory_handle_types) == 0) {
-            const char *vuid =
-                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02985" : "VUID-vkBindBufferMemory-memory-02985";
-            const LogObjectList objlist(buffer, memory);
-            skip |= LogError(vuid, objlist, loc.dot(Field::memory),
-                             "(%s) was created with an import operation with handleType of %s which "
-                             "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
-                             FormatHandle(memory).c_str(),
-                             string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
-                             FormatHandle(buffer).c_str(),
-                             string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
+        } else if (mem_info->IsImport()) {
+            if ((mem_info->import_handle_type.value() & buffer_state->external_memory_handle_types) == 0) {
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02985" : "VUID-vkBindBufferMemory-memory-02985";
+                const LogObjectList objlist(buffer, memory);
+                skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                                 "(%s) was created with an import operation with handleType of %s which "
+                                 "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
+                                 FormatHandle(memory).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
+                                 FormatHandle(buffer).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
+            }
+            // Check if buffer can be bound to memory imported from specific handle type
+            if (!HasExternalMemoryImportSupport(*buffer_state, mem_info->import_handle_type.value())) {
+                const LogObjectList objlist(buffer, memory);
+                skip |= LogError(
+                    "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-00658", objlist, loc.dot(Field::memory),
+                    "(%s) was imported from handleType %s but VkExternalBufferProperties does not report it as importable.",
+                    FormatHandle(memory).c_str(), string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
+            }
         }
 
         // Validate mix of protected buffer and memory
@@ -1528,6 +1535,15 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
                                          FormatHandle(bind_info.image).c_str(),
                                          string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
+                    }
+                    // Check if image can be bound to memory imported from specific handle type
+                    if (!HasExternalMemoryImportSupport(*image_state, mem_info->import_handle_type.value())) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-00658", objlist, loc.dot(Field::memory),
+                                         "(%s) was imported from handleType %s but VkExternalImageFormatProperties does not report "
+                                         "it as importable.",
+                                         FormatHandle(bind_info.memory).c_str(),
+                                         string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
                     }
                 }
 
