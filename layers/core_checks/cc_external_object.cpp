@@ -21,6 +21,24 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
+static bool CanSemaphoreExportFromImported(VkPhysicalDevice physical_device, VkExternalSemaphoreHandleTypeFlagBits export_type,
+                                           VkExternalSemaphoreHandleTypeFlagBits imported_type) {
+    VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.handleType = export_type;
+    VkExternalSemaphoreProperties semaphore_properties = vku::InitStructHelper();
+    DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &semaphore_info, &semaphore_properties);
+    return (imported_type & semaphore_properties.exportFromImportedHandleTypes) != 0;
+}
+
+static bool CanFenceExportFromImported(VkPhysicalDevice physical_device, VkExternalFenceHandleTypeFlagBits export_type,
+                                       VkExternalFenceHandleTypeFlagBits imported_type) {
+    VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
+    fence_info.handleType = export_type;
+    VkExternalFenceProperties fence_properties = vku::InitStructHelper();
+    DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &fence_info, &fence_properties);
+    return (imported_type & fence_properties.exportFromImportedHandleTypes) != 0;
+}
+
 bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                const ErrorObject &error_obj) const {
     bool skip = false;
@@ -98,6 +116,14 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
 
+        if (sem_state->Scope() != vvl::Semaphore::kInternal &&
+            !CanSemaphoreExportFromImported(physical_device, pGetFdInfo->handleType, sem_state->ImportedHandleType())) {
+            skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-semaphore-01133", sem_state->Handle(), info_loc.dot(Field::handleType),
+                             "(%s) cannot be exported from semaphore with imported payload with handle type %s",
+                             string_VkExternalSemaphoreHandleTypeFlagBits(pGetFdInfo->handleType),
+                             string_VkExternalSemaphoreHandleTypeFlagBits(sem_state->ImportedHandleType()));
+        }
+
         if (pGetFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
             if (sem_state->type != VK_SEMAPHORE_TYPE_BINARY) {
                 skip |=
@@ -140,6 +166,15 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
                              string_VkExternalFenceHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
+
+        if (fence_state->Scope() != vvl::Fence::kInternal &&
+            !CanFenceExportFromImported(physical_device, pGetFdInfo->handleType, fence_state->ImportedHandleType())) {
+            skip |= LogError("VUID-VkFenceGetFdInfoKHR-fence-01455", fence_state->Handle(), info_loc.dot(Field::handleType),
+                             "(%s) cannot be exported from fence with imported payload with handle type %s",
+                             string_VkExternalFenceHandleTypeFlagBits(pGetFdInfo->handleType),
+                             string_VkExternalFenceHandleTypeFlagBits(fence_state->ImportedHandleType()));
+        }
+
         if (pGetFdInfo->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == vvl::Fence::kUnsignaled) {
             skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01454", fence_state->Handle(), info_loc.dot(Field::handleType),
                              "is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT which cannot be exported unless the fence has a pending "
@@ -203,14 +238,9 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                              string_VkExternalSemaphoreHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
-        auto can_export_from_imported = [this, pGetWin32HandleInfo, &sem_state]() {
-            VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
-            semaphore_info.handleType = pGetWin32HandleInfo->handleType;
-            VkExternalSemaphoreProperties semaphore_properties = vku::InitStructHelper();
-            DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &semaphore_info, &semaphore_properties);
-            return (sem_state->ImportedHandleType() & semaphore_properties.exportFromImportedHandleTypes) != 0;
-        };
-        if (sem_state->Scope() != vvl::Semaphore::kInternal && !can_export_from_imported()) {
+
+        if (sem_state->Scope() != vvl::Semaphore::kInternal &&
+            !CanSemaphoreExportFromImported(physical_device, pGetWin32HandleInfo->handleType, sem_state->ImportedHandleType())) {
             skip |= LogError("VUID-VkSemaphoreGetWin32HandleInfoKHR-semaphore-01128", sem_state->Handle(),
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
                              "(%s) cannot be exported from semaphore with imported payload with handle type %s",
@@ -240,14 +270,9 @@ bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const Vk
                              string_VkExternalFenceHandleTypeFlagBits(pGetWin32HandleInfo->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
-        auto can_export_from_imported = [this, pGetWin32HandleInfo, &fence_state]() {
-            VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
-            fence_info.handleType = pGetWin32HandleInfo->handleType;
-            VkExternalFenceProperties fence_properties = vku::InitStructHelper();
-            DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &fence_info, &fence_properties);
-            return (fence_state->ImportedHandleType() & fence_properties.exportFromImportedHandleTypes) != 0;
-        };
-        if (fence_state->Scope() != vvl::Fence::kInternal && !can_export_from_imported()) {
+
+        if (fence_state->Scope() != vvl::Fence::kInternal &&
+            !CanFenceExportFromImported(physical_device, pGetWin32HandleInfo->handleType, fence_state->ImportedHandleType())) {
             skip |= LogError("VUID-VkFenceGetWin32HandleInfoKHR-fence-01450", fence_state->Handle(),
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
                              "(%s) cannot be exported from fence with imported payload with handle type %s",
