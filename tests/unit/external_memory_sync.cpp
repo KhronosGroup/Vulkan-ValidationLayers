@@ -581,6 +581,120 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     m_default_queue->wait();
 }
 
+TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedSemaphore) {
+    TEST_DESCRIPTION("Export from semaphore with imported payload that does not support export");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+    {
+        const auto handle_types = FindSupportedExternalSemaphoreHandleTypes(
+            gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT);
+        if ((handle_types & handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT is not both exportable and importable";
+        }
+    }
+    const auto export_from_import_handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    {
+        const auto handle_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+        if ((handle_types & export_from_import_handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT is not exportable";
+        }
+    }
+    VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
+    semaphore_info.handleType = export_from_import_handle_type;
+    VkExternalSemaphoreProperties semaphore_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &semaphore_info, &semaphore_properties);
+    if ((handle_type & semaphore_properties.exportFromImportedHandleTypes) != 0) {
+        GTEST_SKIP() << "cannot find handle type that does not support export from imported semaphore";
+    }
+
+    // create semaphore and export payload
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
+
+    VkSubmitInfo si = vku::InitStructHelper();
+    si.signalSemaphoreCount = 1;
+    si.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
+
+    int handle = 0;
+    semaphore.export_handle(handle, handle_type);
+
+    // create semaphore and import payload
+    VkExportSemaphoreCreateInfo export_info2 = vku::InitStructHelper();  // prepare to export from imported semaphore
+    export_info2.handleTypes = export_from_import_handle_type;
+    const VkSemaphoreCreateInfo create_info2 = vku::InitStructHelper(&export_info2);
+    vkt::Semaphore import_semaphore(*m_device, create_info2);
+    import_semaphore.import_handle(handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
+
+    // export from imported semaphore
+    int handle2 = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-semaphore-01133");
+    import_semaphore.export_handle(handle2, export_from_import_handle_type);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedFence) {
+    TEST_DESCRIPTION("Export from fence with imported payload that does not support export");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
+    {
+        const auto handle_types = FindSupportedExternalFenceHandleTypes(
+            gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT);
+        if ((handle_types & handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT is not both exportable and importable";
+        }
+    }
+    const auto export_from_import_handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    {
+        const auto handle_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+        if ((handle_types & export_from_import_handle_type) == 0) {
+            GTEST_SKIP() << "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT is not exportable";
+        }
+    }
+    VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
+    fence_info.handleType = export_from_import_handle_type;
+    VkExternalFenceProperties fence_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &fence_info, &fence_properties);
+    if ((handle_type & fence_properties.exportFromImportedHandleTypes) != 0) {
+        GTEST_SKIP() << "cannot find handle type that does not support export from imported fence";
+    }
+
+    // create fence and export payload
+    VkExportFenceCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;  // at first export handle type, then import it
+    const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Fence fence(*m_device, create_info);
+
+    VkSubmitInfo si = vku::InitStructHelper();
+    vk::QueueSubmit(m_default_queue->handle(), 1, &si, fence.handle());
+
+    int handle = 0;
+    fence.export_handle(handle, handle_type);
+
+    // create fence and import payload
+    VkExportFenceCreateInfo export_info2 = vku::InitStructHelper();  // prepare to export from imported fence
+    export_info2.handleTypes = export_from_import_handle_type;
+    const VkFenceCreateInfo create_info2 = vku::InitStructHelper(&export_info2);
+    vkt::Fence import_fence(*m_device, create_info2);
+    import_fence.import_handle(handle, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT);
+
+    // export from imported fence
+    int handle2 = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFenceGetFdInfoKHR-fence-01455");
+    import_fence.export_handle(handle2, export_from_import_handle_type);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreType) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
@@ -1704,7 +1818,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
     ::CloseHandle(handle);
 }
 
-TEST_F(NegativeExternalMemorySync, ExportFromImportedSemaphore) {
+TEST_F(NegativeExternalMemorySync, Win32ExportFromImportedSemaphore) {
     TEST_DESCRIPTION("Export from semaphore with imported payload that does not support export");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
@@ -1757,7 +1871,7 @@ TEST_F(NegativeExternalMemorySync, ExportFromImportedSemaphore) {
     ::CloseHandle(handle);
 }
 
-TEST_F(NegativeExternalMemorySync, ExportFromImportedFence) {
+TEST_F(NegativeExternalMemorySync, Win32ExportFromImportedFence) {
     TEST_DESCRIPTION("Export from fence with imported payload that does not support export");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
