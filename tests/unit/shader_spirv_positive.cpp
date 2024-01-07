@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1908,4 +1908,46 @@ TEST_F(PositiveShaderSpirv, DescriptorCountSpecConstant) {
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderSpirv, PushConstantBufferReference) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7258");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char src[] = R"glsl(
+        #version 460
+        #extension GL_EXT_debug_printf: require
+        #extension GL_EXT_buffer_reference : require
+        #extension GL_EXT_buffer_reference2: require
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64: require
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout(buffer_reference) buffer TestBuffer
+        {
+            uint64_t buffer_value;
+        };
+
+
+        layout(push_constant) uniform PushConstants {
+            TestBuffer test_buffers[];
+        } push_constants;
+
+        void main(){
+            push_constants.test_buffers[0].buffer_value = 9001;
+        }
+    )glsl";
+    VkShaderObj vs(this, src, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 8};
+    VkPipelineLayoutCreateInfo pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 }
