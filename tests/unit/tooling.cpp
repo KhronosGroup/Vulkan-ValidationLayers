@@ -138,7 +138,7 @@ TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
     uint64_t data;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetPrivateData-objectHandle");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPrivateData-objectHandle-09498");
     // valid handle, but not a vkSample
     vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)m_device->device(), data_slot, &data);
     m_errorMonitor->VerifyFound();
@@ -160,7 +160,7 @@ TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
     sampler.destroy();
 
     uint64_t data;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetPrivateData-objectHandle");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPrivateData-objectHandle-09498");
     // valid handle, but not a vkSample
     vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, bad_handle, data_slot, &data);
     m_errorMonitor->VerifyFound();

@@ -1536,7 +1536,7 @@ bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectTyp
                              FormatHandle(device).c_str());
         }
     } else {
-        skip |= ValidateAnonymousObject(objectHandle, objectType, "UNASSIGNED-vkGetPrivateData-objectHandle",
+        skip |= ValidateAnonymousObject(objectHandle, objectType, "VUID-vkGetPrivateData-objectHandle-09498",
                                         "VUID-vkGetPrivateData-objectType-04018", error_obj.location.dot(Field::objectHandle));
     }
 
