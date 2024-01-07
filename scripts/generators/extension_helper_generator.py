@@ -104,9 +104,6 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
                 temp = re.sub(r',VK_VERSION_1_\d+', '', extension.depends)
                 for reqs in exprValues(parseExpr(temp)):
-                    if reqs == 'VK_VERSION_1_0':
-                        # An explicit dependency on Vulkan 1.0 is meaningless
-                        continue
                     feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
                     requiredExpression[extension.name].append(feature)
         for version in self.vk.versions.keys():
