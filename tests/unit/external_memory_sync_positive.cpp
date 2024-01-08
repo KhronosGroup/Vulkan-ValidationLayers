@@ -491,6 +491,8 @@ TEST_F(PositiveExternalMemorySync, ExportFromImportedFence) {
     import_fence.export_handle(handle2, handle_type);
 
     ::CloseHandle(handle);
-    ::CloseHandle(handle2);
+    if (handle2 != handle) {
+        ::CloseHandle(handle2);
+    }
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
