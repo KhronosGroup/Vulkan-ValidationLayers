@@ -176,7 +176,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetShaderBinaryDataEXT',
             'vkSetDeviceMemoryPriorityEXT',
             'vkGetDeviceImageSubresourceLayoutKHR',
-            'vkQueueBindSparse'
+            'vkQueueBindSparse',
+            'vkCmdBindDescriptorBuffersEXT',
+            'vkGetPhysicalDeviceExternalBufferProperties',
             ]
 
         # Commands to ignore
