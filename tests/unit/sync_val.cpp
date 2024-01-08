@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -5620,4 +5620,261 @@ TEST_F(NegativeSyncVal, WriteOnlyImageWriteHazard) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, DebugRegion) {
+    TEST_DESCRIPTION("Reports debug region for hazard's prior access: single debug region");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    m_commandBuffer->begin();
+    label.pLabelName = "VulkanFrame";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VulkanFrame");
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);  // VulkanFrame
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, DebugRegion2) {
+    TEST_DESCRIPTION("Reports debug region for hazard's prior access: two nested debug regions");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    m_commandBuffer->begin();
+    label.pLabelName = "VulkanFrame";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+
+    label.pLabelName = "CopyAToB";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VulkanFrame::CopyAToB");
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);  // VulkanFrame
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, DebugRegion3) {
+    TEST_DESCRIPTION(
+        "Reports debug region for hazard's prior access:"
+        "there is a nested region but prior access happens in the top level region");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_d(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    m_commandBuffer->begin();
+    label.pLabelName = "VulkanFrame";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+
+    label.pLabelName = "CopyAToD";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_d, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    // this is where prior access happens for reported hazard
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VulkanFrame");
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);  // VulkanFrame
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, DebugRegion4) {
+    TEST_DESCRIPTION("Reports debug region for hazard's prior access: multiple nested debug regions");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+
+    m_commandBuffer->begin();
+    label.pLabelName = "VulkanFrame";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+
+    label.pLabelName = "ResetEvent";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdResetEvent(*m_commandBuffer, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    label.pLabelName = "FirstPass";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+
+    label.pLabelName = "CopyAToB";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    label.pLabelName = "ResetEvent2";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdResetEvent(*m_commandBuffer, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VulkanFrame::FirstPass::CopyAToB");
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);  // FirstPass
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);  // VulkanFrame
+
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, DebugRegion5_QueueSubmitValidation) {
+    TEST_DESCRIPTION(
+        "Validation at submit time: Reports debug region for hazard's prior access: single debug region for entire command buffer");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+
+    label.pLabelName = "VulkanFrame_CommandBuffer0";
+    cb0.begin();
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(cb0);
+    cb0.end();
+
+    label.pLabelName = "VulkanFrame_CommandBuffer1";
+    cb1.begin();
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(cb1);
+    cb1.end();
+
+    std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
+    vkt::Fence fence;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VulkanFrame_CommandBuffer0");
+    m_default_queue->submit(command_buffers, fence, false);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeSyncVal, DebugRegion6_QueueSubmitValidation) {
+    TEST_DESCRIPTION("Validation at submit time: Reports debug region for hazard's prior access: multiple nested debug regions");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+
+    vkt::Event event(*m_device);  // events are not used for some specific functionality, only to create additional debug regions
+    vkt::Event event2(*m_device);
+
+    // CommandBuffer0
+    label.pLabelName = "VulkanFrame_CommandBuffer0";
+    cb0.begin();
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+
+    label.pLabelName = "ResetEvent";
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+    vk::CmdResetEvent(cb0, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    vk::CmdEndDebugUtilsLabelEXT(cb0);
+
+    label.pLabelName = "FirstPass";
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+
+    label.pLabelName = "CopyAToB";
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(cb0);
+
+    vk::CmdEndDebugUtilsLabelEXT(cb0);  // FirstPass
+    vk::CmdEndDebugUtilsLabelEXT(cb0);  // VulkanFrame_CommandBuffer0
+    cb0.end();
+
+    // CommandBuffer1
+    label.pLabelName = "VulkanFrame_CommandBuffer1";
+    cb1.begin();
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+
+    label.pLabelName = "ResetEvent2";
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+    vk::CmdResetEvent(cb1, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    vk::CmdEndDebugUtilsLabelEXT(cb1);
+
+    label.pLabelName = "SecondPass";
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+
+    label.pLabelName = "CopyCToA";
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(cb1);
+
+    vk::CmdEndDebugUtilsLabelEXT(cb1);  // SecondPass
+    vk::CmdEndDebugUtilsLabelEXT(cb1);  // VulkanFrame_CommandBuffer1
+    cb1.end();
+
+    std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
+    vkt::Fence fence;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VulkanFrame_CommandBuffer0::FirstPass::CopyAToB");
+    m_default_queue->submit(command_buffers, fence, false);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_default_queue->wait();
 }
