@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1891,5 +1891,33 @@ TEST_F(VkLayerTest, MissingExtensionPhysicalDeviceProperties) {
     VkPhysicalDeviceProperties2 properties2 = vku::InitStructHelper(&id_properties);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidGetExternalBufferPropertiesUsage) {
+    TEST_DESCRIPTION("Call vkGetPhysicalDeviceExternalBufferProperties with invalid usage");
+
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+#ifdef _WIN32
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+
+    VkPhysicalDeviceExternalBufferInfo externalBufferInfo = vku::InitStructHelper();
+    externalBufferInfo.usage = 0x80000000;
+    externalBufferInfo.handleType = handle_type;
+
+    VkExternalBufferProperties externalBufferProperties = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceExternalBufferInfo-None-09499");
+    vk::GetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &externalBufferInfo, &externalBufferProperties);
+    m_errorMonitor->VerifyFound();
+
+    externalBufferInfo.usage = 0u;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceExternalBufferInfo-None-09500");
+    vk::GetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &externalBufferInfo, &externalBufferProperties);
     m_errorMonitor->VerifyFound();
 }

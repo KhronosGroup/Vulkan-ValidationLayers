@@ -1536,6 +1536,40 @@ TEST_F(NegativeDescriptorBuffer, Binding) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, InvalidDescriptorBufferUsage) {
+    TEST_DESCRIPTION("Test vkCmdBindDescriptorBuffersEXT with invalid usage");
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buffCI = vku::InitStructHelper();
+    buffCI.size = 4096;
+    buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+
+    VkDescriptorBufferBindingInfoEXT bindingInfo = vku::InitStructHelper();
+    bindingInfo.address = d_buffer.address();
+    bindingInfo.usage = buffCI.usage | 0x80000000;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-None-09499");
+    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1u, &bindingInfo);
+    m_errorMonitor->VerifyFound();
+
+    bindingInfo.usage = 0u;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-None-09500");
+    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1u, &bindingInfo);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {
     TEST_DESCRIPTION("texel buffers must be less than maxTexelBufferElements.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
