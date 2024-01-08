@@ -11704,7 +11704,7 @@ TEST_F(NegativeVideo, CreateQueryPoolEncodeFeedbackProfile) {
 
     VideoConfig decode_config = GetConfigDecode();
     VideoConfig encode_config = GetConfigEncode();
-    if (!decode_config && !encode_config) {
+    if (!decode_config || !encode_config) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
