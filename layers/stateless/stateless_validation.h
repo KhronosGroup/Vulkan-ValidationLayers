@@ -687,6 +687,14 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                              VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const;
 
+    bool manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                           const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
+                                                           const ErrorObject &error_obj) const;
+
+    bool manual_PreCallValidateGetPhysicalDeviceExternalBufferProperties(
+        VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
+        VkExternalBufferProperties *pExternalBufferProperties, const ErrorObject &error_obj) const;
+
     bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                   const ErrorObject &error_obj) const;

@@ -12456,6 +12456,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
                                     GeneratedVulkanHeaderVersion, "VUID-VkExternalBufferProperties-pNext-pNext", kVUIDUndefined,
                                     true, false);
     }
+    if (!skip)
+        skip |= manual_PreCallValidateGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
+                                                                                pExternalBufferProperties, error_obj);
     return skip;
 }
 
@@ -22853,6 +22856,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBu
                                         "VUID-VkDescriptorBufferBindingInfoEXT-sType-unique", false, true);
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, error_obj);
     return skip;
 }
 

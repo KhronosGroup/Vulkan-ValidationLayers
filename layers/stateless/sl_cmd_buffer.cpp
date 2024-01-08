@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -438,6 +438,38 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
                              "(%" PRIu64 ") is not a multiple of 4.", size);
         }
     }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                                            const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
+                                                                            const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < bufferCount; i++) {
+        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pBindingInfos[i].pNext)) {
+            skip |= ValidateFlags(error_obj.location.dot(Field::pBindingInfos, i).dot(Field::usage), "VkBufferUsageFlagBits",
+                                  AllVkBufferUsageFlagBits, pBindingInfos[i].usage, kRequiredFlags,
+                                  "VUID-VkDescriptorBufferBindingInfoEXT-None-09499",
+                                  "VUID-VkDescriptorBufferBindingInfoEXT-None-09500");
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceExternalBufferProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
+    VkExternalBufferProperties *pExternalBufferProperties, const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pExternalBufferInfo->pNext)) {
+        skip |= ValidateFlags(error_obj.location.dot(Field::pExternalBufferInfo).dot(Field::usage), "VkBufferUsageFlagBits",
+                              AllVkBufferUsageFlagBits, pExternalBufferInfo->usage, kRequiredFlags,
+                              "VUID-VkPhysicalDeviceExternalBufferInfo-None-09499",
+                              "VUID-VkPhysicalDeviceExternalBufferInfo-None-09500");
+    }
+
     return skip;
 }
 
