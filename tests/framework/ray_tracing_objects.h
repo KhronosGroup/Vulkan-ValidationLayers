@@ -78,6 +78,7 @@ class GeometryKHR {
     GeometryKHR& SetTrianglesVertexFormat(VkFormat vertex_format);
     GeometryKHR& SetTrianglesMaxVertex(uint32_t max_vertex);
     GeometryKHR& SetTrianglesTransformatData(VkDeviceAddress address);
+    GeometryKHR& SetTrianglesVertexBufferDeviceAddress(VkDeviceAddress address);
     // AABB
     GeometryKHR& SetAABBsDeviceBuffer(vkt::Buffer&& buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
     GeometryKHR& SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));

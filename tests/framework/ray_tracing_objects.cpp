@@ -133,6 +133,10 @@ GeometryKHR &GeometryKHR::SetTrianglesTransformatData(VkDeviceAddress address) {
     return *this;
 }
 
+GeometryKHR &GeometryKHR::SetTrianglesVertexBufferDeviceAddress(VkDeviceAddress address) {
+    vk_obj_.geometry.triangles.vertexData.deviceAddress = address;
+    return *this;
+}
 GeometryKHR &GeometryKHR::SetAABBsDeviceBuffer(vkt::Buffer &&buffer, VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
     aabbs_.device_buffer = std::move(buffer);
     vk_obj_.geometry.aabbs.data.deviceAddress = aabbs_.device_buffer.address();
