@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2022 The Khronos Group Inc.
-// Copyright (c) 2021-2023 Valve Corporation
-// Copyright (c) 2021-2023 LunarG, Inc.
+// Copyright (c) 2021-2024 The Khronos Group Inc.
+// Copyright (c) 2021-2024 Valve Corporation
+// Copyright (c) 2021-2024 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,17 @@ using uint = unsigned int;
 const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u*4u;
 
 #endif
+
+// Instead of having to create a variable and pass it in each time for every function call made, we use these values to map
+// constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime. (Similar to
+// Specialization Constant)
+const uint kLinkShaderId = 0x0DEAD001;
+
+const int kDefaultDescriptorSet = 7;
+// Inside the descriptor set used by GPU-AV, binding #0 is reserved for the output, but each check that requires additional input
+// must reserve its own binding slot
+const int kBindingBindlessDescriptor = 1;
+const int kBindingBufferDeviceAddress = 2;
 
 // Common Stream Record Offsets
 //

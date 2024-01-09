@@ -1,7 +1,7 @@
 # ~~~
 # Copyright (c) 2014-2024 Valve Corporation
 # Copyright (c) 2014-2024 LunarG, Inc.
-# Copyright (c) 2023-2023 RasterGrid Kft.
+# Copyright (c) 2023-2024 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,6 +110,8 @@ elseif(MSVC)
         /wd4389 # signed/unsigned mismatch
     )
 endif()
+
+add_subdirectory(gpu_validation/spirv)
 
 add_library(vvl MODULE)
 
@@ -352,6 +354,7 @@ target_link_libraries(vvl PRIVATE
     SPIRV-Headers::SPIRV-Headers
     SPIRV-Tools-opt
     SPIRV-Tools-link
+    gpu_av_spirv
     VkLayer_utils
 )
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2016-2023 Valve Corporation
-# Copyright (c) 2016-2023 LunarG, Inc.
-# Copyright (c) 2016-2022 Google Inc.
+# Copyright (c) 2016-2024 Valve Corporation
+# Copyright (c) 2016-2024 LunarG, Inc.
+# Copyright (c) 2016-2024 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,18 +44,18 @@ def compile(filename, glslang_validator, spirv_opt, target_env):
         args = [glslang_validator]
 
         if not target_env:
-            requires_vulkan_1_2 = ['rgen']
+            requires_vulkan_1_2 = ['rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
             if filename.split(".")[-1] in requires_vulkan_1_2:
                 target_env = "vulkan1.2"
+            elif tmpfile.startswith("inst_"):
+                target_env = "vulkan1.1" # Otherwise glslang might create BufferBlocks
+            else:
+                target_env = "vulkan1.0"
         if target_env:
             args += ["--target-env", target_env]
         # functions called by the SPIRV-Tools instrumentation require special options
         if tmpfile.startswith("inst_"):
-            args += ["--no-link", "--target-env"]
-            if filename.endswith(".rgen"):
-                args += ["vulkan1.2"]
-            else:
-                args += ["vulkan1.0"]
+            args += ["--no-link"]
         else:
             args += ["-V"]
         args += ["-o", tmpfile, filename]
@@ -114,9 +114,9 @@ def write(words, filename, apiname, outdir = None):
 
 /***************************************************************************
 *
-* Copyright (c) 2021-2022 The Khronos Group Inc.
-* Copyright (c) 2021-2023 Valve Corporation
-* Copyright (c) 2021-2023 LunarG, Inc.
+* Copyright (c) 2021-2024 The Khronos Group Inc.
+* Copyright (c) 2021-2024 Valve Corporation
+* Copyright (c) 2021-2024 LunarG, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ def main():
                         help='Specify API name to generate')
     parser.add_argument('--shader', action='store', type=str, help='Input Filename')
     parser.add_argument('--glslang', action='store', type=str, help='Path to glslangValidator to use')
-    parser.add_argument('--spirv-opt', action='store', dest='spirv_opt', type=str, help='Path to glslangValidator to use')
+    parser.add_argument('--spirv-opt', action='store', dest='spirv_opt', type=str, help='Path to spirv-opt to use')
     parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory')
     parser.add_argument('--targetenv', action='store', type=str, help='Optional --target-env argument passed down to glslangValidator')
     args = parser.parse_args()

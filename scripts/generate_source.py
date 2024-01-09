@@ -2,8 +2,8 @@
 # Copyright (c) 2021-2024 The Khronos Group Inc.
 # Copyright (c) 2021-2024 Valve Corporation
 # Copyright (c) 2021-2024 LunarG, Inc.
-# Copyright (c) 2021-2023 Google Inc.
-# Copyright (c) 2023-2023 RasterGrid Kft.
+# Copyright (c) 2021-2024 Google Inc.
+# Copyright (c) 2023-2024 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -356,6 +356,8 @@ def main(argv):
         'gpu_pre_draw_vert.h',
         'gpu_pre_trace_rays_rgen.h',
         'inst_functions_comp.h',
+        'inst_buffer_device_address_comp.h',
+        'inst_bindless_descriptor_comp.h',
         'gpu_inst_shader_hash.h'
     ]
 
