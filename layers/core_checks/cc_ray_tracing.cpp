@@ -607,20 +607,59 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         }
 
                         if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
-                            const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
-                            if (recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
-                                const LogObjectList objlist(info.srcAccelerationStructure);
-                                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770", objlist,
-                                                 p_geom_loc,
-                                                 " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
-                                                 "], but this build range has its firstVertex member set to (%" PRIu32
-                                                 ") when it was last specified as (%" PRIu32 ").",
-                                                 pp_build_range_info_loc.Fields().c_str(), geom_i,
-                                                 geometry_build_ranges[geom_i].firstVertex, recorded_first_vertex);
+                            if (geom_i < src_as_state->build_range_infos.size()) {
+                                const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
+                                if (recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
+                                    const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
+                                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770", objlist,
+                                                     p_geom_loc,
+                                                     " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
+                                                     "], but this build range has its firstVertex member set to (%" PRIu32
+                                                     ") when it was last specified as (%" PRIu32 ").",
+                                                     pp_build_range_info_loc.Fields().c_str(), geom_i,
+                                                     geometry_build_ranges[geom_i].firstVertex, recorded_first_vertex);
+                                }
                             }
                         }
                     }
 
+                    VkFormatProperties vertex_format_props{};
+                    DispatchGetPhysicalDeviceFormatProperties(physical_device, geom_data.geometry.triangles.vertexFormat,
+                                                              &vertex_format_props);
+                    if (!(vertex_format_props.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+                        skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797", cmd_buffer,
+                                         p_geom_geom_triangles_loc.dot(Field::vertexFormat),
+                                         "is %s, and only has the following VkFormatProperties::bufferFeatures: %s.",
+                                         string_VkFormat(geom_data.geometry.triangles.vertexFormat),
+                                         string_VkFormatFeatureFlags(vertex_format_props.bufferFeatures).c_str());
+                    }
+                    // Only try to get format info if vertex format is valid
+                    else {
+                        const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(geom_data.geometry.triangles.vertexFormat);
+                        uint32_t min_component_bits_size = format_info.components[0].size;
+                        for (uint32_t component_i = 1; component_i < format_info.component_count; ++component_i) {
+                            min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
+                        }
+                        const uint32_t min_component_byte_size = min_component_bits_size / 8;
+                        if (SafeModulo(geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size) != 0) {
+                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711", cmd_buffer,
+                                             p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                             "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                             ") of its corresponding vertex "
+                                             "format (%s).",
+                                             geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size,
+                                             string_VkFormat(geom_data.geometry.triangles.vertexFormat));
+                        }
+                        if (SafeModulo(geom_data.geometry.triangles.vertexStride, min_component_byte_size) != 0) {
+                            skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735", cmd_buffer,
+                                             p_geom_geom_triangles_loc.dot(Field::vertexStride),
+                                             "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                             ") of its corresponding vertex "
+                                             "format (%s).",
+                                             geom_data.geometry.triangles.vertexStride, min_component_byte_size,
+                                             string_VkFormat(geom_data.geometry.triangles.vertexFormat));
+                        }
+                    }
                     if (geom_data.geometry.triangles.transformData.deviceAddress != 0) {
                         auto tranform_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.transformData.deviceAddress);
                         if (tranform_buffer_states.empty()) {
