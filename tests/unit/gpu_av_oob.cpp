@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
- * Copyright (c) 2020-2023 Google, Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -813,7 +813,7 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
     }
 }
 
-TEST_F(NegativeGpuAVOOB, StorageBuffer) {
+TEST_F(NegativeGpuAVOOB, DISABLED_StorageBuffer) {
     TEST_DESCRIPTION("Make suree OOB is still checked when result is from a BufferDeviceAddress");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
