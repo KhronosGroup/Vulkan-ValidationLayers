@@ -1366,8 +1366,10 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    // TODO - This is not called in vkCmdBuildAccelerationStructuresKHR and only seems used for ValidateActionState
-    skip |= ValidateCmdRayQueryState(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    if (!cb_state->unprotected) {
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-03649", commandBuffer, error_obj.location,
+                         "called in a protected command buffer.");
+    }
     for (uint32_t i = 0; i < infoCount; ++i) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, i);
         auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfos[i].srcAccelerationStructure);
@@ -1580,31 +1582,6 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
                                               error_obj.location.dot(Field::pInfo).dot(Field::dst),
                                               "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-buffer-03745");
     }
-    return skip;
-}
-
-bool CoreChecks::ValidateCmdRayQueryState(const vvl::CommandBuffer &cb_state, const VkPipelineBindPoint bind_point,
-                                          const Location &loc) const {
-    bool skip = false;
-    const vvl::DrawDispatchVuid &vuid = vvl::GetDrawDispatchVuid(loc.function);
-    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto &last_bound = cb_state.lastBound[lv_bind_point];
-    const auto *pipe = last_bound.pipeline_state;
-
-    bool ray_query_shader = false;
-    if (nullptr != pipe) {
-        if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-            ray_query_shader = true;
-        } else {
-            // TODO - Loop through shader for RayQueryKHR for draw/dispatch commands
-        }
-    }
-
-    if (cb_state.unprotected == false && ray_query_shader) {
-        skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.commandBuffer(), loc,
-                         "can't use in protected command buffers for RayQuery operations.");
-    }
-
     return skip;
 }
 
