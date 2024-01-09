@@ -2349,20 +2349,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
             BufferAddressValidation<5> buffer_address_validator = {{{
                 {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052", LogObjectList(device),
                  [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                     if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
-                         if (out_error_msg) {
-                             if (const auto mem_state = buffer_state->MemState(); mem_state && mem_state->Destroyed()) {
-                                 *out_error_msg +=
-                                     "buffer is bound to memory (" + FormatHandle(mem_state->Handle()) + ") but it has been freed";
-                             } else {
-                                 *out_error_msg += "buffer has not been bound to memory";
-                             }
-                         }
-                         return false;
-                     }
-                     return true;
+                     return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
                  },
-                 []() { return "The following buffers are not bound to memory or it has been freed:\n"; }},
+                 []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
 
                 {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055", LogObjectList(device),
                  [binding_usage = bindingInfo.usage](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
