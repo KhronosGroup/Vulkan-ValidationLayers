@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3014,6 +3014,21 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
                 sync_image->SetOpaqueBaseAddress(*this);
             }
         }
+    }
+}
+
+void SyncValidator::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo,
+                                                            const RecordObject &record_obj) {
+    StateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
+    if (auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer)) {
+        cb_state->access_context.PushDebugRegion(pLabelInfo ? pLabelInfo->pLabelName : nullptr);
+    }
+}
+
+void SyncValidator::PreCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+    StateTracker::PreCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer, record_obj);
+    if (auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer)) {
+        cb_state->access_context.PopDebugRegion();
     }
 }
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     cb_access_context_.ImportAsyncContexts(*from_context);
 
     events_context_ = from.events_context_;
+    debug_regions_ = from.debug_regions_;
 
     // We don't want to copy the full render_pass_context_ history just for the proxy.
 }
@@ -123,6 +124,7 @@ void CommandBufferAccessContext::Reset() {
     current_renderpass_context_ = nullptr;
     events_context_.Clear();
     dynamic_rendering_info_.reset();
+    debug_regions_ = DebugRegions{};
 }
 
 std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) const {
@@ -858,6 +860,9 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command
     if (handle) {
         access_log_->back().AddHandle(std::move(handle));
     }
+    if (!debug_regions_.commands.empty()) {
+        access_log_->back().debug_region_command_index = static_cast<uint32_t>(debug_regions_.commands.size() - 1);
+    }
     return next;
 }
 
@@ -876,6 +881,9 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, N
         access_log_->back().AddHandle(handle);
         command_handles_.emplace_back(std::move(handle));
     }
+    if (!debug_regions_.commands.empty()) {
+        access_log_->back().debug_region_command_index = static_cast<uint32_t>(debug_regions_.commands.size() - 1);
+    }
     CheckCommandTagDebugCheckpoint();
     return next;
 }
@@ -885,6 +893,50 @@ ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(vvl::Func com
         return NextCommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
     }
     return NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
+}
+
+void CommandBufferAccessContext::PushDebugRegion(const char *region_name) {
+    std::string name = (region_name == nullptr || region_name[0] == 0) ? "(unnamed debug region)" : region_name;
+    debug_regions_.label_names.push_back(std::move(name));
+
+    DebugRegions::DebugRegionCommand command;
+    command.start_region = true;
+    command.label_name_index = static_cast<uint32_t>(debug_regions_.label_names.size() - 1);
+    debug_regions_.commands.push_back(command);
+}
+
+void CommandBufferAccessContext::PopDebugRegion() {
+    DebugRegions::DebugRegionCommand command;
+    command.start_region = false;
+    debug_regions_.commands.push_back(command);
+}
+
+std::string CommandBufferAccessContext::GetDebugRegionFullyQualifiedName(uint32_t debug_region_command_index) const {
+    return debug_regions_.GetDebugRegionFullyQualifiedName(debug_region_command_index);
+}
+
+std::string CommandBufferAccessContext::DebugRegions::GetDebugRegionFullyQualifiedName(uint32_t debug_region_command_index) const {
+    // Replay commands up to specified command index. nested_label_indices will be populated
+    // with nested debug regions that correspond to the location of the specified command.
+    assert(debug_region_command_index < commands.size());
+    std::vector<uint32_t> nested_label_indices;
+    for (uint32_t i = 0; i <= debug_region_command_index; i++) {
+        if (commands[i].start_region) {
+            assert(commands[i].label_name_index < label_names.size());
+            nested_label_indices.push_back(commands[i].label_name_index);
+        } else {
+            nested_label_indices.pop_back();
+        }
+    }
+    // Concatenate nested region names
+    std::string name;
+    for (uint32_t label_index : nested_label_indices) {
+        if (!name.empty()) {
+            name += "::";
+        }
+        name += label_names[label_index];
+    }
+    return name;
 }
 
 void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {
@@ -1094,6 +1146,16 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
             out << ", " << named_handle.Formatter(formatter.sync_state);
         }
         out << ", reset_no: " << std::to_string(record.reset_count);
+
+        if (record.debug_region_command_index != vvl::kU32Max) {
+            const auto &access_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state)->access_context;
+            const std::string region_name = access_context.GetDebugRegionFullyQualifiedName(record.debug_region_command_index);
+            // Empty region name means that we are not inside any debug region.
+            // If we are inside debug region with an empty name then it will reported as "(unnamed debug region)".
+            if (!region_name.empty()) {
+                out << ", debug region: " << region_name;
+            }
+        }
     }
     return out;
 }
