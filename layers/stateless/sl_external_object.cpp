@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -487,10 +487,11 @@ bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const 
             DispatchGetMemoryHostPointerPropertiesEXT(device, ext.import_info_host_pointer->handleType,
                                                       ext.import_info_host_pointer->pHostPointer, &host_pointer_props);
             if (((1 << pAllocateInfo->memoryTypeIndex) & host_pointer_props.memoryTypeBits) == 0) {
-                skip |= LogError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-01744", device,
-                                 allocate_info_loc.dot(Field::memoryTypeIndex),
-                                 "is %" PRIu32 " but VkMemoryHostPointerPropertiesEXT::memoryTypeBits is 0x%" PRIx32 ".",
-                                 pAllocateInfo->memoryTypeIndex, host_pointer_props.memoryTypeBits);
+                skip |= LogError(
+                    "VUID-VkMemoryAllocateInfo-memoryTypeIndex-01744", device, allocate_info_loc.dot(Field::memoryTypeIndex),
+                    "is %" PRIu32 " but VkMemoryHostPointerPropertiesEXT::memoryTypeBits is 0x%" PRIx32 " with handleType %s.",
+                    pAllocateInfo->memoryTypeIndex, host_pointer_props.memoryTypeBits,
+                    string_VkExternalMemoryHandleTypeFlagBits(ext.import_info_host_pointer->handleType));
             }
         }
 

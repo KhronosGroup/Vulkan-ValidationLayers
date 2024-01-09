@@ -513,20 +513,23 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                          VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT,
                          VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT})) {
                     if (payload_info->dedicated_buffer == VK_NULL_HANDLE) {
-                        skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", dedicated_buffer,
-                                         allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
-                                         "is %s but %s (0x%" PRIxPTR ") was not created with a dedicated buffer.",
-                                         FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
-                                         reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle));
+                        skip |=
+                            LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", dedicated_buffer,
+                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                     "is %s but %s (0x%" PRIxPTR ") was not created with a dedicated buffer with handleType %s.",
+                                     FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
+                                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                     string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType));
 
                     } else if (payload_info->dedicated_buffer != dedicated_buffer) {
                         const LogObjectList objlist(payload_info->dedicated_buffer, dedicated_buffer);
                         skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01877", objlist,
                                          allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
-                                         "is %s but %s (0x%" PRIxPTR ") was created with a dedicated buffer %s.",
+                                         "is %s but %s (0x%" PRIxPTR ") was created with a dedicated buffer %s with handleType %s.",
                                          FormatHandle(dedicated_buffer).c_str(), import_loc.Fields().c_str(),
                                          reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                                         FormatHandle(payload_info->dedicated_buffer).c_str());
+                                         FormatHandle(payload_info->dedicated_buffer).c_str(),
+                                         string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType));
                     }
                 }
             }
@@ -542,10 +545,11 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 DispatchGetMemoryWin32HandlePropertiesKHR(device, import_memory_win32_info->handleType,
                                                           import_memory_win32_info->handle, &handle_properties);
                 if (((1 << pAllocateInfo->memoryTypeIndex) & handle_properties.memoryTypeBits) == 0) {
-                    skip |= LogError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645", device,
-                                     allocate_info_loc.dot(Field::memoryTypeIndex),
-                                     "is %" PRIu32 " but VkMemoryWin32HandlePropertiesKHR::memoryTypeBits is 0x%" PRIx32 ".",
-                                     pAllocateInfo->memoryTypeIndex, handle_properties.memoryTypeBits);
+                    skip |= LogError(
+                        "VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645", device, allocate_info_loc.dot(Field::memoryTypeIndex),
+                        "is %" PRIu32 " but VkMemoryWin32HandlePropertiesKHR::memoryTypeBits is 0x%" PRIx32 " with handleType %s.",
+                        pAllocateInfo->memoryTypeIndex, handle_properties.memoryTypeBits,
+                        string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType));
                 }
             }
         }
