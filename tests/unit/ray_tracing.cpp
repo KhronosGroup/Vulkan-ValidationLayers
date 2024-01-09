@@ -2530,6 +2530,26 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeRayTracing, TrianglesVertexBufferBadMemory) {
+    TEST_DESCRIPTION("Use a triangles vertex buffer whose memory has been destroyed for an acceleration structure build operation");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.GetGeometries()[0].SetTrianglesVertexBufferDeviceAddress(0);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804");
+    build_info.BuildCmdBuffer(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with triangles "
