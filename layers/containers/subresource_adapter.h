@@ -383,6 +383,7 @@ class ImageRangeEncoder : public RangeEncoder {
     inline const SubresInfo& GetSubresourceInfo(uint32_t index) const { return subres_info_[index]; }
 
     inline IndexType GetAspectSize(uint32_t aspect_index) const { return aspect_sizes_[aspect_index]; }
+    inline VkExtent2D GetAspectExtentDivisors(uint32_t aspect_index) const { return aspect_extent_divisors_[aspect_index]; }
     inline const double& TexelSize(int aspect_index) const { return texel_sizes_[aspect_index]; }
     inline bool IsLinearImage() const { return linear_image_; }
     inline IndexType TotalSize() const { return total_size_; }
@@ -397,6 +398,7 @@ class ImageRangeEncoder : public RangeEncoder {
     std::vector<double> texel_sizes_;
     SubresInfoVector subres_info_;
     small_vector<IndexType, 4, uint32_t> aspect_sizes_;
+    small_vector<VkExtent2D, 4, uint32_t> aspect_extent_divisors_;
     IndexType total_size_;
     VkExtent3D texel_extent_;
     bool is_3_d_;
@@ -436,6 +438,10 @@ class ImageRangeGenerator {
     void SetUpIncrementer(bool all_width, bool all_height, bool all_depth);
     typedef void (ImageRangeGenerator::*SetInitialPosFn)(uint32_t, uint32_t);
     inline void SetInitialPos(uint32_t layer, uint32_t aspect_index) { (this->*(set_initial_pos_fn_))(layer, aspect_index); }
+
+    VkOffset3D GetOffset(uint32_t aspect_index) const;
+    VkExtent3D GetExtent(uint32_t aspect_index) const;
+
     const ImageRangeEncoder* encoder_;
     VkImageSubresourceRange subres_range_;
     VkOffset3D offset_;
