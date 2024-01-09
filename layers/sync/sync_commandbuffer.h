@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,11 @@ struct ResourceCmdUsageRecord {
     const vvl::CommandBuffer *cb_state = nullptr;
     Count reset_count;
     NamedHandleVector handles;
+
+    // Indexes CommandBufferAccessContext::DebugRegions::commands.
+    // Allows to derive fully qualified name (i.e. including parent scopes)
+    // of the debug region where the current command is located.
+    uint32_t debug_region_command_index = vvl::kU32Max;
 };
 
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
@@ -352,6 +357,10 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
     const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
 
+    void PushDebugRegion(const char *region_name);
+    void PopDebugRegion();
+    std::string GetDebugRegionFullyQualifiedName(uint32_t debug_region_command_index) const;
+
   private:
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
@@ -384,6 +393,22 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     // State during dynamic rendering (dynamic rendering rendering passes must be
     // contained within a single command buffer)
     std::unique_ptr<syncval_state::DynamicRenderingInfo> dynamic_rendering_info_;
+
+    // Encodes information about debug regions defined for the current command buffer
+    // using vkCmdBeginDebugUtilsLabelEXT/vkCmdEndDebugUtilsLabelEXT
+    struct DebugRegions {
+        struct DebugRegionCommand {
+            // true when starting debug frame. label_name_index refers to label name.
+            // false when ending debug frame. label_name_index is not used.
+            bool start_region = false;
+            uint32_t label_name_index = vvl::kU32Max;
+        };
+        std::vector<std::string> label_names;
+        std::vector<DebugRegionCommand> commands;
+
+        std::string GetDebugRegionFullyQualifiedName(uint32_t debug_region_command_index) const;
+    };
+    DebugRegions debug_regions_;
 };
 
 namespace syncval_state {
