@@ -643,8 +643,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderObjectDrawtimeState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateShaderObjectGraphicsDrawtimeState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateActionState(const vvl::CommandBuffer& cb_state, const VkPipelineBindPoint bind_point, const Location& loc) const;
-    bool ValidateCmdRayQueryState(const vvl::CommandBuffer& cb_state, const VkPipelineBindPoint bind_point,
-                                  const Location& loc) const;
     static bool ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::CommandBuffer& cb_state, size_t eventCount,
                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
                                            const EventToStageMap& local_event_signal_info, VkQueue waiting_queue,

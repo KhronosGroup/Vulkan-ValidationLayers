@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
- * Modifications Copyright (C) 2020-2023 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         msrtss_rasterization_samples_07284       = "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer_02707         = "VUID-vkCmdDraw-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDraw-commandBuffer-02712";
+        ray_query_04617                          = "VUID-vkCmdDraw-commandBuffer-04617";
         max_multiview_instance_index_02688       = "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688";
         img_filter_cubic_02693                   = "VUID-vkCmdDraw-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDraw-filterCubic-02694";
@@ -362,6 +363,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         msrtss_rasterization_samples_07284       = "VUID-vkCmdDrawMultiEXT-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer_02707         = "VUID-vkCmdDrawMultiEXT-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDrawMultiEXT-commandBuffer-02712";
+        ray_query_04617                          = "VUID-vkCmdDrawMultiEXT-commandBuffer-04617";
         max_multiview_instance_index_02688       = "VUID-vkCmdDrawMultiEXT-maxMultiviewInstanceIndex-02688";
         img_filter_cubic_02693                   = "VUID-vkCmdDrawMultiEXT-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDrawMultiEXT-filterCubic-02694";
@@ -671,6 +673,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         msrtss_rasterization_samples_07284       = "VUID-vkCmdDrawIndexed-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer_02707         = "VUID-vkCmdDrawIndexed-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDrawIndexed-commandBuffer-02712";
+        ray_query_04617                          = "VUID-vkCmdDrawIndexed-commandBuffer-04617";
         max_multiview_instance_index_02688       = "VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688";
         img_filter_cubic_02693                   = "VUID-vkCmdDrawIndexed-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDrawIndexed-filterCubic-02694";
@@ -980,6 +983,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         msrtss_rasterization_samples_07284       = "VUID-vkCmdDrawMultiIndexedEXT-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer_02707         = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02712";
+        ray_query_04617                          = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-04617";
         max_multiview_instance_index_02688       = "VUID-vkCmdDrawMultiIndexedEXT-maxMultiviewInstanceIndex-02688";
         img_filter_cubic_02693                   = "VUID-vkCmdDrawMultiIndexedEXT-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDrawMultiIndexedEXT-filterCubic-02694";
@@ -1269,7 +1273,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirect-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndirect-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndirect-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawIndirect-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawIndirect-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndirect-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawIndirect-buffer-02709";
         viewport_count_03417                     = "VUID-vkCmdDrawIndirect-viewportCount-03417";
@@ -1578,7 +1582,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexedIndirect-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndexedIndirect-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndexedIndirect-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndexedIndirect-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawIndexedIndirect-buffer-02709";
         viewport_count_03417                     = "VUID-vkCmdDrawIndexedIndirect-viewportCount-03417";
@@ -1890,6 +1894,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatch-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatch-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDispatch-commandBuffer-02712";
+        ray_query_04617                          = "VUID-vkCmdDispatch-commandBuffer-04617";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatch-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDispatch-filterCubic-02694";
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatch-filterCubicMinmax-02695";
@@ -1924,7 +1929,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDispatchIndirect-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDispatchIndirect-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDispatchIndirect-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDispatchIndirect-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDispatchIndirect-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDispatchIndirect-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDispatchIndirect-buffer-02709";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDispatchIndirect-flags-02696";
@@ -1976,7 +1981,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirectCount-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndirectCount-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndirectCount-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawIndirectCount-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawIndirectCount-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndirectCount-buffer-02708";
         indirect_count_contiguous_memory_02714   = "VUID-vkCmdDrawIndirectCount-countBuffer-02714";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawIndirectCount-buffer-02709";
@@ -2288,7 +2293,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexedIndirectCount-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndexedIndirectCount-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndexedIndirectCount-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708";
         indirect_count_contiguous_memory_02714   = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709";
@@ -3073,7 +3078,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectNV-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709";
         viewport_count_03417                     = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03417";
@@ -3368,7 +3373,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709";
         indirect_count_contiguous_memory_02714   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714";
@@ -3958,7 +3963,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectEXT-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectEXT-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawMeshTasksIndirectEXT-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectEXT-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawMeshTasksIndirectEXT-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawMeshTasksIndirectEXT-buffer-02709";
         viewport_count_03417                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewportCount-03417";
@@ -4253,7 +4258,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-commandBuffer-02711";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-buffer-02708";
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-buffer-02709";
         indirect_count_contiguous_memory_02714   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714";
@@ -4553,7 +4558,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndirectByteCountEXT-mipmapMode-04770";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-02692";
-        indirect_protected_cb_02646              = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646";
+        indirect_protected_cb_02711              = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-04567",
         indirect_buffer_bit_02290                = "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-02290";
         viewport_count_03417                     = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417";
@@ -4865,6 +4870,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatchBase-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchBase-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDispatchBase-commandBuffer-02712";
+        ray_query_04617                          = "VUID-vkCmdDispatchBase-commandBuffer-04617";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatchBase-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDispatchBase-filterCubic-02694";
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatchBase-filterCubicMinmax-02695";

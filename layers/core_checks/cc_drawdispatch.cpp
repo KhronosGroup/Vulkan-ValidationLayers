@@ -1522,6 +1522,10 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR || bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
         skip |= ValidateRayTracingDynamicStateSetStatus(last_bound_state, loc);
+        if (!cb_state.unprotected) {
+            skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.GetObjectList(bind_point), loc,
+                             "called in a protected command buffer.");
+        }
     }
 
     const vvl::Pipeline *pipeline = last_pipeline;
@@ -1737,8 +1741,6 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
     }
 
-    skip |= ValidateCmdRayQueryState(cb_state, bind_point, loc);
-
     if (pipeline) {
         if ((pipeline->create_info_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
                                              VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
@@ -1749,6 +1751,26 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                     skip |= LogError(vuid.mesh_shader_queries_07073, objlist, loc,
                                      "Query (slot %" PRIu32 ") with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active.",
                                      query.slot);
+                }
+            }
+        }
+    }
+
+    if (!cb_state.unprotected) {
+        if (pipeline) {
+            for (const auto &stage : pipeline->stage_states) {
+                if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
+                    skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), loc,
+                                     "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
+                                     string_VkShaderStageFlags(stage.GetStage()).c_str());
+                }
+            }
+        } else {
+            for (const auto &stage : last_bound_state.shader_object_states) {
+                if (stage && stage->spirv->HasCapability(spv::CapabilityRayQueryKHR)) {
+                    skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), loc,
+                                     "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
+                                     string_VkShaderStageFlags(stage->create_info.stage).c_str());
                 }
             }
         }
@@ -1786,7 +1808,7 @@ bool CoreChecks::ValidateIndirectCmd(const vvl::CommandBuffer &cb_state, const v
     skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      vuid.indirect_buffer_bit_02290, loc.dot(Field::buffer));
     if (cb_state.unprotected == false) {
-        skip |= LogError(vuid.indirect_protected_cb_02646, objlist, loc,
+        skip |= LogError(vuid.indirect_protected_cb_02711, objlist, loc,
                          "Indirect commands can't be used in protected command buffers.");
     }
     return skip;
