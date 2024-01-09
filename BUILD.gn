@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2021 The ANGLE Project Authors.
-# Copyright (C) 2019-2023 LunarG, Inc.
+# Copyright (C) 2019-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -173,6 +173,21 @@ vvl_sources = [
   "layers/gpu_validation/gpu_validation.h",
   "layers/gpu_validation/gpu_vuids.cpp",
   "layers/gpu_validation/gpu_vuids.h",
+  "layers/gpu_validation/spirv/function_basic_block.cpp",
+  "layers/gpu_validation/spirv/function_basic_block.h",
+  "layers/gpu_validation/spirv/instruction.cpp",
+  "layers/gpu_validation/spirv/instruction.h",
+  "layers/gpu_validation/spirv/link.h",
+  "layers/gpu_validation/spirv/module.cpp",
+  "layers/gpu_validation/spirv/module.h",
+  "layers/gpu_validation/spirv/pass.cpp",
+  "layers/gpu_validation/spirv/pass.h",
+  "layers/gpu_validation/spirv/type_manager.cpp",
+  "layers/gpu_validation/spirv/type_manager.h",
+  "layers/gpu_validation/spirv/bindless_descriptor_pass.h",
+  "layers/gpu_validation/spirv/bindless_descriptor_pass.cpp",
+  "layers/gpu_validation/spirv/buffer_device_address_pass.h",
+  "layers/gpu_validation/spirv/buffer_device_address_pass.cpp",
   "layers/layer_chassis_dispatch_manual.cpp",
   "layers/layer_options.cpp",
   "layers/layer_options.h",
@@ -281,6 +296,8 @@ vvl_sources = [
   "layers/vulkan/generated/gpu_pre_draw_vert.h",
   "layers/vulkan/generated/gpu_pre_trace_rays_rgen.h",
   "layers/vulkan/generated/inst_functions_comp.h",
+  "layers/vulkan/generated/inst_bindless_descriptor_comp.h",
+  "layers/vulkan/generated/inst_buffer_device_address_comp.h",
   "layers/vulkan/generated/layer_chassis_dispatch.cpp",
   "layers/vulkan/generated/layer_chassis_dispatch.h",
   "layers/vulkan/generated/object_tracker.cpp",
