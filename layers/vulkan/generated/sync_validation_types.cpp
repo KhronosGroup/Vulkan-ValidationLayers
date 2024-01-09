@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
 
 #include "sync_validation_types.h"
 // clang-format off
-const std::array<SyncStageAccessInfoType, 136>& syncStageAccessInfoByStageAccessIndex() {
-static const std::array<SyncStageAccessInfoType, 136> variable = { {
+const std::array<SyncStageAccessInfoType, 137>& syncStageAccessInfoByStageAccessIndex() {
+static const std::array<SyncStageAccessInfoType, 137> variable = { {
     {
         "SYNC_ACCESS_INDEX_NONE",
         VK_PIPELINE_STAGE_2_NONE_KHR,
@@ -761,6 +761,13 @@ static const std::array<SyncStageAccessInfoType, 136> variable = { {
         SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_WRITE_BIT_EXT
     },
     {
+        "SYNC_MICROMAP_BUILD_EXT_SHADER_STORAGE_READ",
+        VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT,
+        VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+        SYNC_MICROMAP_BUILD_EXT_SHADER_STORAGE_READ,
+        SYNC_MICROMAP_BUILD_EXT_SHADER_STORAGE_READ_BIT
+    },
+    {
         "SYNC_MICROMAP_BUILD_EXT_TRANSFER_READ",
         VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT,
         VK_ACCESS_2_TRANSFER_READ_BIT,
@@ -1135,6 +1142,7 @@ const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMask
     { VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT, (
         SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_READ_BIT_EXT |
         SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_WRITE_BIT_EXT |
+        SYNC_MICROMAP_BUILD_EXT_SHADER_STORAGE_READ_BIT |
         SYNC_MICROMAP_BUILD_EXT_TRANSFER_READ_BIT |
         SYNC_MICROMAP_BUILD_EXT_TRANSFER_WRITE_BIT
     )},
@@ -1328,6 +1336,7 @@ const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAcces
         SYNC_MESH_SHADER_EXT_SHADER_STORAGE_READ_BIT |
         SYNC_RAY_TRACING_SHADER_SHADER_STORAGE_READ_BIT |
         SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_STORAGE_READ_BIT |
+        SYNC_MICROMAP_BUILD_EXT_SHADER_STORAGE_READ_BIT |
         SYNC_SUBPASS_SHADER_HUAWEI_SHADER_STORAGE_READ_BIT |
         SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_READ_BIT
     )},
@@ -1569,6 +1578,7 @@ const std::map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMa
     { VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT, (
         VK_ACCESS_2_MICROMAP_READ_BIT_EXT |
         VK_ACCESS_2_MICROMAP_WRITE_BIT_EXT |
+        VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
         VK_ACCESS_2_TRANSFER_READ_BIT |
         VK_ACCESS_2_TRANSFER_WRITE_BIT
     )},

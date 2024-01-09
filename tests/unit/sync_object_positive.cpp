@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2355,5 +2355,29 @@ TEST_F(PositiveSyncObject, BarrierASBuildWithShaderReadAccess) {
 
     m_commandBuffer->begin();
     vk::CmdPipelineBarrier2KHR(*m_commandBuffer, &dependency_info);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveSyncObject, BarrierAccessSyncMicroMap) {
+    TEST_DESCRIPTION("Test VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT can be used with VK_ACCESS_2_SHADER_READ_BIT.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &mem_barrier;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     m_commandBuffer->end();
 }
