@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2023 The Khronos Group Inc.
- * Copyright (c) 2018-2023 Valve Corporation
- * Copyright (c) 2018-2023 LunarG, Inc.
+/* Copyright (c) 2018-2024 The Khronos Group Inc.
+ * Copyright (c) 2018-2024 Valve Corporation
+ * Copyright (c) 2018-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,6 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, vvl::C
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav::DescriptorSet, vvl::DescriptorSet)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav::ImageView, vvl::ImageView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav::Sampler, vvl::Sampler)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
@@ -92,7 +91,7 @@ class Validator : public gpu_tracker::Validator {
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash,
                                           create_shader_object_api_state* cso_state);
     void UpdateInstrumentationBuffer(CommandBuffer* cb_node);
-    void UpdateBDABuffer();
+    void UpdateBDABuffer(DeviceMemoryBlock buffer_device_addresses);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
 
@@ -150,10 +149,6 @@ class Validator : public gpu_tracker::Validator {
     std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-                                            const VkQueueFamilyProperties &queueFamilyProperties) override {
-        return std::static_pointer_cast<vvl::Queue>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
-    }
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) final;
     void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo);
@@ -223,6 +218,18 @@ class Validator : public gpu_tracker::Validator {
     void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
                                                const RecordObject& record_obj) override;
+    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                  const RecordObject&) override;
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                   const RecordObject& record_obj) override;
+    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                      const RecordObject&) override;
+    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                                   const RecordObject&) override;
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                       const RecordObject& record_obj) override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                    const RecordObject& record_obj) override;
     void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj) override;
@@ -438,6 +445,7 @@ class Validator : public gpu_tracker::Validator {
                            bool* error) const override;
 
   private:
+    void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
     VkPipeline GetDrawValidationPipeline(VkRenderPass render_pass);
 
     template <typename RangeFactory>
