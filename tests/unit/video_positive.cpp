@@ -576,6 +576,54 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH265) {
     context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, &feedback_info, &data_size, nullptr);
 }
 
+TEST_F(PositiveVideoSyncVal, ImageRangeGenYcbcrSubsampling) {
+    TEST_DESCRIPTION(
+        "Test that subsampled YCbCr image planes are handled correctly "
+        "by the image range generation utilities used by sync validation");
+
+    RETURN_IF_SKIP(Init());
+
+    // Test values that require the implementation to handle YCbCr subsampling correctly
+    // across planes in order for this test to not hit any asserts
+    const VkExtent2D max_coded_extent = {272, 272};
+    const VkExtent2D coded_extent = {256, 256};
+
+    VideoConfig config = GetConfig(FilterConfigs(GetConfigsDecode(), [&](const VideoConfig& config) {
+        return config.PictureFormatProps()->format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM &&
+               config.Caps()->maxCodedExtent.width >= max_coded_extent.width &&
+               config.Caps()->maxCodedExtent.height >= max_coded_extent.height;
+    }));
+    if (!config) {
+        GTEST_SKIP() << "Test requires decode with NV12 decode picture format support";
+    }
+
+    config.SessionCreateInfo()->maxCodedExtent = max_coded_extent;
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin());
+    cb.ControlVideoCoding(context.Control().Reset());
+
+    // Test with a subregion that would cross the half-extent boundaries of a 4:2:0 subsampled image
+    auto decode_info = context.DecodeFrame();
+    decode_info->dstPictureResource.codedExtent = coded_extent;
+    cb.DecodeVideo(decode_info);
+
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+
+    // Also test with an offset (ignoring other validation violations)
+    decode_info->dstPictureResource.codedOffset = {1, 1};
+    cb.DecodeVideo(decode_info);
+
+    cb.EndVideoCoding(context.End());
+    cb.end();
+}
+
 TEST_F(PositiveVideoSyncVal, DecodeCoincide) {
     TEST_DESCRIPTION("Test video decode in coincide mode without sync hazards");
 
