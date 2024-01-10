@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
- * Copyright (c) 2020-2023 Google, Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -563,7 +563,6 @@ TEST_F(NegativeGpuAVOOB, GPL) {
     const auto render_pass = pre_raster.gp_ci_.renderPass;
     const auto subpass = pre_raster.gp_ci_.subpass;
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(nullptr);
     fragment.gp_ci_.stageCount = 0;
