@@ -29,12 +29,12 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
+#include "spirv/module.h"
 // Generated shaders
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
 #include "generated/gpu_as_inspection_comp.h"
-#include "generated/inst_functions_comp.h"
 #include "generated/gpu_inst_shader_hash.h"
 
 VkDeviceAddress gpuav::Validator::GetBufferDeviceAddress(VkBuffer buffer) const {
@@ -82,10 +82,9 @@ bool gpuav::Validator::CheckForDescriptorIndexing(DeviceFeatures enabled_feature
 }
 
 static bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
-                              std::string &error) {
+                              spv_target_env target_env, std::string &error) {
     // Use SPIRV-Tools validator to try and catch any issues with the module
-    spv_target_env spirv_environment = SPV_ENV_VULKAN_1_1;
-    spv_context ctx = spvContextCreate(spirv_environment);
+    spv_context ctx = spvContextCreate(target_env);
     spv_const_binary_t binary{input.data(), input.size()};
     spv_diagnostic diag = nullptr;
     spv_validator_options options = spvValidatorOptionsCreate();
@@ -127,76 +126,31 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
 
-    // Instrument the user's shader
-    {
-        ValidatorOptions val_options;
-        AdjustValidatorOptions(device_extensions, enabled_features, val_options);
-        OptimizerOptions opt_options;
-        opt_options.set_run_validator(true);
-        opt_options.set_validator_options(val_options);
-        Optimizer inst_passes(target_env);
-        inst_passes.SetMessageConsumer(gpu_console_message_consumer);
-        if (gpuav_settings.validate_descriptors) {
-            inst_passes.RegisterPass(CreateInstBindlessCheckPass(unique_shader_id));
-        }
+    gpuav::spirv::Module module(binaries[0], unique_shader_id, desc_set_bind_index);
 
-        if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-             IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-            shaderInt64 && enabled_features.bufferDeviceAddress) {
-            inst_passes.RegisterPass(CreateInstBuffAddrCheckPass(unique_shader_id));
-        }
-        if (!inst_passes.Run(binaries[0].data(), binaries[0].size(), &binaries[0], opt_options)) {
-            ReportSetupProblem(device, "Failure to instrument shader in spirv-opt.  Proceeding with non-instrumented shader.");
-            assert(false);
-            return false;
-        }
+    if (gpuav_settings.validate_descriptors) {
+        module.RunPassBindlessDescriptorPass();
     }
-    {
-        // The instrumentation code is not a complete SPIRV module so we cannot validate it separately
-        OptimizerOptions options;
-        options.set_run_validator(false);
-        // Load instrumentation helper functions
-        size_t inst_size = sizeof(inst_functions_comp) / sizeof(uint32_t);
-        binaries[1].reserve(inst_size);  // the shader will be copied in by the optimizer
 
-        // The compiled instrumentation functions use 7 for their data.
-        // Switch that to the highest set number supported by the actual VkDevice.
-        Optimizer switch_descriptorsets(target_env);
-        switch_descriptorsets.SetMessageConsumer(gpu_console_message_consumer);
-        switch_descriptorsets.RegisterPass(CreateSwitchDescriptorSetPass(7, desc_set_bind_index));
-
-        if (!switch_descriptorsets.Run(inst_functions_comp, inst_size, &binaries[1], options)) {
-            ReportSetupProblem(
-                device,
-                "Failure to switch descriptorsets in instrumentation code in spirv-opt. Proceeding with non-instrumented shader.");
-            assert(false);
-            return false;
-        }
+    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+        shaderInt64 && enabled_features.bufferDeviceAddress) {
+        module.RunPassBufferDeviceAddress();
     }
-    // Link in the instrumentation helper functions
-    {
-        Context context(target_env);
-        context.SetMessageConsumer(gpu_console_message_consumer);
-        LinkerOptions link_options;
-        link_options.SetUseHighestVersion(true);
 
-        spv_result_t link_status = Link(context, binaries, &new_pgm, link_options);
-        if (link_status != SPV_SUCCESS && link_status != SPV_WARNING) {
-            std::ostringstream strm;
-            strm << "Failed to link Instrumented shader, spirv-link error:\n"
-                 << link_status << " Proceeding with non instrumented shader.";
-            ReportSetupProblem(device, strm.str().c_str());
-            assert(false);
-            return false;
-        }
+    for (const auto info : module.link_info_) {
+        module.LinkFunction(info);
     }
+
+    module.ToBinary(new_pgm);
+
     // (Maybe) validate the instrumented and linked shader
     if (validate_instrumented_shaders) {
         std::string instrumented_error;
         if (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout, device_extensions.vk_ext_scalar_block_layout,
-                               instrumented_error)) {
+                               target_env, instrumented_error)) {
             std::ostringstream strm;
-            strm << "Instrumented shader is invalid, spirv-val error:\n"
+            strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
                  << instrumented_error << " Proceeding with non instrumented shader.";
             ReportSetupProblem(device, strm.str().c_str());
             assert(false);

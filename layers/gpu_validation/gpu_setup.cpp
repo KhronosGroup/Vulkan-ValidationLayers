@@ -34,7 +34,6 @@
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
 #include "generated/gpu_as_inspection_comp.h"
-#include "generated/inst_functions_comp.h"
 #include "generated/gpu_inst_shader_hash.h"
 
 std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo *pCreateInfo) {

@@ -37,7 +37,9 @@ const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u*4u;
 // Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
 
+// This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
 const int kDefaultDescriptorSet = 7;
+
 // Inside the descriptor set used by GPU-AV, binding #0 is reserved for the output, but each check that requires additional input
 // must reserve its own binding slot
 const int kBindingBindlessDescriptor = 1;
