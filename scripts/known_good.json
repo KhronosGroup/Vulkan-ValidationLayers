@@ -123,7 +123,7 @@
             "sub_dir": "Vulkan-Profiles",
             "build_dir": "Vulkan-Profiles/build",
             "install_dir": "Vulkan-Profiles/build/install",
-            "commit": "be8378b79937c20abd8a9af0c4c35700660ab3ff",
+            "commit": "912cedbc49bd13713a030bc600c9e6f548c67355",
             "build_step": "skip",
             "optional": [
                 "tests"

@@ -323,7 +323,7 @@ void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureI
                                              [&res](const auto &it) { return it.second == res; });
             if (other_ref_it == pictures_per_id_[slot_index].end()) {
                 // If there are no remaining references to the resource, remove it
-                all_pictures_[slot_index].erase(prev_res_it->second);
+                all_pictures_[slot_index].erase(res);
             }
         }
     }
