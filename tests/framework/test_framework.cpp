@@ -1,7 +1,7 @@
 ﻿/*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,6 +198,15 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             printf("\nUse --help or -h for option list.\n");
             exit(0);
         }
+    }
+
+    // Allow some options to be set via env variables because some tools like ctest
+    // can't provide a way to pass arguments to this test executable in the current state
+    if (!GetEnvironment("VVL_TEST_SNYCVAL_ENABLE_CORE").empty()) {
+        m_syncval_enable_core = true;
+    }
+    if (!GetEnvironment("VVL_TEST_GPUAV_ENABLE_CORE").empty()) {
+        m_gpuav_enable_core = true;
     }
 }
 

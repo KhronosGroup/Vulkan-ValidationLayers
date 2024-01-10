@@ -18,6 +18,7 @@ import subprocess
 import sys
 import os
 import argparse
+import multiprocessing
 import common_ci
 
 # Where all artifacts will ultimately be placed under
@@ -178,6 +179,8 @@ def RunVVLTests(args):
     if common_ci.IsWindows():
         lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'bin')
         lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'bin\\VkICD_mock_icd.json')
+        # CTest runs from the cmake build directory, not from the installed directory
+        lvt_env['PATH'] = lvt_env['PATH'] + os.pathsep + os.path.join(CI_INSTALL_DIR, 'bin')
     else:
         lvt_env['LD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
         lvt_env['DYLD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
@@ -204,22 +207,24 @@ def RunVVLTests(args):
 
     lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
 
-    lvt_cmd = os.path.join(CI_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
+    lvt_cmd = f'ctest --test-dir {CI_BUILD_DIR}/vvl/ --output-on-failure -j{format(multiprocessing.cpu_count())}'
 
     if args.mockAndroid:
         # TODO - only reason running this subset, is mockAndoid fails any test that does
         # a manual vkCreateDevice call and need to investigate more why
-        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
+        common_ci.RunShellCmd(lvt_cmd + " -R .*AndroidHardwareBuffer.*|.*AndroidExternalResolve.*", env=lvt_env)
         return
 
     common_ci.RunShellCmd(lvt_cmd, env=lvt_env)
 
     print("Re-Running syncval tests with core validation enabled (--syncval-enable-core)")
-    common_ci.RunShellCmd(lvt_cmd + ' --gtest_filter=*SyncVal* --syncval-enable-core', env=lvt_env)
+    lvt_env['VVL_TEST_SNYCVAL_ENABLE_CORE'] = '1'
+    common_ci.RunShellCmd(lvt_cmd + ' -R .*SyncVal.*', env=lvt_env)
+    del lvt_env['VVL_TEST_SNYCVAL_ENABLE_CORE']
 
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING disabled")
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '0'
-    common_ci.RunShellCmd(lvt_cmd + ' --gtest_filter=*Thread*', env=lvt_env)
+    common_ci.RunShellCmd(lvt_cmd + ' -R .*Thread.*', env=lvt_env)
 
 def Test(args):
     try:
