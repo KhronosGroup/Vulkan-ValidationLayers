@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,9 +292,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
         if (graphics_lib_info && (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
                                                               VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT))) {
-            skip |= ValidateArray(create_info_loc.dot(Field::stageCount), create_info_loc.dot(Field::pStages),
-                                  create_info.stageCount, &create_info.pStages, true, true,
-                                  "VUID-VkGraphicsPipelineCreateInfo-flags-06644", "VUID-VkGraphicsPipelineCreateInfo-flags-06640");
+            skip |=
+                ValidateArray(create_info_loc.dot(Field::stageCount), create_info_loc.dot(Field::pStages), create_info.stageCount,
+                              &create_info.pStages, false, true, kVUIDUndefined, "VUID-VkGraphicsPipelineCreateInfo-flags-06640");
         }
 
         // <VkDynamicState, index in pDynamicStates, hash for enum key>

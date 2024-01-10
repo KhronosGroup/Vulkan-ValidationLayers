@@ -869,22 +869,6 @@ TEST_F(NegativeGraphicsLibrary, FragmentStateWithPreRaster) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGraphicsLibrary, StageCount) {
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-    InitRenderTarget();
-
-    CreatePipelineHelper pre_raster_lib(*this);
-    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-    pre_raster_lib.InitState();
-    pre_raster_lib.gp_ci_.stageCount = 0;
-    pre_raster_lib.gp_ci_.layout = pre_raster_lib.pipeline_layout_.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06644");
-    pre_raster_lib.CreateGraphicsPipeline(false);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeGraphicsLibrary, NullStages) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
@@ -910,7 +894,6 @@ TEST_F(NegativeGraphicsLibrary, MissingShaderStages) {
         pipe.InitState();
 
         // set in stateless
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
         // 02096 is effectively unrelated, but gets triggered due to lack of mesh shader extension
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-02096");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
