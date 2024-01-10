@@ -137,6 +137,12 @@ GeometryKHR &GeometryKHR::SetTrianglesVertexBufferDeviceAddress(VkDeviceAddress 
     vk_obj_.geometry.triangles.vertexData.deviceAddress = address;
     return *this;
 }
+
+GeometryKHR &GeometryKHR::SetTrianglesIndexBufferDeviceAddress(VkDeviceAddress address) {
+    vk_obj_.geometry.triangles.indexData.deviceAddress = address;
+    return *this;
+}
+
 GeometryKHR &GeometryKHR::SetAABBsDeviceBuffer(vkt::Buffer &&buffer, VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
     aabbs_.device_buffer = std::move(buffer);
     vk_obj_.geometry.aabbs.data.deviceAddress = aabbs_.device_buffer.address();
@@ -726,6 +732,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device) {
 
     // Assign vertex and index buffers to out geometry
     triangle_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3 - 1));
+    triangle_geometry.SetTrianglesIndexType(VK_INDEX_TYPE_UINT32);
     triangle_geometry.SetTrianglesDeviceIndexBuffer(std::move(index_buffer));
 
     return triangle_geometry;
