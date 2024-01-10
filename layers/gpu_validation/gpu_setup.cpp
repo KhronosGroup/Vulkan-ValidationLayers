@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2023 The Khronos Group Inc.
- * Copyright (c) 2018-2023 Valve Corporation
- * Copyright (c) 2018-2023 LunarG, Inc.
+/* Copyright (c) 2018-2024 The Khronos Group Inc.
+ * Copyright (c) 2018-2024 Valve Corporation
+ * Copyright (c) 2018-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
 #include "generated/gpu_as_inspection_comp.h"
-#include "generated/inst_functions_comp.h"
 #include "generated/gpu_inst_shader_hash.h"
 
 std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo *pCreateInfo) {

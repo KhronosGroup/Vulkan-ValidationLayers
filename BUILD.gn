@@ -295,7 +295,6 @@ vvl_sources = [
   "layers/vulkan/generated/gpu_pre_dispatch_comp.h",
   "layers/vulkan/generated/gpu_pre_draw_vert.h",
   "layers/vulkan/generated/gpu_pre_trace_rays_rgen.h",
-  "layers/vulkan/generated/inst_functions_comp.h",
   "layers/vulkan/generated/inst_bindless_descriptor_comp.h",
   "layers/vulkan/generated/inst_buffer_device_address_comp.h",
   "layers/vulkan/generated/layer_chassis_dispatch.cpp",

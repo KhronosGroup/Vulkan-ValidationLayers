@@ -75,6 +75,7 @@ class Module {
     // provides a way to map back and know which original SPIR-V this was from
     const uint32_t shader_id_;
     // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
+    // This allows anything to be set in the GLSL for the set value, as we change it at runtime
     const uint32_t output_buffer_descriptor_set_;
 };
 

@@ -355,7 +355,6 @@ def main(argv):
         'gpu_pre_dispatch_comp.h',
         'gpu_pre_draw_vert.h',
         'gpu_pre_trace_rays_rgen.h',
-        'inst_functions_comp.h',
         'inst_buffer_device_address_comp.h',
         'inst_bindless_descriptor_comp.h',
         'gpu_inst_shader_hash.h'

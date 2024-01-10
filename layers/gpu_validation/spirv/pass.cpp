@@ -307,7 +307,7 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
     invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});
 
     // move all remaining instructions to the newly created merge block
-    while (*inst_it && inst_it != original_block.instructions_.end()) {
+    while (inst_it != original_block.instructions_.end()) {
         merge_block.instructions_.emplace_back(std::move(*inst_it));
         inst_it = original_block.instructions_.erase(inst_it);
     }
