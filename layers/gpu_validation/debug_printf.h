@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+/* Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     CommandBuffer(Validator* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info, const vvl::CommandPool* pool);
     ~CommandBuffer();
 
-    bool PreProcess() final { return !buffer_infos.empty(); }
-    void PostProcess(VkQueue queue, const Location& loc) final;
+    bool NeedsProcessing() const final { return !buffer_infos.empty(); }
+    void Process(VkQueue queue, const Location &loc) final;
 
     void Destroy() final;
     void Reset() final;

@@ -1,6 +1,6 @@
-/* Copyright (c) 2021-2022 The Khronos Group Inc.
- * Copyright (c) 2021-2023 Valve Corporation
- * Copyright (c) 2021-2023 LunarG, Inc.
+/* Copyright (c) 2021-2024 The Khronos Group Inc.
+ * Copyright (c) 2021-2024 Valve Corporation
+ * Copyright (c) 2021-2024 LunarG, Inc.
  * Copyright (C) 2021-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,28 +59,6 @@ std::string Location::Message() const {
 
 namespace vvl {
 LocationCapture::LocationCapture(const Location& loc) { Capture(loc, 1); }
-
-LocationCapture::LocationCapture(const LocationCapture& other)
-    : capture(other.capture) {
-    if (capture.empty()) {
-        return;
-    }
-    capture[0].prev = nullptr;
-    for (CaptureStore::size_type i = 1; i < capture.size(); i++) {
-        capture[i].prev = &capture[i - 1];
-    }
-}
-
-LocationCapture::LocationCapture(LocationCapture&& other)
-    : capture(std::move(other.capture)) {
-    if (capture.empty()) {
-        return;
-    }
-    capture[0].prev = nullptr;
-    for (CaptureStore::size_type i = 1; i < capture.size(); i++) {
-        capture[i].prev = &capture[i - 1];
-    }
-}
 
 const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size_type depth) {
     const Location* prev_capture = nullptr;

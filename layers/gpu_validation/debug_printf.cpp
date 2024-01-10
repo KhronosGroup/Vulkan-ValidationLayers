@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+/* Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -414,7 +414,7 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void debug_printf::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
+void debug_printf::CommandBuffer::Process(VkQueue queue, const Location &loc) {
     auto *device_state = static_cast<debug_printf::Validator *>(dev_data);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
         auto &gpu_buffer_list = buffer_infos;

@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+/* Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,8 +266,8 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
         // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
         features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
     } else {
-        auto *features2 = const_cast<VkPhysicalDeviceFeatures2 *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
+        auto *features2 =
+            const_cast<VkPhysicalDeviceFeatures2 *>(vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
         if (features2) features = &features2->features;
     }
     VkPhysicalDeviceFeatures new_features = {};
@@ -291,18 +291,51 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
         delete modified_create_info->pEnabledFeatures;
         modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
-    // TODO How to handle multi-device
-    if (api_version > VK_API_VERSION_1_1) {
-        auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
-        if (features12) {
-            features12->timelineSemaphore = VK_TRUE;
-            if (force_buffer_device_address) {
+    if (force_buffer_device_address) {
+        // TODO How to handle multi-device
+        if (api_version > VK_API_VERSION_1_1) {
+            auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
+            if (features12) {
                 features12->bufferDeviceAddress = VK_TRUE;
+            } else {
+                auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info->pNext));
+                if (bda_features) {
+                    bda_features->bufferDeviceAddress = VK_TRUE;
+                } else {
+                    VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
+                    new_bda_features.bufferDeviceAddress = VK_TRUE;
+                    new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
+                    modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
+                }
             }
-        } else {
+        } else if (api_version == VK_API_VERSION_1_1) {
+            static const std::string bda_ext{"VK_KHR_buffer_device_address"};
+            bool found_ext = false;
+            for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
+                if (bda_ext == modified_create_info->ppEnabledExtensionNames[i]) {
+                    found_ext = true;
+                    break;
+                }
+            }
+            if (!found_ext) {
+                const char **ext_names = new const char *[modified_create_info->enabledExtensionCount + 1];
+                // Copy the existing pointer table
+                std::copy(modified_create_info->ppEnabledExtensionNames,
+                          modified_create_info->ppEnabledExtensionNames + modified_create_info->enabledExtensionCount, ext_names);
+                // Add our new extension
+                char *bda_ext_copy = new char[bda_ext.size() + 1]{};
+                bda_ext.copy(bda_ext_copy, bda_ext.size());
+                bda_ext_copy[bda_ext.size()] = '\0';
+                ext_names[modified_create_info->enabledExtensionCount] = bda_ext_copy;
+                // Patch up the safe struct
+                delete[] modified_create_info->ppEnabledExtensionNames;
+                modified_create_info->ppEnabledExtensionNames = ext_names;
+                modified_create_info->enabledExtensionCount++;
+            }
             auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info->pNext));
+                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
             if (bda_features) {
                 bda_features->bufferDeviceAddress = VK_TRUE;
             } else {
@@ -311,76 +344,9 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
                 new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
                 modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
             }
-        }
-    } else if (api_version == VK_API_VERSION_1_1) {
-        static const std::string bda_ext{"VK_KHR_buffer_device_address"};
-        bool found_bda = false;
-        for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
-            if (bda_ext == modified_create_info->ppEnabledExtensionNames[i]) {
-                found_bda = true;
-                break;
-            }
-        }
-        static const std::string ts_ext{"VK_KHR_timeline_semaphore"};
-        bool found_ts = false;
-        for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
-            if (ts_ext == modified_create_info->ppEnabledExtensionNames[i]) {
-                found_ts = true;
-                break;
-            }
-        }
-
-        if (!found_bda || !found_ts) {
-            size_t modify_count = modified_create_info->enabledExtensionCount;
-            if (!found_bda) {
-                modify_count++;
-            }
-            if (!found_ts) {
-                modify_count++;
-            }
-            const char **ext_names = new const char *[modify_count];
-            // Copy the existing pointer table
-            std::copy(modified_create_info->ppEnabledExtensionNames,
-                      modified_create_info->ppEnabledExtensionNames + modified_create_info->enabledExtensionCount, ext_names);
-            // Add our new extensions
-            if (!found_bda) {
-                char *bda_ext_copy = new char[bda_ext.size() + 1]{};
-                bda_ext.copy(bda_ext_copy, bda_ext.size());
-                bda_ext_copy[bda_ext.size()] = '\0';
-                ext_names[modified_create_info->enabledExtensionCount++] = bda_ext_copy;
-            }
-            if (!found_ts) {
-                char *ts_ext_copy = new char[ts_ext.size() + 1]{};
-                ts_ext.copy(ts_ext_copy, ts_ext.size());
-                ts_ext_copy[ts_ext.size()] = '\0';
-                ext_names[modified_create_info->enabledExtensionCount++] = ts_ext_copy;
-            }
-            // Patch up the safe struct
-            delete[] modified_create_info->ppEnabledExtensionNames;
-            modified_create_info->ppEnabledExtensionNames = ext_names;
-        }
-        auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
-        if (bda_features) {
-            bda_features->bufferDeviceAddress = VK_TRUE;
         } else {
-            VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
-            new_bda_features.bufferDeviceAddress = VK_TRUE;
-            new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
-            modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
+            force_buffer_device_address = false;
         }
-        auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
-            vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info));
-        if (ts_features) {
-            ts_features->timelineSemaphore = VK_TRUE;
-        } else {
-            VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
-            new_ts_features.timelineSemaphore = VK_TRUE;
-            new_ts_features.pNext = const_cast<void *>(modified_create_info->pNext);
-            modified_create_info->pNext = new VkPhysicalDeviceTimelineSemaphoreFeatures(new_ts_features);
-        }
-    } else {
-        force_buffer_device_address = false;
     }
 }
 
@@ -490,7 +456,7 @@ gpu_tracker::Queue::~Queue() {
 
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void gpu_tracker::Queue::SubmitBarrier(uint64_t seq) {
+void gpu_tracker::Queue::SubmitBarrier() {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 
@@ -516,21 +482,6 @@ void gpu_tracker::Queue::SubmitBarrier(uint64_t seq) {
             return;
         }
 
-        VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-        semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
-        semaphore_type_create_info.initialValue = 0;
-
-        VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
-
-        result = DispatchCreateSemaphore(state_.device, &semaphore_create_info, nullptr, &barrier_sem_);
-        if (result != VK_SUCCESS) {
-            state_.ReportSetupProblem(state_.device, "Unable to create barrier semaphore.");
-            DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
-            barrier_command_pool_ = VK_NULL_HANDLE;
-            barrier_command_buffer_ = VK_NULL_HANDLE;
-            return;
-        }
-
         // Hook up command buffer dispatch
         state_.vkSetDeviceLoaderData(state_.device, barrier_command_buffer_);
 
@@ -546,71 +497,107 @@ void gpu_tracker::Queue::SubmitBarrier(uint64_t seq) {
             DispatchEndCommandBuffer(barrier_command_buffer_);
         }
     }
-
     if (barrier_command_buffer_ != VK_NULL_HANDLE) {
-        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-        timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
-        timeline_semaphore_submit_info.pSignalSemaphoreValues = &seq;
-
-        VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_semaphore_submit_info);
-
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &barrier_command_buffer_;
-        submit_info.signalSemaphoreCount = 1;
-        submit_info.pSignalSemaphores = &barrier_sem_;
-
         DispatchQueueSubmit(vvl::Queue::VkHandle(), 1, &submit_info, VK_NULL_HANDLE);
     }
 }
 
-uint64_t gpu_tracker::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
-    for (const auto &submission : submissions) {
-        for (auto &cb : submission.cbs) {
-            auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);
-            auto guard = gpu_cb->ReadLock();
-            gpu_cb->PreProcess();
-            for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
-                auto secondary_guard = secondary_cb->ReadLock();
-                auto *secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
-                secondary_gpu_cb->PreProcess();
-            }
+bool gpu_tracker::Validator::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const {
+    auto cb_node = GetRead<gpu_tracker::CommandBuffer>(command_buffer);
+    if (cb_node->NeedsProcessing()) {
+        return true;
+    }
+    for (const auto *secondary_cb : cb_node->linkedCommandBuffers) {
+        auto secondary_cb_node = static_cast<const gpu_tracker::CommandBuffer *>(secondary_cb);
+        auto guard = secondary_cb_node->ReadLock();
+        if (secondary_cb_node->NeedsProcessing()) {
+            return true;
         }
     }
-    return vvl::Queue::PreSubmit(std::move(submissions));
+    return false;
 }
 
-void gpu_tracker::Queue::PostSubmit(vvl::QueueSubmission &submission) {
-    vvl::Queue::PostSubmit(submission);
-    if (submission.end_batch) {
-        SubmitBarrier(submission.seq);
+void gpu_tracker::Validator::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer, const Location &loc) {
+    auto cb_node = GetWrite<gpu_tracker::CommandBuffer>(command_buffer);
+
+    cb_node->Process(queue, loc);
+    for (auto *secondary_cmd_base : cb_node->linkedCommandBuffers) {
+        auto *secondary_cb_node = static_cast<gpu_tracker::CommandBuffer *>(secondary_cmd_base);
+        auto guard = secondary_cb_node->WriteLock();
+        secondary_cb_node->Process(queue, loc);
     }
 }
 
-void gpu_tracker::Queue::Retire(vvl::QueueSubmission &submission) {
-    retiring_.emplace_back(submission.cbs);
-    if (submission.end_batch) {
-        VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
-        wait_info.semaphoreCount = 1;
-        wait_info.pSemaphores = &barrier_sem_;
-        wait_info.pValues = &submission.seq;
-        DispatchWaitSemaphoresKHR(state_.device, &wait_info, 1000000000);
+// Issue a memory barrier to make GPU-written data available to host.
+// Wait for the queue to complete execution.
+// Check the debug buffers for all the command buffers that were submitted.
+void gpu_tracker::Validator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                       VkFence fence, const RecordObject &record_obj) {
+    BaseClass::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
 
-        for (auto &cbs : retiring_) {
-            for (auto &cb : cbs) {
-                auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);
-                auto guard = gpu_cb->WriteLock();
-                auto loc = submission.loc.Get();
-                gpu_cb->PostProcess(VkHandle(), loc);
-                for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
-                    auto *secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
-                    auto secondary_guard = secondary_gpu_cb->WriteLock();
-                    secondary_gpu_cb->PostProcess(VkHandle(), loc);
-                }
-            }
+    if (aborted || (record_obj.result != VK_SUCCESS)) return;
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBuffers[i]);
         }
-        retiring_.clear();
     }
-    vvl::Queue::Retire(submission);
+    if (!buffers_present) return;
+
+    SubmitBarrier(queue);
+
+    DispatchQueueWaitIdle(queue);
+
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo, vvl::Field::pSubmits, submit_idx);
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            ProcessCommandBuffer(queue, submit->pCommandBuffers[i], submit_loc.dot(vvl::Field::pCommandBuffers, i));
+        }
+    }
+}
+
+void gpu_tracker::Validator::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                                const RecordObject &record_obj) {
+    if (aborted || (record_obj.result != VK_SUCCESS)) return;
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBufferInfos[i].commandBuffer);
+        }
+    }
+    if (!buffers_present) return;
+
+    SubmitBarrier(queue);
+
+    DispatchQueueWaitIdle(queue);
+
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo2, vvl::Field::pSubmits, submit_idx);
+        const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer,
+                                 submit_loc.dot(vvl::Struct::VkCommandBufferSubmitInfo, vvl::Field::pCommandBufferInfos, i));
+        }
+    }
+}
+
+void gpu_tracker::Validator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                           VkFence fence, const RecordObject &record_obj) {
+    PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void gpu_tracker::Validator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                        VkFence fence, const RecordObject &record_obj) {
+    BaseClass::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 
 // Just gives a warning about a possible deadlock.

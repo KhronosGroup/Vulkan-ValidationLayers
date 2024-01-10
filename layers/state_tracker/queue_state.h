@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -42,7 +42,6 @@ struct QueueSubmission {
     };
     QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
-    bool end_batch{false};
     std::vector<std::shared_ptr<vvl::CommandBuffer>> cbs;
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
@@ -91,10 +90,7 @@ class Queue: public StateObject {
 
     VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
 
-    // called from the various PreCallRecordQueueSubmit() methods
-    virtual uint64_t PreSubmit(std::vector<QueueSubmission> &&submissions);
-    // called from the various PostCallRecordQueueSubmit() methods
-    void PostSubmit();
+    uint64_t Submit(QueueSubmission &&submission);
 
     // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
     uint64_t Notify(uint64_t until_seq = kU64Max);
@@ -107,12 +103,6 @@ class Queue: public StateObject {
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
     const VkQueueFamilyProperties queueFamilyProperties;
-
-  protected:
-    // called from the various PostCallRecordQueueSubmit() methods
-    virtual void PostSubmit(QueueSubmission &submission) {}
-    // called when the worker thread decides a submissions has finished executing
-    virtual void Retire(QueueSubmission &submission);
 
   private:
     using LockGuard = std::unique_lock<std::mutex>;

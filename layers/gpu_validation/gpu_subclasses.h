@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2023 The Khronos Group Inc.
- * Copyright (c) 2018-2023 Valve Corporation
- * Copyright (c) 2018-2023 LunarG, Inc.
+/* Copyright (c) 2018-2024 The Khronos Group Inc.
+ * Copyright (c) 2018-2024 Valve Corporation
+ * Copyright (c) 2018-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,24 +222,15 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
     ~CommandBuffer();
 
-    bool PreProcess() final;
-    void PostProcess(VkQueue queue, const Location &loc) final;
+    bool NeedsProcessing() const final { return !per_command_resources.empty() || has_build_as_cmd; }
+    void Process(VkQueue queue, const Location &loc) final;
 
     void Destroy() final;
     void Reset() final;
 
   private:
-    Validator &state_;
     void ResetCBState();
-    void ProcessAccelerationStructure(VkQueue queue, const Location &loc);
-};
-
-class Queue : public gpu_tracker::Queue {
-  public:
-    Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp);
-
-  protected:
-    uint64_t PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
+    void ProcessAccelerationStructure(VkQueue queue);
 };
 
 class Buffer : public vvl::Buffer {
