@@ -36,6 +36,17 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
     auto tagged_wait_op = [queue_id, tag](const std::shared_ptr<QueueBatchContext> &batch) {
         batch->ApplyTaggedWait(queue_id, tag);
         batch->Trim();
+
+        // If there is a *pending* last batch then apply tagged wait for its accesses too.
+        // A pending last batch might exist if this wait was initiated between QueueSubmit's
+        // Validate and Record phases (from a different thread). The pending last batch might
+        // contain *imported* accesses that are in the scope of this wait.
+        auto batch_queue_state = batch->GetQueueSyncState();
+        auto pending_batch = batch_queue_state ? batch_queue_state->PendingLastBatch() : nullptr;
+        if (pending_batch) {
+            pending_batch->ApplyTaggedWait(queue_id, tag);
+            pending_batch->Trim();
+        }
     };
     ForAllQueueBatchContexts(tagged_wait_op);
 }
@@ -2757,7 +2768,6 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 
 struct QueuePresentCmdState {
     std::shared_ptr<const QueueSyncState> queue;
-    std::shared_ptr<QueueBatchContext> present_batch;
     SignaledSemaphores signaled;
     PresentedImages presented_images;
     QueuePresentCmdState(const SignaledSemaphores &parent_semaphores) : signaled(parent_semaphores) {}
@@ -2794,7 +2804,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     batch->Cleanup();
 
     if (!skip) {
-        cmd_state->present_batch = std::move(batch);
+        cmd_state->queue->SetPendingLastBatch(std::move(batch));
     }
     return skip;
 }
@@ -2836,12 +2846,12 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
     }
 
     // Update the state with the data from the validate phase
-    cmd_state->signaled.Resolve(signaled_semaphores_, cmd_state->present_batch);
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
+    cmd_state->signaled.Resolve(signaled_semaphores_, queue_state->PendingLastBatch());
     for (auto &presented : cmd_state->presented_images) {
         presented.ExportToSwapchain(*this);
     }
-    queue_state->UpdateLastBatch(std::move(cmd_state->present_batch));
+    queue_state->UpdateLastBatch();
 }
 
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
@@ -2963,7 +2973,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     }
     // The most recently created batch will become the queue's "last batch" in the record phase
     if (batch) {
-        cmd_state->last_batch = std::move(batch);
+        cmd_state->queue->SetPendingLastBatch(std::move(batch));
     }
 
     // Note that if we skip, guard cleans up for us, but cannot release the reserved tag range
@@ -2991,8 +3001,8 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const Record
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
 
-    cmd_state->signaled.Resolve(signaled_semaphores_, cmd_state->last_batch);
-    queue_state->UpdateLastBatch(std::move(cmd_state->last_batch));
+    cmd_state->signaled.Resolve(signaled_semaphores_, queue_state->PendingLastBatch());
+    queue_state->UpdateLastBatch();
 
     ResourceUsageRange fence_tag_range = ReserveGlobalTagRange(1U);
     UpdateFenceWaitInfo(fence, queue_state->GetQueueId(), fence_tag_range.begin);

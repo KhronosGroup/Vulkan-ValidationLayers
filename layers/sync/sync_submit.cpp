@@ -116,7 +116,7 @@ std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::Unsignal(V
     return unsignaled;
 }
 
-void SignaledSemaphores::Resolve(SignaledSemaphores& parent, std::shared_ptr<QueueBatchContext>& last_batch) {
+void SignaledSemaphores::Resolve(SignaledSemaphores& parent, const std::shared_ptr<QueueBatchContext>& last_batch) {
     // Must only be called on child objects, with the non-const reference of the parent/previous object passed in
     assert(prev_ == &parent);
 
@@ -706,16 +706,16 @@ std::ostream& QueueBatchContext::AcquireResourceRecord::Format(std::ostream& out
 // Batch Contexts saved during signalling have their AccessLog reset when the pending signals are signalled.
 // NOTE: By design, QueueBatchContexts that are neither last, nor referenced by a signal are abandoned as unowned, since
 //       the contexts Resolve all history from previous all contexts when created
-void QueueSyncState::UpdateLastBatch(std::shared_ptr<QueueBatchContext>&& new_last) {
+void QueueSyncState::UpdateLastBatch() {
     // Update the queue to point to the last batch from the submit
-    if (new_last) {
+    if (pending_last_batch_) {
         // Clean up the events data in the previous last batch on queue, as only the subsequent batches have valid use for them
         // and the QueueBatchContext::Setup calls have be copying them along from batch to batch during submit.
         if (last_batch_) {
             last_batch_->ResetEventsContext();
         }
-        new_last->Trim();
-        last_batch_ = std::move(new_last);
+        pending_last_batch_->Trim();
+        last_batch_ = std::move(pending_last_batch_);
     }
 }
 
@@ -771,6 +771,8 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
 // Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
 // atomic... but as the ops are per submit, the performance cost is negible for the peace of mind.
 uint64_t QueueSyncState::ReserveSubmitId() const { return submit_index_.fetch_add(1); }
+
+void QueueSyncState::SetPendingLastBatch(std::shared_ptr<QueueBatchContext>&& last) const { pending_last_batch_ = std::move(last); }
 
 VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::WaitSemaphore(const VkSubmitInfo& info, uint32_t index) {
     VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();

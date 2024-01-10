@@ -82,7 +82,7 @@ class SignaledSemaphores {
     bool SignalSemaphore(const std::shared_ptr<const vvl::Semaphore> &sem_state, const PresentedImage &presented,
                          ResourceUsageTag acq_tag);
     std::shared_ptr<const Signal> Unsignal(VkSemaphore);
-    void Resolve(SignaledSemaphores &parent, std::shared_ptr<QueueBatchContext> &last_batch);
+    void Resolve(SignaledSemaphores &parent, const std::shared_ptr<QueueBatchContext> &last_batch);
     SignaledSemaphores() : prev_(nullptr) {}
     SignaledSemaphores(const SignaledSemaphores &prev) : prev_(&prev) {}
 
@@ -259,6 +259,7 @@ class QueueBatchContext : public CommandExecutionContext {
     const AccessContext *GetCurrentAccessContext() const override { return current_access_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
+    const QueueSyncState *GetQueueSyncState() { return queue_state_; }
     VkQueueFlags GetQueueFlags() const;
     QueueId GetQueueId() const override;
     ExecutionType Type() const override { return kSubmitted; }
@@ -344,15 +345,22 @@ class QueueSyncState {
     }
     std::shared_ptr<const QueueBatchContext> LastBatch() const { return last_batch_; }
     std::shared_ptr<QueueBatchContext> LastBatch() { return last_batch_; }
-    void UpdateLastBatch(std::shared_ptr<QueueBatchContext> &&last);
+    void UpdateLastBatch();
     const vvl::Queue *GetQueueState() const { return queue_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
     QueueId GetQueueId() const { return id_; }
 
-    uint64_t ReserveSubmitId() const;  // Method is const but updates mutable sumbit_index atomically.
+    // Method is const but updates mutable sumbit_index atomically.
+    uint64_t ReserveSubmitId() const;
+
+    // Method is const but updates mutable pending_last_batch and relies on the queue external synchronization
+    void SetPendingLastBatch(std::shared_ptr<QueueBatchContext> &&last) const;
+
+    std::shared_ptr<QueueBatchContext> PendingLastBatch() const { return pending_last_batch_; }
 
   private:
     mutable std::atomic<uint64_t> submit_index_;
+    mutable std::shared_ptr<QueueBatchContext> pending_last_batch_;
     std::shared_ptr<vvl::Queue> queue_state_;
     std::shared_ptr<QueueBatchContext> last_batch_;
     const VkQueueFlags queue_flags_;
@@ -388,7 +396,6 @@ struct SubmitInfoConverter {
 
 struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
-    std::shared_ptr<QueueBatchContext> last_batch;
     const ErrorObject &error_obj;
     SignaledSemaphores signaled;
     QueueSubmitCmdState(const ErrorObject &error_obj, const SignaledSemaphores &parent_semaphores)
