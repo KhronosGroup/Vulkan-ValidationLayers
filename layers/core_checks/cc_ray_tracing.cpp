@@ -548,11 +548,11 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     skip |= buffer_check(geom_i, geom_data.geometry.triangles.transformData,
                                          p_geom_geom_triangles_loc.dot(Field::transformData));
 
-                    auto buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
-                    if (buffer_states.empty()) {
+                    auto vertex_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
+                    if (vertex_buffer_states.empty()) {
                         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804", cmd_buffer,
                                          p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                         "(0x%" PRIx64 ") is not a valid address.",
+                                         "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
                                          geom_data.geometry.triangles.vertexData.deviceAddress);
                     } else {
                         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
@@ -571,11 +571,51 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                }}}}};
 
                         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                            *this, buffer_states, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                            *this, vertex_buffer_states, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
                             geom_data.geometry.triangles.vertexData.deviceAddress);
                     }
 
                     if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                        const VkDeviceSize index_buffer_alignment = GetIndexAlignment(geom_data.geometry.triangles.indexType);
+                        if (SafeModulo(geom_data.geometry.triangles.indexData.deviceAddress, index_buffer_alignment) != 0) {
+                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", cmd_buffer,
+                                             p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                             "(0x%" PRIx64
+                                             ") is not aligned to the size in bytes of its corresponding index type (%s).",
+                                             geom_data.geometry.triangles.indexData.deviceAddress,
+                                             string_VkIndexType(geom_data.geometry.triangles.indexType));
+                        }
+
+                        auto index_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
+                        if (index_buffer_states.empty()) {
+                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806", cmd_buffer,
+                                             p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                             "(0x%" PRIx64 ") is not an address belonging to an existing buffer. %s is %s.",
+                                             geom_data.geometry.triangles.indexData.deviceAddress,
+                                             p_geom_geom_triangles_loc.dot(Field::indexType).Fields().c_str(),
+                                             string_VkIndexType(geom_data.geometry.triangles.indexType));
+                        } else {
+                            using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+                            BufferAddressValidation<1> buffer_address_validator = {
+                                {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03807", LogObjectList(cmd_buffer),
+                                   [this, &p_geom_geom_triangles_loc, cmd_buffer](const BUFFER_STATE_PTR &buffer_state,
+                                                                                  std::string *out_error_msg) {
+                                       if (!out_error_msg) {
+                                           return !buffer_state->sparse && buffer_state->IsMemoryBound();
+                                       } else {
+                                           return ValidateMemoryIsBoundToBuffer(
+                                               cmd_buffer, *buffer_state,
+                                               p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                               "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03807");
+                                       }
+                                   }}}}};
+
+                            skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                                *this, index_buffer_states,
+                                p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                geom_data.geometry.triangles.indexData.deviceAddress);
+                        }
+
                         if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
                             const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
                             if (recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
@@ -600,7 +640,8 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     auto buffer_states = GetBuffersByAddress(geom_data.geometry.instances.data.deviceAddress);
                     if (buffer_states.empty()) {
                         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813", cmd_buffer,
-                                         instances_data_loc.dot(Field::deviceAddress), "(%" PRIu64 ") is not a valid address.",
+                                         instances_data_loc.dot(Field::deviceAddress),
+                                         "(%" PRIu64 ") is not an address belonging to an existing buffer.",
                                          geom_data.geometry.instances.data.deviceAddress);
                     } else {
                         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
