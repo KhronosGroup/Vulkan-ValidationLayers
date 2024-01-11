@@ -59,7 +59,8 @@
    For an example of how to use BufferAddressValidation, see for instance how "VUID-VkDescriptorBufferBindingInfoEXT-usage-08122"
    and friends are validated.
  */
-template <size_t N>
+
+template <size_t N = 1>
 class BufferAddressValidation {
   public:
     // Return true if and only if VU is verified
@@ -113,6 +114,27 @@ class BufferAddressValidation {
             }
         }
         return false;
+    }
+
+    static bool ValidateMemoryBoundToBuffer(const CoreChecks& validator,
+                                            const ValidationStateTracker::BUFFER_STATE_PTR& buffer_state,
+                                            std::string* out_error_msg) {
+        if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
+            if (out_error_msg) {
+                if (const auto mem_state = buffer_state->MemState(); mem_state && mem_state->Destroyed()) {
+                    *out_error_msg +=
+                        "buffer is bound to memory (" + validator.FormatHandle(mem_state->Handle()) + ") but it has been freed";
+                } else {
+                    *out_error_msg += "buffer has not been bound to memory";
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    static std::string ValidateMemoryBoundToBufferErrorMsgHeader() {
+        return "The following buffers are not bound to memory or it has been freed:\n";
     }
 
   public:
