@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1995,15 +1995,8 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
-    if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) vertexInputDynamicState, skipping";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442
@@ -2190,24 +2183,13 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateDivisor) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vertex_attribute_divisor_features = vku::InitStructHelper();
-    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features =
-        vku::InitStructHelper(&vertex_attribute_divisor_features);
-    auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
-    if (!vertex_attribute_divisor_features.vertexAttributeInstanceRateDivisor) {
-        GTEST_SKIP() << "Test requires (unsupported) vertexAttributeInstanceRateDivisor, skipping";
-    }
-    if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) vertexInputDynamicState, skipping";
-    }
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(vertex_attribute_divisor_properties);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-    InitRenderTarget();
 
     m_commandBuffer->begin();
 
@@ -4631,15 +4613,8 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
     TEST_DESCRIPTION("Shader uses a location not provided with dynamic vertex input");
 
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dsf = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dsf);
-    if (!vertex_input_dsf.vertexInputDynamicState) {
-        GTEST_SKIP() << "vertexInputDynamicState not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -4693,19 +4668,9 @@ TEST_F(NegativeDynamicState, MissingCmdSetVertexInput) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features = vku::InitStructHelper();
-    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features =
-        vku::InitStructHelper(&extended_dynamic_state_features);
-    GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
-    }
-    if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) vertexInputDynamicState, skipping";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &vertex_input_dynamic_state_features));
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);

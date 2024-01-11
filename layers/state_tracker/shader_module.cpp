@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2021-2023 The Khronos Group Inc.
+﻿/* Copyright (c) 2021-2024 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1147,7 +1147,7 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
             ss << "accelerationStruture";
             break;
         default:
-            ss << "oddtype";
+            ss << "unknown type";
             break;
     }
 }

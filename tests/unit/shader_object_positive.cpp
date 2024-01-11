@@ -1786,53 +1786,6 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
-    TEST_DESCRIPTION("Test vertex inputs.");
-
-    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
-    RETURN_IF_SKIP(InitBasicShaderObject());
-    InitDynamicRenderTarget();
-
-    static const char vert_src[] = R"glsl(
-        #version 460
-        #extension GL_EXT_shader_explicit_arithmetic_types : enable
-        layout(location = 0) in int pos;
-        layout(location = 0) out int64_t pos1;
-        void main() {
-            gl_Position = vec4(pos);
-            pos1 = 0;
-        }
-    )glsl";
-
-    VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
-    const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
-    SetDefaultDynamicStates();
-    BindVertFragShader(vertShader, fragShader);
-
-    VkVertexInputBindingDescription2EXT vertexBindingDescription = vku::InitStructHelper();
-    vertexBindingDescription.binding = 0u;
-    vertexBindingDescription.stride = 16u;
-    vertexBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    vertexBindingDescription.divisor = 1u;
-
-    VkVertexInputAttributeDescription2EXT vertexAttributeDescription = vku::InitStructHelper();
-    vertexAttributeDescription.location = 0u;
-    vertexAttributeDescription.binding = 0u;
-    vertexAttributeDescription.format = VK_FORMAT_R32G32B32A32_UINT;
-    vertexAttributeDescription.offset = 0u;
-
-    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1u, &vertexBindingDescription, 1u, &vertexAttributeDescription);
-
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
-}
-
 TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
     TEST_DESCRIPTION("Draw using binary shaders.");
 

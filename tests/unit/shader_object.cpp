@@ -6007,6 +6007,48 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderObject, MismatchedAttributeType) {
+    TEST_DESCRIPTION("Draw with vertex format not matching vertex input format.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-Input-08734");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    static const char vert_src[] = R"glsl(
+        #version 460
+        layout(location=0) in int x; /* attrib provided float */
+        void main(){
+           gl_Position = vec4(x);
+        }
+    )glsl";
+
+    VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
+    const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    SetDefaultDynamicStates();
+    BindVertFragShader(vertShader, fragShader);
+
+    VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
+    binding.stride = 4;
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    binding.divisor = 1;
+
+    VkVertexInputAttributeDescription2EXT attribute = vku::InitStructHelper();
+    attribute.format = VK_FORMAT_R32_SFLOAT;
+
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
     TEST_DESCRIPTION("Draw with shaders using a descriptor set that was never updated.");
 
