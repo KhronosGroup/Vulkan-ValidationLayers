@@ -79,24 +79,18 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     if (!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VERTEX_INPUT_EXT] &&
             phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
-            bool non_1_divisor = false;
-            uint32_t i = 0;
-            for (; i < (uint32_t)cb_state.dynamic_state_value.vertex_binding_descriptions.size(); ++i) {
+            for (uint32_t i = 0; i < (uint32_t)cb_state.dynamic_state_value.vertex_binding_descriptions.size(); ++i) {
                 if (cb_state.dynamic_state_value.vertex_binding_descriptions[i].divisor != 1u) {
-                    non_1_divisor = true;
+                    LogObjectList objlist(cb_state.Handle());
+                    if (pipeline_state) {
+                        objlist.add(pipeline_state->Handle());
+                    }
+                    skip |= LogError(vuid.vertex_input_09462, objlist, loc,
+                                     "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "].divisor as %" PRIu32
+                                     ", but firstInstance is %" PRIu32 " and supportsNonZeroFirstInstance is VK_FALSE.",
+                                     i, cb_state.dynamic_state_value.vertex_binding_descriptions[i].divisor, firstInstance);
                     break;
                 }
-            }
-            if (non_1_divisor) {
-                LogObjectList objlist(cb_state.Handle());
-                if (pipeline_state) {
-                    objlist.add(pipeline_state->Handle());
-                }
-                skip |= LogError(vuid.vertex_input_09462, objlist, loc,
-                                 "VkPipelineVertexInputDivisorStateCreateInfoKHR::pVertexBindingDivisors[%" PRIu32
-                                 "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
-                                 ", but supportsNonZeroFirstInstance is VK_FALSE.",
-                                 i, cb_state.dynamic_state_value.vertex_binding_descriptions[i].divisor, firstInstance);
             }
         }
     }
