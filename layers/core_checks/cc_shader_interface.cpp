@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,9 +108,12 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
                              location);
         } else if (attribute_input && shader_input) {
             const VkFormat attribute_format = *attribute_input;
-            const auto attribute_type = spirv::GetFormatType(attribute_format);
+            const uint32_t attribute_type = spirv::GetFormatType(attribute_format);
             const uint32_t var_base_type_id = shader_input->ResultId();
             const auto var_numeric_type = module_state.GetNumericType(var_base_type_id);
+
+            const bool attribute64 = vkuFormatIs64bit(attribute_format);
+            const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
 
             // Type checking
             if (!(attribute_type & var_numeric_type)) {
@@ -119,37 +122,30 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
                              vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
                              "(%s) at Location %" PRIu32 " does not match vertex shader input type (%s).",
                              string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
-            } else {
-                // 64-bit can't be used if both the Vertex Attribute AND Shader Input Variable are both not 64-bit.
-                const bool attribute64 = vkuFormatIs64bit(attribute_format);
-                const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
-                if (attribute64 && !shader64) {
+            } else if (attribute64 && !shader64) {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929", module_state.handle(),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                             "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 32-bit type (%s).",
+                             string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
+            } else if (!attribute64 && shader64) {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930", module_state.handle(),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                             "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 64-bit type (%s).",
+                             string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
+            } else if (attribute64 && shader64) {
+                const uint32_t attribute_components = vkuFormatComponentCount(attribute_format);
+                const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
+                if (attribute_components < input_components) {
                     skip |= LogError(
-                        "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929", module_state.handle(),
+                        "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198", module_state.handle(),
                         vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
-                        "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 32-bit type (%s).",
-                        string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
-                } else if (!attribute64 && shader64) {
-                    skip |= LogError(
-                        "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930", module_state.handle(),
-                        vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
-                        "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 64-bit type (%s).",
-                        string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
-                } else if (attribute64 && shader64) {
-                    // Unlike 32-bit, the components for 64-bit inputs have to match exactly
-                    const uint32_t attribute_components = vkuFormatComponentCount(attribute_format);
-                    const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
-                    if (attribute_components < input_components) {
-                        skip |= LogError(
-                            "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198", module_state.handle(),
-                            vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
-                            "(%s) is a %" PRIu32 "-wide 64-bit format, but at location %" PRIu32
-                            " the vertex shader input is %" PRIu32
-                            "-wide 64-bit type (%s). (64-bit vertex input don't have default values and require "
-                            "components to match what is used in the shader)",
-                            string_VkFormat(attribute_format), attribute_components, location, input_components,
-                            module_state.DescribeType(var_base_type_id).c_str());
-                    }
+                        "(%s) is a %" PRIu32 "-wide 64-bit format, but at location %" PRIu32 " the vertex shader input is %" PRIu32
+                        "-wide 64-bit type (%s). (64-bit vertex input don't have default values and require "
+                        "components to match what is used in the shader)",
+                        string_VkFormat(attribute_format), attribute_components, location, input_components,
+                        module_state.DescribeType(var_base_type_id).c_str());
                 }
             }
         } else {            // !attrib && !input

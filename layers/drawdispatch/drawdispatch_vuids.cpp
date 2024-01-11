@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2023 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,6 +67,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDraw-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDraw-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDraw-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDraw-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDraw-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDraw-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDraw-None-07880";
@@ -374,6 +375,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawMultiEXT-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawMultiEXT-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawMultiEXT-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawMultiEXT-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawMultiEXT-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMultiEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMultiEXT-None-07880";
@@ -682,6 +684,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawIndexed-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndexed-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndexed-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawIndexed-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndexed-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndexed-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndexed-None-07880";
@@ -990,6 +993,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawMultiIndexedEXT-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawMultiIndexedEXT-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawMultiIndexedEXT-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawMultiIndexedEXT-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawMultiIndexedEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawMultiIndexedEXT-None-07880";
@@ -1299,6 +1303,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawIndirect-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndirect-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndirect-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawIndirect-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndirect-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndirect-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndirect-None-07880";
@@ -1607,6 +1612,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawIndexedIndirect-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndexedIndirect-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawIndexedIndirect-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndexedIndirect-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndexedIndirect-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndexedIndirect-None-07880";
@@ -2007,6 +2013,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawIndirectCount-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndirectCount-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndirectCount-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawIndirectCount-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndirectCount-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndirectCount-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndirectCount-None-07880";
@@ -2318,6 +2325,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawIndexedIndirectCount-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndexedIndirectCount-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndexedIndirectCount-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawIndexedIndirectCount-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndexedIndirectCount-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndexedIndirectCount-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndexedIndirectCount-None-07880";
@@ -4579,6 +4587,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_input_04912                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-04912";
         vertex_input_binding_stride_04913        = "VUID-vkCmdDrawIndirectByteCountEXT-pStrides-04913";
         vertex_input_04914                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-04914";
+        vertex_input_08734                       = "VUID-vkCmdDrawIndirectByteCountEXT-Input-08734";
         blend_enable_04727                       = "VUID-vkCmdDrawIndirectByteCountEXT-blendEnable-04727";
         dynamic_discard_rectangle_07751          = "VUID-vkCmdDrawIndirectByteCountEXT-None-07751";
         dynamic_discard_rectangle_enable_07880   = "VUID-vkCmdDrawIndirectByteCountEXT-None-07880";

@@ -59,6 +59,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_04912 = kVUIDUndefined;
     const char* vertex_input_binding_stride_04913 = kVUIDUndefined;
     const char* vertex_input_04914 = kVUIDUndefined;
+    const char* vertex_input_08734 = kVUIDUndefined;
     const char* blend_enable_04727 = kVUIDUndefined;
     const char* dynamic_discard_rectangle_07751 = kVUIDUndefined;
     const char* dynamic_discard_rectangle_enable_07880 = kVUIDUndefined;
