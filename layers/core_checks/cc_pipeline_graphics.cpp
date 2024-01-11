@@ -529,6 +529,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                         LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
                                  "is incompatible with the layout specified in the fragment shader sub-state: %s", err_msg.c_str());
                 }
+            } else {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", device, create_info_loc.dot(Field::layout),
+                         "is missing and therefore not compatible with the libraries layout");
+
             }
         }
     }
