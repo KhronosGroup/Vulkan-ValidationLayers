@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
         error_msg_beginning += "(";
         error_msg_beginning += address_string;
         error_msg_beginning +=
-            ") has no buffer associated to it. "
+            ") has no valid buffer associated to it. "
             "At least one buffer associated to this device address must be valid. ";
     }
 

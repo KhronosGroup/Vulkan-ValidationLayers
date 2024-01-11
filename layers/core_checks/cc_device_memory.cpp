@@ -30,12 +30,11 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, co
     auto type_name = object_string[typed_handle.type];
     if (!mem_state) {
         result |=
-            LogError(vuid, objlist, loc, "(%s) used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
+            LogError(vuid, objlist, loc, "(%s) is used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      FormatHandle(typed_handle).c_str(), type_name + 2);
     } else if (mem_state->Destroyed()) {
         result |= LogError(vuid, objlist, loc,
-                           "(%s) used with no memory bound and previously bound memory was freed. Memory must not be freed "
-                           "prior to this operation.",
+                           "(%s) is used, but bound memory was freed. Memory must not be freed prior to this operation.",
                            FormatHandle(typed_handle).c_str());
     }
     return result;
