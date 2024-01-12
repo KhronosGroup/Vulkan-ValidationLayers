@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2023 Valve Corporation
-# Copyright (c) 2014-2023 LunarG, Inc.
+# Copyright (c) 2014-2024 Valve Corporation
+# Copyright (c) 2014-2024 LunarG, Inc.
 # Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +40,7 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_validation_error_messages.h
     ${API_TYPE}/generated/vk_layer_dispatch_table.h
     ${API_TYPE}/generated/vk_dispatch_table_helper.h
+    ${API_TYPE}/generated/vk_dispatch_table_helper.cpp
     ${API_TYPE}/generated/vk_safe_struct.h
     ${API_TYPE}/generated/vk_safe_struct_utils.cpp
     ${API_TYPE}/generated/vk_safe_struct_core.cpp

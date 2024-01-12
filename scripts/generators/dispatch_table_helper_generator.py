@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2023 The Khronos Group Inc.
-# Copyright (c) 2015-2023 Valve Corporation
-# Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2015-2024 The Khronos Group Inc.
+# Copyright (c) 2015-2024 Valve Corporation
+# Copyright (c) 2015-2024 LunarG, Inc.
 # Copyright (c) 2015-2023 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,16 +27,15 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         BaseGenerator.__init__(self)
 
     def generate(self):
-        out = []
-        out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2023 The Khronos Group Inc.
-            * Copyright (c) 2015-2023 Valve Corporation
-            * Copyright (c) 2015-2023 LunarG, Inc.
-            * Copyright (c) 2015-2023 Google Inc.
+            * Copyright (c) 2015-2024 The Khronos Group Inc.
+            * Copyright (c) 2015-2024 Valve Corporation
+            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2024 Google Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
@@ -50,8 +49,19 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             * See the License for the specific language governing permissions and
             * limitations under the License.
             ****************************************************************************/\n''')
-        out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
+        if self.filename == 'vk_dispatch_table_helper.h':
+            self.generateHeader()
+        elif self.filename == 'vk_dispatch_table_helper.cpp':
+            self.generateSource()
+        else:
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
+
+        self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
+
+    def generateHeader(self):
+        out = []
         out.append('''
             #pragma once
 
@@ -63,6 +73,22 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             #include "vk_extension_helper.h"
             \n''')
 
+        out.append('''
+            // Using the above code-generated map of APINames-to-parent extension names, this function will:
+            //   o  Determine if the API has an associated extension
+            //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
+            //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
+            bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info);''')
+
+        out.append('void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* table, PFN_vkGetDeviceProcAddr gpa);')
+
+        out.append('void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa);')
+        self.write("".join(out))
+
+    def generateSource(self):
+        out = []
+        out.append('#include "vk_dispatch_table_helper.h"\n')
+
         guard_helper = PlatformGuardHelper()
 
         for command in [x for x in self.vk.commands.values() if x.extensions or x.version]:
@@ -72,6 +98,9 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
 
             prototype = ' '.join(command.cPrototype.split()) # remove duplicate whitespace
             prototype = prototype.replace('\n', '').replace('( ', '(').replace(');', ')').replace(' vk', ' Stub')
+            # Remove the parameter names so that we don't get any unreferenced parameter warnings
+            for param in command.params:
+                prototype = prototype.replace(f'{param.name},', ',').replace(f'{param.name})', ')').replace(f' {param.name}[', '[')
 
             result = '' if command.returnType == 'void' else 'return 0;'
             result = 'return VK_SUCCESS;' if command.returnType == 'VkResult' else result
@@ -94,7 +123,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             //   o  Determine if the API has an associated extension
             //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
             //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
-            static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info) {
+            bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info) {
                 auto has_ext = api_extension_map.find(api_name);
                 // Is this API part of an extension or feature group?
                 if (has_ext != api_extension_map.end()) {
@@ -126,7 +155,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             }
             ''')
         out.append('''
-            static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* table, PFN_vkGetDeviceProcAddr gpa) {
+            void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* table, PFN_vkGetDeviceProcAddr gpa) {
                 memset(table, 0, sizeof(*table));
                 // Device function pointers
                 table->GetDeviceProcAddr = gpa;
@@ -140,7 +169,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         out.append('}\n')
 
         out.append('''
-            static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa) {
+            void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa) {
                 memset(table, 0, sizeof(*table));
                 // Instance function pointers
                 table->GetInstanceProcAddr = gpa;
@@ -163,5 +192,4 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
 
-        out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
         self.write("".join(out))
