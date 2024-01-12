@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2023 The Khronos Group Inc.
-# Copyright (c) 2021-2023 Valve Corporation
-# Copyright (c) 2021-2023 LunarG, Inc.
+# Copyright (c) 2021-2024 The Khronos Group Inc.
+# Copyright (c) 2021-2024 Valve Corporation
+# Copyright (c) 2021-2024 LunarG, Inc.
 # Copyright (c) 2021-2023 Google Inc.
 # Copyright (c) 2023-2023 RasterGrid Kft.
 #
@@ -144,6 +144,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'genCombined': True,
         },
         'vk_dispatch_table_helper.h' : {
+            'generator' : DispatchTableHelperOutputGenerator,
+            'genCombined': True,
+        },
+        'vk_dispatch_table_helper.cpp' : {
             'generator' : DispatchTableHelperOutputGenerator,
             'genCombined': True,
         },
