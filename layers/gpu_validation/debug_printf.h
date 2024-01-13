@@ -62,8 +62,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     CommandBuffer(Validator* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info, const vvl::CommandPool* pool);
     ~CommandBuffer();
 
-    bool NeedsProcessing() const final { return !buffer_infos.empty(); }
-    void Process(VkQueue queue, const Location &loc) final;
+    bool PreProcess() final { return !buffer_infos.empty(); }
+    void PostProcess(VkQueue queue, const Location& loc) final;
 
     void Destroy() final;
     void Reset() final;
