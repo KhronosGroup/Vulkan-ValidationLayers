@@ -414,7 +414,7 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void debug_printf::CommandBuffer::Process(VkQueue queue, const Location &loc) {
+void debug_printf::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     auto *device_state = static_cast<debug_printf::Validator *>(dev_data);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
         auto &gpu_buffer_list = buffer_infos;

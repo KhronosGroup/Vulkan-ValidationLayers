@@ -28,20 +28,26 @@ class Queue : public vvl::Queue {
     Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties);
     virtual ~Queue();
-    void SubmitBarrier();
 
-  private:
+  protected:
+    uint64_t PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
+    void PostSubmit(vvl::QueueSubmission &) override;
+    void SubmitBarrier(uint64_t seq);
+    void Retire(vvl::QueueSubmission &) override;
+
     Validator &state_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
+    VkSemaphore barrier_sem_{VK_NULL_HANDLE};
+    std::deque<std::vector<std::shared_ptr<vvl::CommandBuffer>>> retiring_;
 };
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
     CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
 
-    virtual bool NeedsProcessing() const = 0;
-    virtual void Process(VkQueue queue, const Location &loc) = 0;
+    virtual bool PreProcess() = 0;
+    virtual void PostProcess(VkQueue queue, const Location &loc) = 0;
 };
 }  // namespace gpu_tracker
 
@@ -101,14 +107,6 @@ class Validator : public ValidationStateTracker {
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
 
-    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                   const RecordObject &record_obj) override;
-    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                            const RecordObject &record_obj);
-    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                       const RecordObject &record_obj) override;
-    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                    const RecordObject &record_obj) override;
     bool ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask, const Location &loc) const;
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                       VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
@@ -188,15 +186,8 @@ class Validator : public ValidationStateTracker {
     bool CheckForGpuAvEnabled(const void *pNext);
 
   protected:
-    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const;
+    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
     void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer, const Location &loc);
-
-    void SubmitBarrier(VkQueue queue) {
-        auto queue_state = Get<Queue>(queue);
-        if (queue_state) {
-            queue_state->SubmitBarrier();
-        }
-    }
 
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override {
