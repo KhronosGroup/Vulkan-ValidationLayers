@@ -106,6 +106,9 @@ struct LocationVuidAdapter {
 
 struct LocationCapture {
     LocationCapture(const Location& loc);
+    LocationCapture(const LocationCapture &other);
+    LocationCapture(LocationCapture &&other);
+
     const Location& Get() const { return capture.back(); }
 
   protected:

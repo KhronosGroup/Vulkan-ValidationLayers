@@ -81,6 +81,11 @@ std::shared_ptr<vvl::CommandBuffer> gpuav::Validator::CreateCmdBufferState(VkCom
     return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(this, cb, pCreateInfo, pool));
 }
 
+std::shared_ptr<vvl::Queue> gpuav::Validator::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+                                                          const VkQueueFamilyProperties &queueFamilyProperties) {
+    return std::static_pointer_cast<vvl::Queue>(std::make_shared<Queue>(*this, q, index, flags, queueFamilyProperties));
+}
+
 // Perform initializations that can be done at Create Device time.
 void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor

@@ -251,8 +251,8 @@ void gpuav::Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
     }
 }
 
-void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer, const Location &loc) {
-    if (gpuav_bda_buffer_version == buffer_device_address_ranges_version) {
+void gpuav::Validator::UpdateBDABuffer(const Location &loc) {
+    if (!buffer_device_address_enabled || gpuav_bda_buffer_version == buffer_device_address_ranges_version) {
         return;
     }
     auto address_ranges = GetBufferAddressRanges();
@@ -273,7 +273,7 @@ void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer, 
     uint64_t *bda_data;
     // Make sure to limit writes to size of the buffer
     [[maybe_unused]] VkResult result;
-    result = vmaMapMemory(vmaAllocator, device_address_buffer.allocation, reinterpret_cast<void **>(&bda_data));
+    result = vmaMapMemory(vmaAllocator, app_buffer_device_addresses.allocation, reinterpret_cast<void **>(&bda_data));
     assert(result == VK_SUCCESS);
     uint32_t address_index = 1;
     size_t size_index = 3 + address_ranges.size();
@@ -298,10 +298,10 @@ void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer, 
     bda_data[address_index] = std::numeric_limits<uintptr_t>::max();
     bda_data[size_index] = 0;
     // Flush the BDA buffer before unmapping so that the new state is visible to the GPU
-    result = vmaFlushAllocation(vmaAllocator, device_address_buffer.allocation, 0, VK_WHOLE_SIZE);
+    result = vmaFlushAllocation(vmaAllocator, app_buffer_device_addresses.allocation, 0, VK_WHOLE_SIZE);
     // No good way to handle this error, we should still try to unmap.
     assert(result == VK_SUCCESS);
-    vmaUnmapMemory(vmaAllocator, device_address_buffer.allocation);
+    vmaUnmapMemory(vmaAllocator, app_buffer_device_addresses.allocation);
     gpuav_bda_buffer_version = buffer_device_address_ranges_version;
 }
 
