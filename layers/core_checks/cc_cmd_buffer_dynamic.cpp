@@ -357,8 +357,8 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
             cb_state.dynamic_state_value.sample_locations_enable) {
             if (cb_state.active_attachments && cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
                 for (const auto attachment : (*cb_state.active_attachments)) {
-                    if (attachment->create_info.subresourceRange.aspectMask &
-                        (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                    if (attachment && attachment->create_info.subresourceRange.aspectMask &
+                                          (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
                         if ((attachment->image_state->createInfo.flags &
                              VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                             const LogObjectList objlist(cb_state.commandBuffer(), frag_spirv_state->handle());
@@ -532,7 +532,8 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                     advanced_blend = true;
                 }
 
-                if (((*cb_state.active_attachments)[i]->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) {
+                const auto attachment = (*cb_state.active_attachments)[i];
+                if (attachment && ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0)) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                     skip |= LogError(vuid.blend_feature_07470, objlist, loc,
                                      "Attachment %" PRIu32

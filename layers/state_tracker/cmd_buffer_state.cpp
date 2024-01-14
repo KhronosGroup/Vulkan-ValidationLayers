@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -590,6 +590,9 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     hasRenderPassInstance = true;
 
     active_attachments = nullptr;
+    // add 2 for the Depth and Stencil
+    // multiple by 2 because every attachment might have a resolve
+    // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     // Set cb_state->active_attachments & cb_state->attachments_view_states
