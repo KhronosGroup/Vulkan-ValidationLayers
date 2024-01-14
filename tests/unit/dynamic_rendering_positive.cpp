@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1163,6 +1163,46 @@ TEST_F(PositiveDynamicRendering, PipelineUnusedAttachments) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicRendering, DynamicColorBlendEnable) {
+    TEST_DESCRIPTION("Do a draw with VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    VkBool32 color_blend_enable = VK_TRUE;
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enable);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
