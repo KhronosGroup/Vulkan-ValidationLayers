@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021-2022 ARM, Inc. All rights reserved.
  *
@@ -114,10 +114,6 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
     TEST_DESCRIPTION("vkCmdDraw* Dynamic Rendering Tests.");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -125,7 +121,6 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
 
     CreatePipelineHelper pipe(*this, 0);
     pipe.InitState();
-    pipe.gp_ci_.layout = pl.handle();
     pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -191,9 +186,6 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-
     VkPipelineMultisampleStateCreateInfo ms_ci = vku::InitStructHelper();
     ms_ci.sampleShadingEnable = VK_TRUE;
     ms_ci.minSampleShading = 1.0;
@@ -207,7 +199,6 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipe.gp_ci_.pDepthStencilState = &ds_state;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -897,20 +888,6 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
@@ -918,9 +895,7 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
     pipeline_rendering_info.viewMask = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.InitState();
-    pipe.gp_ci_.layout = pl.handle();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.CreateGraphicsPipeline();
 
@@ -948,12 +923,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
 
     VkFormat color_formats[] = {VK_FORMAT_R8G8B8A8_UNORM};
@@ -962,8 +931,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
 
     CreatePipelineHelper pipeline_color(*this);
     pipeline_color.InitState();
-    pipeline_color.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipeline_color.gp_ci_.layout = pl.handle();
     pipeline_color.gp_ci_.pNext = &pipeline_rendering_info;
     pipeline_color.CreateGraphicsPipeline();
 
@@ -973,8 +940,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
 
     CreatePipelineHelper pipeline_depth(*this, 0);
     pipeline_depth.InitState();
-    pipeline_depth.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipeline_depth.gp_ci_.layout = pl.handle();
     pipeline_depth.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipeline_depth.gp_ci_.pNext = &pipeline_rendering_info;
     pipeline_depth.CreateGraphicsPipeline();
@@ -1008,8 +973,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
         pipeline_rendering_info.stencilAttachmentFormat = stencilFormat;
 
         pipeline_stencil.InitState();
-        pipeline_stencil.shader_stages_[1] = fs.GetStageCreateInfo();
-        pipeline_stencil.gp_ci_.layout = pl.handle();
         pipeline_stencil.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
         pipeline_stencil.gp_ci_.pNext = &pipeline_rendering_info;
         pipeline_stencil.CreateGraphicsPipeline();
@@ -1087,12 +1050,6 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
 
     VkFormat color_formats[] = {VK_FORMAT_R8G8B8A8_UNORM};
@@ -1101,8 +1058,6 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     CreatePipelineHelper pipeline_color(*this);
     pipeline_color.InitState();
-    pipeline_color.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipeline_color.gp_ci_.layout = pl.handle();
     pipeline_color.gp_ci_.pNext = &pipeline_rendering_info;
     pipeline_color.CreateGraphicsPipeline();
 
@@ -1112,8 +1067,6 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     CreatePipelineHelper pipeline_depth(*this, 0);
     pipeline_depth.InitState();
-    pipeline_depth.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipeline_depth.gp_ci_.layout = pl.handle();
     pipeline_depth.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipeline_depth.gp_ci_.pNext = &pipeline_rendering_info;
     pipeline_depth.CreateGraphicsPipeline();
@@ -1125,8 +1078,6 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     CreatePipelineHelper pipeline_stencil(*this, 0);
     pipeline_stencil.InitState();
-    pipeline_stencil.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipeline_stencil.gp_ci_.layout = pl.handle();
     pipeline_stencil.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipeline_stencil.gp_ci_.pNext = &pipeline_rendering_info;
     pipeline_stencil.CreateGraphicsPipeline();
@@ -1201,12 +1152,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3Color) {
     AddRequiredFeature(vkt::Feature::dynamicRenderingUnusedAttachments);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
 
     VkFormat color_formats[] = {VK_FORMAT_B8G8R8A8_UNORM};
@@ -1215,8 +1160,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3Color) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
@@ -1255,12 +1198,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
     AddRequiredFeature(vkt::Feature::dynamicRenderingUnusedAttachments);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = nullptr;
@@ -1268,8 +1205,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
 
     CreatePipelineHelper pipe1(*this);
     pipe1.InitState();
-    pipe1.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe1.gp_ci_.layout = pl.handle();
     pipe1.ds_ci_ = vku::InitStructHelper();
     pipe1.gp_ci_.pNext = &pipeline_rendering_info;
     pipe1.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -1304,8 +1239,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3DepthStencil) {
         pipeline_rendering_info.stencilAttachmentFormat = stencilFormat;
 
         pipe2.InitState();
-        pipe2.shader_stages_[1] = fs.GetStageCreateInfo();
-        pipe2.gp_ci_.layout = pl.handle();
         pipe2.ds_ci_ = vku::InitStructHelper();
         pipe2.gp_ci_.pNext = &pipeline_rendering_info;
         pipe2.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -1357,19 +1290,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
 
     VkFormat color_formats[] = {VK_FORMAT_R8G8B8A8_UNORM};
@@ -1378,8 +1298,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesColor) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
     pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -1415,19 +1333,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesDepthStencil) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching depth/stencil sample counts");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
 
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -1437,8 +1342,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesDepthStencil) {
 
     CreatePipelineHelper pipe1(*this);
     pipe1.InitState();
-    pipe1.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe1.gp_ci_.layout = pl.handle();
     pipe1.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe1.ds_ci_ = vku::InitStructHelper();
     pipe1.gp_ci_.pColorBlendState = nullptr;
@@ -1452,8 +1355,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamplesDepthStencil) {
 
     CreatePipelineHelper pipe2(*this);
     pipe2.InitState();
-    pipe2.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe2.gp_ci_.layout = pl.handle();
     pipe2.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe2.ds_ci_ = vku::InitStructHelper();
     pipe2.gp_ci_.pColorBlendState = nullptr;
@@ -1511,19 +1412,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesColor) {
         GTEST_SKIP() << "Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples";
     }
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkSampleCountFlagBits counts[2] = {VK_SAMPLE_COUNT_2_BIT, VK_SAMPLE_COUNT_2_BIT};
     VkAttachmentSampleCountInfoAMD samples_info = vku::InitStructHelper();
 
@@ -1538,8 +1426,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesColor) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
 
@@ -1589,19 +1475,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
         GTEST_SKIP() << "Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples";
     }
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkSampleCountFlagBits counts[2] = {VK_SAMPLE_COUNT_2_BIT, VK_SAMPLE_COUNT_2_BIT};
     VkAttachmentSampleCountInfoAMD samples_info = vku::InitStructHelper();
 
@@ -1619,8 +1492,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
 
     CreatePipelineHelper pipe1(*this);
     pipe1.InitState();
-    pipe1.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe1.gp_ci_.layout = pl.handle();
     pipe1.ds_ci_ = vku::InitStructHelper();
     pipe1.gp_ci_.pColorBlendState = nullptr;
     pipe1.gp_ci_.pNext = &pipeline_rendering_info;
@@ -1633,8 +1504,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
 
     CreatePipelineHelper pipe2(*this);
     pipe2.InitState();
-    pipe2.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe2.gp_ci_.layout = pl.handle();
     pipe2.ds_ci_ = vku::InitStructHelper();
     pipe2.gp_ci_.pColorBlendState = nullptr;
     pipe2.gp_ci_.pNext = &pipeline_rendering_info;
@@ -6158,20 +6027,6 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
     TEST_DESCRIPTION("Test pipeline rendering formats and viewmask");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkFormat depth_format = VK_FORMAT_X8_D24_UNORM_PACK32;
 
     if (FormatFeaturesAreSupported(gpu_, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
@@ -6195,7 +6050,6 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
     pipe.InitState();
     pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
-    pipe.gp_ci_.layout = pl.handle();
 
     // Invalid color format
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582");
@@ -6251,19 +6105,6 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
@@ -6282,8 +6123,6 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
