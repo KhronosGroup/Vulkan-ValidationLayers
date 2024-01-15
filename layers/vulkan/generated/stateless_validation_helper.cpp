@@ -26908,5 +26908,45 @@ bool StatelessValidation::ValidatePipelineInputAssemblyStateCreateInfo(const VkP
     skip |= ValidateBool32(loc.dot(Field::primitiveRestartEnable), info.primitiveRestartEnable);
     return skip;
 }
+bool StatelessValidation::ValidatePipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo& info,
+                                                                       const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkPipelineRasterizationStateCreateInfo = {
+        VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_STREAM_CREATE_INFO_EXT};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineRasterizationStateCreateInfo.size(),
+                                allowed_structs_VkPipelineRasterizationStateCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineRasterizationStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineRasterizationStateCreateInfo-sType-unique", false, true);
+
+    skip |=
+        ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineRasterizationStateCreateInfo-flags-zerobitmask");
+
+    skip |= ValidateBool32(loc.dot(Field::depthClampEnable), info.depthClampEnable);
+
+    skip |= ValidateBool32(loc.dot(Field::rasterizerDiscardEnable), info.rasterizerDiscardEnable);
+
+    skip |= ValidateRangedEnum(loc.dot(Field::polygonMode), "VkPolygonMode", info.polygonMode,
+                               "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-parameter");
+
+    skip |= ValidateFlags(loc.dot(Field::cullMode), "VkCullModeFlagBits", AllVkCullModeFlagBits, info.cullMode, kOptionalFlags,
+                          "VUID-VkPipelineRasterizationStateCreateInfo-cullMode-parameter");
+
+    skip |= ValidateRangedEnum(loc.dot(Field::frontFace), "VkFrontFace", info.frontFace,
+                               "VUID-VkPipelineRasterizationStateCreateInfo-frontFace-parameter");
+
+    skip |= ValidateBool32(loc.dot(Field::depthBiasEnable), info.depthBiasEnable);
+    return skip;
+}
 
 // NOLINTEND

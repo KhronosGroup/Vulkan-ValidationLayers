@@ -1134,6 +1134,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
         if (create_info.pRasterizationState) {
             const Location rasterization_loc = create_info_loc.dot(Field::pRasterizationState);
+            skip |= ValidatePipelineRasterizationStateCreateInfo(*create_info.pRasterizationState, rasterization_loc);
+
             if (!IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
                 if (create_info.pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
                     skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414", device,
