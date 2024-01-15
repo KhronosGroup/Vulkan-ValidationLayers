@@ -94,7 +94,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     }
 
     for (const auto &location_it : location_map) {
-        const auto location = location_it.first;
+        const uint32_t location = location_it.first;
         const auto attribute_input = location_it.second.attribute_input;
         const auto shader_input = location_it.second.shader_input;
 
@@ -110,13 +110,13 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             const VkFormat attribute_format = *attribute_input;
             const uint32_t attribute_type = spirv::GetFormatType(attribute_format);
             const uint32_t var_base_type_id = shader_input->ResultId();
-            const auto var_numeric_type = module_state.GetNumericType(var_base_type_id);
+            const uint32_t var_numeric_type = module_state.GetNumericType(var_base_type_id);
 
             const bool attribute64 = vkuFormatIs64bit(attribute_format);
             const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
 
             // Type checking
-            if (!(attribute_type & var_numeric_type)) {
+            if ((attribute_type & var_numeric_type) == 0) {
                 skip |=
                     LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
                              vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
@@ -679,7 +679,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                 continue;
             }
 
-            const auto location = location_it.first;
+            const uint32_t location = location_it.first;
             const auto attachment = location_it.second.attachment;
             const auto output = location_it.second.output;
             if (attachment && !output) {
@@ -697,11 +697,11 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                                               location);
                 }
             } else if (attachment && output) {
-                const auto attachment_type = spirv::GetFormatType(attachment->format);
-                const auto output_type = module_state.GetNumericType(output->type_id);
+                const uint32_t attachment_type = spirv::GetFormatType(attachment->format);
+                const uint32_t output_type = module_state.GetNumericType(output->type_id);
 
                 // Type checking
-                if (!(output_type & attachment_type)) {
+                if ((output_type & attachment_type) == 0) {
                     skip |= LogUndefinedValue(
                         "Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
                         "Attachment %" PRIu32
@@ -749,12 +749,12 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const spirv:
                 "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment", location);
         } else if (pipeline.fragment_output_state && output &&
                    (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
-            auto format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
-            const auto attachment_type = spirv::GetFormatType(format);
-            const auto output_type = module_state.GetNumericType(output->type_id);
+            const VkFormat format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
+            const uint32_t attachment_type = spirv::GetFormatType(format);
+            const uint32_t output_type = module_state.GetNumericType(output->type_id);
 
             // Type checking
-            if (!(output_type & attachment_type)) {
+            if ((output_type & attachment_type) == 0) {
                 skip |= LogUndefinedValue(
                     "Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
                     "Attachment %" PRIu32
