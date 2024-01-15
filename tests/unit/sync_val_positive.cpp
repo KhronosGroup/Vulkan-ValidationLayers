@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -366,16 +366,6 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-
-    const char vs_source[] = R"glsl(
-        #version 460
-        layout(set=1) layout(binding=0) uniform foo { float x; } bar;
-        void main() {
-           gl_Position = vec4(bar.x);
-        }
-    )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
     const vkt::DescriptorSetLayout set_layout(*m_device, {binding});
