@@ -302,13 +302,13 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
 
                     const uint32_t var_base_type_id = variable_ptr->base_type.ResultId();
                     const uint32_t attribute_type = spirv::GetFormatType(description.format);
-                    const auto var_numeric_type = vert_spirv_state->GetNumericType(var_base_type_id);
+                    const uint32_t var_numeric_type = vert_spirv_state->GetNumericType(var_base_type_id);
 
                     const bool attribute64 = vkuFormatIs64bit(description.format);
                     const bool shader64 = vert_spirv_state->GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
 
                     // first type check before doing 64-bit matching
-                    if (!(attribute_type & var_numeric_type)) {
+                    if ((attribute_type & var_numeric_type) == 0) {
                         skip |= LogError(vuid.vertex_input_08734, vert_spirv_state->handle(), loc,
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "].location (%" PRIu32
                                          ") with format %s but the vertex shader input is numberic type %s",

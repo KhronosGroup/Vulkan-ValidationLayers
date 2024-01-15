@@ -332,7 +332,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                       string_SpvDim(dim), is_image_array);
         }
 
-        if (!(variable->info.image_format_type & image_view_state->descriptor_format_bits)) {
+        if ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0) {
             const bool signed_override =
                 ((variable->info.image_format_type & spirv::NumericTypeUint) && variable->info.is_sign_extended);
             const bool unsigned_override =
@@ -955,9 +955,9 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                         "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32 ") is using buffer %s that has been destroyed.",
                         FormatHandle(set).c_str(), binding, index, FormatHandle(buffer).c_str());
     }
-    const auto format_bits = spirv::GetFormatType(buffer_view_format);
+    const uint32_t format_bits = spirv::GetFormatType(buffer_view_format);
 
-    if (!(variable->info.image_format_type & format_bits)) {
+    if ((variable->info.image_format_type & format_bits) == 0) {
         const bool signed_override =
             ((variable->info.image_format_type & spirv::NumericTypeUint) && variable->info.is_sign_extended);
         const bool unsigned_override =
