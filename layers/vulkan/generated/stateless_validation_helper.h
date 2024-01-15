@@ -1818,4 +1818,5 @@ bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleState
 bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo& info, const Location& loc) const;
 bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo& info, const Location& loc) const;
 bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo& info, const Location& loc) const;
 // NOLINTEND
