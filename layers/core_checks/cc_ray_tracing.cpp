@@ -560,21 +560,10 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         BufferAddressValidation<1> buffer_address_validator = {
                             {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03805", LogObjectList(cmd_buffer),
                                [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                   if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
-                                       if (out_error_msg) {
-                                           if (const auto mem_state = buffer_state->MemState();
-                                               mem_state && mem_state->Destroyed()) {
-                                               *out_error_msg += "buffer is bound to memory (" + FormatHandle(mem_state->Handle()) +
-                                                                 ") but it has been freed";
-                                           } else {
-                                               *out_error_msg += "buffer has not been bound to memory";
-                                           }
-                                       }
-                                       return false;
-                                   }
-                                   return true;
+                                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
+                                                                                                  out_error_msg);
                                },
-                               []() { return "The following buffers are not bound to memory or it has been freed:\n"; }}}}};
+                               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
 
                         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
                             *this, vertex_buffer_states, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
@@ -582,16 +571,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     }
 
                     if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
-                        const VkDeviceSize index_buffer_alignment = GetIndexAlignment(geom_data.geometry.triangles.indexType);
-                        if (SafeModulo(geom_data.geometry.triangles.indexData.deviceAddress, index_buffer_alignment) != 0) {
-                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", cmd_buffer,
-                                             p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
-                                             "(0x%" PRIx64
-                                             ") is not aligned to the size in bytes of its corresponding index type (%s).",
-                                             geom_data.geometry.triangles.indexData.deviceAddress,
-                                             string_VkIndexType(geom_data.geometry.triangles.indexType));
-                        }
-
                         auto index_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
                         if (index_buffer_states.empty()) {
                             skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806", cmd_buffer,
@@ -653,17 +632,11 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                             using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                             BufferAddressValidation<1> buffer_address_validator = {
                                 {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809", LogObjectList(cmd_buffer),
-                                   [this, &p_geom_geom_triangles_loc, cmd_buffer](const BUFFER_STATE_PTR &buffer_state,
-                                                                                  std::string *out_error_msg) {
-                                       if (!out_error_msg) {
-                                           return !buffer_state->sparse && buffer_state->IsMemoryBound();
-                                       } else {
-                                           return ValidateMemoryIsBoundToBuffer(
-                                               cmd_buffer, *buffer_state,
-                                               p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
-                                               "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809");
-                                       }
-                                   }}}}};
+                                   [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                                       return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
+                                                                                                      out_error_msg);
+                                   },
+                                   []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
 
                             skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
                                 *this, tranform_buffer_states,
@@ -689,21 +662,10 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         BufferAddressValidation<1> buffer_address_validator = {
                             {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814", LogObjectList(cmd_buffer),
                                [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                   if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
-                                       if (out_error_msg) {
-                                           if (const auto mem_state = buffer_state->MemState();
-                                               mem_state && mem_state->Destroyed()) {
-                                               *out_error_msg += "buffer is bound to memory (" + FormatHandle(mem_state->Handle()) +
-                                                                 ") but it has been freed";
-                                           } else {
-                                               *out_error_msg += "buffer has not been bound to memory";
-                                           }
-                                       }
-                                       return false;
-                                   }
-                                   return true;
+                                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
+                                                                                                  out_error_msg);
                                },
-                               []() { return "The following buffers are not bound to memory or it has been freed:\n"; }}}}};
+                               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
 
                         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states,
                                                                                   instances_data_loc.dot(Field::deviceAddress),
@@ -1861,20 +1823,9 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
         BufferAddressValidation<4> buffer_address_validator = {{{
             {vuid_single_device_memory, LogObjectList(commandBuffer),
              [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                 if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
-                     if (out_error_msg) {
-                         if (const auto mem_state = buffer_state->MemState(); mem_state && mem_state->Destroyed()) {
-                             *out_error_msg +=
-                                 "buffer is bound to memory (" + FormatHandle(mem_state->Handle()) + ") but it has been freed";
-                         } else {
-                             *out_error_msg += "buffer has not been bound to memory";
-                         }
-                     }
-                     return false;
-                 }
-                 return true;
+                 return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
              },
-             []() { return "The following buffers are not bound to memory or it has been freed:\n"; }},
+             []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
 
             {vuid_binding_table_flag, LogObjectList(commandBuffer),
              [](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {

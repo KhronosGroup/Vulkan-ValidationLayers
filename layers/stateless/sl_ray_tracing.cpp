@@ -1273,6 +1273,16 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                             as_geometry.geometry.instances.data.deviceAddress);
                     }
                 } else if (as_geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                    const VkDeviceSize index_buffer_alignment = GetIndexAlignment(as_geometry.geometry.triangles.indexType);
+                    if (SafeModulo(as_geometry.geometry.triangles.indexData.deviceAddress, index_buffer_alignment) != 0) {
+                        skip |= LogError(
+                            "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", commandBuffer,
+                            geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::indexData).dot(Field::deviceAddress),
+                            "(0x%" PRIx64 ") is not aligned to the size in bytes of its corresponding index type (%s).",
+                            as_geometry.geometry.triangles.indexData.deviceAddress,
+                            string_VkIndexType(as_geometry.geometry.triangles.indexType));
+                    }
+
                     if (SafeModulo(as_geometry.geometry.triangles.transformData.deviceAddress, 16) != 0) {
                         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810", commandBuffer,
                                          geometry_loc.dot(Field::geometry)
