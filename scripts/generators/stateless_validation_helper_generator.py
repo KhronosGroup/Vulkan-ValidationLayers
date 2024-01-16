@@ -837,7 +837,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         usedLines.append(f'skip |= ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired});\n')
                     elif member.type in self.vk.enums and member.const:
                         lenLoc = 'loc' if member.fixedSizeArray else f'{errorLoc}.dot(Field::{member.length})'
-                        usedLines.append(f'skip |= ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), "{member.type}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired});\n')
+                        count_required_vuid = self.GetVuid(structTypeName, f"{member.length}-arraylength")
+                        array_required_vuid = self.GetVuid(structTypeName, f"{member.name}-parameter")
+                        usedLines.append(f'skip |= ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), "{member.type}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
                     elif member.name == 'pNext':
                         # Generate an array of acceptable VkStructureType values for pNext
                         extStructCount = 0

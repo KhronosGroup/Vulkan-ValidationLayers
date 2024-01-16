@@ -425,49 +425,28 @@ class StatelessValidation : public ValidationObject {
      * @param count_loc Name of count parameter.
      * @param array_loc Name of array parameter.
      * @param enumName Name of the enumeration being validated.
-     * @param valid_values The list of valid values for the enumeration.
      * @param count Number of enumeration values in the array.
      * @param array Array of enumeration values to validate.
      * @param countRequired The 'count' parameter may not be 0 when true.
      * @param arrayRequired The 'array' parameter may not be NULL when true.
+     * @param count_required_vuid The VUID for the '*count' parameter.
+     * @param array_required_vuid The VUID for the 'array' parameter.
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
     bool ValidateRangedEnumArray(const Location &count_loc, const Location &array_loc, const char *enumName, uint32_t count,
-                                 const T *array, bool countRequired, bool arrayRequired) const {
+                                 const T *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
+                                 const char *array_required_vuid) const {
         bool skip = false;
         const auto valid_values = ValidParamValues<T>();
 
         if ((count == 0) || (array == nullptr)) {
-            skip |=
-                ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, kVUIDUndefined, kVUIDUndefined);
+            skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
+                                  array_required_vuid);
         } else {
             for (uint32_t i = 0; i < count; ++i) {
                 if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
-                    skip |= LogError(kVUID_PVError_UnrecognizedValue, device, array_loc.dot(i),
-                                     "(%" PRIu32
-                                     ") does not fall within the begin..end range of the core %s "
-                                     "enumeration tokens and is not an extension added token",
-                                     array[i], enumName);
-                }
-            }
-        }
-
-        return skip;
-    }
-
-    template <typename T>
-    bool ValidateRangedEnumArray(const Location &count_loc, const Location &array_loc, const char *vuid, const char *enumName,
-                                 uint32_t count, const T *array, bool countRequired, bool arrayRequired) const {
-        bool skip = false;
-        const auto valid_values = ValidParamValues<T>();
-
-        if ((count == 0) || (array == nullptr)) {
-            skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, vuid, vuid);
-        } else {
-            for (uint32_t i = 0; i < count; ++i) {
-                if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
-                    skip |= LogError(vuid, device, array_loc.dot(i),
+                    skip |= LogError(array_required_vuid, device, array_loc.dot(i),
                                      "(%" PRIu32
                                      ") does not fall within the begin..end range of the core %s "
                                      "enumeration tokens and is not an extension added token",

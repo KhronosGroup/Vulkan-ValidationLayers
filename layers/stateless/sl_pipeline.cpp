@@ -144,11 +144,11 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRe
     }
 
     if (rendering_struct.colorAttachmentCount != 0) {
-        skip |=
-            ValidateRangedEnumArray(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
-                                    loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats),
-                                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579", "VkFormat",
-                                    rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats, true, true);
+        skip |= ValidateRangedEnumArray(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
+                                        loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats),
+                                        "VkFormat", rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats,
+                                        true, true, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
+                                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579");
     }
 
     if (rendering_struct.pColorAttachmentFormats) {
