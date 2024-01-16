@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3571,5 +3571,38 @@ TEST_F(NegativeWsi, IncompatibleImageWithSwapchain) {
     VkImage image;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995");
     vk::CreateImage(device(), &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, SwapchainPresentModeInfoImplicit) {
+    TEST_DESCRIPTION("VkSwapchainPresentModeInfoEXT implicit VUs");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create swapchain, skipping test";
+    }
+
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+    VkSwapchainPresentModeInfoEXT present_mode_info = vku::InitStructHelper();
+    present_mode_info.swapchainCount = 0;
+    present_mode_info.pPresentModes = &present_mode;
+
+    uint32_t image_indices = 0;
+    VkPresentInfoKHR present = vku::InitStructHelper(&present_mode_info);
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_indices;
+    present.swapchainCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-arraylength");
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_errorMonitor->VerifyFound();
+
+    present_mode_info.swapchainCount = 1;
+    present_mode_info.pPresentModes = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-parameter");
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
     m_errorMonitor->VerifyFound();
 }

@@ -1131,7 +1131,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImageFormatListCreateInfo);
                 VkImageFormatListCreateInfo* structure = (VkImageFormatListCreateInfo*)header;
                 skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::viewFormatCount), pNext_loc.dot(Field::pViewFormats),
-                                                "VkFormat", structure->viewFormatCount, structure->pViewFormats, false, true);
+                                                "VkFormat", structure->viewFormatCount, structure->pViewFormats, false, true,
+                                                kVUIDUndefined, "VUID-VkImageFormatListCreateInfo-pViewFormats-parameter");
             }
         } break;
 
@@ -1561,7 +1562,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                         pAttachmentImageInfos_loc.dot(Field::pViewFormats), "VkFormat",
                                                         structure->pAttachmentImageInfos[attachmentImageInfoIndex].viewFormatCount,
                                                         structure->pAttachmentImageInfos[attachmentImageInfoIndex].pViewFormats,
-                                                        false, true);
+                                                        false, true, kVUIDUndefined,
+                                                        "VUID-VkFramebufferAttachmentImageInfo-pViewFormats-parameter");
                     }
                 }
             }
@@ -2269,9 +2271,10 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateFlags(pNext_loc.dot(Field::flags), "VkRenderingFlagBits", AllVkRenderingFlagBits, structure->flags,
                                       kOptionalFlags, "VUID-VkCommandBufferInheritanceRenderingInfo-flags-parameter");
 
-                skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::colorAttachmentCount),
-                                                pNext_loc.dot(Field::pColorAttachmentFormats), "VkFormat",
-                                                structure->colorAttachmentCount, structure->pColorAttachmentFormats, false, true);
+                skip |= ValidateRangedEnumArray(
+                    pNext_loc.dot(Field::colorAttachmentCount), pNext_loc.dot(Field::pColorAttachmentFormats), "VkFormat",
+                    structure->colorAttachmentCount, structure->pColorAttachmentFormats, false, true, kVUIDUndefined,
+                    "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-parameter");
 
                 skip |=
                     ValidateRangedEnum(pNext_loc.dot(Field::depthAttachmentFormat), "VkFormat", structure->depthAttachmentFormat,
@@ -3749,7 +3752,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::disabledValidationCheckCount),
                                                 pNext_loc.dot(Field::pDisabledValidationChecks), "VkValidationCheckEXT",
                                                 structure->disabledValidationCheckCount, structure->pDisabledValidationChecks, true,
-                                                true);
+                                                true, "VUID-VkValidationFlagsEXT-disabledValidationCheckCount-arraylength",
+                                                "VUID-VkValidationFlagsEXT-pDisabledValidationChecks-parameter");
             }
         } break;
 
@@ -4722,15 +4726,16 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkValidationFeaturesEXT);
                 VkValidationFeaturesEXT* structure = (VkValidationFeaturesEXT*)header;
-                skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::enabledValidationFeatureCount),
-                                                pNext_loc.dot(Field::pEnabledValidationFeatures), "VkValidationFeatureEnableEXT",
-                                                structure->enabledValidationFeatureCount, structure->pEnabledValidationFeatures,
-                                                false, true);
+                skip |= ValidateRangedEnumArray(
+                    pNext_loc.dot(Field::enabledValidationFeatureCount), pNext_loc.dot(Field::pEnabledValidationFeatures),
+                    "VkValidationFeatureEnableEXT", structure->enabledValidationFeatureCount, structure->pEnabledValidationFeatures,
+                    false, true, kVUIDUndefined, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-parameter");
 
                 skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::disabledValidationFeatureCount),
                                                 pNext_loc.dot(Field::pDisabledValidationFeatures), "VkValidationFeatureDisableEXT",
                                                 structure->disabledValidationFeatureCount, structure->pDisabledValidationFeatures,
-                                                false, true);
+                                                false, true, kVUIDUndefined,
+                                                "VUID-VkValidationFeaturesEXT-pDisabledValidationFeatures-parameter");
             }
         } break;
 
@@ -5077,9 +5082,10 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT);
                 VkSwapchainPresentModesCreateInfoEXT* structure = (VkSwapchainPresentModesCreateInfoEXT*)header;
-                skip |=
-                    ValidateRangedEnumArray(pNext_loc.dot(Field::presentModeCount), pNext_loc.dot(Field::pPresentModes),
-                                            "VkPresentModeKHR", structure->presentModeCount, structure->pPresentModes, true, true);
+                skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::presentModeCount), pNext_loc.dot(Field::pPresentModes),
+                                                "VkPresentModeKHR", structure->presentModeCount, structure->pPresentModes, true,
+                                                true, "VUID-VkSwapchainPresentModesCreateInfoEXT-presentModeCount-arraylength",
+                                                "VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-parameter");
             }
         } break;
 
@@ -5088,9 +5094,10 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainPresentModeInfoEXT);
                 VkSwapchainPresentModeInfoEXT* structure = (VkSwapchainPresentModeInfoEXT*)header;
-                skip |=
-                    ValidateRangedEnumArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pPresentModes),
-                                            "VkPresentModeKHR", structure->swapchainCount, structure->pPresentModes, true, true);
+                skip |= ValidateRangedEnumArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pPresentModes),
+                                                "VkPresentModeKHR", structure->swapchainCount, structure->pPresentModes, true, true,
+                                                "VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-arraylength",
+                                                "VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-parameter");
             }
         } break;
 
@@ -5805,7 +5812,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                             pMutableDescriptorTypeLists_loc.dot(Field::descriptorTypeCount),
                             pMutableDescriptorTypeLists_loc.dot(Field::pDescriptorTypes), "VkDescriptorType",
                             structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].descriptorTypeCount,
-                            structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].pDescriptorTypes, false, true);
+                            structure->pMutableDescriptorTypeLists[mutableDescriptorTypeListIndex].pDescriptorTypes, false, true,
+                            kVUIDUndefined, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-parameter");
                     }
                 }
             }
@@ -9570,7 +9578,8 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(VkDevice device
                 skip |= ValidateRangedEnumArray(pDynamicState_loc.dot(Field::dynamicStateCount),
                                                 pDynamicState_loc.dot(Field::pDynamicStates), "VkDynamicState",
                                                 pCreateInfos[createInfoIndex].pDynamicState->dynamicStateCount,
-                                                pCreateInfos[createInfoIndex].pDynamicState->pDynamicStates, false, true);
+                                                pCreateInfos[createInfoIndex].pDynamicState->pDynamicStates, false, true,
+                                                kVUIDUndefined, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-parameter");
             }
         }
     }
@@ -17483,7 +17492,7 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandB
         // No xml-driven validation
     }
     skip |= ValidateRangedEnumArray(loc, loc.dot(Field::combinerOps), "VkFragmentShadingRateCombinerOpKHR", 2, combinerOps, false,
-                                    true);
+                                    true, kVUIDUndefined, kVUIDUndefined);
     return skip;
 }
 
@@ -20665,7 +20674,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCo
                                             pShadingRatePalettes_loc.dot(Field::pShadingRatePaletteEntries),
                                             "VkShadingRatePaletteEntryNV",
                                             pShadingRatePalettes[viewportIndex].shadingRatePaletteEntryCount,
-                                            pShadingRatePalettes[viewportIndex].pShadingRatePaletteEntries, true, true);
+                                            pShadingRatePalettes[viewportIndex].pShadingRatePaletteEntries, true, true,
+                                            "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-arraylength",
+                                            "VUID-VkShadingRatePaletteNV-pShadingRatePaletteEntries-parameter");
         }
     }
     if (!skip)
@@ -22417,7 +22428,8 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice
 
                 skip |= ValidateRangedEnumArray(pTokens_loc.dot(Field::indexTypeCount), pTokens_loc.dot(Field::pIndexTypes),
                                                 "VkIndexType", pCreateInfo->pTokens[tokenIndex].indexTypeCount,
-                                                pCreateInfo->pTokens[tokenIndex].pIndexTypes, false, true);
+                                                pCreateInfo->pTokens[tokenIndex].pIndexTypes, false, true, kVUIDUndefined,
+                                                "VUID-VkIndirectCommandsLayoutTokenNV-pIndexTypes-parameter");
 
                 skip |= ValidateArray(pTokens_loc.dot(Field::indexTypeCount), pTokens_loc.dot(Field::pIndexTypeValues),
                                       pCreateInfo->pTokens[tokenIndex].indexTypeCount,
@@ -23007,7 +23019,7 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkComma
     skip |= ValidateRangedEnum(loc.dot(Field::shadingRate), "VkFragmentShadingRateNV", shadingRate,
                                "VUID-vkCmdSetFragmentShadingRateEnumNV-shadingRate-parameter");
     skip |= ValidateRangedEnumArray(loc, loc.dot(Field::combinerOps), "VkFragmentShadingRateCombinerOpKHR", 2, combinerOps, false,
-                                    true);
+                                    true, kVUIDUndefined, kVUIDUndefined);
     return skip;
 }
 
@@ -26507,7 +26519,8 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                 skip |= ValidateRangedEnumArray(pDynamicState_loc.dot(Field::dynamicStateCount),
                                                 pDynamicState_loc.dot(Field::pDynamicStates), "VkDynamicState",
                                                 pCreateInfos[createInfoIndex].pDynamicState->dynamicStateCount,
-                                                pCreateInfos[createInfoIndex].pDynamicState->pDynamicStates, false, true);
+                                                pCreateInfos[createInfoIndex].pDynamicState->pDynamicStates, false, true,
+                                                kVUIDUndefined, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-parameter");
             }
 
             skip |= ValidateRequiredHandle(pCreateInfos_loc.dot(Field::layout), pCreateInfos[createInfoIndex].layout);

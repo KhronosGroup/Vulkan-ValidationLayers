@@ -145,8 +145,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFeaturesBadFlags) {
         validation_features.pEnabledValidationFeatures = &bad_enable;
         ici.pNext = &validation_features;
 
-        // VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-parameter
-        Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
+        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -158,8 +157,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFeaturesBadFlags) {
         validation_features.pDisabledValidationFeatures = &bad_disable;
         ici.pNext = &validation_features;
 
-        // VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-parameter
-        Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
+        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pDisabledValidationFeatures-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -192,8 +190,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFlags) {
         validation_flags.pDisabledValidationChecks = &bad_disable;
         ici.pNext = &validation_flags;
 
-        // VUID-VkValidationFlagsEXT-pDisabledValidationChecks-parameter
-        Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
+        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFlagsEXT-pDisabledValidationChecks-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -203,9 +200,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFlags) {
         validation_flags.disabledValidationCheckCount = 0;
         ici.pNext = &validation_flags;
 
-        // TODO - Currently returns VUID_Undefined
-        // VUID-VkValidationFlagsEXT-disabledValidationCheckCount-arraylength
-        Monitor().SetDesiredFailureMsg(kErrorBit, "disabledValidationCheckCount must be greater than 0");
+        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFlagsEXT-disabledValidationCheckCount-arraylength");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
