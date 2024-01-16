@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -696,10 +696,11 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     m_commandBuffer = new vkt::CommandBuffer(m_device, m_commandPool);
 }
 
-bool VkRenderFramework::InitSurface() {
+void VkRenderFramework::InitSurface() {
     // NOTE: Currently InitSurface can leak the WIN32 handle if called multiple times without first calling DestroySurfaceContext.
     // This is intentional. Each swapchain/surface combo needs a unique HWND.
-    return CreateSurface(m_surface_context, m_surface);
+    ASSERT_EQ(VK_SUCCESS, CreateSurface(m_surface_context, m_surface));
+    ASSERT_TRUE(m_surface != VK_NULL_HANDLE);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -708,7 +709,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance) {
+VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance) {
     const VkInstance surface_instance = (custom_instance != VK_NULL_HANDLE) ? custom_instance : instance();
     (void)surface_instance;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -726,7 +727,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
         VkWin32SurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
         surface_create_info.hinstance = window_instance;
         surface_create_info.hwnd = window;
-        return VK_SUCCESS == vk::CreateWin32SurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+        return vk::CreateWin32SurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
     }
 #endif
 
@@ -734,7 +735,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
     if (IsExtensionsEnabled(VK_EXT_METAL_SURFACE_EXTENSION_NAME)) {
         const VkMetalSurfaceCreateInfoEXT surface_create_info = vkt::CreateMetalSurfaceInfoEXT();
         assert(surface_create_info.pLayer != nullptr);
-        return VK_SUCCESS == vk::CreateMetalSurfaceEXT(surface_instance, &surface_create_info, nullptr, &surface);
+        return vk::CreateMetalSurfaceEXT(surface_instance, &surface_create_info, nullptr, &surface);
     }
 #endif
 
@@ -742,7 +743,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
     if (IsExtensionsEnabled(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
         VkAndroidSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
         surface_create_info.window = VkTestFramework::window;
-        return VK_SUCCESS == vk::CreateAndroidSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+        return vk::CreateAndroidSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
     }
 #endif
 
@@ -757,7 +758,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
             VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.dpy = surface_context.m_surface_dpy;
             surface_create_info.window = surface_context.m_surface_window;
-            return VK_SUCCESS == vk::CreateXlibSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+            return vk::CreateXlibSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
         }
     }
 #endif
@@ -770,11 +771,12 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
             VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.connection = surface_context.m_surface_xcb_conn;
             surface_create_info.window = window;
-            return VK_SUCCESS == vk::CreateXcbSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+            return vk::CreateXcbSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
         }
     }
 #endif
-    return surface != VK_NULL_HANDLE;
+
+    return VK_SUCCESS;
 }
 
 void VkRenderFramework::DestroySurface() {
@@ -876,11 +878,9 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
     return info;
 }
 
-bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform) {
-    if (InitSurface()) {
-        return CreateSwapchain(m_surface, imageUsage, preTransform, m_swapchain);
-    }
-    return false;
+void VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform) {
+    RETURN_IF_SKIP(InitSurface());
+    ASSERT_TRUE(CreateSwapchain(m_surface, imageUsage, preTransform, m_swapchain));
 }
 
 bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,

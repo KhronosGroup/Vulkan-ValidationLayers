@@ -400,9 +400,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
@@ -479,9 +477,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);

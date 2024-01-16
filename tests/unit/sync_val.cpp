@@ -5106,7 +5106,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-    ASSERT_TRUE(InitSwapchain());
+    RETURN_IF_SKIP(InitSwapchain());
     uint32_t image_count;
     std::vector<VkImage> images;
     ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
@@ -5286,9 +5286,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
@@ -5357,9 +5355,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
