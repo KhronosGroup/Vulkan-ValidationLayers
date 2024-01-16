@@ -1910,9 +1910,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
     uint32_t image_index, image_count;
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
     std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);

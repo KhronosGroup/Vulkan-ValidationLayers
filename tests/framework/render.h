@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,14 +87,14 @@ class VkRenderFramework : public VkTestFramework {
     void ShutdownFramework();
 
      // Functions to modify the VkRenderFramework surface & swapchain variables
-    bool InitSurface();
+    void InitSurface();
     void DestroySurface();
     void InitSwapchainInfo();
-    bool InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    void InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     void DestroySwapchain();
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
-    bool CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance = VK_NULL_HANDLE);
+    VkResult CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance = VK_NULL_HANDLE);
     void DestroySurface(VkSurfaceKHR& surface);
     void DestroySurfaceContext(SurfaceContext& surface_context);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);

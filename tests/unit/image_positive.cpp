@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -515,9 +515,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     create_device_pnext.pNext = &physicalDeviceFeatures2;
 
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
-    if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
-        GTEST_SKIP() << "Cannot create surface or swapchain";
-    }
+    RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+
     uint32_t attachmentWidth = m_surface_capabilities.minImageExtent.width;
     uint32_t attachmentHeight = m_surface_capabilities.minImageExtent.height;
     VkFormat attachmentFormat = m_surface_formats[0].format;

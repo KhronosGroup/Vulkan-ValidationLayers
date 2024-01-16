@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -281,9 +281,7 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    if (!CreateSurface(surface_context, instance2_surface.handle, instance2)) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
 
     VkBool32 supported = VK_FALSE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent");
@@ -301,9 +299,7 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    if (!CreateSurface(surface_context, instance2_surface.handle, instance2)) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
 
     VkDeviceGroupPresentModeFlagsKHR flags = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent");
@@ -315,9 +311,7 @@ TEST_F(NegativeParent, Instance_Surface) {
     TEST_DESCRIPTION("Surface from a different instance in vkCreateSwapchainKHR");
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
     const auto instance_create_info = GetInstanceCreateInfo();
@@ -326,8 +320,8 @@ TEST_F(NegativeParent, Instance_Surface) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    if (!CreateSurface(surface_context, instance2_surface.handle, instance2)) {
-        GTEST_SKIP() << "Cannot create surface";
+    if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create 2nd surface";
     }
 
     auto swapchain_ci = vku::InitStruct<VkSwapchainCreateInfoKHR>();
@@ -356,9 +350,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     TEST_DESCRIPTION("oldSwapchain from a different device in vkCreateSwapchainKHR");
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
     const auto instance_create_info = GetInstanceCreateInfo();
@@ -367,8 +359,8 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    if (!CreateSurface(surface_context, instance2_surface.handle, instance2)) {
-        GTEST_SKIP() << "Cannot create surface";
+    if (CreateSurface(surface_context, instance2_surface.handle, instance2) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create 2nd surface";
     }
 
     VkPhysicalDevice instance2_physical_device = VK_NULL_HANDLE;
@@ -420,9 +412,7 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 
     SurfaceContext surface_context;
     Surface instance2_surface(instance2);
-    if (!CreateSurface(surface_context, instance2_surface.handle, instance2)) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
 
     // surface from a different instance
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroySurfaceKHR-surface-parent");

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,10 +50,7 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
-
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
 
     // Attempt to force an invalid return code for an unsupported format
     VkImageFormatProperties2 image_format_prop = {};
@@ -204,7 +201,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -233,7 +230,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments with secondary command buffers");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -301,7 +298,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 
 TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     // Create two images of different types and try to copy between them
     VkImageObj srcImage(m_device);
@@ -364,7 +361,7 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     TEST_DESCRIPTION("vkCmdBlitImage with a zero area region");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkImageObj image_src(m_device);
     image_src.Init(128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
@@ -394,7 +391,7 @@ TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
     TEST_DESCRIPTION("Test for getting warned when render area is 0 in VkRenderPassBeginInfo during vkCmdBeginRenderPass");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-zero-size-render-area");
@@ -408,7 +405,7 @@ TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
 
 TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds");
 
@@ -451,7 +448,7 @@ TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
     TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with COMMAND_BUFFER_RESET_BIT");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset");
@@ -470,7 +467,7 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with VK_COMMAND_BUFFER_LEVEL_SECONDARY");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     uint32_t queue_family_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
@@ -513,7 +510,7 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
     TEST_DESCRIPTION("Test for validating usage of vkBeginCommandBuffer with SIMULTANEOUS_USE");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use");
 
@@ -531,7 +528,7 @@ TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
     TEST_DESCRIPTION("Test for small memory allocations");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
 
@@ -562,7 +559,7 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     TEST_DESCRIPTION("Test for small dedicated memory allocations");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
@@ -596,7 +593,7 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     TEST_DESCRIPTION("Test for MS image that requires memory");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateRenderPass-image-requires-memory");
@@ -628,7 +625,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     TEST_DESCRIPTION("Test for non-lazy multisampled images");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
@@ -689,7 +686,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     TEST_DESCRIPTION("Test for too many instanced vertex buffers");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers");
@@ -742,7 +739,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     TEST_DESCRIPTION("Test for clearing attachments after load");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkImageObj image(m_device);
     image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -786,7 +783,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     TEST_DESCRIPTION("Test for clearing attachments after load with secondary command buffers");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
@@ -928,12 +925,10 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
 
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
     VkBool32 supported;
@@ -985,10 +980,8 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
 
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSurface());
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     m_surface_composite_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
@@ -1139,9 +1132,7 @@ TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-    if (!InitSwapchain()) {
-        GTEST_SKIP() << "Cannot create surface or swapchain";
-    }
+    RETURN_IF_SKIP(InitSwapchain());
 
     uint32_t swapchain_images_count = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
@@ -1157,7 +1148,7 @@ TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
     TEST_DESCRIPTION("Enable depthBias without a depth attachment");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -1402,10 +1393,8 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
 
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    InitState();
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
     VkBool32 supported;
@@ -2172,9 +2161,7 @@ TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
 
     RETURN_IF_SKIP(InitState());
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
+    RETURN_IF_SKIP(InitSurface());
     m_errorMonitor->SetDesiredFailureMsg(
         kWarningBit, "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided");
     CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, m_swapchain);
