@@ -2581,10 +2581,8 @@ TEST_F(NegativeRayTracing, TrianglesIndexBufferNull) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeRayTracing, TrianglesIndexBufferMisaligned) {
-    TEST_DESCRIPTION(
-        "Use a triangles vertex buffer specified referencing a device address that is 1) referencing no buffer and 2) is not "
-        "aligned to the index type byte size for an acceleration structure build operation");
+TEST_F(NegativeRayTracing, TrianglesIndexBufferInvalidAddress) {
+    TEST_DESCRIPTION("Use a triangles vertex buffer specified referencing a device address that is referencing no existing buffer");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -2594,11 +2592,10 @@ TEST_F(NegativeRayTracing, TrianglesIndexBufferMisaligned) {
     RETURN_IF_SKIP(InitState());
 
     auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    build_info.GetGeometries()[0].SetTrianglesIndexBufferDeviceAddress(5);
+    build_info.GetGeometries()[0].SetTrianglesIndexBufferDeviceAddress(2);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712");
     build_info.BuildCmdBuffer(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
