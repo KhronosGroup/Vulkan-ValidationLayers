@@ -1819,4 +1819,5 @@ bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCr
 bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo& info, const Location& loc) const;
 bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo& info, const Location& loc) const;
 bool ValidatePipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo& info, const Location& loc) const;
+bool ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& info, const Location& loc) const;
 // NOLINTEND

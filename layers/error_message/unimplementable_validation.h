@@ -76,6 +76,14 @@ const char* unimplementable_validation[] = {
     "VUID-VkPipelineDepthStencilStateCreateInfo-back-parameter",
     // VkClearValue
     "VUID-VkRenderingAttachmentInfo-clearValue-parameter",
+
+    // These VUs have "is not NULL it must be a pointer to a valid pointer to valid structure" language
+    // There is no actual way to validate thsese
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3718
+    "VUID-VkDescriptorGetInfoEXT-pUniformTexelBuffer-parameter",
+    "VUID-VkDescriptorGetInfoEXT-pStorageTexelBuffer-parameter",
+    "VUID-VkDescriptorGetInfoEXT-pUniformBuffer-parameter",
+    "VUID-VkDescriptorGetInfoEXT-pStorageBuffer-parameter",
 };
 
 // clang-format on

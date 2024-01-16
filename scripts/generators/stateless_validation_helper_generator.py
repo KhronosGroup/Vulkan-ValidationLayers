@@ -222,6 +222,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'VkPipelineDepthStencilStateCreateInfo',
             'VkPipelineInputAssemblyStateCreateInfo',
             'VkPipelineRasterizationStateCreateInfo',
+            'VkDescriptorAddressInfoEXT',
         ]
 
         # Map of structs type names to generated validation code for that struct type
