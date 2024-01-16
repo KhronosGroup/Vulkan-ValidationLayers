@@ -165,6 +165,11 @@ GeometryKHR &GeometryKHR::SetAABBsStride(VkDeviceSize stride) {
     return *this;
 }
 
+GeometryKHR &GeometryKHR::SetAABBsDeviceAddress(VkDeviceAddress address) {
+    vk_obj_.geometry.aabbs.data.deviceAddress = address;
+    return *this;
+}
+
 GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vkt::Device &device, VkAccelerationStructureKHR bottom_level_as) {
     auto vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
         vk::GetDeviceProcAddr(device.handle(), "vkGetAccelerationStructureDeviceAddressKHR"));
