@@ -714,8 +714,31 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     break;
                 }
                 case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
+                {
                     skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
+
+                    auto aabb_buffer_states = GetBuffersByAddress(geom_data.geometry.aabbs.data.deviceAddress);
+                    if (aabb_buffer_states.empty()) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811", cmd_buffer,
+                                         p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
+                                         "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
+                                         geom_data.geometry.aabbs.data.deviceAddress);
+                    } else {
+                        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+                        BufferAddressValidation<1> buffer_address_validator = {
+                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03812", LogObjectList(cmd_buffer),
+                               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
+                                                                                                  out_error_msg);
+                               },
+                               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
+
+                        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                            *this, aabb_buffer_states, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
+                            geom_data.geometry.aabbs.data.deviceAddress);
+                    }
                     break;
+                }
                 default:
                     // no-op
                     break;
