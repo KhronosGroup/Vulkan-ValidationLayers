@@ -77,6 +77,15 @@ const char* unimplementable_validation[] = {
     // VkClearValue
     "VUID-VkRenderingAttachmentInfo-clearValue-parameter",
 
+    // When:
+    //   Struct A has a pointer field to Struct B
+    //   Struct B has a non-pointer field to Struct C
+    // you get a situation where Struct B has a VU that is not hit because we validate it in Struct C
+    "VUID-VkAttachmentSampleLocationsEXT-sampleLocationsInfo-parameter",              // VUID-VkSampleLocationsInfoEXT-sType-sType
+    "VUID-VkSubpassSampleLocationsEXT-sampleLocationsInfo-parameter",                 // VUID-VkSampleLocationsInfoEXT-sType-sType
+    "VUID-VkPipelineSampleLocationsStateCreateInfoEXT-sampleLocationsInfo-parameter", // VUID-VkSampleLocationsInfoEXT-sType-sType
+    "VUID-VkComputePipelineCreateInfo-stage-parameter", // VUID-VkPipelineShaderStageCreateInfo-sType-sType
+
     // These VUs have "is not NULL it must be a pointer to a valid pointer to valid structure" language
     // There is no actual way to validate thsese
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3718
