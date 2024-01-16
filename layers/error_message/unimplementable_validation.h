@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,42 @@ const char* unimplementable_validation[] = {
 
     // these are already taken care in spirv-val for 08737
     "VUID-VkShaderModuleCreateInfo-pCode-08736", "VUID-VkShaderCreateInfoEXT-pCode-08736",
-    "VUID-VkShaderModuleCreateInfo-pCode-08738", "VUID-VkShaderCreateInfoEXT-pCode-08738"
+    "VUID-VkShaderModuleCreateInfo-pCode-08738", "VUID-VkShaderCreateInfoEXT-pCode-08738",
+
+    // These implicit VUs ask to check for a valid structure that has no sType,
+    // there is nothing that can actually be validated
+    //
+    // VkImageSubresourceLayers
+    "VUID-VkImageBlit-dstSubresource-parameter",
+    "VUID-VkImageBlit-srcSubresource-parameter",
+    "VUID-VkImageBlit2-dstSubresource-parameter",
+    "VUID-VkImageBlit2-srcSubresource-parameter",
+    "VUID-VkImageCopy-dstSubresource-parameter",
+    "VUID-VkImageCopy-srcSubresource-parameter",
+    "VUID-VkImageCopy2-dstSubresource-parameter",
+    "VUID-VkImageCopy2-srcSubresource-parameter",
+    "VUID-VkImageResolve-dstSubresource-parameter",
+    "VUID-VkImageResolve-srcSubresource-parameter",
+    "VUID-VkImageResolve2-dstSubresource-parameter",
+    "VUID-VkImageResolve2-srcSubresource-parameter",
+    "VUID-VkBufferImageCopy-imageSubresource-parameter",
+    "VUID-VkBufferImageCopy2-imageSubresource-parameter",
+    "VUID-VkMemoryToImageCopyEXT-imageSubresource-parameter",
+    "VUID-VkImageToMemoryCopyEXT-imageSubresource-parameter",
+    "VUID-VkCopyMemoryToImageIndirectCommandNV-imageSubresource-parameter",
+    // VkImageSubresourceRange
+    "VUID-VkImageMemoryBarrier-subresourceRange-parameter",
+    "VUID-VkImageMemoryBarrier2-subresourceRange-parameter",
+    "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-parameter",
+    "VUID-VkImageViewCreateInfo-subresourceRange-parameter",
+    // VkImageSubresource
+    "VUID-VkImageSubresource2KHR-imageSubresource-parameter",
+    "VUID-VkSparseImageMemoryBind-subresource-parameter",
+    // VkStencilOpState
+    "VUID-VkPipelineDepthStencilStateCreateInfo-front-parameter",
+    "VUID-VkPipelineDepthStencilStateCreateInfo-back-parameter",
+    // VkClearValue
+    "VUID-VkRenderingAttachmentInfo-clearValue-parameter",
 };
 
 // clang-format on
