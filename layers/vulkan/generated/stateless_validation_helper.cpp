@@ -26948,5 +26948,17 @@ bool StatelessValidation::ValidatePipelineRasterizationStateCreateInfo(const VkP
     skip |= ValidateBool32(loc.dot(Field::depthBiasEnable), info.depthBiasEnable);
     return skip;
 }
+bool StatelessValidation::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& info, const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT", &info,
+                               VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT, false, kVUIDUndefined,
+                               "VUID-VkDescriptorAddressInfoEXT-sType-sType");
+
+    skip |= ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                "VUID-VkDescriptorAddressInfoEXT-pNext-pNext", kVUIDUndefined, false, false);
+
+    skip |= ValidateRangedEnum(loc.dot(Field::format), "VkFormat", info.format, "VUID-VkDescriptorAddressInfoEXT-format-parameter");
+    return skip;
+}
 
 // NOLINTEND

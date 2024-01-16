@@ -1022,7 +1022,27 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoValidPointer) {
     dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     auto bad_struct = vku::InitStruct<VkBufferCopy2>();
     dgi.data.pUniformTexelBuffer = (VkDescriptorAddressInfoEXT*)&bad_struct;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-pUniformTexelBuffer-parameter");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-sType-sType");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, 4, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, DescriptorAddressInfoImplicit) {
+    TEST_DESCRIPTION("Make sure VkDescriptorAddressInfoEXT are validated");
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    auto bad_struct = vku::InitStruct<VkBufferCopy2>();
+    VkDescriptorAddressInfoEXT dai = vku::InitStructHelper(&bad_struct);
+    dai.address = 0;
+    dai.range = 4;
+    dai.format = VK_FORMAT_R8_UINT;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    dgi.data.pUniformTexelBuffer = &dai;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-pNext-pNext");
+    uint8_t buffer[16];
     vk::GetDescriptorEXT(m_device->device(), &dgi, 4, &buffer);
     m_errorMonitor->VerifyFound();
 }
