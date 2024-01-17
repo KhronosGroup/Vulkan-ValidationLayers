@@ -268,15 +268,17 @@ bool StatelessValidation::ValidateBool32(const Location &loc, VkBool32 value) co
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const Location &array_loc, uint32_t count,
-                                              const VkBool32 *array, bool countRequired, bool arrayRequired) const {
+                                              const VkBool32 *array, bool countRequired, bool arrayRequired,
+                                              const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
     if ((count == 0) || (array == nullptr)) {
-        skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, kVUIDUndefined, kVUIDUndefined);
+        skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
+                              array_required_vuid);
     } else {
         for (uint32_t i = 0; i < count; ++i) {
             if ((array[i] != VK_TRUE) && (array[i] != VK_FALSE)) {
-                skip |= LogError(kVUID_PVError_UnrecognizedValue, device, array_loc.dot(i),
+                skip |= LogError(array_required_vuid, device, array_loc.dot(i),
                                  "(%" PRIu32
                                  ") is neither VK_TRUE nor VK_FALSE. Applications MUST not pass any other "
                                  "values than VK_TRUE or VK_FALSE into a Vulkan implementation where a VkBool32 is expected.",
