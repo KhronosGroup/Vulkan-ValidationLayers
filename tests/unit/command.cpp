@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -5702,6 +5702,12 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     bind_ds_info.pDynamicOffsets = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467");
+    vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
+    m_errorMonitor->VerifyFound();
+
+    bind_ds_info.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    bind_ds_info.descriptorSetCount = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-descriptorSetCount-arraylength");
     vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }

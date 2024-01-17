@@ -5684,3 +5684,17 @@ TEST_F(NegativeDynamicState, SetColorBlendEnableArrayLength) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, SetColorBlendWriteMaskArrayLength) {
+    TEST_DESCRIPTION("vkCmdSetColorWriteMaskEXT with zero attachmentCount");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
+    RETURN_IF_SKIP(Init());
+
+    m_commandBuffer->begin();
+    VkColorComponentFlags write_mask = VK_COLOR_COMPONENT_R_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteMaskEXT-attachmentCount-arraylength");
+    vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 0, &write_mask);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
