@@ -6070,7 +6070,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPipelineColorWriteCreateInfoEXT);
                 VkPipelineColorWriteCreateInfoEXT* structure = (VkPipelineColorWriteCreateInfoEXT*)header;
                 skip |= ValidateBool32Array(pNext_loc.dot(Field::attachmentCount), pNext_loc.dot(Field::pColorWriteEnables),
-                                            structure->attachmentCount, structure->pColorWriteEnables, false, true);
+                                            structure->attachmentCount, structure->pColorWriteEnables, false, true, kVUIDUndefined,
+                                            "VUID-VkPipelineColorWriteCreateInfoEXT-pColorWriteEnables-parameter");
             }
         } break;
 
@@ -17492,7 +17493,7 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandB
         // No xml-driven validation
     }
     skip |= ValidateRangedEnumArray(loc, loc.dot(Field::combinerOps), "VkFragmentShadingRateCombinerOpKHR", 2, combinerOps, false,
-                                    true, kVUIDUndefined, kVUIDUndefined);
+                                    true, kVUIDUndefined, "VUID-vkCmdSetFragmentShadingRateKHR-combinerOps-parameter");
     return skip;
 }
 
@@ -21353,7 +21354,9 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorEnableNV(VkComman
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_scissor_exclusive)) skip |= OutputExtensionError(loc, "VK_NV_scissor_exclusive");
     skip |= ValidateBool32Array(loc.dot(Field::exclusiveScissorCount), loc.dot(Field::pExclusiveScissorEnables),
-                                exclusiveScissorCount, pExclusiveScissorEnables, true, true);
+                                exclusiveScissorCount, pExclusiveScissorEnables, true, true,
+                                "VUID-vkCmdSetExclusiveScissorEnableNV-exclusiveScissorCount-arraylength",
+                                "VUID-vkCmdSetExclusiveScissorEnableNV-pExclusiveScissorEnables-parameter");
     if (!skip)
         skip |= manual_PreCallValidateCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
                                                                      pExclusiveScissorEnables, error_obj);
@@ -23019,7 +23022,7 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkComma
     skip |= ValidateRangedEnum(loc.dot(Field::shadingRate), "VkFragmentShadingRateNV", shadingRate,
                                "VUID-vkCmdSetFragmentShadingRateEnumNV-shadingRate-parameter");
     skip |= ValidateRangedEnumArray(loc, loc.dot(Field::combinerOps), "VkFragmentShadingRateCombinerOpKHR", 2, combinerOps, false,
-                                    true, kVUIDUndefined, kVUIDUndefined);
+                                    true, kVUIDUndefined, "VUID-vkCmdSetFragmentShadingRateEnumNV-combinerOps-parameter");
     return skip;
 }
 
@@ -23787,7 +23790,8 @@ bool StatelessValidation::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuff
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_ext_color_write_enable)) skip |= OutputExtensionError(loc, "VK_EXT_color_write_enable");
     skip |= ValidateBool32Array(loc.dot(Field::attachmentCount), loc.dot(Field::pColorWriteEnables), attachmentCount,
-                                pColorWriteEnables, true, true);
+                                pColorWriteEnables, true, true, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-arraylength",
+                                "VUID-vkCmdSetColorWriteEnableEXT-pColorWriteEnables-parameter");
     return skip;
 }
 
@@ -24585,7 +24589,8 @@ bool StatelessValidation::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuff
     if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, "VK_EXT_extended_dynamic_state3 || VK_EXT_shader_object");
     skip |= ValidateBool32Array(loc.dot(Field::attachmentCount), loc.dot(Field::pColorBlendEnables), attachmentCount,
-                                pColorBlendEnables, true, true);
+                                pColorBlendEnables, true, true, "VUID-vkCmdSetColorBlendEnableEXT-attachmentCount-arraylength",
+                                "VUID-vkCmdSetColorBlendEnableEXT-pColorBlendEnables-parameter");
     return skip;
 }
 

@@ -701,6 +701,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
     # Generate the parameter checking code
     def genFuncBody(self, members: list[Member], funcName, errorLoc, valuePrefix, displayNamePrefix, structTypeName, isPhysDevice):
         struct = self.vk.structs[structTypeName] if structTypeName in self.vk.structs else None
+        callerName = structTypeName if structTypeName else funcName
         lines = []    # Generated lines of code
         duplicateCountVuid = [] # prevent duplicate VUs being generated
 
@@ -754,8 +755,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                                 if lenMembers and next((x for x in lenMembers if x.name == len_deref[1] and x.optional), None):
                                     lenValueRequired = 'false'
                         else:
-                            vuidNameTag = structTypeName if structTypeName is not None else funcName
-                            vuidName = self.GetVuid(vuidNameTag, f"{lengthMember.name}-arraylength")
+                            vuidName = self.GetVuid(callerName, f"{lengthMember.name}-arraylength")
                             # This VUID is considered special, as it is the only one whose names ends in "-arraylength" but has special conditions allowing bindingCount to be 0.
                             arrayVuidExceptions = ["\"VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength\""]
                             if vuidName in arrayVuidExceptions:
@@ -765,8 +765,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             elif member.noAutoValidity:
                                 # Handle edge case where XML expresses a non-optional non-pointer value length with noautovalidity
                                 # ex: <param noautovalidity="true"len="commandBufferCount">
-                                vuidNameTag = structTypeName if structTypeName is not None else funcName
-                                countRequiredVuid = self.GetVuid(vuidNameTag, f"{lengthMember.name}-arraylength")
+                                countRequiredVuid = self.GetVuid(callerName, f"{lengthMember.name}-arraylength")
                                 if countRequiredVuid in duplicateCountVuid:
                                     countRequiredVuid = None
                                 else:
@@ -787,19 +786,17 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     usedLines.extend(api_specific_custom_validation)
                 elif member.noAutoValidity and member.type not in AllocatorFunctions and not countRequiredVuid:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
-                    objectName = structTypeName if structTypeName else funcName
-                    self.logMsg('diag', f'ParameterValidation: No validation for {objectName} {member.name}')
+                    self.logMsg('diag', f'ParameterValidation: No validation for {callerName} {member.name}')
                 elif countRequiredVuid:
                     usedLines.append(f'skip |= ValidateArray({errorLoc}.dot(Field::{member.length}), loc, {valuePrefix}{member.length}, &{valuePrefix}{member.name}, true, false, {countRequiredVuid}, kVUIDUndefined);\n')
                 else:
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         # If this is a pointer to a struct with an sType field, verify the type
                         struct = self.vk.structs[member.type]
-                        vuid_name = structTypeName if structTypeName is not None else funcName
                         stypeVUID = self.GetVuid(member.type, "sType-sType")
-                        paramVUID = self.GetVuid(vuid_name, f"{member.name}-parameter")
+                        paramVUID = self.GetVuid(callerName, f"{member.name}-parameter")
                         if lengthMember:
-                            count_required_vuid = self.GetVuid(vuid_name, f"{member.length}-arraylength")
+                            count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                             # This is an array of struct pointers
                             if member.cDeclaration.count('*') == 2:
                                 usedLines.append(f'skip |= ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
@@ -825,7 +822,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         # This is an array with an integer count value
                         usedLines.append(f'skip |= ValidateHandleArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid});\n')
                     elif member.type in self.flags and member.const:
-                        callerName = structTypeName if structTypeName else funcName
                         # Generate check string for an array of VkFlags values
                         flagBitsName = member.type.replace('Flags', 'FlagBits')
                         if flagBitsName not in self.vk.bitmasks:
@@ -834,11 +830,13 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {array_required_vuid});\n')
                     elif member.type == 'VkBool32' and member.const:
-                        usedLines.append(f'skip |= ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired});\n')
+                        count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
+                        array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
+                        usedLines.append(f'skip |= ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
                     elif member.type in self.vk.enums and member.const:
                         lenLoc = 'loc' if member.fixedSizeArray else f'{errorLoc}.dot(Field::{member.length})'
-                        count_required_vuid = self.GetVuid(structTypeName, f"{member.length}-arraylength")
-                        array_required_vuid = self.GetVuid(structTypeName, f"{member.name}-parameter")
+                        count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
+                        array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         usedLines.append(f'skip |= ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), "{member.type}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
                     elif member.name == 'pNext':
                         # Generate an array of acceptable VkStructureType values for pNext
@@ -902,10 +900,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 # members not tagged as 'noautovalidity' will be validated
                 if member.noAutoValidity:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
-                    objectName = structTypeName if structTypeName else funcName
-                    self.logMsg('diag', f'ParameterValidation: No validation for {objectName} {member.name}')
+                    self.logMsg('diag', f'ParameterValidation: No validation for {callerName} {member.name}')
                 else:
-                    vuid_name_tag = structTypeName if structTypeName is not None else funcName
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         vuid = self.GetVuid(member.type, "sType-sType")
                         sType = self.vk.structs[member.type].sType
@@ -918,18 +914,18 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         if not member.optional:
                             usedLines.append(f'skip |= ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.flags and member.type.replace('Flags', 'FlagBits') not in self.flagBits:
-                        vuid = self.GetVuid(vuid_name_tag, f"{member.name}-zerobitmask")
+                        vuid = self.GetVuid(callerName, f"{member.name}-zerobitmask")
                         usedLines.append(f'skip |= ValidateReservedFlags({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {vuid});\n')
                     elif member.type in self.flags or member.type in self.flagBits:
                         if member.type in self.flags:
                             flagBitsName = member.type.replace('Flags', 'FlagBits')
                             flagsType = 'kOptionalFlags' if member.optional else 'kRequiredFlags'
-                            invalidVuid = self.GetVuid(vuid_name_tag, f"{member.name}-parameter")
-                            zeroVuid = self.GetVuid(vuid_name_tag, f"{member.name}-requiredbitmask")
+                            invalidVuid = self.GetVuid(callerName, f"{member.name}-parameter")
+                            zeroVuid = self.GetVuid(callerName, f"{member.name}-requiredbitmask")
                         elif member.type in self.flagBits:
                             flagBitsName = member.type
                             flagsType = 'kOptionalSingleBit' if member.optional else 'kRequiredSingleBit'
-                            invalidVuid = self.GetVuid(vuid_name_tag, f"{member.name}-parameter")
+                            invalidVuid = self.GetVuid(callerName, f"{member.name}-parameter")
                             zeroVuid = invalidVuid
                         # Bad workaround, but this whole file will be refactored soon
                         if flagBitsName == 'VkBuildAccelerationStructureFlagBitsNV':
@@ -941,7 +937,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     elif member.type == 'VkBool32':
                         usedLines.append(f'skip |= ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.vk.enums and member.type != 'VkStructureType':
-                        vuid = self.GetVuid(vuid_name_tag, f"{member.name}-parameter")
+                        vuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         usedLines.append(f'skip |= ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), "{member.type}", {valuePrefix}{member.name}, {vuid});\n')
                     # If this is a struct, see if it contains members that need to be checked
                     if member.type in self.validatedStructs:

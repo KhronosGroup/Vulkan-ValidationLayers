@@ -378,7 +378,8 @@ class StatelessValidation : public ValidationObject {
     bool ValidateBool32(const Location &loc, VkBool32 value) const;
 
     bool ValidateBool32Array(const Location &count_loc, const Location &array_loc, uint32_t count, const VkBool32 *array,
-                             bool countRequired, bool arrayRequired) const;
+                             bool countRequired, bool arrayRequired, const char *count_required_vuid,
+                             const char *array_required_vuid) const;
 
     /**
      * Validate a Vulkan enumeration value.

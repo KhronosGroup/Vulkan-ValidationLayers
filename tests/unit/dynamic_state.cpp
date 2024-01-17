@@ -5670,3 +5670,17 @@ TEST_F(NegativeDynamicState, ColorBlendAdvancedNotSet) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, SetColorBlendEnableArrayLength) {
+    TEST_DESCRIPTION("vkCmdSetColorBlendEnableEXT with zero attachmentCount");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    RETURN_IF_SKIP(Init());
+
+    m_commandBuffer->begin();
+    VkBool32 color_blend_enable = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorBlendEnableEXT-attachmentCount-arraylength");
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 0, &color_blend_enable);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
