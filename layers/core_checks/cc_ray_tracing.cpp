@@ -608,16 +608,29 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
 
                         if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
                             if (geom_i < src_as_state->build_range_infos.size()) {
-                                const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
-                                if (recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
+                                if (const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
+                                    recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
                                     const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
-                                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770", objlist,
+                                    skip |=
+                                        LogError("VUID-vkCmdBuildAccelerationStructuresKHR-firstVertex-03770", objlist, p_geom_loc,
+                                                 " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
+                                                 "], but this build range has its firstVertex member set to (%" PRIu32
+                                                 ") when it was last specified as (%" PRIu32 ").",
+                                                 pp_build_range_info_loc.Fields().c_str(), geom_i,
+                                                 geometry_build_ranges[geom_i].firstVertex, recorded_first_vertex);
+                                }
+
+                                if (const uint32_t recorded_primitive_count =
+                                        src_as_state->build_range_infos[geom_i].primitiveCount;
+                                    recorded_primitive_count != geometry_build_ranges[geom_i].primitiveCount) {
+                                    const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
+                                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-primitiveCount-03769", objlist,
                                                      p_geom_loc,
                                                      " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
-                                                     "], but this build range has its firstVertex member set to (%" PRIu32
+                                                     "], but this build range has its primitiveCount member set to (%" PRIu32
                                                      ") when it was last specified as (%" PRIu32 ").",
                                                      pp_build_range_info_loc.Fields().c_str(), geom_i,
-                                                     geometry_build_ranges[geom_i].firstVertex, recorded_first_vertex);
+                                                     geometry_build_ranges[geom_i].primitiveCount, recorded_primitive_count);
                                 }
                             }
                         }
