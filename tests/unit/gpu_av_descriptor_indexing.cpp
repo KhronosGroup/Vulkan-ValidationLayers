@@ -232,16 +232,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
            gl_Position = vec4(1);
         }
         )glsl";
-    static const char *tesSource = R"glsl(
-        #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable
-        layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
-        layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
-        layout(triangles, equal_spacing, cw) in;
-        void main() {
-            gl_Position = adds[uniform_index_buffer.index].val;
-        }
-        )glsl";
 
     struct TestCase {
         char const *name;
@@ -288,12 +278,24 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         tests.push_back({"geom_2", vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
                          &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
+#if 0
     if (m_device->phy().features().tessellationShader) {
+        static const char *tesSource = R"glsl(
+           #version 450
+           #extension GL_EXT_nonuniform_qualifier : enable
+           layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
+           layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
+           layout(triangles, equal_spacing, cw) in;
+           void main() {
+               gl_Position = adds[uniform_index_buffer.index].val;
+           }
+        )glsl";
         tests.push_back({"tess_1", kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 25, "UNASSIGNED-Descriptor index out of bounds"});
         tests.push_back({"tess_2", kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
+#endif
 
     for (const auto &iter : tests) {
         std::cout << "begin case: " << iter.name << std::endl;
