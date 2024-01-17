@@ -15,6 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
+#include <iostream>
 
 TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     TEST_DESCRIPTION(
@@ -243,6 +244,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         )glsl";
 
     struct TestCase {
+        char const *name;
         char const *vertex_source;
         char const *fragment_source;
         char const *geometry_source;
@@ -255,9 +257,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({"vert", vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
                      "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({"frag", vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
                      "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
     // TODO - These errors only show with EShMsgDebugInfo - need to figure out if suppose to be here
     // tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
@@ -265,35 +267,36 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     // tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
     //                  "uFragColor = texture(tex[index], vec2(0, 0));"});
 
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
-                     "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 5,
-                     "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
+    tests.push_back({"frag_runtime_1", vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout,
+                     &descriptor_set, 25, "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({"frag_runtime_2", vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout,
+                     &descriptor_set, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
     // Pick 6 below because it is less than the maximum specified, but more than the actual specified
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout_variable,
+    tests.push_back({"frag_runtime_3", vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout_variable,
                      &descriptor_set_variable, 6, "(set = 0, binding = 1) Index of 6 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout_variable,
+    tests.push_back({"frag_runtime_4", vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, &pipeline_layout_variable,
                      &descriptor_set_variable, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
-    tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, &pipeline_layout_buffer, &descriptor_set_buffer, 25,
-                     "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, &pipeline_layout_buffer, &descriptor_set_buffer, 5,
-                     "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
+    tests.push_back({"buffer_1", vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, &pipeline_layout_buffer,
+                     &descriptor_set_buffer, 25, "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({"buffer_2", vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, &pipeline_layout_buffer,
+                     &descriptor_set_buffer, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
     if (m_device->phy().features().geometryShader) {
         // OOB Geometry
-        tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
+        tests.push_back({"geom_1", vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
                          &descriptor_set_buffer, 25, "UNASSIGNED-Descriptor index out of bounds"});
         // Uninitialized Geometry
-        tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
+        tests.push_back({"geom_2", vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
                          &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
     if (m_device->phy().features().tessellationShader) {
-        tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
+        tests.push_back({"tess_1", kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 25, "UNASSIGNED-Descriptor index out of bounds"});
-        tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
+        tests.push_back({"tess_2", kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
 
     for (const auto &iter : tests) {
+        std::cout << "begin case: " << iter.name << std::endl;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.expected_error);
         VkShaderObj vs(this, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -348,6 +351,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         delete gs;
         delete tcs;
         delete tes;
+        std::cout << "end case: " << iter.name << std::endl;
     }
 
     char const *csSource = R"glsl(
@@ -393,6 +397,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     m_commandBuffer->end();
 
     // Uninitialized
+    std::cout << "begin case: compute_1" << std::endl;
     uint32_t *data = (uint32_t *)buffer0.memory().map();
     data[0] = 5;
     buffer0.memory().unmap();
@@ -400,7 +405,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
+    std::cout << "end case: compute_1" << std::endl;
     // Out of Bounds
+    std::cout << "begin case: compute_2" << std::endl;
     data = (uint32_t *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
@@ -408,6 +415,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
+    std::cout << "end case: compute_2" << std::endl;
     vk::DestroyPipeline(m_device->handle(), c_pipeline, nullptr);
 }
 
