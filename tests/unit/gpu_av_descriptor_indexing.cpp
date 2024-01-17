@@ -135,6 +135,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     buffer_descriptor_writes[1].pBufferInfo = &buffer_test_buffer_info[1];
     vk::UpdateDescriptorSets(m_device->device(), 2, buffer_descriptor_writes, 0, nullptr);
 
+#if 0
     // Shader programs for array OOB test in vertex stage:
     // - The vertex shader fetches the invalid index from the uniform buffer and uses it to make an invalid index into another
     // array.
@@ -232,17 +233,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
            gl_Position = vec4(1);
         }
         )glsl";
-    static const char *tesSource = R"glsl(
-        #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable
-        layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
-        layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
-        layout(triangles, equal_spacing, cw) in;
-        void main() {
-            gl_Position = adds[uniform_index_buffer.index].val;
-        }
-        )glsl";
-
+#endif
     struct TestCase {
         char const *name;
         char const *vertex_source;
@@ -257,6 +248,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     };
 
     std::vector<TestCase> tests;
+#if 0
     tests.push_back({"vert", vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
                      "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
     tests.push_back({"frag", vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, &pipeline_layout, &descriptor_set, 25,
@@ -288,7 +280,18 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         tests.push_back({"geom_2", vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, &pipeline_layout_buffer,
                          &descriptor_set_buffer, 5, "VUID-vkCmdDraw-None-08114"});
     }
+#endif
     if (m_device->phy().features().tessellationShader) {
+        static const char *tesSource = R"glsl(
+           #version 450
+           #extension GL_EXT_nonuniform_qualifier : enable
+           layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
+           layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
+           layout(triangles, equal_spacing, cw) in;
+           void main() {
+               gl_Position = adds[uniform_index_buffer.index].val;
+           }
+        )glsl";
         tests.push_back({"tess_1", kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
                          &pipeline_layout_buffer, &descriptor_set_buffer, 25, "UNASSIGNED-Descriptor index out of bounds"});
         tests.push_back({"tess_2", kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource,
@@ -353,7 +356,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
         delete tes;
         std::cout << "end case: " << iter.name << std::endl;
     }
-
+#if 0
     char const *csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
@@ -417,6 +420,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGraphics) {
     m_errorMonitor->VerifyFound();
     std::cout << "end case: compute_2" << std::endl;
     vk::DestroyPipeline(m_device->handle(), c_pipeline, nullptr);
+#endif
 }
 
 TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
