@@ -556,11 +556,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
     # Generate the pointer check string
     def makePointerCheck(self, valuePrefix, member: Member, lengthMember: Member, errorLoc, valueRequired, lenValueRequired, lenPtrRequired, funcName, structTypeName):
         checkExpr = []
-        vuid_tag_name = structTypeName if structTypeName is not None else funcName
+        callerName = structTypeName if structTypeName else funcName
         if lengthMember:
             length_deref = '->' in member.length
-            count_required_vuid = self.GetVuid(vuid_tag_name, f"{member.length}-arraylength")
-            array_required_vuid = self.GetVuid(vuid_tag_name, f"{member.name}-parameter")
+            count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
+            array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
+            count_ptr_required_vuid = self.GetVuid(callerName, f"{member.length}-parameter")
             # TODO: Remove workaround for missing optional tag in vk.xml
             if array_required_vuid == '"VUID-VkFramebufferCreateInfo-pAttachments-parameter"':
                 return []
@@ -569,14 +570,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenPtrRequired == 'true' or lenValueRequired == 'true':
                     # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                    checkExpr.append(f'skip |= ValidateArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
+                    checkExpr.append(f'skip |= ValidatePointerArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenPtrRequired}, {lenValueRequired}, {valueRequired},{count_ptr_required_vuid}, {count_required_vuid}, {array_required_vuid});\n')
             # This is an array with an integer count value
             else:
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenValueRequired == 'true':
                     if member.type != 'char':
                         # A valid VU can't use '->' in the middle so the generated VUID from the spec uses '::' instead
-                        count_required_vuid = self.GetVuid(vuid_tag_name, f"{member.length.replace('->', '::')}-arraylength")
+                        count_required_vuid = self.GetVuid(callerName, f"{member.length.replace('->', '::')}-arraylength")
                         if structTypeName == 'VkShaderModuleCreateInfo' and member.name == 'pCode':
                             count_required_vuid = '"VUID-VkShaderModuleCreateInfo-codeSize-01085"' # exception due to unique lenValue
 
@@ -615,7 +616,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # This is an individual struct that is not allowed to be NULL
         elif not (member.optional or member.optionalPointer or member.fixedSizeArray):
             # Function pointers need a reinterpret_cast to void*
-            ptr_required_vuid = self.GetVuid(vuid_tag_name, f"{member.name}-parameter")
+            ptr_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
             if member.type.startswith('PFN_'):
                 allocator_dict = {'pfnAllocation': '"VUID-VkAllocationCallbacks-pfnAllocation-00632"',
                                   'pfnReallocation': '"VUID-VkAllocationCallbacks-pfnReallocation-00633"',
