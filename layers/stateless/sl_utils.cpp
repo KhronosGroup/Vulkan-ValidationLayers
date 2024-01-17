@@ -399,12 +399,12 @@ bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bi
  */
 bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Location &array_loc, const char *flag_bits_name,
                                              VkFlags all_flags, uint32_t count, const VkFlags *array, bool count_required,
-                                             const char *array_required_vuid) const {
+                                             const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
-    if (array == nullptr) {
+    if ((count == 0) || (array == nullptr)) {
         // Flag arrays always need to have a valid array
-        skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, true, kVUIDUndefined, array_required_vuid);
+        skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, true, count_required_vuid, array_required_vuid);
     } else {
         // Verify that all VkFlags values in the array
         for (uint32_t i = 0; i < count; ++i) {

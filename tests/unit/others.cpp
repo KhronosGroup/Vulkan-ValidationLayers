@@ -1241,10 +1241,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
 
     // One exception in spec where the size of a field is used in both the function call it and the struct
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateDescriptorSets-pAllocateInfo::descriptorSetCount-arraylength");
-    // TODO - Figure out why  VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-arraylength is not being generated, very low
-    // priority since it is already caught with the above implicit VU. There was an internal MR and WG decided to keep both
-    // len='descriptorSetCount' for anyone relying on it
-    m_errorMonitor->SetUnexpectedError("VUID_Undefined");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-arraylength");
     {
         VkDescriptorSetAllocateInfo info = vku::InitStructHelper();
         info.descriptorPool = descriptor_set.pool_;

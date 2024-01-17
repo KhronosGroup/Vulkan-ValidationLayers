@@ -475,7 +475,8 @@ class StatelessValidation : public ValidationObject {
                        const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
     bool ValidateFlagsArray(const Location &count_loc, const Location &array_loc, const char *flag_bits_name, VkFlags all_flags,
-                            uint32_t count, const VkFlags *array, bool count_required, const char *array_required_vuid) const;
+                            uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
+                            const char *array_required_vuid) const;
 
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,

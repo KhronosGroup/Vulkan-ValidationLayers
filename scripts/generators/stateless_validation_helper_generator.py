@@ -818,7 +818,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         elif lengthMember.pointer:
                             # This is assumed to be an output array with a pointer to a count value
                             raise Exception('Unsupported parameter validation case: Output handle array elements are not NULL checked')
-                        count_required_vuid = self.GetVuid(funcName, f"{member.length}-arraylength")
+                        count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         # This is an array with an integer count value
                         usedLines.append(f'skip |= ValidateHandleArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid});\n')
                     elif member.type in self.flags and member.const:
@@ -827,8 +827,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         if flagBitsName not in self.vk.bitmasks:
                             raise Exception('Unsupported parameter validation case: array of reserved VkFlags')
                         allFlags = 'All' + flagBitsName
+                        count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {array_required_vuid});\n')
+                        usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {count_required_vuid}, {array_required_vuid});\n')
                     elif member.type == 'VkBool32' and member.const:
                         count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")

@@ -3217,7 +3217,7 @@ TEST_F(NegativeWsi, PresentInfoParameters) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
     // There are 3 because 3 different fields rely on swapchainCount being non-zero
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");                                    // pSwapchains
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-swapchainCount-arraylength");  // pSwapchains
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-swapchainCount-arraylength");  // pImageIndices
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-swapchainCount-arraylength");  // pResults
     vk::QueuePresentKHR(m_default_queue->handle(), &present);

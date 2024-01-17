@@ -1240,7 +1240,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 VkDescriptorSetLayoutBindingFlagsCreateInfo* structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo*)header;
                 skip |= ValidateFlagsArray(pNext_loc.dot(Field::bindingCount), pNext_loc.dot(Field::pBindingFlags),
                                            "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount,
-                                           structure->pBindingFlags, false,
+                                           structure->pBindingFlags, false, kVUIDUndefined,
                                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-parameter");
             }
         } break;
@@ -5072,7 +5072,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT);
                 VkSwapchainPresentFenceInfoEXT* structure = (VkSwapchainPresentFenceInfoEXT*)header;
                 skip |= ValidateHandleArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pFences),
-                                            structure->swapchainCount, structure->pFences, true, true, kVUIDUndefined);
+                                            structure->swapchainCount, structure->pFences, true, true,
+                                            "VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-arraylength");
             }
         } break;
 
@@ -8065,10 +8066,10 @@ bool StatelessValidation::PreCallValidateQueueSubmit(VkQueue queue, uint32_t sub
                                   pSubmits[submitIndex].waitSemaphoreCount, &pSubmits[submitIndex].pWaitSemaphores, false, true,
                                   kVUIDUndefined, "VUID-VkSubmitInfo-pWaitSemaphores-parameter");
 
-            skip |=
-                ValidateFlagsArray(pSubmits_loc.dot(Field::waitSemaphoreCount), pSubmits_loc.dot(Field::pWaitDstStageMask),
-                                   "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pSubmits[submitIndex].waitSemaphoreCount,
-                                   pSubmits[submitIndex].pWaitDstStageMask, false, "VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
+            skip |= ValidateFlagsArray(pSubmits_loc.dot(Field::waitSemaphoreCount), pSubmits_loc.dot(Field::pWaitDstStageMask),
+                                       "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits,
+                                       pSubmits[submitIndex].waitSemaphoreCount, pSubmits[submitIndex].pWaitDstStageMask, false,
+                                       kVUIDUndefined, "VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
 
             skip |= ValidateArray(pSubmits_loc.dot(Field::commandBufferCount), pSubmits_loc.dot(Field::pCommandBuffers),
                                   pSubmits[submitIndex].commandBufferCount, &pSubmits[submitIndex].pCommandBuffers, false, true,
@@ -10212,7 +10213,8 @@ bool StatelessValidation::PreCallValidateAllocateDescriptorSets(VkDevice device,
         skip |= ValidateRequiredHandle(pAllocateInfo_loc.dot(Field::descriptorPool), pAllocateInfo->descriptorPool);
 
         skip |= ValidateHandleArray(pAllocateInfo_loc.dot(Field::descriptorSetCount), pAllocateInfo_loc.dot(Field::pSetLayouts),
-                                    pAllocateInfo->descriptorSetCount, pAllocateInfo->pSetLayouts, true, true, kVUIDUndefined);
+                                    pAllocateInfo->descriptorSetCount, pAllocateInfo->pSetLayouts, true, true,
+                                    "VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-arraylength");
     }
     if (pAllocateInfo != nullptr) {
         skip |= ValidateArray(loc.dot(Field::pAllocateInfo).dot(Field::descriptorSetCount), loc.dot(Field::pDescriptorSets),
@@ -13063,7 +13065,8 @@ bool StatelessValidation::PreCallValidateWaitSemaphores(VkDevice device, const V
                               pWaitInfo->flags, kOptionalFlags, "VUID-VkSemaphoreWaitInfo-flags-parameter");
 
         skip |= ValidateHandleArray(pWaitInfo_loc.dot(Field::semaphoreCount), pWaitInfo_loc.dot(Field::pSemaphores),
-                                    pWaitInfo->semaphoreCount, pWaitInfo->pSemaphores, true, true, kVUIDUndefined);
+                                    pWaitInfo->semaphoreCount, pWaitInfo->pSemaphores, true, true,
+                                    "VUID-VkSemaphoreWaitInfo-semaphoreCount-arraylength");
 
         skip |= ValidateArray(pWaitInfo_loc.dot(Field::semaphoreCount), pWaitInfo_loc.dot(Field::pValues),
                               pWaitInfo->semaphoreCount, &pWaitInfo->pValues, true, true,
@@ -15020,7 +15023,8 @@ bool StatelessValidation::PreCallValidateQueuePresentKHR(VkQueue queue, const Vk
                               "VUID-VkPresentInfoKHR-pWaitSemaphores-parameter");
 
         skip |= ValidateHandleArray(pPresentInfo_loc.dot(Field::swapchainCount), pPresentInfo_loc.dot(Field::pSwapchains),
-                                    pPresentInfo->swapchainCount, pPresentInfo->pSwapchains, true, true, kVUIDUndefined);
+                                    pPresentInfo->swapchainCount, pPresentInfo->pSwapchains, true, true,
+                                    "VUID-VkPresentInfoKHR-swapchainCount-arraylength");
 
         skip |= ValidateArray(pPresentInfo_loc.dot(Field::swapchainCount), pPresentInfo_loc.dot(Field::pImageIndices),
                               pPresentInfo->swapchainCount, &pPresentInfo->pImageIndices, true, true,
@@ -18486,9 +18490,10 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuff
                               "VUID-VkBindDescriptorSetsInfoKHR-stageFlags-parameter",
                               "VUID-VkBindDescriptorSetsInfoKHR-stageFlags-requiredbitmask");
 
-        skip |= ValidateHandleArray(
-            pBindDescriptorSetsInfo_loc.dot(Field::descriptorSetCount), pBindDescriptorSetsInfo_loc.dot(Field::pDescriptorSets),
-            pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, true, true, kVUIDUndefined);
+        skip |= ValidateHandleArray(pBindDescriptorSetsInfo_loc.dot(Field::descriptorSetCount),
+                                    pBindDescriptorSetsInfo_loc.dot(Field::pDescriptorSets),
+                                    pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, true,
+                                    true, "VUID-VkBindDescriptorSetsInfoKHR-descriptorSetCount-arraylength");
     }
     return skip;
 }
@@ -24646,6 +24651,7 @@ bool StatelessValidation::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer
         skip |= OutputExtensionError(loc, "VK_EXT_extended_dynamic_state3 || VK_EXT_shader_object");
     skip |= ValidateFlagsArray(loc.dot(Field::attachmentCount), loc.dot(Field::pColorWriteMasks), "VkColorComponentFlagBits",
                                AllVkColorComponentFlagBits, attachmentCount, pColorWriteMasks, true,
+                               "VUID-vkCmdSetColorWriteMaskEXT-attachmentCount-arraylength",
                                "VUID-vkCmdSetColorWriteMaskEXT-pColorWriteMasks-parameter");
     return skip;
 }
