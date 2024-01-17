@@ -167,7 +167,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     bind_swapchain_info.imageIndex = 0;
     bind_info.pNext = &bind_swapchain_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandle");
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
@@ -2005,7 +2005,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-07763");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764");
-        m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-GeneralParameterError-UnrecognizedValue");
         vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
         m_errorMonitor->VerifyFound();
     }

@@ -356,6 +356,10 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer co
                                                               const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
+    skip |= ValidateObject(pPushDescriptorSetInfo->layout, kVulkanObjectTypePipelineLayout, true,
+                           "VUID-VkPushDescriptorSetInfoKHR-layout-parameter", kVUIDUndefined,
+                           error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout));
+
     if (pPushDescriptorSetInfo->pDescriptorWrites) {
         for (uint32_t index0 = 0; index0 < pPushDescriptorSetInfo->descriptorWriteCount; ++index0) {
             skip |= ValidateDescriptorWrite(

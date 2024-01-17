@@ -8201,6 +8201,7 @@ bool StatelessValidation::PreCallValidateMapMemory(VkDevice device, VkDeviceMemo
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= ValidateRequiredHandle(loc.dot(Field::memory), memory);
     skip |= ValidateReservedFlags(loc.dot(Field::flags), flags, "VUID-vkMapMemory-flags-zerobitmask");
+    skip |= ValidateRequiredPointer(loc.dot(Field::ppData), ppData, "VUID-vkMapMemory-ppData-parameter");
     return skip;
 }
 
@@ -11713,11 +11714,12 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
     if (loc.function == vvl::Func::vkEnumeratePhysicalDeviceGroups &&
         CheckPromotedApiAgainstVulkanVersion(instance, loc, VK_API_VERSION_1_1))
         return true;
-    skip |= ValidateStructTypeArray(
-        loc.dot(Field::pPhysicalDeviceGroupCount), loc.dot(Field::pPhysicalDeviceGroupProperties),
-        "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES", pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES, true, false, false, "VUID-VkPhysicalDeviceGroupProperties-sType-sType",
-        "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(loc.dot(Field::pPhysicalDeviceGroupCount), loc.dot(Field::pPhysicalDeviceGroupProperties),
+                                    "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES", pPhysicalDeviceGroupCount,
+                                    pPhysicalDeviceGroupProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES, true, false,
+                                    false, "VUID-VkPhysicalDeviceGroupProperties-sType-sType",
+                                    "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter",
+                                    "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupCount-parameter", kVUIDUndefined);
     if (pPhysicalDeviceGroupProperties != nullptr) {
         for (uint32_t pPhysicalDeviceGroupIndex = 0; pPhysicalDeviceGroupIndex < *pPhysicalDeviceGroupCount;
              ++pPhysicalDeviceGroupIndex) {
@@ -11816,11 +11818,13 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
 
         skip |= ValidateRequiredHandle(pInfo_loc.dot(Field::image), pInfo->image);
     }
-    skip |= ValidateStructTypeArray(loc.dot(Field::pSparseMemoryRequirementCount), loc.dot(Field::pSparseMemoryRequirements),
-                                    "VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2", pSparseMemoryRequirementCount,
-                                    pSparseMemoryRequirements, VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2, true, false,
-                                    false, "VUID-VkSparseImageMemoryRequirements2-sType-sType",
-                                    "VUID-vkGetImageSparseMemoryRequirements2-pSparseMemoryRequirements-parameter", kVUIDUndefined);
+    skip |=
+        ValidateStructTypeArray(loc.dot(Field::pSparseMemoryRequirementCount), loc.dot(Field::pSparseMemoryRequirements),
+                                "VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2", pSparseMemoryRequirementCount,
+                                pSparseMemoryRequirements, VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2, true, false, false,
+                                "VUID-VkSparseImageMemoryRequirements2-sType-sType",
+                                "VUID-vkGetImageSparseMemoryRequirements2-pSparseMemoryRequirements-parameter",
+                                "VUID-vkGetImageSparseMemoryRequirements2-pSparseMemoryRequirementCount-parameter", kVUIDUndefined);
     if (pSparseMemoryRequirements != nullptr) {
         for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
              ++pSparseMemoryRequirementIndex) {
@@ -12072,7 +12076,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
         loc.dot(Field::pQueueFamilyPropertyCount), loc.dot(Field::pQueueFamilyProperties),
         "VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2", pQueueFamilyPropertyCount, pQueueFamilyProperties,
         VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, true, false, false, "VUID-VkQueueFamilyProperties2-sType-sType",
-        "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter", kVUIDUndefined);
+        "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter",
+        "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyPropertyCount-parameter", kVUIDUndefined);
     if (pQueueFamilyProperties != nullptr) {
         for (uint32_t pQueueFamilyPropertyIndex = 0; pQueueFamilyPropertyIndex < *pQueueFamilyPropertyCount;
              ++pQueueFamilyPropertyIndex) {
@@ -12155,11 +12160,12 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
         skip |= ValidateRangedEnum(pFormatInfo_loc.dot(Field::tiling), "VkImageTiling", pFormatInfo->tiling,
                                    "VUID-VkPhysicalDeviceSparseImageFormatInfo2-tiling-parameter");
     }
-    skip |= ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties),
-                                    "VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2", pPropertyCount, pProperties,
-                                    VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2, true, false, false,
-                                    "VUID-VkSparseImageFormatProperties2-sType-sType",
-                                    "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2",
+        pPropertyCount, pProperties, VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2, true, false, false,
+        "VUID-VkSparseImageFormatProperties2-sType-sType",
+        "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pProperties-parameter",
+        "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -13158,11 +13164,11 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceToolProperties(VkPhysi
     if (loc.function == vvl::Func::vkGetPhysicalDeviceToolProperties &&
         CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_3))
         return true;
-    skip |= ValidateStructTypeArray(loc.dot(Field::pToolCount), loc.dot(Field::pToolProperties),
-                                    "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES", pToolCount, pToolProperties,
-                                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES, true, false, false,
-                                    "VUID-VkPhysicalDeviceToolProperties-sType-sType",
-                                    "VUID-vkGetPhysicalDeviceToolProperties-pToolProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pToolCount), loc.dot(Field::pToolProperties), "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES",
+        pToolCount, pToolProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES, true, false, false,
+        "VUID-VkPhysicalDeviceToolProperties-sType-sType", "VUID-vkGetPhysicalDeviceToolProperties-pToolProperties-parameter",
+        "VUID-vkGetPhysicalDeviceToolProperties-pToolCount-parameter", kVUIDUndefined);
     if (pToolProperties != nullptr) {
         for (uint32_t pToolIndex = 0; pToolIndex < *pToolCount; ++pToolIndex) {
             [[maybe_unused]] const Location pToolProperties_loc = loc.dot(Field::pToolProperties, pToolIndex);
@@ -14727,6 +14733,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
                                     pSparseMemoryRequirements, VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2, true, false,
                                     false, "VUID-VkSparseImageMemoryRequirements2-sType-sType",
                                     "VUID-vkGetDeviceImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter",
+                                    "VUID-vkGetDeviceImageSparseMemoryRequirements-pSparseMemoryRequirementCount-parameter",
                                     kVUIDUndefined);
     if (pSparseMemoryRequirements != nullptr) {
         for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
@@ -15075,6 +15082,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(Vk
     if (!(IsExtEnabled(device_extensions.vk_khr_swapchain) || IsExtEnabled(device_extensions.vk_khr_device_group)))
         skip |= OutputExtensionError(loc, "VK_KHR_swapchain || VK_KHR_device_group");
     skip |= ValidateRequiredHandle(loc.dot(Field::surface), surface);
+    skip |= ValidateRequiredPointer(loc.dot(Field::pModes), pModes, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-pModes-parameter");
     return skip;
 }
 
@@ -15804,7 +15812,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesK
         loc.dot(Field::pVideoFormatPropertyCount), loc.dot(Field::pVideoFormatProperties),
         "VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR", pVideoFormatPropertyCount, pVideoFormatProperties,
         VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR, true, false, false, "VUID-VkVideoFormatPropertiesKHR-sType-sType",
-        "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatProperties-parameter", kVUIDUndefined);
+        "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatProperties-parameter",
+        "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatPropertyCount-parameter", kVUIDUndefined);
     if (pVideoFormatProperties != nullptr) {
         for (uint32_t pVideoFormatPropertyIndex = 0; pVideoFormatPropertyIndex < *pVideoFormatPropertyCount;
              ++pVideoFormatPropertyIndex) {
@@ -15968,11 +15977,13 @@ bool StatelessValidation::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, "VK_KHR_video_queue");
     skip |= ValidateRequiredHandle(loc.dot(Field::videoSession), videoSession);
-    skip |= ValidateStructTypeArray(loc.dot(Field::pMemoryRequirementsCount), loc.dot(Field::pMemoryRequirements),
-                                    "VK_STRUCTURE_TYPE_VIDEO_SESSION_MEMORY_REQUIREMENTS_KHR", pMemoryRequirementsCount,
-                                    pMemoryRequirements, VK_STRUCTURE_TYPE_VIDEO_SESSION_MEMORY_REQUIREMENTS_KHR, true, false,
-                                    false, "VUID-VkVideoSessionMemoryRequirementsKHR-sType-sType",
-                                    "VUID-vkGetVideoSessionMemoryRequirementsKHR-pMemoryRequirements-parameter", kVUIDUndefined);
+    skip |=
+        ValidateStructTypeArray(loc.dot(Field::pMemoryRequirementsCount), loc.dot(Field::pMemoryRequirements),
+                                "VK_STRUCTURE_TYPE_VIDEO_SESSION_MEMORY_REQUIREMENTS_KHR", pMemoryRequirementsCount,
+                                pMemoryRequirements, VK_STRUCTURE_TYPE_VIDEO_SESSION_MEMORY_REQUIREMENTS_KHR, true, false, false,
+                                "VUID-VkVideoSessionMemoryRequirementsKHR-sType-sType",
+                                "VUID-vkGetVideoSessionMemoryRequirementsKHR-pMemoryRequirements-parameter",
+                                "VUID-vkGetVideoSessionMemoryRequirementsKHR-pMemoryRequirementsCount-parameter", kVUIDUndefined);
     if (pMemoryRequirements != nullptr) {
         for (uint32_t pMemoryRequirementsIndex = 0; pMemoryRequirementsIndex < *pMemoryRequirementsCount;
              ++pMemoryRequirementsIndex) {
@@ -17056,7 +17067,8 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerfo
     skip |= ValidateStructTypeArray(
         loc.dot(Field::pCounterCount), loc.dot(Field::pCounters), "VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR", pCounterCount,
         pCounters, VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR, true, false, false, "VUID-VkPerformanceCounterKHR-sType-sType",
-        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounters-parameter", kVUIDUndefined);
+        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounters-parameter",
+        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterCount-parameter", kVUIDUndefined);
     if (pCounters != nullptr) {
         for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
             [[maybe_unused]] const Location pCounters_loc = loc.dot(Field::pCounters, pIndexerIndex);
@@ -17069,7 +17081,8 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerfo
         "VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR", pCounterCount, pCounterDescriptions,
         VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR, true, false, false,
         "VUID-VkPerformanceCounterDescriptionKHR-sType-sType",
-        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterDescriptions-parameter", kVUIDUndefined);
+        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterDescriptions-parameter",
+        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterCount-parameter", kVUIDUndefined);
     if (pCounterDescriptions != nullptr) {
         for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
             [[maybe_unused]] const Location pCounterDescriptions_loc = loc.dot(Field::pCounterDescriptions, pIndexerIndex);
@@ -17207,11 +17220,11 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkP
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true, true);
     }
-    skip |=
-        ValidateStructTypeArray(loc.dot(Field::pSurfaceFormatCount), loc.dot(Field::pSurfaceFormats),
-                                "VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR", pSurfaceFormatCount, pSurfaceFormats,
-                                VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR, true, false, false, "VUID-VkSurfaceFormat2KHR-sType-sType",
-                                "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceFormats-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pSurfaceFormatCount), loc.dot(Field::pSurfaceFormats), "VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR",
+        pSurfaceFormatCount, pSurfaceFormats, VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR, true, false, false,
+        "VUID-VkSurfaceFormat2KHR-sType-sType", "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceFormats-parameter",
+        "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceFormatCount-parameter", kVUIDUndefined);
     if (pSurfaceFormats != nullptr) {
         for (uint32_t pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex) {
             [[maybe_unused]] const Location pSurfaceFormats_loc = loc.dot(Field::pSurfaceFormats, pSurfaceFormatIndex);
@@ -17239,7 +17252,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
     skip |= ValidateStructTypeArray(
         loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR", pPropertyCount,
         pProperties, VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR, true, false, false, "VUID-VkDisplayProperties2KHR-sType-sType",
-        "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-pProperties-parameter", kVUIDUndefined);
+        "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-pProperties-parameter",
+        "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -17258,11 +17272,11 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_get_display_properties2) skip |= OutputExtensionError(loc, "VK_KHR_get_display_properties2");
-    skip |= ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties),
-                                    "VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR", pPropertyCount, pProperties,
-                                    VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR, true, false, false,
-                                    "VUID-VkDisplayPlaneProperties2KHR-sType-sType",
-                                    "VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-pProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR",
+        pPropertyCount, pProperties, VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR, true, false, false,
+        "VUID-VkDisplayPlaneProperties2KHR-sType-sType", "VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-pProperties-parameter",
+        "VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -17282,11 +17296,11 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(VkPhysical
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_get_display_properties2) skip |= OutputExtensionError(loc, "VK_KHR_get_display_properties2");
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
-    skip |= ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties),
-                                    "VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR", pPropertyCount, pProperties,
-                                    VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR, true, false, false,
-                                    "VUID-VkDisplayModeProperties2KHR-sType-sType",
-                                    "VUID-vkGetDisplayModeProperties2KHR-pProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR",
+        pPropertyCount, pProperties, VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR, true, false, false,
+        "VUID-VkDisplayModeProperties2KHR-sType-sType", "VUID-vkGetDisplayModeProperties2KHR-pProperties-parameter",
+        "VUID-vkGetDisplayModeProperties2KHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -17477,12 +17491,13 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFragmentShadingRatesKH
     VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |=
-        ValidateStructTypeArray(loc.dot(Field::pFragmentShadingRateCount), loc.dot(Field::pFragmentShadingRates),
-                                "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_KHR", pFragmentShadingRateCount,
-                                pFragmentShadingRates, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_KHR, true, false,
-                                false, "VUID-VkPhysicalDeviceFragmentShadingRateKHR-sType-sType",
-                                "VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-pFragmentShadingRates-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(loc.dot(Field::pFragmentShadingRateCount), loc.dot(Field::pFragmentShadingRates),
+                                    "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_KHR", pFragmentShadingRateCount,
+                                    pFragmentShadingRates, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_KHR, true, false,
+                                    false, "VUID-VkPhysicalDeviceFragmentShadingRateKHR-sType-sType",
+                                    "VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-pFragmentShadingRates-parameter",
+                                    "VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-pFragmentShadingRateCount-parameter",
+                                    kVUIDUndefined);
     if (pFragmentShadingRates != nullptr) {
         for (uint32_t pFragmentShadingRateIndex = 0; pFragmentShadingRateIndex < *pFragmentShadingRateCount;
              ++pFragmentShadingRateIndex) {
@@ -17675,11 +17690,11 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDe
 
         skip |= ValidateRequiredHandle(pPipelineInfo_loc.dot(Field::pipeline), pPipelineInfo->pipeline);
     }
-    skip |= ValidateStructTypeArray(loc.dot(Field::pExecutableCount), loc.dot(Field::pProperties),
-                                    "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR", pExecutableCount, pProperties,
-                                    VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR, true, false, false,
-                                    "VUID-VkPipelineExecutablePropertiesKHR-sType-sType",
-                                    "VUID-vkGetPipelineExecutablePropertiesKHR-pProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pExecutableCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR",
+        pExecutableCount, pProperties, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR, true, false, false,
+        "VUID-VkPipelineExecutablePropertiesKHR-sType-sType", "VUID-vkGetPipelineExecutablePropertiesKHR-pProperties-parameter",
+        "VUID-vkGetPipelineExecutablePropertiesKHR-pExecutableCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
         for (uint32_t pExecutableIndex = 0; pExecutableIndex < *pExecutableCount; ++pExecutableIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pExecutableIndex);
@@ -17711,11 +17726,11 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDe
 
         skip |= ValidateRequiredHandle(pExecutableInfo_loc.dot(Field::pipeline), pExecutableInfo->pipeline);
     }
-    skip |= ValidateStructTypeArray(loc.dot(Field::pStatisticCount), loc.dot(Field::pStatistics),
-                                    "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR", pStatisticCount, pStatistics,
-                                    VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR, true, false, false,
-                                    "VUID-VkPipelineExecutableStatisticKHR-sType-sType",
-                                    "VUID-vkGetPipelineExecutableStatisticsKHR-pStatistics-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pStatisticCount), loc.dot(Field::pStatistics), "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR",
+        pStatisticCount, pStatistics, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR, true, false, false,
+        "VUID-VkPipelineExecutableStatisticKHR-sType-sType", "VUID-vkGetPipelineExecutableStatisticsKHR-pStatistics-parameter",
+        "VUID-vkGetPipelineExecutableStatisticsKHR-pStatisticCount-parameter", kVUIDUndefined);
     if (pStatistics != nullptr) {
         for (uint32_t pStatisticIndex = 0; pStatisticIndex < *pStatisticCount; ++pStatisticIndex) {
             [[maybe_unused]] const Location pStatistics_loc = loc.dot(Field::pStatistics, pStatisticIndex);
@@ -17750,7 +17765,8 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
         "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR", pInternalRepresentationCount, pInternalRepresentations,
         VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR, true, false, false,
         "VUID-VkPipelineExecutableInternalRepresentationKHR-sType-sType",
-        "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pInternalRepresentations-parameter", kVUIDUndefined);
+        "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pInternalRepresentations-parameter",
+        "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pInternalRepresentationCount-parameter", kVUIDUndefined);
     if (pInternalRepresentations != nullptr) {
         for (uint32_t pInternalRepresentationIndex = 0; pInternalRepresentationIndex < *pInternalRepresentationCount;
              ++pInternalRepresentationIndex) {
@@ -17783,6 +17799,7 @@ bool StatelessValidation::PreCallValidateMapMemory2KHR(VkDevice device, const Vk
 
         skip |= ValidateRequiredHandle(pMemoryMapInfo_loc.dot(Field::memory), pMemoryMapInfo->memory);
     }
+    skip |= ValidateRequiredPointer(loc.dot(Field::ppData), ppData, "VUID-vkMapMemory2KHR-ppData-parameter");
     return skip;
 }
 
@@ -18130,7 +18147,8 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue
     skip |= ValidateStructTypeArray(
         loc.dot(Field::pCheckpointDataCount), loc.dot(Field::pCheckpointData), "VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV",
         pCheckpointDataCount, pCheckpointData, VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV, true, false, false,
-        "VUID-VkCheckpointData2NV-sType-sType", "VUID-vkGetQueueCheckpointData2NV-pCheckpointData-parameter", kVUIDUndefined);
+        "VUID-VkCheckpointData2NV-sType-sType", "VUID-vkGetQueueCheckpointData2NV-pCheckpointData-parameter",
+        "VUID-vkGetQueueCheckpointData2NV-pCheckpointDataCount-parameter", kVUIDUndefined);
     if (pCheckpointData != nullptr) {
         for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
             [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
@@ -18428,11 +18446,12 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |= ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties),
-                                    "VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR", pPropertyCount, pProperties,
-                                    VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR, true, false, false,
-                                    "VUID-VkCooperativeMatrixPropertiesKHR-sType-sType",
-                                    "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-pProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR",
+        pPropertyCount, pProperties, VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR, true, false, false,
+        "VUID-VkCooperativeMatrixPropertiesKHR-sType-sType",
+        "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-pProperties-parameter",
+        "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-pPropertyCount-parameter", kVUIDUndefined);
     return skip;
 }
 
@@ -21431,7 +21450,8 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(VkQueue queue,
     skip |= ValidateStructTypeArray(loc.dot(Field::pCheckpointDataCount), loc.dot(Field::pCheckpointData),
                                     "VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV", pCheckpointDataCount, pCheckpointData,
                                     VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV, true, false, false, "VUID-VkCheckpointDataNV-sType-sType",
-                                    "VUID-vkGetQueueCheckpointDataNV-pCheckpointData-parameter", kVUIDUndefined);
+                                    "VUID-vkGetQueueCheckpointDataNV-pCheckpointData-parameter",
+                                    "VUID-vkGetQueueCheckpointDataNV-pCheckpointDataCount-parameter", kVUIDUndefined);
     if (pCheckpointData != nullptr) {
         for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
             [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
@@ -21725,11 +21745,12 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |= ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties),
-                                    "VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV", pPropertyCount, pProperties,
-                                    VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV, true, false, false,
-                                    "VUID-VkCooperativeMatrixPropertiesNV-sType-sType",
-                                    "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-pProperties-parameter", kVUIDUndefined);
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV",
+        pPropertyCount, pProperties, VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV, true, false, false,
+        "VUID-VkCooperativeMatrixPropertiesNV-sType-sType",
+        "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-pProperties-parameter",
+        "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-pPropertyCount-parameter", kVUIDUndefined);
     return skip;
 }
 
@@ -21743,7 +21764,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSupportedFramebufferMi
         "VK_STRUCTURE_TYPE_FRAMEBUFFER_MIXED_SAMPLES_COMBINATION_NV", pCombinationCount, pCombinations,
         VK_STRUCTURE_TYPE_FRAMEBUFFER_MIXED_SAMPLES_COMBINATION_NV, true, false, false,
         "VUID-VkFramebufferMixedSamplesCombinationNV-sType-sType",
-        "VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-pCombinations-parameter", kVUIDUndefined);
+        "VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-pCombinations-parameter",
+        "VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-pCombinationCount-parameter", kVUIDUndefined);
     if (pCombinations != nullptr) {
         for (uint32_t pCombinationIndex = 0; pCombinationIndex < *pCombinationCount; ++pCombinationIndex) {
             [[maybe_unused]] const Location pCombinations_loc = loc.dot(Field::pCombinations, pCombinationIndex);
@@ -25025,7 +25047,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceOpticalFlowImageFormat
                                     pImageFormatProperties, VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_NV, true, false,
                                     false, "VUID-VkOpticalFlowImageFormatPropertiesNV-sType-sType",
                                     "VUID-vkGetPhysicalDeviceOpticalFlowImageFormatsNV-pImageFormatProperties-parameter",
-                                    kVUIDUndefined);
+                                    "VUID-vkGetPhysicalDeviceOpticalFlowImageFormatsNV-pFormatCount-parameter", kVUIDUndefined);
     if (pImageFormatProperties != nullptr) {
         for (uint32_t pFormatIndex = 0; pFormatIndex < *pFormatCount; ++pFormatIndex) {
             [[maybe_unused]] const Location pImageFormatProperties_loc = loc.dot(Field::pImageFormatProperties, pFormatIndex);
@@ -25381,7 +25403,8 @@ bool StatelessValidation::PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevi
     skip |= ValidateStructTypeArray(
         loc.dot(Field::pPropertiesCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM", pPropertiesCount,
         pProperties, VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM, true, false, false, "VUID-VkTilePropertiesQCOM-sType-sType",
-        "VUID-vkGetFramebufferTilePropertiesQCOM-pProperties-parameter", kVUIDUndefined);
+        "VUID-vkGetFramebufferTilePropertiesQCOM-pProperties-parameter",
+        "VUID-vkGetFramebufferTilePropertiesQCOM-pPropertiesCount-parameter", kVUIDUndefined);
     return skip;
 }
 

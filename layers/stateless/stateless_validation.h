@@ -22,8 +22,6 @@
 #include "sync/sync_utils.h"
 #include "state_tracker/cmd_buffer_state.h"
 
-[[maybe_unused]] static const char *kVUID_PVError_RequiredParameter = "UNASSIGNED-GeneralParameterError-RequiredParameter";
-[[maybe_unused]] static const char *kVUID_PVError_UnrecognizedValue = "UNASSIGNED-GeneralParameterError-UnrecognizedValue";
 [[maybe_unused]] static const char *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
 [[maybe_unused]] static const char *kVUID_PVError_ApiVersionViolation = "UNASSIGNED-API-Version-Violation";
 
@@ -285,12 +283,12 @@ class StatelessValidation : public ValidationObject {
     bool ValidateStructTypeArray(const Location &count_loc, const Location &array_loc, const char *sTypeName, uint32_t *count,
                                  const T *array, VkStructureType sType, bool countPtrRequired, bool countValueRequired,
                                  bool arrayRequired, const char *stype_vuid, const char *param_vuid,
-                                 const char *count_required_vuid) const {
+                                 const char *count_ptr_required_vuid, const char *count_required_vuid) const {
         bool skip = false;
 
         if (count == nullptr) {
             if (countPtrRequired) {
-                skip |= LogError(kVUID_PVError_RequiredParameter, device, count_loc, "is NULL.");
+                skip |= LogError(count_ptr_required_vuid, device, count_loc, "is NULL.");
             }
         } else {
             skip |= ValidateStructTypeArray(count_loc, array_loc, sTypeName, (*count), array, sType,
@@ -315,7 +313,7 @@ class StatelessValidation : public ValidationObject {
         bool skip = false;
 
         if (value == VK_NULL_HANDLE) {
-            skip |= LogError(kVUID_PVError_RequiredParameter, device, loc, "is VK_NULL_HANDLE.");
+            skip |= LogError("UNASSIGNED-GeneralParameterError-RequiredHandle", device, loc, "is VK_NULL_HANDLE.");
         }
         return skip;
     }
@@ -353,7 +351,8 @@ class StatelessValidation : public ValidationObject {
             // Verify that no handles in the array are VK_NULL_HANDLE
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i] == VK_NULL_HANDLE) {
-                    skip |= LogError(kVUID_PVError_RequiredParameter, device, array_loc.dot(i), "is VK_NULL_HANDLE.");
+                    skip |= LogError("UNASSIGNED-GeneralParameterError-RequiredHandleArray", device, array_loc.dot(i),
+                                     "is VK_NULL_HANDLE.");
                 }
             }
         }

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -246,6 +246,19 @@ TEST_F(NegativeMemory, MapMemory2) {
     // Now error due to unmapping memory that's not mapped
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryUnmapInfoKHR-memory-07964");
     vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
+    m_errorMonitor->VerifyFound();
+}
+TEST_F(NegativeMemory, MapMemoryNullppData) {
+    TEST_DESCRIPTION("vkMapMemory but ppData is null");
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+    memory_info.allocationSize = 1024;
+    ASSERT_TRUE(m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    vkt::DeviceMemory memory(*m_device, memory_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-ppData-parameter");
+    vk::MapMemory(m_device->device(), memory.handle(), 0, VK_WHOLE_SIZE, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
