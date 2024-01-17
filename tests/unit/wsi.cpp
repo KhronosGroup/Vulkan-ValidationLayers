@@ -19,6 +19,16 @@
 #include "wayland-client.h"
 #endif
 
+TEST_F(NegativeWsi, GetPhysicalDeviceDisplayPropertiesNull) {
+    TEST_DESCRIPTION("Call vkGetPhysicalDeviceDisplayPropertiesKHR with null pointer");
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pPropertyCount-parameter");
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), nullptr, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
     TEST_DESCRIPTION("Initialize swapchain with potentially incompatible flags");
 

@@ -138,14 +138,15 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T1, typename T2>
-    bool ValidateArray(const Location &count_loc, const Location &array_loc, const T1 *count, const T2 *array,
-                       bool countPtrRequired, bool countValueRequired, bool arrayRequired, const char *count_required_vuid,
-                       const char *array_required_vuid) const {
+    bool ValidatePointerArray(const Location &count_loc, const Location &array_loc, const T1 *count, const T2 *array,
+                              bool countPtrRequired, bool countValueRequired, bool arrayRequired,
+                              const char *count_ptr_required_vuid, const char *count_required_vuid,
+                              const char *array_required_vuid) const {
         bool skip = false;
 
         if (count == nullptr) {
             if (countPtrRequired) {
-                skip |= LogError(kVUID_PVError_RequiredParameter, device, count_loc, "is NULL.");
+                skip |= LogError(count_ptr_required_vuid, device, count_loc, "is NULL.");
             }
         } else {
             skip |= ValidateArray(count_loc, array_loc, *array ? (*count) : 0, &array, countValueRequired, arrayRequired,

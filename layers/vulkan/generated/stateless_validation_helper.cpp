@@ -7459,9 +7459,10 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDevices(VkInstance ins
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |= ValidateArray(loc.dot(Field::pPhysicalDeviceCount), loc.dot(Field::pPhysicalDevices), pPhysicalDeviceCount,
-                          &pPhysicalDevices, true, false, false, kVUIDUndefined,
-                          "VUID-vkEnumeratePhysicalDevices-pPhysicalDevices-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pPhysicalDeviceCount), loc.dot(Field::pPhysicalDevices), pPhysicalDeviceCount,
+                                 &pPhysicalDevices, true, false, false,
+                                 "VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter", kVUIDUndefined,
+                                 "VUID-vkEnumeratePhysicalDevices-pPhysicalDevices-parameter");
     return skip;
 }
 
@@ -7540,9 +7541,10 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(
                                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |= ValidateArray(loc.dot(Field::pQueueFamilyPropertyCount), loc.dot(Field::pQueueFamilyProperties),
-                          pQueueFamilyPropertyCount, &pQueueFamilyProperties, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetPhysicalDeviceQueueFamilyProperties-pQueueFamilyProperties-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pQueueFamilyPropertyCount), loc.dot(Field::pQueueFamilyProperties),
+                                 pQueueFamilyPropertyCount, &pQueueFamilyProperties, true, false, false,
+                                 "VUID-vkGetPhysicalDeviceQueueFamilyProperties-pQueueFamilyPropertyCount-parameter",
+                                 kVUIDUndefined, "VUID-vkGetPhysicalDeviceQueueFamilyProperties-pQueueFamilyProperties-parameter");
     if (pQueueFamilyProperties != nullptr) {
         for (uint32_t pQueueFamilyPropertyIndex = 0; pQueueFamilyPropertyIndex < *pQueueFamilyPropertyCount;
              ++pQueueFamilyPropertyIndex) {
@@ -8319,9 +8321,10 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements(
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= ValidateRequiredHandle(loc.dot(Field::image), image);
-    skip |= ValidateArray(loc.dot(Field::pSparseMemoryRequirementCount), loc.dot(Field::pSparseMemoryRequirements),
-                          pSparseMemoryRequirementCount, &pSparseMemoryRequirements, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pSparseMemoryRequirementCount), loc.dot(Field::pSparseMemoryRequirements),
+                                 pSparseMemoryRequirementCount, &pSparseMemoryRequirements, true, false, false,
+                                 "VUID-vkGetImageSparseMemoryRequirements-pSparseMemoryRequirementCount-parameter", kVUIDUndefined,
+                                 "VUID-vkGetImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter");
     if (pSparseMemoryRequirements != nullptr) {
         for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
              ++pSparseMemoryRequirementIndex) {
@@ -8351,8 +8354,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
                           "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-usage-requiredbitmask");
     skip |= ValidateRangedEnum(loc.dot(Field::tiling), "VkImageTiling", tiling,
                                "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-tiling-parameter");
-    skip |= ValidateArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true, false,
-                          false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-pProperties-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
+                                 false, false, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-pPropertyCount-parameter",
+                                 kVUIDUndefined, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-pProperties-parameter");
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -9508,8 +9512,9 @@ bool StatelessValidation::PreCallValidateGetPipelineCacheData(VkDevice device, V
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= ValidateRequiredHandle(loc.dot(Field::pipelineCache), pipelineCache);
-    skip |= ValidateArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetPipelineCacheData-pData-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
+                                 "VUID-vkGetPipelineCacheData-pDataSize-parameter", kVUIDUndefined,
+                                 "VUID-vkGetPipelineCacheData-pData-parameter");
     return skip;
 }
 
@@ -14810,9 +14815,10 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPh
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, "VK_KHR_surface");
-    skip |=
-        ValidateArray(loc.dot(Field::pSurfaceFormatCount), loc.dot(Field::pSurfaceFormats), pSurfaceFormatCount, &pSurfaceFormats,
-                      true, false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormats-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pSurfaceFormatCount), loc.dot(Field::pSurfaceFormats), pSurfaceFormatCount,
+                                 &pSurfaceFormats, true, false, false,
+                                 "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormatCount-parameter", kVUIDUndefined,
+                                 "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormats-parameter");
     if (pSurfaceFormats != nullptr) {
         for (uint32_t pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex) {
             [[maybe_unused]] const Location pSurfaceFormats_loc = loc.dot(Field::pSurfaceFormats, pSurfaceFormatIndex);
@@ -14832,8 +14838,10 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, "VK_KHR_surface");
-    skip |= ValidateArray(loc.dot(Field::pPresentModeCount), loc.dot(Field::pPresentModes), pPresentModeCount, &pPresentModes, true,
-                          false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModes-parameter");
+    skip |=
+        ValidatePointerArray(loc.dot(Field::pPresentModeCount), loc.dot(Field::pPresentModes), pPresentModeCount, &pPresentModes,
+                             true, false, false, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModeCount-parameter",
+                             kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModes-parameter");
     if (!skip)
         skip |= manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount,
                                                                               pPresentModes, error_obj);
@@ -14975,9 +14983,10 @@ bool StatelessValidation::PreCallValidateGetSwapchainImagesKHR(VkDevice device, 
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, "VK_KHR_swapchain");
     skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
-    skip |= ValidateArray(loc.dot(Field::pSwapchainImageCount), loc.dot(Field::pSwapchainImages), pSwapchainImageCount,
-                          &pSwapchainImages, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetSwapchainImagesKHR-pSwapchainImages-parameter");
+    skip |=
+        ValidatePointerArray(loc.dot(Field::pSwapchainImageCount), loc.dot(Field::pSwapchainImages), pSwapchainImageCount,
+                             &pSwapchainImages, true, false, false, "VUID-vkGetSwapchainImagesKHR-pSwapchainImageCount-parameter",
+                             kVUIDUndefined, "VUID-vkGetSwapchainImagesKHR-pSwapchainImages-parameter");
     return skip;
 }
 
@@ -15076,8 +15085,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(V
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= ValidateRequiredHandle(loc.dot(Field::surface), surface);
-    skip |= ValidateArray(loc.dot(Field::pRectCount), loc.dot(Field::pRects), pRectCount, &pRects, true, false, false,
-                          kVUIDUndefined, "VUID-vkGetPhysicalDevicePresentRectanglesKHR-pRects-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pRectCount), loc.dot(Field::pRects), pRectCount, &pRects, true, false, false,
+                                 "VUID-vkGetPhysicalDevicePresentRectanglesKHR-pRectCount-parameter", kVUIDUndefined,
+                                 "VUID-vkGetPhysicalDevicePresentRectanglesKHR-pRects-parameter");
     return skip;
 }
 
@@ -15109,8 +15119,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(V
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, "VK_KHR_display");
-    skip |= ValidateArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true, false,
-                          false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pProperties-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
+                                 false, false, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pPropertyCount-parameter",
+                                 kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pProperties-parameter");
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -15127,8 +15138,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, "VK_KHR_display");
-    skip |= ValidateArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true, false,
-                          false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pProperties-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
+                                 false, false, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pPropertyCount-parameter",
+                                 kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pProperties-parameter");
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -15144,8 +15156,9 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkP
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, "VK_KHR_display");
-    skip |= ValidateArray(loc.dot(Field::pDisplayCount), loc.dot(Field::pDisplays), pDisplayCount, &pDisplays, true, false, false,
-                          kVUIDUndefined, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplays-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pDisplayCount), loc.dot(Field::pDisplays), pDisplayCount, &pDisplays, true, false,
+                                 false, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplayCount-parameter", kVUIDUndefined,
+                                 "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplays-parameter");
     return skip;
 }
 
@@ -15157,8 +15170,9 @@ bool StatelessValidation::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalD
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, "VK_KHR_display");
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
-    skip |= ValidateArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true, false,
-                          false, kVUIDUndefined, "VUID-vkGetDisplayModePropertiesKHR-pProperties-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
+                                 false, false, "VUID-vkGetDisplayModePropertiesKHR-pPropertyCount-parameter", kVUIDUndefined,
+                                 "VUID-vkGetDisplayModePropertiesKHR-pProperties-parameter");
     if (pProperties != nullptr) {
         for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
@@ -17907,8 +17921,9 @@ bool StatelessValidation::PreCallValidateGetEncodedVideoSessionParametersKHR(
                                     GeneratedVulkanHeaderVersion, "VUID-VkVideoEncodeSessionParametersFeedbackInfoKHR-pNext-pNext",
                                     "VUID-VkVideoEncodeSessionParametersFeedbackInfoKHR-sType-unique", false, false);
     }
-    skip |= ValidateArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetEncodedVideoSessionParametersKHR-pData-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
+                                 "VUID-vkGetEncodedVideoSessionParametersKHR-pDataSize-parameter", kVUIDUndefined,
+                                 "VUID-vkGetEncodedVideoSessionParametersKHR-pData-parameter");
     return skip;
 }
 
@@ -18428,8 +18443,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomai
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
-        ValidateArray(loc.dot(Field::pTimeDomainCount), loc.dot(Field::pTimeDomains), pTimeDomainCount, &pTimeDomains, true, false,
-                      false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-pTimeDomains-parameter");
+        ValidatePointerArray(loc.dot(Field::pTimeDomainCount), loc.dot(Field::pTimeDomains), pTimeDomainCount, &pTimeDomains, true,
+                             false, false, "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-pTimeDomainCount-parameter",
+                             kVUIDUndefined, "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-pTimeDomains-parameter");
     return skip;
 }
 
@@ -19246,8 +19262,9 @@ bool StatelessValidation::PreCallValidateGetShaderInfoAMD(VkDevice device, VkPip
                           "VUID-vkGetShaderInfoAMD-shaderStage-parameter");
     skip |=
         ValidateRangedEnum(loc.dot(Field::infoType), "VkShaderInfoTypeAMD", infoType, "VUID-vkGetShaderInfoAMD-infoType-parameter");
-    skip |= ValidateArray(loc.dot(Field::pInfoSize), loc.dot(Field::pInfo), pInfoSize, &pInfo, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetShaderInfoAMD-pInfo-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pInfoSize), loc.dot(Field::pInfo), pInfoSize, &pInfo, true, false, false,
+                                 "VUID-vkGetShaderInfoAMD-pInfoSize-parameter", kVUIDUndefined,
+                                 "VUID-vkGetShaderInfoAMD-pInfo-parameter");
     return skip;
 }
 
@@ -19669,9 +19686,10 @@ bool StatelessValidation::PreCallValidateGetPastPresentationTimingGOOGLE(VkDevic
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_google_display_timing)) skip |= OutputExtensionError(loc, "VK_GOOGLE_display_timing");
     skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
-    skip |= ValidateArray(loc.dot(Field::pPresentationTimingCount), loc.dot(Field::pPresentationTimings), pPresentationTimingCount,
-                          &pPresentationTimings, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetPastPresentationTimingGOOGLE-pPresentationTimings-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pPresentationTimingCount), loc.dot(Field::pPresentationTimings),
+                                 pPresentationTimingCount, &pPresentationTimings, true, false, false,
+                                 "VUID-vkGetPastPresentationTimingGOOGLE-pPresentationTimingCount-parameter", kVUIDUndefined,
+                                 "VUID-vkGetPastPresentationTimingGOOGLE-pPresentationTimings-parameter");
     if (pPresentationTimings != nullptr) {
         for (uint32_t pPresentationTimingIndex = 0; pPresentationTimingIndex < *pPresentationTimingCount;
              ++pPresentationTimingIndex) {
@@ -20648,8 +20666,9 @@ bool StatelessValidation::PreCallValidateGetValidationCacheDataEXT(VkDevice devi
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_ext_validation_cache)) skip |= OutputExtensionError(loc, "VK_EXT_validation_cache");
     skip |= ValidateRequiredHandle(loc.dot(Field::validationCache), validationCache);
-    skip |= ValidateArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetValidationCacheDataEXT-pData-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
+                                 "VUID-vkGetValidationCacheDataEXT-pDataSize-parameter", kVUIDUndefined,
+                                 "VUID-vkGetValidationCacheDataEXT-pData-parameter");
     return skip;
 }
 
@@ -21757,8 +21776,10 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", true, true);
     }
-    skip |= ValidateArray(loc.dot(Field::pPresentModeCount), loc.dot(Field::pPresentModes), pPresentModeCount, &pPresentModes, true,
-                          false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModes-parameter");
+    skip |=
+        ValidatePointerArray(loc.dot(Field::pPresentModeCount), loc.dot(Field::pPresentModes), pPresentModeCount, &pPresentModes,
+                             true, false, false, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModeCount-parameter",
+                             kVUIDUndefined, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModes-parameter");
     if (!skip)
         skip |= manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                                pPresentModes, error_obj);
@@ -22649,8 +22670,9 @@ bool StatelessValidation::PreCallValidateGetCudaModuleCacheNV(VkDevice device, V
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) skip |= OutputExtensionError(loc, "VK_NV_cuda_kernel_launch");
     skip |= ValidateRequiredHandle(loc.dot(Field::module), module);
-    skip |= ValidateArray(loc.dot(Field::pCacheSize), loc.dot(Field::pCacheData), pCacheSize, &pCacheData, true, false, false,
-                          kVUIDUndefined, "VUID-vkGetCudaModuleCacheNV-pCacheData-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pCacheSize), loc.dot(Field::pCacheData), pCacheSize, &pCacheData, true, false,
+                                 false, "VUID-vkGetCudaModuleCacheNV-pCacheSize-parameter", kVUIDUndefined,
+                                 "VUID-vkGetCudaModuleCacheNV-pCacheData-parameter");
     return skip;
 }
 
@@ -25328,8 +25350,9 @@ bool StatelessValidation::PreCallValidateGetShaderBinaryDataEXT(VkDevice device,
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_ext_shader_object)) skip |= OutputExtensionError(loc, "VK_EXT_shader_object");
     skip |= ValidateRequiredHandle(loc.dot(Field::shader), shader);
-    skip |= ValidateArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false, kVUIDUndefined,
-                          "VUID-vkGetShaderBinaryDataEXT-pData-parameter");
+    skip |= ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
+                                 "VUID-vkGetShaderBinaryDataEXT-pDataSize-parameter", kVUIDUndefined,
+                                 "VUID-vkGetShaderBinaryDataEXT-pData-parameter");
     if (!skip) skip |= manual_PreCallValidateGetShaderBinaryDataEXT(device, shader, pDataSize, pData, error_obj);
     return skip;
 }
