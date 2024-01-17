@@ -596,7 +596,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pBuffers-04111");
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-GeneralParameterError-RequiredParameter");
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-GeneralParameterError-RequiredHandle");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindVertexBuffers2-pBuffers-parameter");
         VkBuffer buffers2[1] = {VK_NULL_HANDLE};
         VkDeviceSize offsets2[1] = {16};
@@ -2623,9 +2623,7 @@ TEST_F(NegativeDynamicState, ColorWriteEnableAttachmentCount) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
 
     // Value can't be zero
-    // TODO: The generated code is not use the correct implicit VUID, but at least its still correctly validating
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-arraylength");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-arraylength");
     vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 0, color_write_enable.data());
     m_errorMonitor->VerifyFound();
 

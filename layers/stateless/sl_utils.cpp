@@ -245,7 +245,7 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
 bool StatelessValidation::ValidateBool32(const Location &loc, VkBool32 value) const {
     bool skip = false;
     if ((value != VK_TRUE) && (value != VK_FALSE)) {
-        skip |= LogError(kVUID_PVError_UnrecognizedValue, device, loc,
+        skip |= LogError("UNASSIGNED-GeneralParameterError-UnrecognizedBool32", device, loc,
                          "(%" PRIu32
                          ") is neither VK_TRUE nor VK_FALSE. Applications MUST not pass any other "
                          "values than VK_TRUE or VK_FALSE into a Vulkan implementation where a VkBool32 is expected.",
@@ -409,7 +409,7 @@ bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Lo
         // Verify that all VkFlags values in the array
         for (uint32_t i = 0; i < count; ++i) {
             if ((array[i] & (~all_flags)) != 0) {
-                skip |= LogError(kVUID_PVError_UnrecognizedValue, device, array_loc.dot(i),
+                skip |= LogError(array_required_vuid, device, array_loc.dot(i),
                                  "contains flag bits that are not recognized members of %s.", flag_bits_name);
             }
         }

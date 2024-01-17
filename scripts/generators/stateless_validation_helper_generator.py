@@ -614,7 +614,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     checkedExpr.append('}\n')
                 checkExpr = [checkedExpr]
         # This is an individual struct that is not allowed to be NULL
-        elif not (member.optional or member.optionalPointer or member.fixedSizeArray):
+        elif not (member.optional or member.fixedSizeArray):
             # Function pointers need a reinterpret_cast to void*
             ptr_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
             if member.type.startswith('PFN_'):
@@ -804,7 +804,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             # This is an array with a pointer to a count value
                             elif lengthMember.pointer:
                                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
+                                count_ptr_required_vuid = self.GetVuid(callerName, f"{member.length}-parameter")
+                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_ptr_required_vuid}, {count_required_vuid});\n')
                             # This is an array with an integer count value
                             else:
                                 usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')

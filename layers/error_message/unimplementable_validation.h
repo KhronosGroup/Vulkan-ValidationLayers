@@ -76,6 +76,13 @@ const char* unimplementable_validation[] = {
     "VUID-VkPipelineDepthStencilStateCreateInfo-back-parameter",
     // VkClearValue
     "VUID-VkRenderingAttachmentInfo-clearValue-parameter",
+    // VkComponentMapping
+    "VUID-VkImageViewCreateInfo-components-parameter",
+    "VUID-VkSamplerYcbcrConversionCreateInfo-components-parameter",
+    "VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-components-parameter",
+    "VUID-VkBufferCollectionPropertiesFUCHSIA-samplerYcbcrConversionComponents-parameter",
+    // VkAttachmentReference
+    "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-parameter"
 
     // When:
     //   Struct A has a pointer field to Struct B
@@ -93,6 +100,55 @@ const char* unimplementable_validation[] = {
     "VUID-VkDescriptorGetInfoEXT-pStorageTexelBuffer-parameter",
     "VUID-VkDescriptorGetInfoEXT-pUniformBuffer-parameter",
     "VUID-VkDescriptorGetInfoEXT-pStorageBuffer-parameter",
+    // These occur in stateless validation when a pointer member is optional and the length member is also optional
+    "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-parameter",
+    "VUID-VkSubpassDescription-pResolveAttachments-parameter",
+    "VUID-VkTimelineSemaphoreSubmitInfo-pWaitSemaphoreValues-parameter",
+    "VUID-VkTimelineSemaphoreSubmitInfo-pSignalSemaphoreValues-parameter",
+    "VUID-VkVideoEncodeH264SessionParametersAddInfoKHR-pStdSPSs-parameter",
+    "VUID-VkVideoEncodeH264SessionParametersAddInfoKHR-pStdPPSs-parameter",
+    "VUID-VkVideoEncodeH265SessionParametersAddInfoKHR-pStdVPSs-parameter",
+    "VUID-VkVideoEncodeH265SessionParametersAddInfoKHR-pStdSPSs-parameter",
+    "VUID-VkVideoEncodeH265SessionParametersAddInfoKHR-pStdPPSs-parameter",
+    "VUID-VkD3D12FenceSubmitInfoKHR-pWaitSemaphoreValues-parameter",
+    "VUID-VkD3D12FenceSubmitInfoKHR-pSignalSemaphoreValues-parameter",
+    "VUID-VkPresentRegionKHR-pRectangles-parameter",
+    "VUID-VkBindDescriptorSetsInfoKHR-pDynamicOffsets-parameter",
+    "VUID-VkPhysicalDeviceHostImageCopyPropertiesEXT-pCopySrcLayouts-parameter",
+    "VUID-VkPhysicalDeviceHostImageCopyPropertiesEXT-pCopyDstLayouts-parameter",
+    "VUID-VkSurfacePresentModeCompatibilityEXT-pPresentModes-parameter",
+    "VUID-VkFrameBoundaryEXT-pImages-parameter",
+    "VUID-VkFrameBoundaryEXT-pBuffers-parameter",
+    "VUID-VkFrameBoundaryEXT-pTag-parameter",
+    "VUID-VkMicromapBuildInfoEXT-pUsageCounts-parameter",
+    "VUID-VkMicromapBuildInfoEXT-ppUsageCounts-parameter",
+    "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-pUsageCounts-parameter",
+    "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-ppUsageCounts-parameter",
+    "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-pUsageCounts-parameter",
+    "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-ppUsageCounts-parameter",
+    "VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter",
+    "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-parameter",
+    "VUID-VkLatencySurfaceCapabilitiesNV-pPresentModes-parameter",
+    "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-parameter",
+    "VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-parameter",
+    // These occur in stateless validation when a pointer member is optional and the length member is null
+    "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
+    "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-parameter",
+    "VUID-VkSubpassDescription-pDepthStencilAttachment-parameter",
+    "VUID-VkDeviceFaultInfoEXT-pAddressInfos-parameter",
+    "VUID-VkDeviceFaultInfoEXT-pVendorInfos-parameter",
+    "VUID-VkShaderCreateInfoEXT-pSpecializationInfo-parameter",
+    "VUID-VkExportFenceWin32HandleInfoKHR-pAttributes-parameter",
+    "VUID-VkExportSemaphoreWin32HandleInfoKHR-pAttributes-parameter",
+    "VUID-VkExportMemoryWin32HandleInfoKHR-pAttributes-parameter",
+    "VUID-VkExportMemoryWin32HandleInfoNV-pAttributes-parameter",
+    // Checking for null-terminated UTF-8 string
+    "VUID-VkApplicationInfo-pApplicationName-parameter",
+    "VUID-VkApplicationInfo-pEngineName-parameter",
+    "VUID-VkDebugUtilsObjectNameInfoEXT-pObjectName-parameter",
+    "VUID-VkDebugUtilsMessengerCallbackDataEXT-pMessageIdName-parameter",
+    "VUID-VkPipelineShaderStageNodeCreateInfoAMDX-pName-parameter",
+    "VUID-VkShaderCreateInfoEXT-pName-parameter",
 };
 
 // clang-format on

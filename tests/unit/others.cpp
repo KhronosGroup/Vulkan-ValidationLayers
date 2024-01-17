@@ -424,14 +424,14 @@ TEST_F(VkLayerTest, RequiredParameter) {
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, NULL);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "memory is VK_NULL_HANDLE");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandle");
     // Specify VK_NULL_HANDLE for a required handle
     // Expected to trigger an error with
     // StatelessValidation::ValidateRequiredHandle
     vk::UnmapMemory(device(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandleArray");
     // Specify VK_NULL_HANDLE for a required handle array entry
     // Expected to trigger an error with
     // StatelessValidation::ValidateRequiredHandleArray
