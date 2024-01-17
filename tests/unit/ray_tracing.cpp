@@ -2948,7 +2948,47 @@ TEST_F(NegativeRayTracing, UpdatedFirstVertex) {
     build_range_infos[0].firstVertex = 666;
     build_info.SetBuildRanges(build_range_infos);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-firstVertex-03770");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-firstVertex-03770");
+    build_info.BuildCmdBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, UpdatedFirstPrimitiveCount) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
+        "VkAccelerationStructureBuildRangeInfoKHR::primitiveCount");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_commandBuffer->begin();
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    build_info.BuildCmdBuffer(m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+
+    m_commandBuffer->begin();
+
+    build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetSrcAS(build_info.GetDstAS());
+
+    // Create custom build ranges, with the default valid as a template, then somehow supply it?
+    auto build_range_infos = build_info.GetDefaultBuildRangeInfos();
+    build_range_infos[0].primitiveCount = 0;
+    build_info.SetBuildRanges(build_range_infos);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-primitiveCount-03769");
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
