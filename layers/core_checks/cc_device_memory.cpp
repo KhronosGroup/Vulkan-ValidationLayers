@@ -21,6 +21,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
+#include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
@@ -223,12 +224,29 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image &image, VkExter
 
     VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
     VkImageFormatProperties2 properties = vku::InitStructHelper(&external_properties);
-    if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
-        if (DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties) != VK_SUCCESS) {
-            return false;
+    if (image.createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
+            if (DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties) != VK_SUCCESS) {
+                return false;
+            }
+        } else {
+            if (DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &properties) != VK_SUCCESS) {
+                return false;
+            }
         }
     } else {
-        if (DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &info, &properties) != VK_SUCCESS) {
+        VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
+        drm_format_modifier.sharingMode = image.createInfo.sharingMode;
+        drm_format_modifier.queueFamilyIndexCount = image.createInfo.queueFamilyIndexCount;
+        drm_format_modifier.pQueueFamilyIndices = image.createInfo.pQueueFamilyIndices;
+        vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&info, &drm_format_modifier);
+
+        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
+        if (DispatchGetImageDrmFormatModifierPropertiesEXT(device, image.image(), &drm_format_properties) != VK_SUCCESS) {
+            return false;
+        }
+        drm_format_modifier.drmFormatModifier = drm_format_properties.drmFormatModifier;
+        if (DispatchGetPhysicalDeviceImageFormatProperties2KHR(physical_device, &info, &properties) != VK_SUCCESS) {
             return false;
         }
     }
