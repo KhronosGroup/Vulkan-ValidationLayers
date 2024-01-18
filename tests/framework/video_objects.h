@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2023 The Khronos Group Inc.
- * Copyright (c) 2022-2023 RasterGrid Kft.
+ * Copyright (c) 2022-2024 The Khronos Group Inc.
+ * Copyright (c) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2271,10 +2271,13 @@ class VkVideoLayerTest : public VkLayerTest {
 
         RETURN_IF_SKIP(InitFramework(instance_pnext_));
 
-        auto video_maintenance1_features = vku::InitStruct<VkPhysicalDeviceVideoMaintenance1FeaturesKHR>();
-        auto prot_mem_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>(&video_maintenance1_features);
+        auto prot_mem_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
         auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&prot_mem_features);
         auto features = vku::InitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
+        auto video_maintenance1_features = vku::InitStruct<VkPhysicalDeviceVideoMaintenance1FeaturesKHR>();
+        if (IsExtensionsEnabled(VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME)) {
+            prot_mem_features.pNext = &video_maintenance1_features;
+        }
         vk::GetPhysicalDeviceFeatures2(gpu(), &features);
 
         if (!protected_memory_enabled_) {

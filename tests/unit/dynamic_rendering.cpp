@@ -1552,6 +1552,7 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_features = vku::InitStructHelper();
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper(&dynamic_features);

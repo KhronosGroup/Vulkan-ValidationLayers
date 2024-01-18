@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1733,14 +1733,13 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     AddRequiredExtensions(VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
 
     // Disable the image footprint feature.
     VkPhysicalDeviceShaderImageFootprintFeaturesNV image_footprint_features = vku::InitStructHelper();
     image_footprint_features.imageFootprint = VK_FALSE;
 
-    vkt::Device test_device(gpu(), device_extension_names, &features, &image_footprint_features);
+    vkt::Device test_device(gpu(), m_device_extension_names, &features, &image_footprint_features);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1780,7 +1779,6 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     const vkt::PipelineLayout pipeline_layout(test_device, {&ds_layout});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
@@ -1840,7 +1838,6 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     AddRequiredExtensions(VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
 
     // Disable the compute shader derivatives features.
@@ -1848,7 +1845,7 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     compute_shader_derivatives_features.computeDerivativeGroupLinear = VK_FALSE;
     compute_shader_derivatives_features.computeDerivativeGroupQuads = VK_FALSE;
 
-    vkt::Device test_device(gpu(), device_extension_names, &features, &compute_shader_derivatives_features);
+    vkt::Device test_device(gpu(), m_device_extension_names, &features, &compute_shader_derivatives_features);
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     const vkt::DescriptorSetLayout dsl(test_device, {binding});
@@ -1880,7 +1877,6 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
                                         -1};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
     VkPipeline pipe = VK_NULL_HANDLE;
     vk::CreateComputePipelines(test_device.device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
     m_errorMonitor->VerifyFound();
@@ -1891,27 +1887,15 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the fragment shader interlock feature which has not enabled on the device.");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<const char *> device_extension_names;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME)) {
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME)) {
         // Note: we intentionally do not add the required extension to the device extension list.
         //       in order to create the error below
-    } else {
-        // We skip this test if the extension is not supported by the driver as in some cases this will cause
-        // the vk::CreateShaderModule to fail without generating an error message
-        printf("Extension %s is not supported.\n", VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "VK_EXT_fragment_shader_interlock not supported";
     }
 
     auto features = m_device->phy().features();
 
-    // Disable the fragment shader interlock feature.
-    VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragment_shader_interlock_features = vku::InitStructHelper();
-    fragment_shader_interlock_features.fragmentShaderSampleInterlock = VK_FALSE;
-    fragment_shader_interlock_features.fragmentShaderPixelInterlock = VK_FALSE;
-    fragment_shader_interlock_features.fragmentShaderShadingRateInterlock = VK_FALSE;
-
-    vkt::Device test_device(gpu(), device_extension_names, &features, &fragment_shader_interlock_features);
+    vkt::Device test_device(gpu(), m_device_extension_names, &features);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1934,8 +1918,8 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
 
     const vkt::PipelineLayout pipeline_layout(test_device);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");  // feature
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");  // extension
     CreatePipelineHelper pipe(*this);
     pipe.device_ = &test_device;
     pipe.InitState();

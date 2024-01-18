@@ -1,6 +1,6 @@
-/* Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -364,6 +364,7 @@ TEST_F(PositiveGpuAV, MaxDescriptorsClamp13) {
 
 TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("Use a bad vertex shader, but don't select it for validation and make sure we don't get a buffer oob warning");
+    AddRequiredExtensions(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_2);
     const VkBool32 value = true;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,

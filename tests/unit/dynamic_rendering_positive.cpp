@@ -1001,6 +1001,7 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsFlags) {
 
 TEST_F(PositiveDynamicRendering, ColorAttachmentMismatch) {
     TEST_DESCRIPTION("colorAttachmentCount and attachmentCount don't match but it is dynamically ignored");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);

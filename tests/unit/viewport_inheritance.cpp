@@ -1,5 +1,5 @@
-/* Copyright (c) 2021-2023 The Khronos Group Inc.
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2021-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 LunarG, Inc.
  * Copyright (c) 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -405,7 +405,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
 #endif
     TEST_DESCRIPTION("Simple correct and incorrect usage of VK_NV_inherited_viewport_scissor");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
@@ -639,7 +639,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
 
 TEST_F(NegativeViewportInheritance, MissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling feature.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
@@ -669,7 +669,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
 #endif
     TEST_DESCRIPTION("VK_NV_inherited_viewport_scissor tests with multiple viewports/scissors");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
@@ -899,7 +899,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
 
 TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling multiViewport feature.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     bool has_features = false;
     const char* missing_feature_string = nullptr;
@@ -924,8 +924,7 @@ TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
 
 TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle) {
     TEST_DESCRIPTION("Bind pipeline with missing dynamic state discard rectangle.");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
