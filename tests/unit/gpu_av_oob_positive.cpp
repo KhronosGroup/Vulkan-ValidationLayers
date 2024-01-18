@@ -160,6 +160,7 @@ TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
 TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
     TEST_DESCRIPTION("index into an atomic image Load and Store");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
     AddDisabledFeature(vkt::Feature::robustBufferAccess);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
     RETURN_IF_SKIP(InitGpuAvFramework());

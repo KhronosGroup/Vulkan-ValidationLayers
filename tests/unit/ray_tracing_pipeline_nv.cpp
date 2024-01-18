@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 
 TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
+    AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipleline_features = vku::InitStructHelper();
@@ -149,7 +150,6 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
 TEST_F(NegativeRayTracingPipelineNV, BindPoint) {
     TEST_DESCRIPTION("Bind a graphics pipeline in the ray-tracing bind point");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 

@@ -18,6 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import os
 import re
 from generators.generator_utils import buildListVUID, PlatformGuardHelper
@@ -378,7 +379,29 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     }}
                     '''
 
-            if struct.sType in stype_version_dict.keys():
+            extension_feature_struct = 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends and len(struct.extensions) > 0
+            if extension_feature_struct:
+                # workaround for https://gitlab.khronos.org/vulkan/vulkan/-/issues/3753
+                if struct.name == 'VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT':
+                    if len(struct.extensions) > 1:
+                        print("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3753 has been fixed, this logic should be removed")
+                        sys.exit(1)
+                    struct.extensions.append(self.vk.extensions['VK_EXT_mutable_descriptor_type'])
+
+                extension_check = []
+                extensions = [x.name for x in struct.extensions]
+                for extension in extensions:
+                    extension_check.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
+
+                pnext_check += f'''
+                        if ({" && ".join(extension_check)}) {{
+                            skip |= LogError(
+                                pnext_vuid, instance, loc.dot(Field::pNext),
+                                "includes a pointer to a {struct.name}, but when creating VkDevice, the parent extension "
+                                "({" or ".join(extensions)}) was not included in ppEnabledExtensionNames.");
+                        }}
+                    '''
+            elif struct.sType in stype_version_dict.keys():
                 ext_name = stype_version_dict[struct.sType]
 
                 # Skip extensions that are not in the target API

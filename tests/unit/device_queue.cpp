@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -375,6 +375,8 @@ TEST_F(NegativeDeviceQueue, Robustness2WithoutRobustness) {
     device_ci.queueCreateInfoCount = 1u;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0u;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000");

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
- * Copyright (c) 2020-2023 Google, Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -278,6 +278,7 @@ TEST_F(NegativeGpuAV, ValidationFeatures) {
 TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
     const VkBool32 value = true;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                        &value};

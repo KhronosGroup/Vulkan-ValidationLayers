@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -688,4 +688,22 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestampsKHR) {
     uint64_t timestamps[2];
     uint64_t max_deviation;
     vk::GetCalibratedTimestampsKHR(device(), 2, timestamp_infos, timestamps, &max_deviation);
+}
+
+TEST_F(VkPositiveLayerTest, ExtensionPhysicalDeviceFeatureEXT) {
+    TEST_DESCRIPTION("VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR has an EXT and KHR extension that can enable it");
+    AddRequiredExtensions(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR query_feature = vku::InitStructHelper();
+    query_feature.globalPriorityQuery = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &query_feature));
+}
+
+TEST_F(VkPositiveLayerTest, ExtensionPhysicalDeviceFeatureKHR) {
+    TEST_DESCRIPTION("VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR has an EXT and KHR extension that can enable it");
+    AddRequiredExtensions(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR query_feature = vku::InitStructHelper();
+    query_feature.globalPriorityQuery = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &query_feature));
 }

@@ -158,6 +158,7 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
  * @param allowed_type_count Total number of allowed structure types.
  * @param allowed_types Array of structure types allowed for pNext.
  * @param header_version Version of header defining the pNext validation rules.
+ * @param is_physdev_api True if the first parameter of the function is a VkPhysicalDevice (ex vkCreateDevice)
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,

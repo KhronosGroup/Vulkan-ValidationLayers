@@ -2309,6 +2309,7 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
 
 void NegativeDynamicState::InitLineRasterizationFeatureDisabled() {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LineRasterizationMode);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LineStippleEnable);
     AddRequiredFeature(vkt::Feature::rectangularLines);

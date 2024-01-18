@@ -182,7 +182,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features = vku::InitStructHelper();
@@ -326,7 +326,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
             CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-pNext-08107");
         }
 
-        if (IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        {
             vkt::Buffer as_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -448,7 +448,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+    {
         auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
         blas->Build();
 

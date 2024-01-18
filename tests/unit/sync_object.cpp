@@ -2091,7 +2091,7 @@ TEST_F(NegativeSyncObject, SubmitSignaledFence) {
 TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
 
-    AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
@@ -2147,7 +2147,7 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     }
 
     // sync 2
-    if (IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+    {
         VkSemaphoreSubmitInfo signal_sem_info = vku::InitStructHelper();
         signal_sem_info.semaphore = semaphore.handle();
         signal_sem_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -2771,8 +2771,8 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
 TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
     TEST_DESCRIPTION("Submit a queue with a waiting binary semaphore not previously signaled.");
 
-    AddOptionalExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
@@ -2855,7 +2855,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         m_default_queue->wait();
     }
 
-    if (IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+    {
         vkt::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
         semaphore[1].init(*m_device, semaphore_create_info);

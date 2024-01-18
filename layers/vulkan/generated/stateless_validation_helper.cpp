@@ -88,12 +88,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: {  // Covers
                                                                           // VUID-VkPhysicalDevice16BitStorageFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_16bit_storage))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_16bit_storage)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES), but its parent extension "
-                                 "VK_KHR_16bit_storage has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDevice16BitStorageFeatures, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_16bit_storage) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevice16BitStorageFeatures);
@@ -557,12 +556,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMultiviewFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: {  // Covers VUID-VkPhysicalDeviceMultiviewFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_multiview))) {
-                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES), "
-                                 "but its parent extension "
-                                 "VK_KHR_multiview has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_multiview)) {
+                skip |= LogError(
+                    pnext_vuid, instance, loc.dot(Field::pNext),
+                    "includes a pointer to a VkPhysicalDeviceMultiviewFeatures, but when creating VkDevice, the parent extension "
+                    "(VK_KHR_multiview) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMultiviewFeatures);
@@ -592,12 +590,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES: {  // Covers
                                                                               // VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_variable_pointers))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_variable_pointers)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES), but its parent extension "
-                                 "VK_KHR_variable_pointers has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceVariablePointersFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_variable_pointers) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVariablePointersFeatures);
@@ -721,12 +718,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceSamplerYcbcrConversionFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES), but its parent extension "
-                                 "VK_KHR_sampler_ycbcr_conversion has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceSamplerYcbcrConversionFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_sampler_ycbcr_conversion) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSamplerYcbcrConversionFeatures);
@@ -1140,12 +1136,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES: {  // Covers
                                                                          // VUID-VkPhysicalDevice8BitStorageFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_8bit_storage))) {
-                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES), but its parent extension "
-                                 "VK_KHR_8bit_storage has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_8bit_storage)) {
+                skip |= LogError(
+                    pnext_vuid, instance, loc.dot(Field::pNext),
+                    "includes a pointer to a VkPhysicalDevice8BitStorageFeatures, but when creating VkDevice, the parent extension "
+                    "(VK_KHR_8bit_storage) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevice8BitStorageFeatures);
@@ -1175,12 +1170,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceShaderAtomicInt64Features-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_atomic_int64))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_atomic_int64)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES), but its parent extension "
-                                 "VK_KHR_shader_atomic_int64 has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceShaderAtomicInt64Features, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_shader_atomic_int64) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderAtomicInt64Features);
@@ -1195,12 +1189,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceShaderFloat16Int8Features-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_float16_int8))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_float16_int8)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES), but its parent extension "
-                                 "VK_KHR_shader_float16_int8 has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceShaderFloat16Int8Features, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_shader_float16_int8) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderFloat16Int8Features);
@@ -1249,12 +1242,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceDescriptorIndexingFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
+            if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES), but its parent extension "
-                                 "VK_EXT_descriptor_indexing has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceDescriptorIndexingFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_descriptor_indexing) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDescriptorIndexingFeatures);
@@ -1416,12 +1408,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceScalarBlockLayoutFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_scalar_block_layout))) {
+            if (!IsExtEnabled(device_extensions.vk_ext_scalar_block_layout)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES), but its parent extension "
-                                 "VK_EXT_scalar_block_layout has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceScalarBlockLayoutFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_scalar_block_layout) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceScalarBlockLayoutFeatures);
@@ -1485,12 +1476,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceVulkanMemoryModelFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_vulkan_memory_model))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_vulkan_memory_model)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES), but its parent extension "
-                                 "VK_KHR_vulkan_memory_model has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceVulkanMemoryModelFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_vulkan_memory_model) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVulkanMemoryModelFeatures);
@@ -1508,12 +1498,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceImagelessFramebufferFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES), but its parent extension "
-                                 "VK_KHR_imageless_framebuffer has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceImagelessFramebufferFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_imageless_framebuffer) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImagelessFramebufferFeatures);
@@ -1592,13 +1581,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceUniformBufferStandardLayoutFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_uniform_buffer_standard_layout))) {
-                skip |= LogError(
-                    pnext_vuid, instance, loc.dot(Field::pNext),
-                    "includes a pointer to a VkStructureType "
-                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES), but its parent extension "
-                    "VK_KHR_uniform_buffer_standard_layout has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_uniform_buffer_standard_layout)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceUniformBufferStandardLayoutFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_uniform_buffer_standard_layout) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceUniformBufferStandardLayoutFeatures);
@@ -1612,13 +1599,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_subgroup_extended_types))) {
-                skip |= LogError(
-                    pnext_vuid, instance, loc.dot(Field::pNext),
-                    "includes a pointer to a VkStructureType "
-                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES), but its parent extension "
-                    "VK_KHR_shader_subgroup_extended_types has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_subgroup_extended_types)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_shader_subgroup_extended_types) was not included in ppEnabledExtensionNames.");
             }
         } break;
 
@@ -1626,13 +1611,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts))) {
-                skip |= LogError(
-                    pnext_vuid, instance, loc.dot(Field::pNext),
-                    "includes a pointer to a VkStructureType "
-                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES), but its parent extension "
-                    "VK_KHR_separate_depth_stencil_layouts has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_separate_depth_stencil_layouts) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures);
@@ -1687,12 +1670,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceHostQueryResetFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_host_query_reset))) {
+            if (!IsExtEnabled(device_extensions.vk_ext_host_query_reset)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES), but its parent extension "
-                                 "VK_EXT_host_query_reset has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceHostQueryResetFeatures, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_host_query_reset) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceHostQueryResetFeatures);
@@ -1705,12 +1687,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: {  // Covers
                                                                                // VUID-VkPhysicalDeviceTimelineSemaphoreFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_timeline_semaphore)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES), but its parent extension "
-                                 "VK_KHR_timeline_semaphore has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceTimelineSemaphoreFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_timeline_semaphore) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTimelineSemaphoreFeatures);
@@ -1766,12 +1747,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceBufferDeviceAddressFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_buffer_device_address))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES), but its parent extension "
-                                 "VK_KHR_buffer_device_address has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceBufferDeviceAddressFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_buffer_device_address) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceBufferDeviceAddressFeatures);
@@ -1916,13 +1896,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES: {  // Covers
                                                                                         // VUID-VkPhysicalDeviceShaderTerminateInvocationFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_terminate_invocation))) {
-                skip |=
-                    LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                             "includes a pointer to a VkStructureType "
-                             "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES), but its parent extension "
-                             "VK_KHR_shader_terminate_invocation has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_terminate_invocation)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderTerminateInvocationFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_shader_terminate_invocation) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderTerminateInvocationFeatures);
@@ -1936,13 +1914,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES: {  // Covers
                                                                                                // VUID-VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_shader_demote_to_helper_invocation))) {
-                skip |= LogError(
-                    pnext_vuid, instance, loc.dot(Field::pNext),
-                    "includes a pointer to a VkStructureType "
-                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES), but its parent extension "
-                    "VK_EXT_shader_demote_to_helper_invocation has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_demote_to_helper_invocation)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_shader_demote_to_helper_invocation) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
@@ -1958,12 +1934,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES: {  // Covers
                                                                          // VUID-VkPhysicalDevicePrivateDataFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_private_data))) {
-                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES), but its parent extension "
-                                 "VK_EXT_private_data has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_ext_private_data)) {
+                skip |= LogError(
+                    pnext_vuid, instance, loc.dot(Field::pNext),
+                    "includes a pointer to a VkPhysicalDevicePrivateDataFeatures, but when creating VkDevice, the parent extension "
+                    "(VK_EXT_private_data) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePrivateDataFeatures);
@@ -1988,13 +1963,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES: {  // Covers
                                                                                             // VUID-VkPhysicalDevicePipelineCreationCacheControlFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_pipeline_creation_cache_control))) {
-                skip |= LogError(
-                    pnext_vuid, instance, loc.dot(Field::pNext),
-                    "includes a pointer to a VkStructureType "
-                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES), but its parent extension "
-                    "VK_EXT_pipeline_creation_cache_control has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_ext_pipeline_creation_cache_control)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePipelineCreationCacheControlFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_pipeline_creation_cache_control) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePipelineCreationCacheControlFeatures);
@@ -2035,12 +2008,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES: {  // Covers
                                                                               // VUID-VkPhysicalDeviceSynchronization2Features-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_synchronization2))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES), but its parent extension "
-                                 "VK_KHR_synchronization2 has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceSynchronization2Features, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_synchronization2) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSynchronization2Features);
@@ -2053,13 +2025,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory))) {
-                skip |= LogError(
-                    pnext_vuid, instance, loc.dot(Field::pNext),
-                    "includes a pointer to a VkStructureType "
-                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES), but its parent extension "
-                    "VK_KHR_zero_initialize_workgroup_memory has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_zero_initialize_workgroup_memory) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
@@ -2075,12 +2045,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceImageRobustnessFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_image_robustness))) {
+            if (!IsExtEnabled(device_extensions.vk_ext_image_robustness)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES), but its parent extension "
-                                 "VK_EXT_image_robustness has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceImageRobustnessFeatures, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_image_robustness) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageRobustnessFeatures);
@@ -2093,12 +2062,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceSubgroupSizeControlFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {
+            if (!IsExtEnabled(device_extensions.vk_ext_subgroup_size_control)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES), but its parent extension "
-                                 "VK_EXT_subgroup_size_control has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceSubgroupSizeControlFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_subgroup_size_control) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSubgroupSizeControlFeatures);
@@ -2140,12 +2108,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceInlineUniformBlockFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
+            if (!IsExtEnabled(device_extensions.vk_ext_inline_uniform_block)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES), but its parent extension "
-                                 "VK_EXT_inline_uniform_block has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceInlineUniformBlockFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_inline_uniform_block) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceInlineUniformBlockFeatures);
@@ -2208,13 +2175,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceTextureCompressionASTCHDRFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_texture_compression_astc_hdr))) {
-                skip |=
-                    LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                             "includes a pointer to a VkStructureType "
-                             "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES), but its parent extension "
-                             "VK_EXT_texture_compression_astc_hdr has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_ext_texture_compression_astc_hdr)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceTextureCompressionASTCHDRFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_texture_compression_astc_hdr) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTextureCompressionASTCHDRFeatures);
@@ -2240,12 +2205,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES: {  // Covers
                                                                               // VUID-VkPhysicalDeviceDynamicRenderingFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES), but its parent extension "
-                                 "VK_KHR_dynamic_rendering has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceDynamicRenderingFeatures, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_dynamic_rendering) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDynamicRenderingFeatures);
@@ -2294,13 +2258,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceShaderIntegerDotProductFeatures-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_integer_dot_product))) {
-                skip |=
-                    LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                             "includes a pointer to a VkStructureType "
-                             "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES), but its parent extension "
-                             "VK_KHR_shader_integer_dot_product has not been enabled.");
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_integer_dot_product)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderIntegerDotProductFeatures, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_shader_integer_dot_product) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderIntegerDotProductFeatures);
@@ -2353,12 +2315,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES: {  // Covers
                                                                           // VUID-VkPhysicalDeviceMaintenance4Features-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_4_EXTENSION_NAME)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance4))) {
+            if (!IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType "
-                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES), but its parent extension "
-                                 "VK_KHR_maintenance4 has not been enabled.");
+                                 "includes a pointer to a VkPhysicalDeviceMaintenance4Features, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_maintenance4) was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance4Features);
@@ -3017,6 +2978,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePerformanceQueryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR: {  // Covers
                                                                                   // VUID-VkPhysicalDevicePerformanceQueryFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_performance_query)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePerformanceQueryFeaturesKHR, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_KHR_performance_query) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePerformanceQueryFeaturesKHR);
                 VkPhysicalDevicePerformanceQueryFeaturesKHR* structure = (VkPhysicalDevicePerformanceQueryFeaturesKHR*)header;
@@ -3050,6 +3018,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePortabilitySubsetFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR: {  // Covers
                                                                                    // VUID-VkPhysicalDevicePortabilitySubsetFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePortabilitySubsetFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_portability_subset) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePortabilitySubsetFeaturesKHR);
                 VkPhysicalDevicePortabilitySubsetFeaturesKHR* structure = (VkPhysicalDevicePortabilitySubsetFeaturesKHR*)header;
@@ -3096,6 +3071,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderClockFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR: {  // Covers
                                                                              // VUID-VkPhysicalDeviceShaderClockFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_clock)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderClockFeaturesKHR, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_shader_clock) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderClockFeaturesKHR);
                 VkPhysicalDeviceShaderClockFeaturesKHR* structure = (VkPhysicalDeviceShaderClockFeaturesKHR*)header;
@@ -3204,6 +3186,15 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_global_priority) &&
+                !IsExtEnabled(device_extensions.vk_ext_global_priority_query)) {
+                skip |= LogError(
+                    pnext_vuid, instance, loc.dot(Field::pNext),
+                    "includes a pointer to a VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR, but when creating VkDevice, the "
+                    "parent extension "
+                    "(VK_KHR_global_priority or VK_EXT_global_priority_query) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR);
                 VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR* structure = (VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR*)header;
@@ -3242,6 +3233,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentShadingRateFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceFragmentShadingRateFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentShadingRateFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_fragment_shading_rate) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentShadingRateFeaturesKHR);
                 VkPhysicalDeviceFragmentShadingRateFeaturesKHR* structure = (VkPhysicalDeviceFragmentShadingRateFeaturesKHR*)header;
@@ -3269,6 +3267,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePresentWaitFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR: {  // Covers
                                                                              // VUID-VkPhysicalDevicePresentWaitFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_present_wait)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePresentWaitFeaturesKHR, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_present_wait) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentWaitFeaturesKHR);
                 VkPhysicalDevicePresentWaitFeaturesKHR* structure = (VkPhysicalDevicePresentWaitFeaturesKHR*)header;
@@ -3279,6 +3284,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR: {  // Covers
                                                                                                // VUID-VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_pipeline_executable_properties)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_KHR_pipeline_executable_properties) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR);
@@ -3314,6 +3326,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePresentIdFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR: {  // Covers
                                                                            // VUID-VkPhysicalDevicePresentIdFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_present_id)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePresentIdFeaturesKHR, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_present_id) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentIdFeaturesKHR);
                 VkPhysicalDevicePresentIdFeaturesKHR* structure = (VkPhysicalDevicePresentIdFeaturesKHR*)header;
@@ -3390,6 +3409,15 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_fragment_shader_barycentric) &&
+                !IsExtEnabled(device_extensions.vk_nv_fragment_shader_barycentric)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_fragment_shader_barycentric or VK_NV_fragment_shader_barycentric) was not included in "
+                                 "ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR);
                 VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR* structure =
@@ -3404,6 +3432,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR: {  // Covers
                                                                                                      // VUID-VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_shader_subgroup_uniform_control_flow)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_KHR_shader_subgroup_uniform_control_flow) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR);
@@ -3417,6 +3452,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR: {  // Covers
                                                                                                  // VUID-VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_workgroup_memory_explicit_layout)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_KHR_workgroup_memory_explicit_layout) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR);
@@ -3439,6 +3481,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_maintenance1)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_ray_tracing_maintenance1) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR);
                 VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR* structure =
@@ -3453,6 +3502,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMaintenance5FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR: {  // Covers
                                                                               // VUID-VkPhysicalDeviceMaintenance5FeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_maintenance5)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMaintenance5FeaturesKHR, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_maintenance5) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance5FeaturesKHR);
                 VkPhysicalDeviceMaintenance5FeaturesKHR* structure = (VkPhysicalDeviceMaintenance5FeaturesKHR*)header;
@@ -3489,6 +3545,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_position_fetch)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_ray_tracing_position_fetch) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR);
                 VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR* structure =
@@ -3500,6 +3563,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCooperativeMatrixFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceCooperativeMatrixFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_cooperative_matrix)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCooperativeMatrixFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_cooperative_matrix) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCooperativeMatrixFeaturesKHR);
                 VkPhysicalDeviceCooperativeMatrixFeaturesKHR* structure = (VkPhysicalDeviceCooperativeMatrixFeaturesKHR*)header;
@@ -3516,6 +3586,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVideoMaintenance1FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceVideoMaintenance1FeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_video_maintenance1)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceVideoMaintenance1FeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_video_maintenance1) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVideoMaintenance1FeaturesKHR);
                 VkPhysicalDeviceVideoMaintenance1FeaturesKHR* structure = (VkPhysicalDeviceVideoMaintenance1FeaturesKHR*)header;
@@ -3552,6 +3629,15 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_KHR: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_vertex_attribute_divisor) &&
+                !IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_vertex_attribute_divisor or VK_EXT_vertex_attribute_divisor) was not included in "
+                                 "ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR);
                 VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR* structure =
@@ -3567,6 +3653,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMaintenance6FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES_KHR: {  // Covers
                                                                               // VUID-VkPhysicalDeviceMaintenance6FeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_maintenance6)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMaintenance6FeaturesKHR, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_KHR_maintenance6) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance6FeaturesKHR);
                 VkPhysicalDeviceMaintenance6FeaturesKHR* structure = (VkPhysicalDeviceMaintenance6FeaturesKHR*)header;
@@ -3641,6 +3734,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTransformFeedbackFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceTransformFeedbackFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceTransformFeedbackFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_transform_feedback) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTransformFeedbackFeaturesEXT);
                 VkPhysicalDeviceTransformFeedbackFeaturesEXT* structure = (VkPhysicalDeviceTransformFeedbackFeaturesEXT*)header;
@@ -3671,6 +3771,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCornerSampledImageFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceCornerSampledImageFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_corner_sampled_image)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCornerSampledImageFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_corner_sampled_image) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCornerSampledImageFeaturesNV);
                 VkPhysicalDeviceCornerSampledImageFeaturesNV* structure = (VkPhysicalDeviceCornerSampledImageFeaturesNV*)header;
@@ -3770,6 +3877,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceASTCDecodeFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT: {  // Covers
                                                                             // VUID-VkPhysicalDeviceASTCDecodeFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_astc_decode_mode)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceASTCDecodeFeaturesEXT, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_astc_decode_mode) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceASTCDecodeFeaturesEXT);
                 VkPhysicalDeviceASTCDecodeFeaturesEXT* structure = (VkPhysicalDeviceASTCDecodeFeaturesEXT*)header;
@@ -3780,6 +3894,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePipelineRobustnessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES_EXT: {  // Covers
                                                                                     // VUID-VkPhysicalDevicePipelineRobustnessFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_pipeline_robustness)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePipelineRobustnessFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_pipeline_robustness) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePipelineRobustnessFeaturesEXT);
                 VkPhysicalDevicePipelineRobustnessFeaturesEXT* structure = (VkPhysicalDevicePipelineRobustnessFeaturesEXT*)header;
@@ -3815,6 +3936,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceConditionalRenderingFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceConditionalRenderingFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_conditional_rendering)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceConditionalRenderingFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_conditional_rendering) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceConditionalRenderingFeaturesEXT);
                 VkPhysicalDeviceConditionalRenderingFeaturesEXT* structure =
@@ -3963,6 +4091,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDepthClipEnableFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceDepthClipEnableFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_depth_clip_enable)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDepthClipEnableFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_depth_clip_enable) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthClipEnableFeaturesEXT);
                 VkPhysicalDeviceDepthClipEnableFeaturesEXT* structure = (VkPhysicalDeviceDepthClipEnableFeaturesEXT*)header;
@@ -3987,6 +4122,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RELAXED_LINE_RASTERIZATION_FEATURES_IMG: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_img_relaxed_line_rasterization)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_IMG_relaxed_line_rasterization) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG);
                 VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG* structure =
@@ -4058,6 +4200,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderEnqueueFeaturesAMDX structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceShaderEnqueueFeaturesAMDX-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderEnqueueFeaturesAMDX, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_AMDX_shader_enqueue) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderEnqueueFeaturesAMDX);
                 VkPhysicalDeviceShaderEnqueueFeaturesAMDX* structure = (VkPhysicalDeviceShaderEnqueueFeaturesAMDX*)header;
@@ -4215,6 +4364,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_blend_operation_advanced) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT);
                 VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT* structure =
@@ -4279,6 +4435,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderSMBuiltinsFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceShaderSMBuiltinsFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_shader_sm_builtins)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_shader_sm_builtins) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderSMBuiltinsFeaturesNV);
                 VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* structure = (VkPhysicalDeviceShaderSMBuiltinsFeaturesNV*)header;
@@ -4361,6 +4524,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShadingRateImageFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceShadingRateImageFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_shading_rate_image)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShadingRateImageFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_shading_rate_image) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShadingRateImageFeaturesNV);
                 VkPhysicalDeviceShadingRateImageFeaturesNV* structure = (VkPhysicalDeviceShadingRateImageFeaturesNV*)header;
@@ -4438,6 +4608,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_representative_fragment_test)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_representative_fragment_test) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV);
                 VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* structure =
@@ -4527,6 +4704,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceComputeShaderDerivativesFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceComputeShaderDerivativesFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_compute_shader_derivatives)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_compute_shader_derivatives) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceComputeShaderDerivativesFeaturesNV);
                 VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* structure =
@@ -4540,6 +4724,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMeshShaderFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV: {  // Covers
                                                                            // VUID-VkPhysicalDeviceMeshShaderFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMeshShaderFeaturesNV, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_NV_mesh_shader) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMeshShaderFeaturesNV);
                 VkPhysicalDeviceMeshShaderFeaturesNV* structure = (VkPhysicalDeviceMeshShaderFeaturesNV*)header;
@@ -4555,6 +4746,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderImageFootprintFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceShaderImageFootprintFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_shader_image_footprint)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderImageFootprintFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_shader_image_footprint) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderImageFootprintFeaturesNV);
                 VkPhysicalDeviceShaderImageFootprintFeaturesNV* structure = (VkPhysicalDeviceShaderImageFootprintFeaturesNV*)header;
@@ -4568,6 +4766,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExclusiveScissorFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceExclusiveScissorFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_scissor_exclusive)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExclusiveScissorFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_scissor_exclusive) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExclusiveScissorFeaturesNV);
                 VkPhysicalDeviceExclusiveScissorFeaturesNV* structure = (VkPhysicalDeviceExclusiveScissorFeaturesNV*)header;
@@ -4581,6 +4786,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_intel_shader_integer_functions2)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_INTEL_shader_integer_functions2) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL);
                 VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* structure =
@@ -4620,6 +4832,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentDensityMapFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceFragmentDensityMapFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_fragment_density_map)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentDensityMapFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_fragment_density_map) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentDensityMapFeaturesEXT);
                 VkPhysicalDeviceFragmentDensityMapFeaturesEXT* structure = (VkPhysicalDeviceFragmentDensityMapFeaturesEXT*)header;
@@ -4653,6 +4872,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCoherentMemoryFeaturesAMD structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceCoherentMemoryFeaturesAMD-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_amd_device_coherent_memory)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCoherentMemoryFeaturesAMD, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_AMD_device_coherent_memory) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCoherentMemoryFeaturesAMD);
                 VkPhysicalDeviceCoherentMemoryFeaturesAMD* structure = (VkPhysicalDeviceCoherentMemoryFeaturesAMD*)header;
@@ -4663,6 +4889,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_image_atomic_int64)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_shader_image_atomic_int64) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT);
                 VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* structure =
@@ -4679,6 +4912,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMemoryPriorityFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceMemoryPriorityFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_memory_priority)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMemoryPriorityFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_memory_priority) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMemoryPriorityFeaturesEXT);
                 VkPhysicalDeviceMemoryPriorityFeaturesEXT* structure = (VkPhysicalDeviceMemoryPriorityFeaturesEXT*)header;
@@ -4692,6 +4932,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV: {  // Covers
                                                                                                    // VUID-VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_dedicated_allocation_image_aliasing)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_NV_dedicated_allocation_image_aliasing) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV);
@@ -4705,6 +4952,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_buffer_device_address)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_buffer_device_address) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceBufferDeviceAddressFeaturesEXT);
                 VkPhysicalDeviceBufferDeviceAddressFeaturesEXT* structure = (VkPhysicalDeviceBufferDeviceAddressFeaturesEXT*)header;
@@ -4742,6 +4996,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCooperativeMatrixFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceCooperativeMatrixFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_cooperative_matrix)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCooperativeMatrixFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_cooperative_matrix) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCooperativeMatrixFeaturesNV);
                 VkPhysicalDeviceCooperativeMatrixFeaturesNV* structure = (VkPhysicalDeviceCooperativeMatrixFeaturesNV*)header;
@@ -4758,6 +5019,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCoverageReductionModeFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceCoverageReductionModeFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_coverage_reduction_mode)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCoverageReductionModeFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_coverage_reduction_mode) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCoverageReductionModeFeaturesNV);
                 VkPhysicalDeviceCoverageReductionModeFeaturesNV* structure =
@@ -4784,6 +5052,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_fragment_shader_interlock)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_fragment_shader_interlock) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT);
                 VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT* structure =
@@ -4801,6 +5076,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceYcbcrImageArraysFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceYcbcrImageArraysFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_ycbcr_image_arrays)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceYcbcrImageArraysFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_ycbcr_image_arrays) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceYcbcrImageArraysFeaturesEXT);
                 VkPhysicalDeviceYcbcrImageArraysFeaturesEXT* structure = (VkPhysicalDeviceYcbcrImageArraysFeaturesEXT*)header;
@@ -4811,6 +5093,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceProvokingVertexFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceProvokingVertexFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_provoking_vertex)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceProvokingVertexFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_provoking_vertex) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceProvokingVertexFeaturesEXT);
                 VkPhysicalDeviceProvokingVertexFeaturesEXT* structure = (VkPhysicalDeviceProvokingVertexFeaturesEXT*)header;
@@ -4868,6 +5157,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceLineRasterizationFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceLineRasterizationFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceLineRasterizationFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_line_rasterization) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesEXT);
                 VkPhysicalDeviceLineRasterizationFeaturesEXT* structure = (VkPhysicalDeviceLineRasterizationFeaturesEXT*)header;
@@ -4905,6 +5201,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderAtomicFloatFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceShaderAtomicFloatFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_atomic_float)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_shader_atomic_float) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderAtomicFloatFeaturesEXT);
                 VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* structure = (VkPhysicalDeviceShaderAtomicFloatFeaturesEXT*)header;
@@ -4937,6 +5240,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceIndexTypeUint8FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceIndexTypeUint8FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_index_type_uint8)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceIndexTypeUint8FeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_index_type_uint8) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceIndexTypeUint8FeaturesEXT);
                 VkPhysicalDeviceIndexTypeUint8FeaturesEXT* structure = (VkPhysicalDeviceIndexTypeUint8FeaturesEXT*)header;
@@ -4947,6 +5257,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExtendedDynamicStateFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceExtendedDynamicStateFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_extended_dynamic_state) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExtendedDynamicStateFeaturesEXT);
                 VkPhysicalDeviceExtendedDynamicStateFeaturesEXT* structure =
@@ -4958,6 +5275,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceHostImageCopyFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceHostImageCopyFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_host_image_copy)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceHostImageCopyFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_host_image_copy) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceHostImageCopyFeaturesEXT);
                 VkPhysicalDeviceHostImageCopyFeaturesEXT* structure = (VkPhysicalDeviceHostImageCopyFeaturesEXT*)header;
@@ -4985,6 +5309,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_shader_atomic_float2) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT);
                 VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT* structure = (VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT*)header;
@@ -5058,6 +5389,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT: {  // Covers
                                                                                         // VUID-VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_swapchain_maintenance1) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT);
                 VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT* structure =
@@ -5128,6 +5466,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_device_generated_commands) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV);
                 VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* structure =
@@ -5219,6 +5564,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceInheritedViewportScissorFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceInheritedViewportScissorFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_inherited_viewport_scissor)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceInheritedViewportScissorFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_inherited_viewport_scissor) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceInheritedViewportScissorFeaturesNV);
                 VkPhysicalDeviceInheritedViewportScissorFeaturesNV* structure =
@@ -5241,6 +5593,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_texel_buffer_alignment)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_texel_buffer_alignment) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT);
                 VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* structure =
@@ -5258,6 +5617,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDepthBiasControlFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceDepthBiasControlFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_depth_bias_control)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDepthBiasControlFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_depth_bias_control) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthBiasControlFeaturesEXT);
                 VkPhysicalDeviceDepthBiasControlFeaturesEXT* structure = (VkPhysicalDeviceDepthBiasControlFeaturesEXT*)header;
@@ -5288,6 +5654,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDeviceMemoryReportFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceDeviceMemoryReportFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_device_memory_report)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDeviceMemoryReportFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_device_memory_report) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDeviceMemoryReportFeaturesEXT);
                 VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* structure = (VkPhysicalDeviceDeviceMemoryReportFeaturesEXT*)header;
@@ -5316,6 +5689,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRobustness2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT: {  // Covers
                                                                              // VUID-VkPhysicalDeviceRobustness2FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_robustness2)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRobustness2FeaturesEXT, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_robustness2) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRobustness2FeaturesEXT);
                 VkPhysicalDeviceRobustness2FeaturesEXT* structure = (VkPhysicalDeviceRobustness2FeaturesEXT*)header;
@@ -5347,6 +5727,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCustomBorderColorFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceCustomBorderColorFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_custom_border_color)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCustomBorderColorFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_custom_border_color) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCustomBorderColorFeaturesEXT);
                 VkPhysicalDeviceCustomBorderColorFeaturesEXT* structure = (VkPhysicalDeviceCustomBorderColorFeaturesEXT*)header;
@@ -5360,6 +5747,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePresentBarrierFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV: {  // Covers
                                                                                // VUID-VkPhysicalDevicePresentBarrierFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_present_barrier)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePresentBarrierFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_present_barrier) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentBarrierFeaturesNV);
                 VkPhysicalDevicePresentBarrierFeaturesNV* structure = (VkPhysicalDevicePresentBarrierFeaturesNV*)header;
@@ -5390,6 +5784,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDiagnosticsConfigFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceDiagnosticsConfigFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_device_diagnostics_config)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDiagnosticsConfigFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_device_diagnostics_config) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDiagnosticsConfigFeaturesNV);
                 VkPhysicalDeviceDiagnosticsConfigFeaturesNV* structure = (VkPhysicalDeviceDiagnosticsConfigFeaturesNV*)header;
@@ -5412,6 +5813,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCudaKernelLaunchFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceCudaKernelLaunchFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCudaKernelLaunchFeaturesNV, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_NV_cuda_kernel_launch) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCudaKernelLaunchFeaturesNV);
                 VkPhysicalDeviceCudaKernelLaunchFeaturesNV* structure = (VkPhysicalDeviceCudaKernelLaunchFeaturesNV*)header;
@@ -5518,6 +5926,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDescriptorBufferFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceDescriptorBufferFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDescriptorBufferFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_descriptor_buffer) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDescriptorBufferFeaturesEXT);
                 VkPhysicalDeviceDescriptorBufferFeaturesEXT* structure = (VkPhysicalDeviceDescriptorBufferFeaturesEXT*)header;
@@ -5561,6 +5976,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_graphics_pipeline_library) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT);
                 VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT* structure =
@@ -5600,6 +6022,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_AMD: {  // Covers
                                                                                                      // VUID-VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_amd_shader_early_and_late_fragment_tests)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_AMD_shader_early_and_late_fragment_tests) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD);
@@ -5613,6 +6042,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_fragment_shading_rate_enums)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_fragment_shading_rate_enums) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV);
                 VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* structure =
@@ -5662,6 +6098,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRayTracingMotionBlurFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceRayTracingMotionBlurFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing_motion_blur)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRayTracingMotionBlurFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_ray_tracing_motion_blur) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRayTracingMotionBlurFeaturesNV);
                 VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* structure = (VkPhysicalDeviceRayTracingMotionBlurFeaturesNV*)header;
@@ -5675,6 +6118,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_ycbcr_2plane_444_formats)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_ycbcr_2plane_444_formats) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT);
                 VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT* structure =
@@ -5686,6 +6136,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentDensityMap2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceFragmentDensityMap2FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_fragment_density_map2) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentDensityMap2FeaturesEXT);
                 VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* structure = (VkPhysicalDeviceFragmentDensityMap2FeaturesEXT*)header;
@@ -5702,6 +6159,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageCompressionControlFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_FEATURES_EXT: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceImageCompressionControlFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_image_compression_control)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImageCompressionControlFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_image_compression_control) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageCompressionControlFeaturesEXT);
                 VkPhysicalDeviceImageCompressionControlFeaturesEXT* structure =
@@ -5719,6 +6183,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT: {  // Covers
                                                                                                 // VUID-VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_attachment_feedback_loop_layout)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_attachment_feedback_loop_layout) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT);
@@ -5731,6 +6202,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevice4444FormatsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT: {  // Covers
                                                                              // VUID-VkPhysicalDevice4444FormatsFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_4444_formats)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevice4444FormatsFeaturesEXT, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_4444_formats) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevice4444FormatsFeaturesEXT);
                 VkPhysicalDevice4444FormatsFeaturesEXT* structure = (VkPhysicalDevice4444FormatsFeaturesEXT*)header;
@@ -5742,6 +6220,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceFaultFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT: {  // Covers VUID-VkPhysicalDeviceFaultFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_device_fault)) {
+                skip |= LogError(
+                    pnext_vuid, instance, loc.dot(Field::pNext),
+                    "includes a pointer to a VkPhysicalDeviceFaultFeaturesEXT, but when creating VkDevice, the parent extension "
+                    "(VK_EXT_device_fault) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFaultFeaturesEXT);
                 VkPhysicalDeviceFaultFeaturesEXT* structure = (VkPhysicalDeviceFaultFeaturesEXT*)header;
@@ -5754,6 +6239,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT: {  // Covers
                                                                                                       // VUID-VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_arm_rasterization_order_attachment_access)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_ARM_rasterization_order_attachment_access) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT);
@@ -5773,6 +6265,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_rgba10x6_formats)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_rgba10x6_formats) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT);
                 VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* structure = (VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT*)header;
@@ -5784,6 +6283,15 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT: {  // Covers
                                                                                         // VUID-VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type) &&
+                !IsExtEnabled(device_extensions.vk_ext_mutable_descriptor_type)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_VALVE_mutable_descriptor_type or VK_EXT_mutable_descriptor_type) was not included in "
+                                 "ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT);
                 VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* structure =
@@ -5823,6 +6331,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_vertex_input_dynamic_state)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_vertex_input_dynamic_state) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT);
                 VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT* structure =
@@ -5837,6 +6352,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceAddressBindingReportFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ADDRESS_BINDING_REPORT_FEATURES_EXT: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAddressBindingReportFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_device_address_binding_report)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceAddressBindingReportFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_device_address_binding_report) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceAddressBindingReportFeaturesEXT);
                 VkPhysicalDeviceAddressBindingReportFeaturesEXT* structure =
@@ -5864,6 +6386,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDepthClipControlFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceDepthClipControlFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_depth_clip_control)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDepthClipControlFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_depth_clip_control) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthClipControlFeaturesEXT);
                 VkPhysicalDeviceDepthClipControlFeaturesEXT* structure = (VkPhysicalDeviceDepthClipControlFeaturesEXT*)header;
@@ -5885,6 +6414,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT: {  // Covers
                                                                                                 // VUID-VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_primitive_topology_list_restart)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_primitive_topology_list_restart) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT);
@@ -5947,6 +6483,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSubpassShadingFeaturesHUAWEI structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceSubpassShadingFeaturesHUAWEI-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_huawei_subpass_shading)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceSubpassShadingFeaturesHUAWEI, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_HUAWEI_subpass_shading) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSubpassShadingFeaturesHUAWEI);
                 VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* structure = (VkPhysicalDeviceSubpassShadingFeaturesHUAWEI*)header;
@@ -5960,6 +6503,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceInvocationMaskFeaturesHUAWEI structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceInvocationMaskFeaturesHUAWEI-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_huawei_invocation_mask)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceInvocationMaskFeaturesHUAWEI, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_HUAWEI_invocation_mask) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceInvocationMaskFeaturesHUAWEI);
                 VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* structure = (VkPhysicalDeviceInvocationMaskFeaturesHUAWEI*)header;
@@ -5970,6 +6520,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExternalMemoryRDMAFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceExternalMemoryRDMAFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_external_memory_rdma)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExternalMemoryRDMAFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_external_memory_rdma) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExternalMemoryRDMAFeaturesNV);
                 VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* structure = (VkPhysicalDeviceExternalMemoryRDMAFeaturesNV*)header;
@@ -5980,6 +6537,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePipelinePropertiesFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT: {  // Covers
                                                                                     // VUID-VkPhysicalDevicePipelinePropertiesFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_pipeline_properties)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePipelinePropertiesFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_pipeline_properties) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePipelinePropertiesFeaturesEXT);
                 VkPhysicalDevicePipelinePropertiesFeaturesEXT* structure = (VkPhysicalDevicePipelinePropertiesFeaturesEXT*)header;
@@ -5990,6 +6554,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFrameBoundaryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT: {  // Covers
                                                                                // VUID-VkPhysicalDeviceFrameBoundaryFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_frame_boundary)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFrameBoundaryFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_frame_boundary) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFrameBoundaryFeaturesEXT);
                 VkPhysicalDeviceFrameBoundaryFeaturesEXT* structure = (VkPhysicalDeviceFrameBoundaryFeaturesEXT*)header;
@@ -6010,6 +6581,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT: {  // Covers
                                                                                                       // VUID-VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_multisampled_render_to_single_sampled) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT);
@@ -6042,6 +6620,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExtendedDynamicState2FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceExtendedDynamicState2FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExtendedDynamicState2FeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_extended_dynamic_state2) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExtendedDynamicState2FeaturesEXT);
                 VkPhysicalDeviceExtendedDynamicState2FeaturesEXT* structure =
@@ -6058,6 +6643,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceColorWriteEnableFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceColorWriteEnableFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_color_write_enable)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceColorWriteEnableFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_color_write_enable) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceColorWriteEnableFeaturesEXT);
                 VkPhysicalDeviceColorWriteEnableFeaturesEXT* structure = (VkPhysicalDeviceColorWriteEnableFeaturesEXT*)header;
@@ -6079,6 +6671,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVES_GENERATED_QUERY_FEATURES_EXT: {  // Covers
                                                                                            // VUID-VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_primitives_generated_query)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_primitives_generated_query) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT);
                 VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* structure =
@@ -6096,6 +6695,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageViewMinLodFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceImageViewMinLodFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_image_view_min_lod)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImageViewMinLodFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_image_view_min_lod) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageViewMinLodFeaturesEXT);
                 VkPhysicalDeviceImageViewMinLodFeaturesEXT* structure = (VkPhysicalDeviceImageViewMinLodFeaturesEXT*)header;
@@ -6109,6 +6715,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMultiDrawFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT: {  // Covers
                                                                            // VUID-VkPhysicalDeviceMultiDrawFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_multi_draw)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMultiDrawFeaturesEXT, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_multi_draw) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMultiDrawFeaturesEXT);
                 VkPhysicalDeviceMultiDrawFeaturesEXT* structure = (VkPhysicalDeviceMultiDrawFeaturesEXT*)header;
@@ -6122,6 +6735,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImage2DViewOf3DFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceImage2DViewOf3DFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_image_2d_view_of_3d)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImage2DViewOf3DFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_image_2d_view_of_3d) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImage2DViewOf3DFeaturesEXT);
                 VkPhysicalDeviceImage2DViewOf3DFeaturesEXT* structure = (VkPhysicalDeviceImage2DViewOf3DFeaturesEXT*)header;
@@ -6134,6 +6754,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderTileImageFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceShaderTileImageFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderTileImageFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_shader_tile_image) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderTileImageFeaturesEXT);
                 VkPhysicalDeviceShaderTileImageFeaturesEXT* structure = (VkPhysicalDeviceShaderTileImageFeaturesEXT*)header;
@@ -6154,6 +6781,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceOpacityMicromapFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_EXT: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceOpacityMicromapFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceOpacityMicromapFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_opacity_micromap) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceOpacityMicromapFeaturesEXT);
                 VkPhysicalDeviceOpacityMicromapFeaturesEXT* structure = (VkPhysicalDeviceOpacityMicromapFeaturesEXT*)header;
@@ -6196,6 +6830,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDisplacementMicromapFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceDisplacementMicromapFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_displacement_micromap)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDisplacementMicromapFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_displacement_micromap) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDisplacementMicromapFeaturesNV);
                 VkPhysicalDeviceDisplacementMicromapFeaturesNV* structure = (VkPhysicalDeviceDisplacementMicromapFeaturesNV*)header;
@@ -6243,6 +6884,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI: {  // Covers
                                                                                           // VUID-VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_huawei_cluster_culling_shader)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_HUAWEI_cluster_culling_shader) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI);
                 VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* structure =
@@ -6272,6 +6920,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceBorderColorSwizzleFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceBorderColorSwizzleFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_border_color_swizzle)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceBorderColorSwizzleFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_border_color_swizzle) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceBorderColorSwizzleFeaturesEXT);
                 VkPhysicalDeviceBorderColorSwizzleFeaturesEXT* structure = (VkPhysicalDeviceBorderColorSwizzleFeaturesEXT*)header;
@@ -6307,6 +6962,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT: {  // Covers
                                                                                              // VUID-VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_pageable_device_local_memory) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT);
                 VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* structure =
@@ -6324,6 +6986,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSchedulingControlsFeaturesARM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_FEATURES_ARM: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceSchedulingControlsFeaturesARM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_arm_scheduling_controls)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceSchedulingControlsFeaturesARM, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_ARM_scheduling_controls) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSchedulingControlsFeaturesARM);
                 VkPhysicalDeviceSchedulingControlsFeaturesARM* structure = (VkPhysicalDeviceSchedulingControlsFeaturesARM*)header;
@@ -6349,6 +7018,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT: {  // Covers
                                                                                         // VUID-VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_image_sliced_view_of_3d)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_image_sliced_view_of_3d) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT);
                 VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT* structure = (VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT*)header;
@@ -6362,6 +7038,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE: {  // Covers
                                                                                               // VUID-VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_valve_descriptor_set_host_mapping)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_VALVE_descriptor_set_host_mapping) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE);
@@ -6374,6 +7057,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDepthClampZeroOneFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceDepthClampZeroOneFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_depth_clamp_zero_one)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDepthClampZeroOneFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_depth_clamp_zero_one) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthClampZeroOneFeaturesEXT);
                 VkPhysicalDeviceDepthClampZeroOneFeaturesEXT* structure = (VkPhysicalDeviceDepthClampZeroOneFeaturesEXT*)header;
@@ -6384,6 +7074,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_non_seamless_cube_map)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_non_seamless_cube_map) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT);
                 VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT* structure = (VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT*)header;
@@ -6394,6 +7091,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRenderPassStripedFeaturesARM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RENDER_PASS_STRIPED_FEATURES_ARM: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceRenderPassStripedFeaturesARM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_arm_render_pass_striped)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRenderPassStripedFeaturesARM, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_ARM_render_pass_striped) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRenderPassStripedFeaturesARM);
                 VkPhysicalDeviceRenderPassStripedFeaturesARM* structure = (VkPhysicalDeviceRenderPassStripedFeaturesARM*)header;
@@ -6457,6 +7161,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_fragment_density_map_offset)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_QCOM_fragment_density_map_offset) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM);
                 VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* structure =
@@ -6492,6 +7203,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCopyMemoryIndirectFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceCopyMemoryIndirectFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCopyMemoryIndirectFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_copy_memory_indirect) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCopyMemoryIndirectFeaturesNV);
                 VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* structure = (VkPhysicalDeviceCopyMemoryIndirectFeaturesNV*)header;
@@ -6505,6 +7223,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMemoryDecompressionFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceMemoryDecompressionFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_memory_decompression)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMemoryDecompressionFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_memory_decompression) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMemoryDecompressionFeaturesNV);
                 VkPhysicalDeviceMemoryDecompressionFeaturesNV* structure = (VkPhysicalDeviceMemoryDecompressionFeaturesNV*)header;
@@ -6518,6 +7243,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV: {  // Covers
                                                                                                  // VUID-VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands_compute)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_NV_device_generated_commands_compute) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV);
@@ -6536,6 +7268,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceLinearColorAttachmentFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceLinearColorAttachmentFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceLinearColorAttachmentFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_linear_color_attachment) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLinearColorAttachmentFeaturesNV);
                 VkPhysicalDeviceLinearColorAttachmentFeaturesNV* structure =
@@ -6547,6 +7286,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT: {  // Covers
                                                                                                     // VUID-VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_image_compression_control_swapchain)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_image_compression_control_swapchain) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT);
@@ -6563,6 +7309,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageProcessingFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceImageProcessingFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_image_processing)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImageProcessingFeaturesQCOM, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_QCOM_image_processing) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageProcessingFeaturesQCOM);
                 VkPhysicalDeviceImageProcessingFeaturesQCOM* structure = (VkPhysicalDeviceImageProcessingFeaturesQCOM*)header;
@@ -6580,6 +7333,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceNestedCommandBufferFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_FEATURES_EXT: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceNestedCommandBufferFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_nested_command_buffer)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceNestedCommandBufferFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_nested_command_buffer) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceNestedCommandBufferFeaturesEXT);
                 VkPhysicalDeviceNestedCommandBufferFeaturesEXT* structure = (VkPhysicalDeviceNestedCommandBufferFeaturesEXT*)header;
@@ -6608,6 +7368,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExtendedDynamicState3FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceExtendedDynamicState3FeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExtendedDynamicState3FeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_extended_dynamic_state3) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExtendedDynamicState3FeaturesEXT);
                 VkPhysicalDeviceExtendedDynamicState3FeaturesEXT* structure =
@@ -6722,6 +7489,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_subpass_merge_feedback)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_subpass_merge_feedback) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT);
                 VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT* structure =
@@ -6797,6 +7571,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_module_identifier)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_shader_module_identifier) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT);
                 VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT* structure =
@@ -6824,6 +7605,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceOpticalFlowFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_FEATURES_NV: {  // Covers
                                                                             // VUID-VkPhysicalDeviceOpticalFlowFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_optical_flow)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceOpticalFlowFeaturesNV, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_NV_optical_flow) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceOpticalFlowFeaturesNV);
                 VkPhysicalDeviceOpticalFlowFeaturesNV* structure = (VkPhysicalDeviceOpticalFlowFeaturesNV*)header;
@@ -6859,6 +7647,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceLegacyDitheringFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceLegacyDitheringFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_legacy_dithering)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceLegacyDitheringFeaturesEXT, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_EXT_legacy_dithering) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLegacyDitheringFeaturesEXT);
                 VkPhysicalDeviceLegacyDitheringFeaturesEXT* structure = (VkPhysicalDeviceLegacyDitheringFeaturesEXT*)header;
@@ -6869,6 +7664,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePipelineProtectedAccessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES_EXT: {  // Covers
                                                                                           // VUID-VkPhysicalDevicePipelineProtectedAccessFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_pipeline_protected_access)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePipelineProtectedAccessFeaturesEXT, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_EXT_pipeline_protected_access) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePipelineProtectedAccessFeaturesEXT);
                 VkPhysicalDevicePipelineProtectedAccessFeaturesEXT* structure =
@@ -6881,6 +7683,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExternalFormatResolveFeaturesANDROID structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_FEATURES_ANDROID: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceExternalFormatResolveFeaturesANDROID-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_android_external_format_resolve)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExternalFormatResolveFeaturesANDROID, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_ANDROID_external_format_resolve) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExternalFormatResolveFeaturesANDROID);
                 VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* structure =
@@ -6899,6 +7708,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderObjectFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {  // Covers
                                                                               // VUID-VkPhysicalDeviceShaderObjectFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_shader_object)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderObjectFeaturesEXT, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_shader_object) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderObjectFeaturesEXT);
                 VkPhysicalDeviceShaderObjectFeaturesEXT* structure = (VkPhysicalDeviceShaderObjectFeaturesEXT*)header;
@@ -6912,6 +7728,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTilePropertiesFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceTilePropertiesFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_tile_properties)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceTilePropertiesFeaturesQCOM, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_QCOM_tile_properties) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTilePropertiesFeaturesQCOM);
                 VkPhysicalDeviceTilePropertiesFeaturesQCOM* structure = (VkPhysicalDeviceTilePropertiesFeaturesQCOM*)header;
@@ -6922,6 +7745,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceAmigoProfilingFeaturesSEC structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_AMIGO_PROFILING_FEATURES_SEC: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceAmigoProfilingFeaturesSEC-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_sec_amigo_profiling)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceAmigoProfilingFeaturesSEC, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_SEC_amigo_profiling) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceAmigoProfilingFeaturesSEC);
                 VkPhysicalDeviceAmigoProfilingFeaturesSEC* structure = (VkPhysicalDeviceAmigoProfilingFeaturesSEC*)header;
@@ -6935,6 +7765,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM: {  // Covers
                                                                                               // VUID-VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_multiview_per_view_viewports)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_QCOM_multiview_per_view_viewports) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM);
@@ -6950,6 +7787,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {  // Covers
                                                                                               // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing_invocation_reorder)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_ray_tracing_invocation_reorder) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV);
@@ -6962,6 +7806,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_FEATURES_NV: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_extended_sparse_address_space)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_extended_sparse_address_space) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV);
                 VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* structure =
@@ -7009,6 +7860,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_arm_shader_core_builtins)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_ARM_shader_core_builtins) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM);
                 VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* structure = (VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM*)header;
@@ -7022,6 +7880,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT: {  // Covers
                                                                                                // VUID-VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_pipeline_library_group_handles)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_pipeline_library_group_handles) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT);
@@ -7034,6 +7899,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT: {  // Covers
                                                                                                      // VUID-VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_dynamic_rendering_unused_attachments)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_dynamic_rendering_unused_attachments) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT);
@@ -7062,6 +7934,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM: {  // Covers
                                                                                                  // VUID-VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_multiview_per_view_render_areas)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_QCOM_multiview_per_view_render_areas) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM);
@@ -7096,6 +7975,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePerStageDescriptorSetFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PER_STAGE_DESCRIPTOR_SET_FEATURES_NV: {  // Covers
                                                                                         // VUID-VkPhysicalDevicePerStageDescriptorSetFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_per_stage_descriptor_set)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDevicePerStageDescriptorSetFeaturesNV, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_NV_per_stage_descriptor_set) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePerStageDescriptorSetFeaturesNV);
                 VkPhysicalDevicePerStageDescriptorSetFeaturesNV* structure =
@@ -7109,6 +7995,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageProcessing2FeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_FEATURES_QCOM: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceImageProcessing2FeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_image_processing2)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceImageProcessing2FeaturesQCOM, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_QCOM_image_processing2) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageProcessing2FeaturesQCOM);
                 VkPhysicalDeviceImageProcessing2FeaturesQCOM* structure = (VkPhysicalDeviceImageProcessing2FeaturesQCOM*)header;
@@ -7134,6 +8027,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCubicWeightsFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM: {  // Covers
                                                                                // VUID-VkPhysicalDeviceCubicWeightsFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_filter_cubic_weights)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCubicWeightsFeaturesQCOM, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_QCOM_filter_cubic_weights) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCubicWeightsFeaturesQCOM);
                 VkPhysicalDeviceCubicWeightsFeaturesQCOM* structure = (VkPhysicalDeviceCubicWeightsFeaturesQCOM*)header;
@@ -7165,6 +8065,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceYcbcrDegammaFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_DEGAMMA_FEATURES_QCOM: {  // Covers
                                                                                // VUID-VkPhysicalDeviceYcbcrDegammaFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_ycbcr_degamma)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceYcbcrDegammaFeaturesQCOM, but when creating VkDevice, "
+                                 "the parent extension "
+                                 "(VK_QCOM_ycbcr_degamma) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceYcbcrDegammaFeaturesQCOM);
                 VkPhysicalDeviceYcbcrDegammaFeaturesQCOM* structure = (VkPhysicalDeviceYcbcrDegammaFeaturesQCOM*)header;
@@ -7188,6 +8095,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceCubicClampFeaturesQCOM structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_CLAMP_FEATURES_QCOM: {  // Covers
                                                                              // VUID-VkPhysicalDeviceCubicClampFeaturesQCOM-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qcom_filter_cubic_clamp)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceCubicClampFeaturesQCOM, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_QCOM_filter_cubic_clamp) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCubicClampFeaturesQCOM);
                 VkPhysicalDeviceCubicClampFeaturesQCOM* structure = (VkPhysicalDeviceCubicClampFeaturesQCOM*)header;
@@ -7198,6 +8112,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_FEATURES_EXT: {  // Covers
                                                                                                        // VUID-VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_attachment_feedback_loop_dynamic_state)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_EXT_attachment_feedback_loop_dynamic_state) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT);
@@ -7220,6 +8141,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX: {  // Covers
                                                                                               // VUID-VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_qnx_external_memory_screen_buffer)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_QNX_external_memory_screen_buffer) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX);
@@ -7236,6 +8164,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV: {  // Covers
                                                                                               // VUID-VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_nv_descriptor_pool_overallocation)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV, but when "
+                                 "creating VkDevice, the parent extension "
+                                 "(VK_NV_descriptor_pool_overallocation) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
                     loc.pNext(Struct::VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV);
@@ -7262,6 +8197,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceAccelerationStructureFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_acceleration_structure) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceAccelerationStructureFeaturesKHR);
                 VkPhysicalDeviceAccelerationStructureFeaturesKHR* structure =
@@ -7288,6 +8230,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRayTracingPipelineFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceRayTracingPipelineFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceRayTracingPipelineFeaturesKHR, but when creating "
+                                 "VkDevice, the parent extension "
+                                 "(VK_KHR_ray_tracing_pipeline) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRayTracingPipelineFeaturesKHR);
                 VkPhysicalDeviceRayTracingPipelineFeaturesKHR* structure = (VkPhysicalDeviceRayTracingPipelineFeaturesKHR*)header;
@@ -7312,6 +8261,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceRayQueryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR: {  // Covers
                                                                           // VUID-VkPhysicalDeviceRayQueryFeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_khr_ray_query)) {
+                skip |= LogError(
+                    pnext_vuid, instance, loc.dot(Field::pNext),
+                    "includes a pointer to a VkPhysicalDeviceRayQueryFeaturesKHR, but when creating VkDevice, the parent extension "
+                    "(VK_KHR_ray_query) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRayQueryFeaturesKHR);
                 VkPhysicalDeviceRayQueryFeaturesKHR* structure = (VkPhysicalDeviceRayQueryFeaturesKHR*)header;
@@ -7322,6 +8278,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMeshShaderFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT: {  // Covers
                                                                             // VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-sType-sType
+
+            if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkPhysicalDeviceMeshShaderFeaturesEXT, but when creating VkDevice, the "
+                                 "parent extension "
+                                 "(VK_EXT_mesh_shader) was not included in ppEnabledExtensionNames.");
+            }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMeshShaderFeaturesEXT);
                 VkPhysicalDeviceMeshShaderFeaturesEXT* structure = (VkPhysicalDeviceMeshShaderFeaturesEXT*)header;
