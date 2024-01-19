@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -647,23 +647,13 @@ void BestPractices::RecordCmdNextSubpass(VkCommandBuffer commandBuffer) {
 
 void BestPractices::RecordCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size) {
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    if (cb_state) {
-        if (cb_state->push_constant_data_ranges && !cb_state->push_constant_data_ranges->empty()) {
-            uint32_t start = cb_state->push_constant_data_ranges->at(0).offset;
-            uint32_t end = cb_state->push_constant_data_ranges->at(0).offset + cb_state->push_constant_data_ranges->at(0).size;
-            for (const auto& push_constant_range : *cb_state->push_constant_data_ranges) {
-                if (push_constant_range.offset < start) {
-                    start = push_constant_range.offset;
-                }
-                if (push_constant_range.offset + push_constant_range.size > end) {
-                    end = push_constant_range.offset + push_constant_range.size;
-                }
-            }
-            cb_state->push_constant_data_set.resize(start, 1);
-            cb_state->push_constant_data_set.resize(end, 0);
-            std::fill(cb_state->push_constant_data_set.begin() + offset, cb_state->push_constant_data_set.begin() + offset + size,
-                      1);
+    if (cb_state->push_constant_data_ranges && !cb_state->push_constant_data_ranges->empty()) {
+        // only reset if a found the push constant have been disturbed
+        if (cb_state->push_constant_data.size() != cb_state->push_constant_data_set.size()) {
+            cb_state->push_constant_data_set.resize(cb_state->push_constant_data.size(), 0);
         }
+        std::fill(cb_state->push_constant_data_set.begin() + offset, cb_state->push_constant_data_set.begin() + offset + size,
+                    1);
     }
 }
 

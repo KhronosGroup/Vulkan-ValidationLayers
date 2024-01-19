@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,4 +217,51 @@ TEST_F(VkPositiveBestPracticesLayerTest, PipelineLibraryNoRendering) {
     pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pre_raster_lib.CreateGraphicsPipeline();
+}
+
+TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    char const *const vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { uint x[4]; } constants;
+        void main(){
+           gl_Position = vec4(constants.x[0] * constants.x[1]);
+        }
+    )glsl";
+
+    const char fsSource[] = R"glsl(
+        #version 460
+        layout(push_constant, std430) uniform foo { float x; } constants;
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+            uFragColor = vec4(0,1,0,constants.x);
+        }
+    )glsl";
+
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    uint32_t data[5];
+    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_VERTEX_BIT, 0, 16},
+                                                             {VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4}};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, push_constant_ranges);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16, data);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4, data);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
