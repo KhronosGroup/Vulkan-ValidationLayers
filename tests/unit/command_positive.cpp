@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -806,69 +806,6 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
 
     cb.begin();
     vk::CmdFillBuffer(cb.handle(), buffer.handle(), 0, 12, 0x11111111);
-    cb.end();
-}
-
-TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffer) {
-    TEST_DESCRIPTION("Create a debug label on a primary command buffer");
-
-    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-    m_commandBuffer->begin();
-
-    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
-    label.pLabelName = "test";
-    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-
-    m_commandBuffer->end();
-
-    m_default_queue->submit(*m_commandBuffer);
-    m_default_queue->wait();
-}
-
-TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
-    TEST_DESCRIPTION("Begin a debug label on 1 command buffer, then end it on another command buffer");
-
-    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-
-    vkt::CommandBuffer command_buffer_start(m_device, m_commandPool);
-    vkt::CommandBuffer command_buffer_end(m_device, m_commandPool);
-
-    // Start DebugLabel on 1 command buffer
-    {
-        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
-        label.pLabelName = "test";
-        command_buffer_start.begin();
-        vk::CmdBeginDebugUtilsLabelEXT(command_buffer_start.handle(), &label);
-        command_buffer_start.end();
-    }
-
-    // End DebugLabel on another command buffer
-    {
-        command_buffer_end.begin();
-        vk::CmdEndDebugUtilsLabelEXT(command_buffer_end.handle());
-        command_buffer_end.end();
-    }
-
-    vkt::Fence fence;
-    std::vector<const vkt::CommandBuffer *> command_buffers = {&command_buffer_start, &command_buffer_end};
-    m_default_queue->submit(command_buffers, fence);
-    m_default_queue->wait();
-}
-
-TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {
-    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-    vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    cb.begin();
-    {
-        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
-        label.pLabelName = "test";
-        vk::CmdBeginDebugUtilsLabelEXT(cb, &label);
-        vk::CmdEndDebugUtilsLabelEXT(cb);
-    }
     cb.end();
 }
 
