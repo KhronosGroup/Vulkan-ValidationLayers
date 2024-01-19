@@ -2373,8 +2373,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTy
     build_info.SetSrcAS(build_info.GetDstAS());
     build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
     build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
-    build_info.GetGeometries()[0].SetType(vkt::as::GeometryKHR::Type::AABB);
-    build_info.GetGeometries()[0].SetAABBsStride(4096);
+    build_info.GetGeometries()[0] = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03761");
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
@@ -2681,6 +2680,27 @@ TEST_F(NegativeRayTracing, TrianglesIndexBufferInvalidAddress) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806");
+    build_info.BuildCmdBuffer(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, AabbBufferInvalidAddress) {
+    TEST_DESCRIPTION("Use a AABB buffer specified referencing a device address that referencing no existing buffer");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    build_info.GetGeometries()[0] = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
+    build_info.GetGeometries()[0].SetAABBsDeviceAddress(2);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811");
     build_info.BuildCmdBuffer(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
