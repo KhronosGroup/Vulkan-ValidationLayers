@@ -86,6 +86,9 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkGetDescriptorEXT',
             'vkReleasePerformanceConfigurationINTEL',
             'vkExportMetalObjectsEXT',
+            'vkGetWinrtDisplayNV',
+            'vkGetRandROutputDisplayEXT',
+            'vkGetDrmDisplayEXT',
             # These are for special-casing the pInheritanceInfo issue (must be ignored for primary CBs)
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
@@ -219,7 +222,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             out.extend(guard_helper.add_guard(command.protect))
 
             # Generate NDO wrapping/unwrapping code for all parameters
-            isCreate = any(x in command.name for x in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'GetDrmDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL'])
+            isCreate = any(x in command.name for x in ['Create', 'Allocate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL'])
             isDestroy = any(x in command.name for x in ['Destroy', 'Free'])
 
             # Handle ndo create/allocate operations
