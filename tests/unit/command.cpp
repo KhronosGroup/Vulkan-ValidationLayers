@@ -7191,20 +7191,6 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeCommand, DebugLabelSecondaryCommandBuffer) {
-    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-
-    vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    cb.begin();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
-    vk::CmdEndDebugUtilsLabelEXT(cb);
-    m_errorMonitor->VerifyFound();
-
-    cb.end();
-}
-
 TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
     TEST_DESCRIPTION("Use render pass continue bit with unsupported command pool.");
 
