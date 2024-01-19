@@ -40,11 +40,12 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    uint32_t max_primitives_count;
+    uint32_t max_primitives_count = 0;
     VkAccelerationStructureBuildSizesInfoKHR build_sizes_info = vku::InitStructHelper();
     vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
                                               &max_primitives_count, &build_sizes_info);
@@ -811,7 +812,7 @@ TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
     RETURN_IF_SKIP(InitState());
 
     auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    auto size_info = build_info.GetSizeInfo(*m_device);
+    auto size_info = build_info.GetSizeInfo();
     if (size_info.buildScratchSize <= 64) {
         GTEST_SKIP() << "Need a big scratch size, skipping test.";
     }
