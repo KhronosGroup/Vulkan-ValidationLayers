@@ -792,6 +792,30 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracing, CopyMemoryToAccelerationStructureHostAddress) {
+    TEST_DESCRIPTION("vkCopyMemoryToAccelerationStructureKHR but the hostAddress is not aligned to 16.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    RETURN_IF_SKIP(Init());
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
+    blas->Build();
+
+    VkDeviceOrHostAddressConstKHR output_data;
+    output_data.hostAddress = reinterpret_cast<void *>(0x00000021);
+
+    VkCopyMemoryToAccelerationStructureInfoKHR info = vku::InitStructHelper();
+    info.dst = blas->handle();
+    info.src = output_data;
+    info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03750");
+    vk::CopyMemoryToAccelerationStructureKHR(device(), VK_NULL_HANDLE, &info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     TEST_DESCRIPTION("Test invalid buffer used in vkCopyMemoryToAccelerationStructureKHR.");
 
@@ -820,8 +844,9 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     blas->Build();
 
     uint8_t output[4096];
+    uint8_t *aligned_output = reinterpret_cast<uint8_t *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(output), 16));
     VkDeviceOrHostAddressConstKHR output_data;
-    output_data.hostAddress = reinterpret_cast<void *>(output);
+    output_data.hostAddress = aligned_output;
 
     VkCopyMemoryToAccelerationStructureInfoKHR info = vku::InitStructHelper();
     info.dst = blas->handle();
@@ -1369,6 +1394,25 @@ TEST_F(NegativeRayTracing, IndirectCmdBuildAccelerationStructuresKHR) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03800");
     build_info_null_dst.BuildCmdBufferIndirect(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, IndirectStridesMultiple) {
+    TEST_DESCRIPTION("pIndirectStrides not a multiple of 4.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetIndirectStride(13);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectStrides-03787");
+    blas.BuildCmdBufferIndirect(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }
 

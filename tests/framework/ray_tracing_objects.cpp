@@ -416,6 +416,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetUpdateDstAccelStructSizeBeforeBui
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetIndirectStride(uint32_t indirect_stride) {
+    indirect_stride_ = indirect_stride;
+    return *this;
+}
+
 void BuildGeometryInfoKHR::BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     if (blas_) {
         blas_->BuildCmdBuffer(cmd_buffer, use_ppGeometries);
@@ -581,14 +586,13 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
 
     indirect_buffer_->memory().unmap();
 
-    const uint32_t indirect_strides = sizeof(VkAccelerationStructureBuildRangeInfoKHR);
     std::vector<uint32_t> p_max_primitive_counts(vk_info_.geometryCount, 1);
     const uint32_t *pp_max_primitive_counts = p_max_primitive_counts.data();
 
-    const VkDeviceAddress indirect_device_address = indirect_buffer_->address();
+    const VkDeviceAddress indirect_address = indirect_buffer_->address();
 
-    vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_device_address,
-                                                  &indirect_strides, &pp_max_primitive_counts);
+    vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_address, &indirect_stride_,
+                                                  &pp_max_primitive_counts);
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
