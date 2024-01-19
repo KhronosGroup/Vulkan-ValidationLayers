@@ -72,8 +72,8 @@ class AccelerationStructureNV : public Bindable {
 class AccelerationStructureKHR : public StateObject {
   public:
     AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                             std::shared_ptr<Buffer> &&buf_state, VkDeviceAddress address)
-        : StateObject(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
+                             std::shared_ptr<Buffer> &&buf_state)
+        : StateObject(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     virtual ~AccelerationStructureKHR() {
@@ -110,13 +110,12 @@ class AccelerationStructureKHR : public StateObject {
         }
     }
 
-    const safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
-    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
+    const safe_VkAccelerationStructureCreateInfoKHR create_infoKHR{};
+    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr{};
     bool built = false;
     uint64_t opaque_handle = 0;
-    std::shared_ptr<vvl::Buffer> buffer_state;
-    VkDeviceAddress address;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos;
+    std::shared_ptr<vvl::Buffer> buffer_state{};
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
 };
 
 }  // namespace vvl

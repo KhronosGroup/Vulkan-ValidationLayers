@@ -2328,9 +2328,8 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
 }
 
 std::shared_ptr<vvl::AccelerationStructureKHR> ValidationStateTracker::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state,
-    VkDeviceAddress address) {
-    return std::make_shared<vvl::AccelerationStructureKHR>(as, ci, std::move(buf_state), address);
+    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state) {
+    return std::make_shared<vvl::AccelerationStructureKHR>(as, ci, std::move(buf_state));
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
@@ -2340,10 +2339,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
                                                                           const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     auto buffer_state = Get<vvl::Buffer>(pCreateInfo->buffer);
-    VkAccelerationStructureDeviceAddressInfoKHR as_address_info = vku::InitStructHelper();
-    as_address_info.accelerationStructure = *pAccelerationStructure;
-    const VkDeviceAddress as_address = DispatchGetAccelerationStructureDeviceAddressKHR(device, &as_address_info);
-    Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo, std::move(buffer_state), as_address));
+    Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo, std::move(buffer_state)));
 }
 
 void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(

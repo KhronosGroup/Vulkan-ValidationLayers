@@ -693,7 +693,7 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
         VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
-        std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address);
+        std::shared_ptr<vvl::Buffer>&& buf_state);
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureKHR* pAccelerationStructure,
