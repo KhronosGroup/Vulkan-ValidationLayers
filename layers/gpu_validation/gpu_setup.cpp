@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2023 The Khronos Group Inc.
- * Copyright (c) 2018-2023 Valve Corporation
- * Copyright (c) 2018-2023 LunarG, Inc.
+/* Copyright (c) 2018-2024 The Khronos Group Inc.
+ * Copyright (c) 2018-2024 Valve Corporation
+ * Copyright (c) 2018-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,8 @@ std::shared_ptr<vvl::AccelerationStructureNV> gpuav::Validator::CreateAccelerati
 }
 
 std::shared_ptr<vvl::AccelerationStructureKHR> gpuav::Validator::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state,
-    VkDeviceAddress address) {
-    return std::make_shared<AccelerationStructureKHR>(as, ci, std::move(buf_state), address, *desc_heap);
+    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<vvl::Buffer> &&buf_state) {
+    return std::make_shared<AccelerationStructureKHR>(as, ci, std::move(buf_state), *desc_heap);
 }
 
 std::shared_ptr<vvl::Sampler> gpuav::Validator::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {

@@ -142,7 +142,7 @@ class Validator : public gpu_tracker::Validator {
         VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo) final;
     std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
         VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
-        std::shared_ptr<vvl::Buffer>&& buf_state, VkDeviceAddress address) final;
+        std::shared_ptr<vvl::Buffer>&& buf_state) final;
     std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) final;

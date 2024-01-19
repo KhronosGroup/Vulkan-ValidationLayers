@@ -84,9 +84,8 @@ void gpuav::Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink
 
 gpuav::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as,
                                                           const VkAccelerationStructureCreateInfoKHR *ci,
-                                                          std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress address,
-                                                          DescriptorHeap &desc_heap_)
-    : vvl::AccelerationStructureKHR(as, ci, std::move(buf_state), address),
+                                                          std::shared_ptr<vvl::Buffer> &&buf_state, DescriptorHeap &desc_heap_)
+    : vvl::AccelerationStructureKHR(as, ci, std::move(buf_state)),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureKHR))) {}
 
