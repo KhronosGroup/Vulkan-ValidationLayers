@@ -5652,18 +5652,6 @@ VkResult DispatchAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display*
 
     return result;
 }
-
-VkResult DispatchGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
-                                          VkDisplayKHR* pDisplay) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
-
-    VkResult result = layer_data->instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
-    if (VK_SUCCESS == result) {
-        *pDisplay = layer_data->WrapNew(*pDisplay);
-    }
-    return result;
-}
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 VkResult DispatchGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
@@ -7144,17 +7132,6 @@ VkResult DispatchAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t d
     return result;
 }
 
-VkResult DispatchGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR* display) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-
-    VkResult result = layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-    if (VK_SUCCESS == result) {
-        *display = layer_data->WrapNew(*display);
-    }
-    return result;
-}
-
 VkResult DispatchCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -7469,15 +7446,6 @@ VkResult DispatchAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDispla
     if (!wrap_handles) return layer_data->instance_dispatch_table.AcquireWinrtDisplayNV(physicalDevice, display);
     { display = layer_data->Unwrap(display); }
     VkResult result = layer_data->instance_dispatch_table.AcquireWinrtDisplayNV(physicalDevice, display);
-
-    return result;
-}
-
-VkResult DispatchGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
-    { pDisplay = layer_data->Unwrap(pDisplay); }
-    VkResult result = layer_data->instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
 
     return result;
 }
