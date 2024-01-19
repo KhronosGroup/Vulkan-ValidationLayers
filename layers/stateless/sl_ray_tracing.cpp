@@ -770,6 +770,13 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
     }
     skip |= ValidateRequiredPointer(info_loc.dot(Field::src).dot(Field::hostAddress), pInfo->src.hostAddress,
                                     "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03729");
+
+    if (SafeModulo((VkDeviceAddress)pInfo->src.hostAddress, 16) != 0) {
+        skip |= LogError("VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03750", device,
+                         info_loc.dot(Field::src).dot(Field::hostAddress), "(0x%" PRIx64 ") must be aligned to 16 bytes.",
+                         (VkDeviceAddress)pInfo->src.hostAddress);
+    }
+
     return skip;
 }
 
@@ -1501,6 +1508,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                     }
                 }
             }
+        }
+
+        if (SafeModulo(pIndirectStrides[i], 4) != 0) {
+            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectStrides-03787", commandBuffer,
+                             error_obj.location.dot(Field::pIndirectStrides, i), "is %" PRIu32 ".", pIndirectStrides[i]);
         }
     }
     return skip;
