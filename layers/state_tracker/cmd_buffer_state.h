@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -686,15 +686,25 @@ class CommandBuffer : public RefcountedStateObject {
     }
 
     bool IsPrimary() const { return createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
-    void BeginLabel() { ++label_stack_depth_; }
-    void EndLabel() { --label_stack_depth_; }
+    void BeginLabel(const char *label_name);
+    void EndLabel();
     int LabelStackDepth() const { return label_stack_depth_; }
+
+    struct DebugLabelCommand {
+        bool begin = false;      // vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT
+        std::string label_name;  // used when begin == true
+    };
+    const std::vector<DebugLabelCommand> &GetDebugLabelCommands() const { return debug_label_commands_; }
 
   private:
     void ResetCBState();
 
-    // Keep track of how many CmdBeginDebugUtilsLabelEXT calls have been made without a matching CmdEndDebugUtilsLabelEXT
+    // Keep track of how many CmdBeginDebugUtilsLabelEXT calls have been made without a matching CmdEndDebugUtilsLabelEXT.
+    // Negative value for a secondary command buffer indicates invalid state.
+    // Negative value for a primary command buffer is allowed. Validation is done at submit time accross all command buffers.
     int label_stack_depth_ = 0;
+    // Used during sumbit time validation.
+    std::vector<DebugLabelCommand> debug_label_commands_;
 
     uint32_t active_subpass_;
     // Stores rasterization samples count obtained from the first pipeline with a pMultisampleState in the active subpass,

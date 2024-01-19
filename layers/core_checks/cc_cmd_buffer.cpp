@@ -1770,7 +1770,7 @@ void CoreChecks::PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer comman
                                                           const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
-    cb_state->BeginLabel();
+    cb_state->BeginLabel((pLabelInfo && pLabelInfo->pLabelName) ? pLabelInfo->pLabelName : "");
 }
 
 bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {

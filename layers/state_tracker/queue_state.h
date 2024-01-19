@@ -1,7 +1,7 @@
 /* Copyright (c) 2015-2024 The Khronos Group Inc.
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,6 +103,16 @@ class Queue: public StateObject {
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
     const VkQueueFamilyProperties queueFamilyProperties;
+
+    // Track command buffer label stack depth accross all command buffers submitted to this queue.
+    // Negative value indicates unbalanced usage of begin/end label commands.
+    // Access to this variable relies on external queue synchronization.
+    int cmdbuf_label_stack_depth{0};
+
+    // Track the last closed label. It is used in the error messages to help locate unbalanced vkCmdEndDebugUtilsLabelEXT command.
+    // Access to these variables relies on external queue synchronization.
+    std::vector<std::string> cmdbuf_label_names;
+    std::string last_closed_cmdbuf_label;
 
   private:
     using LockGuard = std::unique_lock<std::mutex>;

@@ -196,6 +196,8 @@ void CommandBuffer::ResetCBState() {
 
     // Clean up the label data
     debug_label.Reset();
+    label_stack_depth_ = 0;
+    debug_label_commands_.clear();
 
     // Best practices info
     small_indexed_draw_call_count = 0;
@@ -1643,6 +1645,16 @@ void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipel
     }
     *rtn_pipe = last_bound.pipeline_state;
     *rtn_sets = &(last_bound.per_set);
+}
+
+void CommandBuffer::BeginLabel(const char *label_name) {
+    ++label_stack_depth_;
+    debug_label_commands_.push_back(DebugLabelCommand{true, label_name});
+}
+
+void CommandBuffer::EndLabel() {
+    --label_stack_depth_;
+    debug_label_commands_.push_back(DebugLabelCommand{false, std::string()});
 }
 
 }  // namespace vvl
