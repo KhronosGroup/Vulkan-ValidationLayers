@@ -139,7 +139,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - name: Cache known_good.json installations
         id: cache-deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             build-ci/external/glslang/build/install
