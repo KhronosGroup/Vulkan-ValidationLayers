@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -368,6 +368,47 @@ TEST_F(NegativeYcbcr, Formats) {
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260");
     image_create_info = reset_create_info;
+}
+
+TEST_F(NegativeYcbcr, ImageViewFormat) {
+    TEST_DESCRIPTION("Creating image view with invalid formats, but use image format list to get a valid VkImage.");
+    RETURN_IF_SKIP(InitBasicYcbcr());
+    InitRenderTarget();
+
+    if (!FormatIsSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
+        GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
+    }
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    image_create_info.extent.width = 31;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.arrayLayers = 1;
+
+    // The only way around this is to use VK_KHR_image_format_list, but currently could not find anyone who supports it for YCbCr
+    // formats, but could in the future
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-format-04712");
+    vkt::Image image(*m_device, image_create_info);
+    if (!image.initialized()) {
+        GTEST_SKIP() << "image couldn't be created";
+    }
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+
+    auto ivci = vku::InitStruct<VkImageViewCreateInfo>(&conversion_info);
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-format-04714");
+    vkt::ImageView view(*m_device, ivci);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
