@@ -539,7 +539,11 @@ class VideoEncodeInput : public VideoPictureResource {
     VideoEncodeInput(vkt::Device* device, const VideoConfig& config, bool is_protected = false)
         : VideoPictureResource(device), picture_(vku::InitStruct<VkVideoPictureResourceInfoKHR>()) {
         if (config.UseProfileIndependentResources()) {
-            Init(nullptr, config.MaxCodedExtent(), 1, *config.PictureFormatProps(), is_protected);
+            // For profile independent encode input pictures make sure to exclude DPB usage
+            // even if the implementation supports the same format for both input and DPB
+            auto format_props = *config.PictureFormatProps();
+            format_props.imageUsageFlags &= ~VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
+            Init(nullptr, config.MaxCodedExtent(), 1, format_props, is_protected);
         } else {
             VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
             profile_list.profileCount = 1;
