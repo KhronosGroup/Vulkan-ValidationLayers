@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -2301,6 +2301,19 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     skip |= ValidateImageViewSampleWeightQCOM(pCreateInfo, image_state, create_info_loc);
+
+    // If Chroma subsampled format ( _420_ or _422_ )
+    if (vkuFormatIsXChromaSubsampled(view_format) && (SafeModulo(image_state.createInfo.extent.width, 2) != 0)) {
+        skip |= LogError("VUID-VkImageViewCreateInfo-format-04714", device, create_info_loc.dot(Field::format),
+                         "(%s) is X Chroma Subsampled (has _422 or _420 suffix) so the image width (%" PRIu32
+                         ") must be a multiple of 2.",
+                         string_VkFormat(view_format), image_state.createInfo.extent.width);
+    }
+    if (vkuFormatIsYChromaSubsampled(view_format) && (SafeModulo(image_state.createInfo.extent.height, 2) != 0)) {
+        skip |= LogError("VUID-VkImageViewCreateInfo-format-04715", device, create_info_loc.dot(Field::format),
+                         "(%s) is Y Chroma Subsampled (has _420 suffix) so the image height (%" PRIu32 ") must be a multiple of 2.",
+                         string_VkFormat(view_format), image_state.createInfo.extent.height);
+    }
 
     return skip;
 }
