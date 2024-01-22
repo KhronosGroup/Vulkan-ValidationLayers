@@ -2476,8 +2476,13 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
 
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
 
+    m_commandBuffer->end();
+    vk::DeviceWaitIdle(*m_device);
+    m_commandBuffer->begin();
+
     build_info.SetSrcAS(build_info.GetDstAS());
     build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetScratchBuffer(std::make_shared<vkt::Buffer>());
     build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
     build_info.GetGeometries()[0].SetTrianglesVertexFormat(second_triangles_vertex_format);
 
@@ -2653,8 +2658,13 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
 
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
 
+    m_commandBuffer->end();
+    vk::DeviceWaitIdle(*m_device);
+    m_commandBuffer->begin();
+
     build_info.SetSrcAS(build_info.GetDstAS());
     build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    build_info.SetScratchBuffer(std::make_shared<vkt::Buffer>());
     build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
     build_info.GetGeometries()[0].SetTrianglesTransformatData(666 * 16);
 
