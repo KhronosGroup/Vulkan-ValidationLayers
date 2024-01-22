@@ -1692,36 +1692,40 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
     if (image_state.createInfo.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
         if ((image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) &&
             !(tiling_features & VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR)) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08333",
-                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR.",
-                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-08333", image_state.image(), create_info_loc.dot(Field::format),
+                             "%s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR (supported: %s).",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                             string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
                    !(tiling_features & VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR)) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08334",
-                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR.",
-                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-08334", image_state.image(), create_info_loc.dot(Field::format),
+                             "%s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR (supported: %s).",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                             string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if (image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08335",
-                             "vkCreateImageView(): image views from video profile independent images with usage "
-                             "VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR are not allowed.");
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-08335", image_state.image(), create_info_loc.dot(Field::usage),
+                             "is VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR which is not allowed for image views from video profile "
+                             "independent images.");
         } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR) &&
                    !(tiling_features & VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR)) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08336",
-                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR.",
-                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-08336", image_state.image(), create_info_loc.dot(Field::format),
+                             "%s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR (supported: %s).",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                             string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) &&
                    !(tiling_features & VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR)) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08337",
-                             "vkCreateImageView(): video profile independent image with view format %s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR.",
-                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-08337", image_state.image(), create_info_loc.dot(Field::format),
+                             "%s and tiling %s does not "
+                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR (supported: %s).",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                             string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if (image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-image-08338",
-                             "vkCreateImageView(): image views from video profile independent images with usage "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR are not allowed.");
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-08338", image_state.image(), create_info_loc.dot(Field::usage),
+                             "is VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR which is not allowed for image views from video profile "
+                             "independent images.");
         }
     }
 

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -712,14 +712,14 @@ bool gpuav::Validator::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state
                 for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                     const auto subresource = image_state.subresource_encoder.Decode(index);
                     const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                    skip |= LogError(objlist, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout",
-                                     "%s command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
+                    skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
+                                     "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                      ", mip level %" PRIu32
                                      ") "
                                      "to be in layout %s--instead, current layout is %s.",
-                                     loc.Message().c_str(), FormatHandle(cb_state).c_str(), FormatHandle(image_state).c_str(),
-                                     subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
-                                     string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
+                                     FormatHandle(cb_state).c_str(), FormatHandle(image_state).c_str(), subresource.aspectMask,
+                                     subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(initial_layout),
+                                     string_VkImageLayout(image_layout));
                 }
             }
         }

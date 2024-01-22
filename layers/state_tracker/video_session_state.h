@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2023 The Khronos Group Inc.
- * Copyright (c) 2022-2023 RasterGrid Kft.
+/* Copyright (c) 2022-2024 The Khronos Group Inc.
+ * Copyright (c) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,7 +463,7 @@ class VideoSessionDeviceState {
     }
 
     bool ValidateRateControlState(const ValidationStateTracker *dev_data, const VideoSession *vs_state,
-                                  const safe_VkVideoBeginCodingInfoKHR &begin_info) const;
+                                  const safe_VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) const;
 
   private:
     bool initialized_;
