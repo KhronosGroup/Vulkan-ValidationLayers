@@ -356,6 +356,7 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer co
                                                               const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet2KHR-commandBuffer-parameter"
     skip |= ValidateObject(pPushDescriptorSetInfo->layout, kVulkanObjectTypePipelineLayout, true,
                            "VUID-VkPushDescriptorSetInfoKHR-layout-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout));
@@ -863,6 +864,7 @@ bool ObjectLifetimes::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwap
                                                          const VkAllocationCallbacks *pAllocator,
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroySwapchainKHR-device-parameter"
     const Location swapchain_loc = error_obj.location.dot(Field::swapchain);
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, true, "VUID-vkDestroySwapchainKHR-swapchain-parameter",
                            "VUID-vkDestroySwapchainKHR-swapchain-parent", swapchain_loc);
@@ -1491,6 +1493,7 @@ bool ObjectLifetimes::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkEx
 bool ObjectLifetimes::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo,
                                                       size_t dataSize, void *pDescriptor, const ErrorObject &error_obj) const {
     bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetDescriptorEXT-device-parameter"
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined,
                            error_obj.location.dot(Field::device));
 

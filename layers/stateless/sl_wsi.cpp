@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -352,6 +352,11 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
         skip |= OutputExtensionError(error_obj.location, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
         skip |= OutputExtensionError(error_obj.location, VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    if (!pModes) {
+        skip |= LogError("VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pModes-parameterr", device,
+                         error_obj.location.dot(Field::pModes), "is NULL.");
+    }
+
     skip |= ValidateStructType(error_obj.location.dot(Field::pSurfaceInfo), "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
                                pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
                                "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter",

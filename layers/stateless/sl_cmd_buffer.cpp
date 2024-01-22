@@ -204,6 +204,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     bool skip = false;
 
     // Check VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength
+    // This is a special case and generator currently skips it
     {
         const bool vuidCondition = (pSizes != nullptr) || (pStrides != nullptr);
         const bool vuidExpectation = bindingCount > 0;
@@ -220,18 +221,25 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
                                  "%s, so bindingCount must be greater than 0.", not_null_msg);
             }
         }
+
+        if (!pOffsets && bindingCount > 0) {
+            skip |= LogError("VUID-vkCmdBindVertexBuffers2-pOffsets-parameter", commandBuffer,
+                             error_obj.location.dot(Field::pOffsets), "is NULL.");
+        }
     }
 
     if (firstBinding >= device_limits.maxVertexInputBindings) {
-        skip |= LogError("VUID-vkCmdBindVertexBuffers2-firstBinding-03355", commandBuffer, error_obj.location,
-                         "firstBinding (%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
-                         device_limits.maxVertexInputBindings);
+        skip |=
+            LogError("VUID-vkCmdBindVertexBuffers2-firstBinding-03355", commandBuffer, error_obj.location.dot(Field::firstBinding),
+                     "(%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
+                     device_limits.maxVertexInputBindings);
     } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
-        skip |= LogError("VUID-vkCmdBindVertexBuffers2-firstBinding-03356", commandBuffer, error_obj.location,
-                         "sum of firstBinding (%" PRIu32 ") and bindingCount (%" PRIu32
-                         ") must be less than "
-                         "maxVertexInputBindings (%" PRIu32 ").",
-                         firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+        skip |=
+            LogError("VUID-vkCmdBindVertexBuffers2-firstBinding-03356", commandBuffer, error_obj.location.dot(Field::firstBinding),
+                     "(%" PRIu32 ") + bindingCount (%" PRIu32
+                     ") must be less than "
+                     "maxVertexInputBindings (%" PRIu32 ").",
+                     firstBinding, bindingCount, device_limits.maxVertexInputBindings);
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
@@ -240,11 +248,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
             const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
             if (!(robustness2_features && robustness2_features->nullDescriptor)) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04111", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
-            } else {
-                if (pOffsets[i] != 0) {
-                    skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04112", commandBuffer, buffer_loc,
-                                     "is VK_NULL_HANDLE, but pOffsets[%" PRIu32 "] is not 0.", i);
-                }
+            } else if (pOffsets && pOffsets[i] != 0) {
+                skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04112", commandBuffer, buffer_loc,
+                                 "is VK_NULL_HANDLE, but pOffsets[%" PRIu32 "] is not 0.", i);
             }
         }
         if (pStrides) {
