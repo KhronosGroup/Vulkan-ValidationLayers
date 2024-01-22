@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2023 The Khronos Group Inc.
- * Copyright (c) 2022-2023 RasterGrid Kft.
+/* Copyright (c) 2022-2024 The Khronos Group Inc.
+ * Copyright (c) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -385,7 +385,8 @@ class RateControlStateMismatchRecorder {
 };
 
 bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTracker *dev_data, const VideoSession *vs_state,
-                                                       const safe_VkVideoBeginCodingInfoKHR &begin_info) const {
+                                                       const safe_VkVideoBeginCodingInfoKHR &begin_info,
+                                                       const Location &loc) const {
     bool skip = false;
 
     assert(vs_state->IsEncode());
@@ -512,7 +513,7 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
 #undef CHECK_RC_LAYER_INFO
 
         if (mismatch_recorder.HasMismatch()) {
-            skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254",
+            skip |= dev_data->LogError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254", vs_state->Handle(), loc,
                                        "The video encode rate control information specified when beginning the video coding scope "
                                        "does not match the currently configured video encode rate control state for %s:\n%s",
                                        dev_data->FormatHandle(vs_state->Handle()).c_str(), mismatch_recorder.c_str());
@@ -521,7 +522,7 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
     } else {
         if (encode_.rate_control_state.base.rateControlMode != VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR) {
             skip |=
-                dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08253",
+                dev_data->LogError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08253", vs_state->Handle(), loc,
                                    "No VkVideoEncodeRateControlInfoKHR structure was specified when beginning the "
                                    "video coding scope but the currently set video encode rate control mode for %s is %s.",
                                    dev_data->FormatHandle(vs_state->Handle()).c_str(),

@@ -536,15 +536,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 ValidationObjectType* GetValidationObject() const;
 
                 // Debug Logging Helpers
-                // deprecated LogError - moving to use one with Location
-                bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
-                    va_list argptr;
-                    va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kErrorBit, objlist, nullptr, vuid_text, format, argptr);
-                    va_end(argptr);
-                    return result;
-                }
-
                 bool DECORATE_PRINTF(5, 6)
                     LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;

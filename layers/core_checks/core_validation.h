@@ -501,7 +501,8 @@ class CoreChecks : public ValidationStateTracker {
                                             const std::shared_ptr<const vvl::VideoProfileDesc>& video_profile) const;
     bool IsImageCompatibleWithVideoProfile(const vvl::Image& image_state,
                                            const std::shared_ptr<const vvl::VideoProfileDesc>& video_profile) const;
-    void EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer& cb_state, vvl::VideoSession& vs_state, const char* vuid);
+    void EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer& cb_state, vvl::VideoSession& vs_state, const Location& loc,
+                                              const char* vuid);
     void EnqueueVerifyVideoInlineQueryUnavailable(vvl::CommandBuffer& cb_state, const VkVideoInlineQueryInfoKHR& query_info,
                                                   Func command);
     bool ValidateVideoInlineQueryInfo(const vvl::QueryPool& query_pool_state, const VkVideoInlineQueryInfoKHR& query_info,
@@ -563,18 +564,22 @@ class CoreChecks : public ValidationStateTracker {
                                      const Location& loc) const;
     bool ValidateVideoDecodeInfoH265(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
                                      const Location& loc) const;
-    bool ValidateVideoEncodeH264PicType(const vvl::VideoSession& vs_state, StdVideoH264PictureType pic_type,
+    bool ValidateVideoEncodeH264PicType(const vvl::VideoSession& vs_state, StdVideoH264PictureType pic_type, const Location& loc,
                                         const char* where) const;
     bool ValidateVideoEncodeInfoH264(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
                                      const Location& loc) const;
-    bool ValidateVideoEncodeH265PicType(const vvl::VideoSession& vs_state, StdVideoH265PictureType pic_type,
+    bool ValidateVideoEncodeH265PicType(const vvl::VideoSession& vs_state, StdVideoH265PictureType pic_type, const Location& loc,
                                         const char* where) const;
     bool ValidateVideoEncodeInfoH265(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
                                      const Location& loc) const;
-    bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info) const;
-    bool ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    bool ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info) const;
+    bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
+                                             const Location& loc) const;
+    bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
+                                             const Location& loc) const;
+    bool ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
+                                          const Location& loc) const;
+    bool ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
+                                          const Location& loc) const;
     template <typename HandleT>
     bool ValidateImageSampleCount(const HandleT handle, const vvl::Image& image_state, VkSampleCountFlagBits sample_count,
                                   const Location& loc, const std::string& vuid) const;
