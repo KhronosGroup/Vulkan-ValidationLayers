@@ -182,7 +182,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
                     "storage for %s (%s). Overlapped memory is (%s) on range %s.",
                     FormatHandle(buffer_a).c_str(), location_a.Fields().c_str(), FormatHandle(accel_struct_a.Handle()).c_str(),
                     FormatHandle(buffer_b).c_str(), location_b.Fields().c_str(), FormatHandle(accel_struct_b.Handle()).c_str(),
-                    FormatHandle(memory).c_str(), string_range(overlap_range).c_str());
+                    FormatHandle(memory).c_str(), string_range_hex(overlap_range).c_str());
             }
 
             return skip;
@@ -397,7 +397,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
                                                     scratch_error_msg_ss << " {" << FormatHandle(scratch->buffer())
                                                                          << ", backed by " << FormatHandle(memory)
                                                                          << " - overlap on VkDeviceMemory space range "
-                                                                         << string_range(overlap_range) << "}";
+                                                                         << string_range_hex(overlap_range) << "}";
                                                     *parent_out_error_msg += scratch_error_msg_ss.str();
                                                 }
                                                 return false;
@@ -803,7 +803,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
 
                  if (!buffer_address_range.includes(scratch_address_range)) {
                      if (out_error_msg) {
-                         *out_error_msg += "buffer address range is " + string_range(buffer_address_range) + '\n';
+                         *out_error_msg += "buffer address range is " + string_range_hex(buffer_address_range) + '\n';
                      }
                      return false;
                  }
@@ -811,7 +811,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
              },
              [scratch_address_range]() {
                  return "The following buffers have an address range that does not include scratch address range " +
-                        string_range(scratch_address_range) + ":";
+                        string_range_hex(scratch_address_range) + ":";
              }},
 
         }}};
