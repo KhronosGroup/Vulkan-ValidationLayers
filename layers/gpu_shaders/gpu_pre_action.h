@@ -23,11 +23,16 @@ layout(set = 0, binding = 0) buffer OutputBuffer {
     uint output_buffer_count;
     uint output_buffer[];
 };
-
+layout(set = 0, binding = 3) buffer IndicesBuffer {
+    uint per_resource_index;
+};
 void gpuavLogError(uint action_code, uint error, uint count, uint draw_number) {
-    uint vo_idx = atomicAdd(output_buffer_count, ERROR_RECORD_WORDS_COUNT);
-    if (vo_idx + ERROR_RECORD_WORDS_COUNT > output_buffer.length()) return;
+    uint rec_len = kInstValidationOutError + 4;
+    uint vo_idx = atomicAdd(output_buffer_count, rec_len);
+    if (vo_idx + rec_len > output_buffer.length()) return;
 
+    output_buffer[vo_idx + kInstCommonOutSize] = rec_len;
+    output_buffer[vo_idx + kInstCommonOutCommandResourceIndex] = per_resource_index;
     output_buffer[vo_idx + kInstValidationOutError] = action_code;
     output_buffer[vo_idx + kInstValidationOutError + 1] = error;
     output_buffer[vo_idx + kInstValidationOutError + 2] = count;

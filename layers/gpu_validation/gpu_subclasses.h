@@ -146,12 +146,10 @@ class CommandResources {
     CommandResources(const CommandResources &) = default;
     CommandResources &operator=(const CommandResources &) = default;
 
-    void LogErrorIfAny(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
+    //void LogErrorIfAny(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
     // Return true iff an error has been logged
     virtual bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                      const uint32_t *debug_record, const uint32_t operation_index, const LogObjectList &objlist);
-
-    DeviceMemoryBlock output_mem_block;
+                                      uint32_t *debug_record, const uint32_t operation_index, const LogObjectList &objlist);
 
     VkDescriptorSet output_buffer_desc_set = VK_NULL_HANDLE;
     VkDescriptorPool output_buffer_desc_pool = VK_NULL_HANDLE;
@@ -160,6 +158,7 @@ class CommandResources {
     vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
     uint32_t desc_binding_index = vvl::kU32Max;// desc_binding is only used to help generate an error message
     std::vector<DescBindingInfo> *desc_binding_list = nullptr;
+    uint32_t operation_index = 0; // Draw number or dispatch number or ray trace number
 };
 
 class PreDrawResources : public CommandResources {
@@ -177,7 +176,7 @@ class PreDrawResources : public CommandResources {
     bool emit_task_error = false;  // Used to decide between mesh error and task error
 
     void Destroy(gpuav::Validator &validator) final;
-    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *debug_record,
                               const uint32_t operation_index, const LogObjectList &objlist);
 };
 
@@ -192,7 +191,7 @@ class PreDispatchResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 4;
 
     void Destroy(gpuav::Validator &validator) final;
-    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *debug_record,
                               const uint32_t operation_index, const LogObjectList &objlist);
 };
 
@@ -206,7 +205,7 @@ class PreTraceRaysResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 5;
 
     void Destroy(gpuav::Validator &validator) final;
-    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+    bool LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *debug_record,
                               const uint32_t operation_index, const LogObjectList &objlist);
 };
 
@@ -218,7 +217,13 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     std::vector<DescBindingInfo> di_input_buffer_list;
     std::vector<AccelerationStructureBuildValidationInfo> as_validation_buffers;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
-
+    DeviceMemoryBlock output_buffer_block = {};
+    DeviceMemoryBlock index_input_buffer_block = {};
+    uint32_t draw_index = 0;
+    uint32_t compute_index = 0;
+    uint32_t trace_rays_index = 0;
+    uint32_t per_resource_index = 0;
+   
     CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
     ~CommandBuffer();
 

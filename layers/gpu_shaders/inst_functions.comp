@@ -68,44 +68,51 @@ layout(set = 7, binding = 2, std430) buffer inst_buff_addr_InputBuffer {
     uint64_t data[];
 } inst_buff_addr_input_buffer;
 
+layout(set = 7, binding = 3, std430) buffer inst_IndicesBuffer {
+    uint per_resource_index;
+    uint operation_index;
+} inst_indices_buffer;
+
 void inst_stream_write_3(const uint shader_id, const uint inst_num, const uvec4 stage_info, const uint error, const uint addr_lo,
                          const uint addr_hi)
 {
-    uint rec_len = 10u;
+    const uint rec_len = 11u;
     uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
     if ((write_pos + rec_len) <= uint(inst_output_buffer.data.length()))
     {
         inst_output_buffer.data[write_pos + 0u] = rec_len;
         inst_output_buffer.data[write_pos + 1u] = shader_id;
         inst_output_buffer.data[write_pos + 2u] = inst_num;
-        inst_output_buffer.data[write_pos + 3u] = stage_info.x;
-        inst_output_buffer.data[write_pos + 4u] = stage_info.y;
-        inst_output_buffer.data[write_pos + 5u] = stage_info.z;
-        inst_output_buffer.data[write_pos + 6u] = stage_info.w;
-        inst_output_buffer.data[write_pos + 7u] = error;
-        inst_output_buffer.data[write_pos + 8u] = addr_lo;
-        inst_output_buffer.data[write_pos + 9u] = addr_hi;
+        inst_output_buffer.data[write_pos + 3u] = inst_indices_buffer.per_resource_index;
+        inst_output_buffer.data[write_pos + 4u] = stage_info.x;
+        inst_output_buffer.data[write_pos + 5u] = stage_info.y;
+        inst_output_buffer.data[write_pos + 6u] = stage_info.z;
+        inst_output_buffer.data[write_pos + 7u] = stage_info.w;
+        inst_output_buffer.data[write_pos + 8u] = error;
+        inst_output_buffer.data[write_pos + 9u] = addr_lo;
+        inst_output_buffer.data[write_pos + 10u] = addr_hi;
     }
 }
 
 void inst_stream_write_6(const uint shader_id, const uint inst_num, const uvec4 stage_info, const uint error, const uint set,
                          const uint binding, const uint index, const uint param5, const uint param6) {
-    uint rec_len = 13u;
+    const uint rec_len = 14u;
     uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
     if ((write_pos + rec_len) <= uint(inst_output_buffer.data.length())) {
         inst_output_buffer.data[write_pos] = rec_len;
         inst_output_buffer.data[write_pos + 1u] = shader_id;
         inst_output_buffer.data[write_pos + 2u] = inst_num;
-        inst_output_buffer.data[write_pos + 3u] = stage_info.x;
-        inst_output_buffer.data[write_pos + 4u] = stage_info.y;
-        inst_output_buffer.data[write_pos + 5u] = stage_info.z;
-        inst_output_buffer.data[write_pos + 6u] = stage_info.w;
-        inst_output_buffer.data[write_pos + 7u] = error;
-        inst_output_buffer.data[write_pos + 8u] = set;
-        inst_output_buffer.data[write_pos + 9u] = binding;
-        inst_output_buffer.data[write_pos + 10u] = index;
-        inst_output_buffer.data[write_pos + 11u] = param5;
-        inst_output_buffer.data[write_pos + 12u] = param6;
+        inst_output_buffer.data[write_pos + 3u] = inst_indices_buffer.per_resource_index;
+        inst_output_buffer.data[write_pos + 4u] = stage_info.x;
+        inst_output_buffer.data[write_pos + 5u] = stage_info.y;
+        inst_output_buffer.data[write_pos + 6u] = stage_info.z;
+        inst_output_buffer.data[write_pos + 7u] = stage_info.w;
+        inst_output_buffer.data[write_pos + 8u] = error;
+        inst_output_buffer.data[write_pos + 9u] = set;
+        inst_output_buffer.data[write_pos + 10u] = binding;
+        inst_output_buffer.data[write_pos + 11u] = index;
+        inst_output_buffer.data[write_pos + 12u] = param5;
+        inst_output_buffer.data[write_pos + 13u] = param6;
     }
 }
 

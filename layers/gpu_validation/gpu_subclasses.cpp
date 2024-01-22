@@ -18,6 +18,7 @@
 #include "gpu_subclasses.h"
 #include "gpu_validation.h"
 #include "gpu_vuids.h"
+#include "spirv-tools/instrument.hpp"
 #include "drawdispatch/descriptor_validator.h"
 
 gpuav::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
@@ -150,6 +151,17 @@ void gpuav::CommandBuffer::ResetCBState() {
     for (auto &as_validation_buffer_info : as_validation_buffers) {
         gpuav->Destroy(as_validation_buffer_info);
     }
+
+    if (output_buffer_block.buffer) {
+        vmaDestroyBuffer(gpuav->vmaAllocator, output_buffer_block.buffer, output_buffer_block.allocation);
+        output_buffer_block.buffer = VK_NULL_HANDLE;
+    }
+
+    if (index_input_buffer_block.buffer) {
+        vmaDestroyBuffer(gpuav->vmaAllocator, index_input_buffer_block.buffer, index_input_buffer_block.allocation);
+        index_input_buffer_block.buffer = VK_NULL_HANDLE;
+    }
+    draw_index = compute_index = trace_rays_index = per_resource_index = 0;
     as_validation_buffers.clear();
 }
 
@@ -157,22 +169,34 @@ void gpuav::CommandBuffer::ResetCBState() {
 void gpuav::CommandBuffer::Process(VkQueue queue, const Location &loc) {
     auto *device_state = static_cast<Validator *>(dev_data);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
-        uint32_t draw_index = 0;
-        uint32_t compute_index = 0;
-        uint32_t ray_trace_index = 0;
-
-        for (auto &cmd_info : per_command_resources) {
-            uint32_t operation_index = 0;
-            if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                operation_index = draw_index++;
-            } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                operation_index = compute_index++;
-            } else if (cmd_info->pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-                operation_index = ray_trace_index++;
-            } else {
-                assert(false);
+        uint32_t *debug_output_buffer = nullptr;
+        VkResult result =
+            vmaMapMemory(device_state->vmaAllocator, output_buffer_block.allocation, reinterpret_cast<void **>(&debug_output_buffer));
+        if (result == VK_SUCCESS) {
+            // The second word in the debug output buffer is the number of words that would have
+            // been written by the shader instrumentation, if there was enough room in the buffer we provided.
+            // The number of words actually written by the shaders is determined by the size of the buffer
+            // we provide via the descriptor. So, we process only the number of words that can fit in the
+            // buffer.
+            const uint32_t total_words = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
+            // A zero here means that the shader instrumentation didn't write anything.
+            if (total_words != 0) {
+                uint32_t *debug_record = &debug_output_buffer[spvtools::kDebugOutputDataOffset];
+                // TODO TODO TODO - Don't go past output_buffer_szie
+                while (debug_record[spvtools::kInstCommonOutSize] > 0) {
+                    uint32_t resource_index = debug_record[gpuav::glsl::kInstCommonOutCommandResourceIndex];
+                    auto cmd_info = per_command_resources[resource_index].get();
+                    const LogObjectList objlist(queue, commandBuffer());
+                    cmd_info->LogValidationMessage(*device_state, queue, commandBuffer(), debug_record, cmd_info->operation_index, objlist);
+                    debug_record += debug_record[spvtools::kInstCommonOutSize];
+                }
+                // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
+                const uint32_t words_to_clear = std::min(total_words, device_state->output_buffer_size - spvtools::kDebugOutputDataOffset);
+                debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
+                memset(&debug_output_buffer[spvtools::kDebugOutputDataOffset], 0, sizeof(uint32_t) * words_to_clear);
             }
-            cmd_info->LogErrorIfAny(*device_state, queue, commandBuffer(), operation_index);
+            debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
+            vmaUnmapMemory(device_state->vmaAllocator, output_buffer_block.allocation);
         }
 
         // For each vkCmdBindDescriptorSets()...

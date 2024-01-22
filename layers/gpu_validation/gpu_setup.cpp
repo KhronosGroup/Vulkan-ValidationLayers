@@ -99,7 +99,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // Set up a stub implementation of the descriptor heap in case we abort.
     desc_heap.emplace(*this, 0);
     bindings_.push_back(binding);
-    for (auto i = 1; i < 3; i++) {
+    for (auto i = 1; i < 4; i++) {
         binding.binding = i;
         bindings_.push_back(binding);
     }
@@ -749,14 +749,9 @@ void gpuav::RestorablePipelineState::Restore(VkCommandBuffer command_buffer) con
 }
 
 void gpuav::CommandResources::Destroy(gpuav::Validator &validator) {
-    if (output_mem_block.buffer != VK_NULL_HANDLE) {
-        vmaDestroyBuffer(validator.vmaAllocator, output_mem_block.buffer, output_mem_block.allocation);
-    }
     if (output_buffer_desc_set != VK_NULL_HANDLE) {
         validator.desc_set_manager->PutBackDescriptorSet(output_buffer_desc_pool, output_buffer_desc_set);
     }
-    output_mem_block.buffer = VK_NULL_HANDLE;
-    output_mem_block.allocation = VK_NULL_HANDLE;
     output_buffer_desc_set = VK_NULL_HANDLE;
 }
 

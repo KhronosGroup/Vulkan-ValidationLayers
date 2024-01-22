@@ -94,6 +94,7 @@ class Validator : public gpu_tracker::Validator {
     void UpdateBDABuffer(DeviceMemoryBlock buffer_device_addresses);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
+    bool AllocateBuffer(uint32_t buffer_size, DeviceMemoryBlock &buffer_block);
 
     // Allocate per command validation resources
     [[nodiscard]] CommandResources AllocateCommandResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
@@ -120,7 +121,7 @@ class Validator : public gpu_tracker::Validator {
   public:
     // Return true iff a error has been found in the internal call to GenerateValidationMessage
     bool AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources& cmd_resources,
-                                    uint32_t operation_index, uint32_t* const debug_output_buffer,
+                                    uint32_t operation_index, uint32_t* debug_output_buffer,
                                     const std::vector<DescSetState>& descriptor_sets, const Location& loc);
 
   private:

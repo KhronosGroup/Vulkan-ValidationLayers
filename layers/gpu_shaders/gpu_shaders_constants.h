@@ -49,11 +49,14 @@ const int kInstCommonOutShaderId = 1;
 // which generated the validation error.
 const int kInstCommonOutInstructionIdx = 2;
 
+// This is the index into the per command resources and the operation index within the command buffer
+const int kInstCommonOutCommandResourceIndex = 3;
+
 // This is the stage which generated the validation error. This word is used
 // to determine the contents of the next two words in the record.
 // 0:Vert, 1:TessCtrl, 2:TessEval, 3:Geom, 4:Frag, 5:Compute
-const int kInstCommonOutStageIdx = 3;
-const int kInstCommonOutCnt = 4;
+const int kInstCommonOutStageIdx = 4;
+const int kInstCommonOutCnt = 5;
 
 // Stage-specific Stream Record Offsets
 //
