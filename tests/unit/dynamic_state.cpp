@@ -4723,6 +4723,18 @@ TEST_F(NegativeDynamicState, MissingCmdBindVertexBuffers2) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeDynamicState, CmdBindVertexBuffers2NullOffset) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+    m_commandBuffer->begin();
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize size = 16;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pOffsets-parameter");
+    vk::CmdBindVertexBuffers2(m_commandBuffer->handle(), 0, 1, &buffer.handle(), nullptr, &size, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
     TEST_DESCRIPTION("Attempt to use more than maximum attachments in subpass when advanced blend is enabled");
 
