@@ -68,8 +68,7 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     robust_pipe.gp_ci_.pNext = &pipeline_robustness_ci;
     robust_pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, robust_pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -96,173 +95,59 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6980
-TEST_F(NegativeGpuAVOOB, DISABLED_Basic) {
+TEST_F(NegativeGpuAVOOB, Basic) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw_features = vku::InitStructHelper();
-    const bool multi_draw = IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    auto robustness2_features =
-        vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>(multi_draw ? &multi_draw_features : nullptr);
-    auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
-    if (!robustness2_features.nullDescriptor) {
-        GTEST_SKIP() << "nullDescriptor feature not supported";
-    }
-    features2.features.robustBufferAccess = VK_FALSE;
-    robustness2_features.robustBufferAccess2 = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
     vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
-    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, reqs);
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, reqs);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = uniform_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView uniform_buffer_view(*m_device, bvci);
-    bvci.buffer = storage_texel_buffer.handle();
-    vkt::BufferView storage_buffer_view(*m_device, bvci);
-
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-    descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] = R"glsl(
+
+    const char vs_source[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;  // data[4]
-        layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
-        layout(set = 0, binding = 3) uniform samplerBuffer u_buffer;              // texel_buffer[4]
-        layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
         void main() {
-            vec4 x;
-            if (u_index.index[0] == 8)
-                Data.data[u_index.index[0]] = 0xdeadca71;
-            else if (u_index.index[0] == 0)
-                Data.data[0] = u_index.index[4];
-            else if (u_index.index[0] == 1)
-                Data.data[0] = Null.data[40];  // No error
-            else if (u_index.index[0] == 2)
-                x = texelFetch(u_buffer, 5);
-            else if (u_index.index[0] == 3)
-                x = imageLoad(s_buffer, 5);
-            else if (u_index.index[0] == 4)
-                imageStore(s_buffer, 5, x);
-            else if (u_index.index[0] == 5)  // No Error
-                imageStore(s_buffer, 0, x);
-            else if (u_index.index[0] == 6)  // No Error
-                x = imageLoad(s_buffer, 0);
+            Data.data[u_index.index[0]] = 0xdeadca71;
         }
-        )glsl";
+    )glsl";
 
-    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    struct TestCase {
-        bool positive;
-        uint32_t index;
-        char const *expected_error;
-    };
-    std::vector<TestCase> tests;
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
-    // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
-    // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    // "VUID-vkCmdDispatchBase-None-08612" Uniform
-    tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
-    tests.push_back({true, 1, ""});
-    // "VUID-vkCmdDispatchBase-None-08612" Uniform
-    tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
 
-    for (const auto &test : tests) {
-        uint32_t *data = (uint32_t *)offset_buffer.memory().map();
-        *data = test.index;
-        offset_buffer.memory().unmap();
-        if (test.positive) {
-        } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
-        }
-        m_commandBuffer->QueueCommandBuffer();
-        if (test.positive) {
-        } else {
-            m_errorMonitor->VerifyFound();
-        }
-        m_default_queue->wait();
-    }
+    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    *data = 8;
+    offset_buffer.memory().unmap();
 
-    if (multi_draw && multi_draw_features.multiDraw) {
-        VkMultiDrawInfoEXT multi_draws[3] = {};
-        multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
-        VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
-        multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
-
-        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        m_commandBuffer->begin(&begin_info);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
-        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-        vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-
-        uint32_t *data = (uint32_t *)offset_buffer.memory().map();
-        *data = 8;
-        offset_buffer.memory().unmap();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-08613");
-        m_commandBuffer->QueueCommandBuffer();
-        m_errorMonitor->VerifyFound();
-
-        m_commandBuffer->begin(&begin_info);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
-        vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-
-        data = (uint32_t *)offset_buffer.memory().map();
-        *data = 0;
-        offset_buffer.memory().unmap();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-08612");
-        m_commandBuffer->QueueCommandBuffer();
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08613");
+    m_default_queue->submit(*m_commandBuffer, false);
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
 }
 
 void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
@@ -475,21 +360,11 @@ TEST_F(NegativeGpuAVOOB, GPL) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
-    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&robustness2_features);
-    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
-    if (!robustness2_features.nullDescriptor) {
-        GTEST_SKIP() << "nullDescriptor feature not supported";
-    }
-    if (!gpl_features.graphicsPipelineLibrary) {
-        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
-    }
-    features2.features.robustBufferAccess = VK_FALSE;
-    robustness2_features.robustBufferAccess2 = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -508,14 +383,12 @@ TEST_F(NegativeGpuAVOOB, GPL) {
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -523,27 +396,26 @@ TEST_F(NegativeGpuAVOOB, GPL) {
         #version 450
         layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;  // data[4]
-        layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
         layout(set = 0, binding = 3) uniform samplerBuffer u_buffer;              // texel_buffer[4]
         layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
         void main() {
             vec4 x;
-            if (u_index.index[0] == 8)
-                Data.data[u_index.index[0]] = 0xdeadca71;
-            else if (u_index.index[0] == 0)
+            uint index = u_index.index[0];
+            if (index == 8) {
+                Data.data[index] = 0xdeadca71;
+            }
+            else if (index == 0) {
                 Data.data[0] = u_index.index[4];
-            else if (u_index.index[0] == 1)
-                Data.data[0] = Null.data[40];  // No error
-            else if (u_index.index[0] == 2)
+            }
+            else if (index == 2) {
                 x = texelFetch(u_buffer, 5);
-            else if (u_index.index[0] == 3)
+            }
+            else if (index == 3) {
                 x = imageLoad(s_buffer, 5);
-            else if (u_index.index[0] == 4)
+            }
+            else if (index == 4) {
                 imageStore(s_buffer, 5, x);
-            else if (u_index.index[0] == 5)  // No Error
-                imageStore(s_buffer, 0, x);
-            else if (u_index.index[0] == 6)  // No Error
-                x = imageLoad(s_buffer, 0);
+            }
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
@@ -586,49 +458,39 @@ TEST_F(NegativeGpuAVOOB, GPL) {
     };
     vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+
     struct TestCase {
-        bool positive;
+        const char *name;
         uint32_t index;
         char const *expected_error;
     };
     std::vector<TestCase> tests;
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
+    tests.push_back({"read", 8, "VUID-vkCmdDraw-None-08613"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    // "VUID-vkCmdDispatchBase-None-08612" Uniform
-    tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
-    tests.push_back({true, 1, ""});
-    // "VUID-vkCmdDispatchBase-None-08612" Uniform
-    tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    tests.push_back({"write", 0, "VUID-vkCmdDraw-None-08612"});
+    tests.push_back({"texel fetch", 2, "VUID-vkCmdDraw-None-08612"});
+    tests.push_back({"image load", 3, "VUID-vkCmdDraw-None-08613"});
+    tests.push_back({"image store", 4, "VUID-vkCmdDraw-None-08613"});
 
     for (const auto &test : tests) {
+        SCOPED_TRACE(test.name);
         uint32_t *data = (uint32_t *)offset_buffer.memory().map();
         *data = test.index;
         offset_buffer.memory().unmap();
-        if (test.positive) {
-        } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
-        }
-        m_commandBuffer->QueueCommandBuffer();
-        if (test.positive) {
-        } else {
-            m_errorMonitor->VerifyFound();
-        }
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
+        m_default_queue->submit(*m_commandBuffer, false);
         m_default_queue->wait();
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -636,21 +498,11 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
-    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper(&robustness2_features);
-    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
-    if (!robustness2_features.nullDescriptor) {
-        GTEST_SKIP() << "nullDescriptor feature not supported";
-    }
-    if (!gpl_features.graphicsPipelineLibrary) {
-        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
-    }
-    features2.features.robustBufferAccess = VK_FALSE;
-    robustness2_features.robustBufferAccess2 = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -670,8 +522,7 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
     OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
     OneOffDescriptorSet common_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     OneOffDescriptorSet fragment_set(m_device,
-                                     {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                      {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     {{1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       {2, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
 
     const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, &common_set.layout_, nullptr}, {},
@@ -684,7 +535,6 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
     vertex_set.UpdateDescriptorSets();
     common_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
     common_set.UpdateDescriptorSets();
-    fragment_set.WriteDescriptorBufferInfo(0, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     fragment_set.WriteDescriptorBufferView(1, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     fragment_set.WriteDescriptorBufferView(2, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     fragment_set.UpdateDescriptorSets();
@@ -726,7 +576,6 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
     static const char frag_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
-        layout(set = 2, binding = 0) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
         layout(set = 2, binding = 1) uniform samplerBuffer u_buffer;              // texel_buffer[4]
         layout(set = 2, binding = 2, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
         layout(location = 0) out vec4 c_out;
@@ -738,10 +587,6 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
                 x = imageLoad(s_buffer, 5);
             } else if (u_index.index[0] == 4) {
                 imageStore(s_buffer, 5, x);
-            } else if (u_index.index[0] == 5) { // No Error
-                imageStore(s_buffer, 0, x);
-            } else if (u_index.index[0] == 6) { // No Error
-                x = imageLoad(s_buffer, 0);
             }
             c_out = x;
         }
@@ -766,49 +611,38 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
     };
     vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+
     struct TestCase {
-        bool positive;
+        const char *name;
         uint32_t index;
         char const *expected_error;
     };
     std::vector<TestCase> tests;
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    // tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
+    tests.push_back({"read", 8, "VUID-vkCmdDraw-None-08613"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    // "VUID-vkCmdDispatchBase-None-08612" Uniform
-    // tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
-    // tests.push_back({true, 1, ""});
-    // "VUID-vkCmdDispatchBase-None-08612" Uniform
-    // tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // // "VUID-vkCmdDispatchBase-None-08613" Storage
-    // tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-08613" Storage
-    tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    tests.push_back({"write", 0, "VUID-vkCmdDraw-None-08612"});
+    tests.push_back({"texel fetch", 2, "VUID-vkCmdDraw-None-08612"});
+    tests.push_back({"image load", 3, "VUID-vkCmdDraw-None-08613"});
+    tests.push_back({"image store", 4, "VUID-vkCmdDraw-None-08613"});
 
     for (const auto &test : tests) {
+        SCOPED_TRACE(test.name);
         uint32_t *data = (uint32_t *)offset_buffer.memory().map();
         *data = test.index;
         offset_buffer.memory().unmap();
-        if (test.positive) {
-        } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
-        }
-        m_commandBuffer->QueueCommandBuffer();
-        if (test.positive) {
-        } else {
-            m_errorMonitor->VerifyFound();
-        }
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
+        m_default_queue->submit(*m_commandBuffer, false);
         m_default_queue->wait();
+        m_errorMonitor->VerifyFound();
     }
 }
 
