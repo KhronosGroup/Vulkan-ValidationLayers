@@ -115,6 +115,18 @@ const char* unimplementable_validation[] = {
     "VUID-VkPipelineSampleLocationsStateCreateInfoEXT-sampleLocationsInfo-parameter", // VUID-VkSampleLocationsInfoEXT-sType-sType
     "VUID-VkComputePipelineCreateInfo-stage-parameter", // VUID-VkPipelineShaderStageCreateInfo-sType-sType
 
+    // Not possible as described in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6324
+    "VUID-VkGraphicsPipelineCreateInfo-pTessellationState-09023",
+    "VUID-VkGraphicsPipelineCreateInfo-pViewportState-09025",
+    "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09027",
+    "VUID-VkGraphicsPipelineCreateInfo-pDepthStencilState-09029",
+    "VUID-VkGraphicsPipelineCreateInfo-pInputAssemblyState-09032",
+    "VUID-VkGraphicsPipelineCreateInfo-pDepthStencilState-09034",
+    "VUID-VkGraphicsPipelineCreateInfo-pDepthStencilState-09036",
+    "VUID-VkGraphicsPipelineCreateInfo-pColorBlendState-09038",
+    "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-09039",
+    "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-09040",
+
     // These VUs have "is not NULL it must be a pointer to a valid pointer to valid structure" language
     // There is no actual way to validate thsese
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3718

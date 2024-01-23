@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,12 @@ VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features, 
     }
     if (!features.attachmentFragmentShadingRate && !features.shadingRateImage) {
         result |= VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    }
+    if (!features.subpassShading) {
+        result |= VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI;
+    }
+    if (!features.invocationMask) {
+        result |= VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI;
     }
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.rayTracingPipeline) {
         result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;

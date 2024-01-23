@@ -353,7 +353,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
     if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
         skip |= OutputExtensionError(error_obj.location, VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
     if (!pModes) {
-        skip |= LogError("VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pModes-parameterr", device,
+        skip |= LogError("VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pModes-parameter", device,
                          error_obj.location.dot(Field::pModes), "is NULL.");
     }
 

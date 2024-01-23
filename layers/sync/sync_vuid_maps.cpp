@@ -1,7 +1,7 @@
-/* Copyright (c) 2021-2023 The Khronos Group Inc.
- * Copyright (c) 2021-2023 Valve Corporation
- * Copyright (c) 2021-2023 LunarG, Inc.
- * Copyright (C) 2021-2023 Google Inc.
+/* Copyright (c) 2021-2024 The Khronos Group Inc.
+ * Copyright (c) 2021-2024 Valve Corporation
+ * Copyright (c) 2021-2024 LunarG, Inc.
+ * Copyright (C) 2021-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04092"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04092"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04092"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03931"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03931"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04077"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03931"},
@@ -83,6 +84,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04093"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04093"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04093"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03932"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03932"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04078"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03932"},
@@ -107,6 +109,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04090"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04090"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04090"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03929"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03929"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04075"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03929"},
@@ -131,6 +134,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04095"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04095"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04095"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03934"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03934"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04080"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03934"},
@@ -155,6 +159,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04096"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04096"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04096"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03935"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03935"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-07077"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03935"},
@@ -179,6 +184,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04091"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04091"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04091"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03930"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03930"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04076"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03930"},
@@ -204,6 +210,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
             {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04091"},
             {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04091"},
             {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04091"},
+            {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03930"},
             {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03930"},
             {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04076"},
             {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03930"},
@@ -229,6 +236,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-04094"},
          {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-04094"},
          {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-04094"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-03933"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-03933"},
          {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-pipelineStage-04079"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-03933"},
@@ -265,6 +273,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Struct::VkImageMemoryBarrier2, Field::srcStageMask), "VUID-VkImageMemoryBarrier2-srcStageMask-07946"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-07946"},
          {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-07946"},
+         {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-07946"},
      }},
 };
 
@@ -283,7 +292,7 @@ static const std::array<Entry, 12> kStageMaskErrorsNone{{
     {Key(Struct::VkSubpassDependency2, Field::dstStageMask), "VUID-VkSubpassDependency2-dstStageMask-03937"},
 }};
 
-static const std::array<Entry, 21> kStageMaskErrorsShadingRate{{
+static const std::array<Entry, 22> kStageMaskErrorsShadingRate{{
     {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-07316"},
     {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-07316"},
     {Key(Func::vkCmdPipelineBarrier, Field::dstStageMask), "VUID-vkCmdPipelineBarrier-dstStageMask-07318"},
@@ -293,6 +302,7 @@ static const std::array<Entry, 21> kStageMaskErrorsShadingRate{{
     {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-07318"},
     {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-07318"},
     {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-07318"},
+    {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-07316"},
     {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-07316"},
     {Key(Func::vkCmdWriteTimestamp, Field::pipelineStage), "VUID-vkCmdWriteTimestamp-shadingRateImage-07314"},
     {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-07316"},
@@ -307,15 +317,43 @@ static const std::array<Entry, 21> kStageMaskErrorsShadingRate{{
     {Key(Struct::VkSubpassDependency2, Field::dstStageMask), "VUID-VkSubpassDependency2-dstStageMask-07318"},
 }};
 
+static const std::array<Entry, 10> kStageMaskErrorsSubpassShader{{
+    {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-04957"},
+    {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-04957"},
+    {Key(Func::vkCmdResetEvent2, Field::stageMask), "VUID-vkCmdResetEvent2-stageMask-04957"},
+    {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-04957"},
+    {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-04957"},
+    {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-04957"},
+    {Key(Struct::VkImageMemoryBarrier2, Field::srcStageMask), "VUID-VkImageMemoryBarrier2-srcStageMask-04957"},
+    {Key(Struct::VkMemoryBarrier2, Field::dstStageMask), "VUID-VkMemoryBarrier2-dstStageMask-04957"},
+    {Key(Struct::VkMemoryBarrier2, Field::srcStageMask), "VUID-VkMemoryBarrier2-srcStageMask-04957"},
+    {Key(Struct::VkSemaphoreSubmitInfo, Field::stageMask), "VUID-VkSemaphoreSubmitInfo-stageMask-04957"},
+}};
+
+static const std::array<Entry, 10> kStageMaskErrorsInvocationMask{{
+    {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-04995"},
+    {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-04995"},
+    {Key(Func::vkCmdResetEvent2, Field::stageMask), "VUID-vkCmdResetEvent2-stageMask-04995"},
+    {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-04995"},
+    {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-04995"},
+    {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-04995"},
+    {Key(Struct::VkImageMemoryBarrier2, Field::srcStageMask), "VUID-VkImageMemoryBarrier2-srcStageMask-04995"},
+    {Key(Struct::VkMemoryBarrier2, Field::dstStageMask), "VUID-VkMemoryBarrier2-dstStageMask-04995"},
+    {Key(Struct::VkMemoryBarrier2, Field::srcStageMask), "VUID-VkMemoryBarrier2-srcStageMask-04995"},
+    {Key(Struct::VkSemaphoreSubmitInfo, Field::stageMask), "VUID-VkSemaphoreSubmitInfo-stageMask-04995"},
+}};
+
 const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 bit, const DeviceExtensions &device_extensions) {
-    // special case for the NONE stage because it depends on sync2 extension being enabled
+    // special case for stages that require an extension or feature bit,
+    // this is checked in DisabledPipelineStages
     if (bit == VK_PIPELINE_STAGE_2_NONE) {
         return FindVUID(loc, kStageMaskErrorsNone);
-    }
-
-    // special case for FRAGMENT_SHADING_RATE_ATTACHMENT because it depends on KHR and/or NV extensions being enabled.
-    if (bit == VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
+    } else if (bit == VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
         return FindVUID(loc, kStageMaskErrorsShadingRate);
+    } else if (bit == VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI) {
+        return FindVUID(loc, kStageMaskErrorsSubpassShader);
+    } else if (bit == VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI) {
+        return FindVUID(loc, kStageMaskErrorsInvocationMask);
     }
 
     const auto &result = FindVUID(bit, loc, kStageMaskErrors);
@@ -643,6 +681,42 @@ static const std::map<VkAccessFlags2KHR, std::array<Entry, 6>> kAccessMask2Commo
          {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-04861"},
          {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-04861"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-04861"},
+     }}},
+    {VK_ACCESS_2_OPTICAL_FLOW_READ_BIT_NV,
+     {{
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-07455"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-07455"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-07455"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-07455"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-07455"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-07455"},
+     }}},
+    {VK_ACCESS_2_OPTICAL_FLOW_WRITE_BIT_NV,
+     {{
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-07456"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-07456"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-07456"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-07456"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-07456"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-07456"},
+     }}},
+    {VK_ACCESS_2_MICROMAP_WRITE_BIT_EXT,
+     {{
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-07457"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-07457"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-07457"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-07457"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-07457"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-07457"},
+     }}},
+    {VK_ACCESS_2_MICROMAP_READ_BIT_EXT,
+     {{
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-07458"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-07458"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-07458"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-07458"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-07458"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-07458"},
      }}},
     {VK_ACCESS_2_INVOCATION_MASK_READ_BIT_HUAWEI,
      {{
