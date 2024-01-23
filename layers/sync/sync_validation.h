@@ -577,8 +577,5 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                      uint64_t timeout, const RecordObject &record_obj) override;
     void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                              VkImage *pSwapchainImages, const RecordObject &record_obj) override;
-    void PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo,
-                                                 const RecordObject &record_obj) override;
-    void PreCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject &record_obj) override;
 };
 

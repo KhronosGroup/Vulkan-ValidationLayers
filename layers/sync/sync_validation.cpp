@@ -2641,6 +2641,9 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     // Heavyweight, but we need a proxy copy of the active command buffer access context
     CommandBufferAccessContext proxy_cb_context(*cb_context, CommandBufferAccessContext::AsProxyContext());
 
+    auto &proxy_label_commands = proxy_cb_context.GetProxyLabelCommands();
+    proxy_label_commands = cb_state->GetLabelCommands();
+
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
         proxy_cb_context.NextIndexedCommandTag(error_obj.location.function, cb_index);
@@ -2652,10 +2655,15 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         skip |= ReplayState(proxy_cb_context, *recorded_cb_context, error_obj, cb_index).ValidateFirstUse();
 
+        // Update proxy label commands so they can be used by InsertRecordedAccessLogEntries
+        const auto &recorded_label_commands = recorded_cb->GetLabelCommands();
+        proxy_label_commands.insert(proxy_label_commands.end(), recorded_label_commands.begin(), recorded_label_commands.end());
+
         // The barriers have already been applied in ValidatFirstUse
         ResourceUsageRange tag_range = proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
         proxy_cb_context.ResolveExecutedCommandBuffer(*recorded_cb_context->GetCurrentAccessContext(), tag_range.begin);
     }
+    proxy_label_commands.clear();
 
     return skip;
 }
@@ -3014,21 +3022,6 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
                 sync_image->SetOpaqueBaseAddress(*this);
             }
         }
-    }
-}
-
-void SyncValidator::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo,
-                                                            const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, record_obj);
-    if (auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer)) {
-        cb_state->access_context.PushDebugRegion(pLabelInfo ? pLabelInfo->pLabelName : nullptr);
-    }
-}
-
-void SyncValidator::PreCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    StateTracker::PreCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer, record_obj);
-    if (auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer)) {
-        cb_state->access_context.PopDebugRegion();
     }
 }
 
