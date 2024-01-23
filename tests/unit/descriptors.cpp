@@ -1296,6 +1296,7 @@ TEST_F(NegativeDescriptors, BindDescriptorSetsInfoPipelineLayout) {
 
     bind_ds_info.layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-None-09495");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-layout-09496");
     vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }

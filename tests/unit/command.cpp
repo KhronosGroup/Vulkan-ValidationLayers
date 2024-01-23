@@ -443,6 +443,28 @@ TEST_F(NegativeCommand, PushConstants) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeCommand, PushConstant2PipelineLayoutCreateInfo) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const float data[16] = {};
+    VkPushConstantsInfoKHR pc_info = vku::InitStructHelper();
+    pc_info.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pc_info.offset = 32;
+    pc_info.size = 16;
+    pc_info.pValues = data;
+    pc_info.layout = VK_NULL_HANDLE;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantsInfoKHR-layout-09496");
+    vk::CmdPushConstants2KHR(m_commandBuffer->handle(), &pc_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeCommand, NoBeginCommandBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
 

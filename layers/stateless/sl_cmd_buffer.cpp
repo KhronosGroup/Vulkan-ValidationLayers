@@ -307,8 +307,16 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
                                                                      const VkPushConstantsInfoKHR *pPushConstantsInfo,
                                                                      const ErrorObject &error_obj) const {
-    return ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size,
-                                    error_obj.location.dot(Field::pPushConstantsInfo));
+    bool skip = false;
+    skip |= ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size,
+                                     error_obj.location.dot(Field::pPushConstantsInfo));
+    if (pPushConstantsInfo->layout == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushConstantsInfo->pNext)) {
+        skip |= LogError("VUID-VkPushConstantsInfoKHR-layout-09496", commandBuffer,
+                         error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout),
+                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+    }
+    return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
@@ -488,8 +496,16 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(
 bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                                          const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
                                                                          const ErrorObject &error_obj) const {
-    return ValidateWriteDescriptorSet(error_obj.location, pPushDescriptorSetInfo->descriptorWriteCount,
-                                      pPushDescriptorSetInfo->pDescriptorWrites);
+    bool skip = false;
+    skip |= ValidateWriteDescriptorSet(error_obj.location, pPushDescriptorSetInfo->descriptorWriteCount,
+                                       pPushDescriptorSetInfo->pDescriptorWrites);
+    if (pPushDescriptorSetInfo->layout == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetInfo->pNext)) {
+        skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-layout-09496", commandBuffer,
+                         error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout),
+                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+    }
+    return skip;
 }
 
 bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const {
