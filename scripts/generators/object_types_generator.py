@@ -1,10 +1,10 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2023 The Khronos Group Inc.
-# Copyright (c) 2015-2023 Valve Corporation
-# Copyright (c) 2015-2023 LunarG, Inc.
-# Copyright (c) 2015-2023 Google Inc.
-# Copyright (c) 2023-2023 RasterGrid Kft.
+# Copyright (c) 2015-2024 The Khronos Group Inc.
+# Copyright (c) 2015-2024 Valve Corporation
+# Copyright (c) 2015-2024 LunarG, Inc.
+# Copyright (c) 2015-2024 Google Inc.
+# Copyright (c) 2023-2024 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ class ObjectTypesOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2023 The Khronos Group Inc.
-            * Copyright (c) 2015-2023 Valve Corporation
-            * Copyright (c) 2015-2023 LunarG, Inc.
-            * Copyright (c) 2015-2023 Google Inc.
+            * Copyright (c) 2015-2024 The Khronos Group Inc.
+            * Copyright (c) 2015-2024 Valve Corporation
+            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2024 Google Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
@@ -118,6 +118,18 @@ static inline VkDebugReportObjectTypeEXT ConvertCoreObjectToDebugReportObject(Vk
             if object != 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT':
                 out.append(f'        case {handle.type}: return {object};\n')
         out.append('''        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    }
+}\n''')
+
+        out.append('''
+static inline VulkanObjectType ConvertDebugReportObjectToVulkanObject(VkDebugReportObjectTypeEXT debug_obj) {
+    switch (debug_obj) {
+        case VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT: return kVulkanObjectTypeUnknown;\n''')
+        for handle in self.vk.handles.values():
+            object = debugReportObject[handle.name]
+            if object != 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT':
+                out.append(f'        case {object}: return kVulkanObjectType{handle.name[2:]};\n')
+        out.append('''        default: return kVulkanObjectTypeUnknown;
     }
 }\n''')
 
