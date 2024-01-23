@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1079,8 +1079,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     VkBufferCreateInfo unbound_buffer_ci = vku::InitStructHelper();
     unbound_buffer_ci.size = 1024;
     unbound_buffer_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-    vkt::Buffer unbound_buffer;
-    unbound_buffer.init_no_mem(*m_device, unbound_buffer_ci);
+    vkt::Buffer unbound_buffer(*m_device, unbound_buffer_ci, vkt::no_mem);
 
     constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
     constexpr std::array<uint32_t, 3> indicies = {0, 1, 2};

@@ -758,12 +758,10 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         buffCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         buffCI.size = large_buffer_size;
         buffCI.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-        auto large_buffer = std::make_unique<vkt::Buffer>();
-        large_buffer->init_no_mem(*m_device, buffCI);
+        auto large_buffer = std::make_unique<vkt::Buffer>(*m_device, buffCI, vkt::no_mem);
 
         buffCI.size = small_buffer_size;
-        auto small_buffer = std::make_unique<vkt::Buffer>();
-        small_buffer->init_no_mem(*m_device, buffCI);
+        auto small_buffer = std::make_unique<vkt::Buffer>(*m_device, buffCI, vkt::no_mem);
 
         VkMemoryRequirements buffer_mem_reqs = {};
         vk::GetBufferMemoryRequirements(m_device->device(), large_buffer->handle(), &buffer_mem_reqs);
@@ -1159,9 +1157,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
     VkBufferCreateInfo buffCI = vku::InitStructHelper();
     buffCI.size = 4096;
     buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    vkt::Buffer d_buffer;
-    d_buffer.init_no_mem(*m_device, buffCI);
+    vkt::Buffer d_buffer(*m_device, buffCI, vkt::no_mem);
 
     VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();

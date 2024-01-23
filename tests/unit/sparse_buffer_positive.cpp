@@ -35,10 +35,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
-    vkt::Buffer buffer_sparse2;
-    buffer_sparse2.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
+    vkt::Buffer buffer_sparse2(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -131,8 +129,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -197,8 +194,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     VkBufferCreateInfo buffer_ci =
         vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer_sparse(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -276,8 +272,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     VkBufferCreateInfo buffer_ci =
         vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer_sparse(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);

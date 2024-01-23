@@ -585,11 +585,10 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     RETURN_IF_SKIP(Init());
 
     // Init a non host visible buffer
-    vkt::Buffer buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-    buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
     VkMemoryRequirements memory_requirements = buffer.memory_requirements();
     VkMemoryAllocateInfo memory_alloc = vku::InitStructHelper();
     memory_alloc.allocationSize = memory_requirements.size;
@@ -670,8 +669,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 1024;
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-    vkt::Buffer dst_buffer;
-    dst_buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer dst_buffer(*m_device, buffer_ci, vkt::no_mem);
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 0);
     blas->SetDeviceBuffer(std::move(dst_buffer));
@@ -702,11 +700,10 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     RETURN_IF_SKIP(Init());
 
     // Init a non host visible buffer
-    vkt::Buffer non_host_visible_buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-    non_host_visible_buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer non_host_visible_buffer(*m_device, buffer_ci, vkt::no_mem);
     VkMemoryRequirements memory_requirements = non_host_visible_buffer.memory_requirements();
     VkMemoryAllocateInfo memory_alloc = vku::InitStructHelper();
     memory_alloc.allocationSize = memory_requirements.size;
@@ -764,11 +761,10 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     RETURN_IF_SKIP(Init());
 
     // Init a non host visible buffer
-    vkt::Buffer non_host_visible_buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-    non_host_visible_buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer non_host_visible_buffer(*m_device, buffer_ci, vkt::no_mem);
     VkMemoryRequirements memory_requirements = non_host_visible_buffer.memory_requirements();
     VkMemoryAllocateInfo memory_alloc = vku::InitStructHelper();
     memory_alloc.allocationSize = memory_requirements.size;
@@ -806,11 +802,10 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     RETURN_IF_SKIP(Init());
 
     // Init a non host visible buffer
-    vkt::Buffer non_host_visible_buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-    non_host_visible_buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer non_host_visible_buffer(*m_device, buffer_ci, vkt::no_mem);
     VkMemoryRequirements memory_requirements = non_host_visible_buffer.memory_requirements();
     VkMemoryAllocateInfo memory_alloc = vku::InitStructHelper();
     memory_alloc.allocationSize = memory_requirements.size;
@@ -1038,13 +1033,12 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
         ASSERT_EQ(VK_SUCCESS, result);
     }
 
-    vkt::Buffer buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage =
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
     buffer_ci.size = 4096;
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
@@ -1119,9 +1113,8 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
 
     // buffer is missing flag VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
     {
-        vkt::Buffer buffer_missing_flag;
         buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        buffer_missing_flag.init_no_mem(*m_device, buffer_ci);
+        vkt::Buffer buffer_missing_flag(*m_device, buffer_ci, vkt::no_mem);
         vk::BindBufferMemory(device(), buffer_missing_flag.handle(), mem.handle(), 0);
         const VkDeviceAddress device_address_missing_flag = buffer_missing_flag.address();
 
@@ -1508,8 +1501,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         auto buffer_ci =
             vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
-        vkt::Buffer invalid_buffer;
-        invalid_buffer.init_no_mem(*m_device, buffer_ci);
+        vkt::Buffer invalid_buffer(*m_device, buffer_ci, vkt::no_mem);
         auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         build_info.GetDstAS()->SetDeviceBuffer(std::move(invalid_buffer));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03707");
@@ -1716,8 +1708,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
         std::vector<std::shared_ptr<vkt::Buffer>> scratch_buffers(build_info_count);
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
         for (auto &scratch_buffer : scratch_buffers) {
-            scratch_buffer = std::make_shared<vkt::Buffer>();
-            scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
+            scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
             vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
 
             auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -1983,8 +1974,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     buffer_ci.size = buffer_size;
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
     as_create_info.pNext = NULL;
@@ -2085,12 +2075,10 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
             buffer_ci.usage = bad_buffer_usage;
         }
 
-        vkt::Buffer vbo;
-        vbo.init_no_mem(*m_device, buffer_ci);
+        vkt::Buffer vbo(*m_device, buffer_ci, vkt::no_mem);
         vk::BindBufferMemory(device(), vbo.handle(), buffer_memory.handle(), 0);
 
-        vkt::Buffer ibo;
-        ibo.init_no_mem(*m_device, buffer_ci);
+        vkt::Buffer ibo(*m_device, buffer_ci, vkt::no_mem);
         vk::BindBufferMemory(device(), ibo.handle(), buffer_memory.handle(), 0);
 
         // Those calls to vkGetBufferDeviceAddressKHR will internally record vbo and ibo device addresses

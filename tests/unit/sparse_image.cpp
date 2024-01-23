@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -278,8 +278,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =

@@ -146,9 +146,9 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
 
     RETURN_IF_SKIP(Init());
 
-    auto buffer = std::unique_ptr<vkt::Buffer>(new vkt::Buffer());
     VkDeviceSize buff_size = 256;
-    buffer->init_no_mem(*DeviceObj(), vkt::Buffer::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+    auto buffer = std::make_unique<vkt::Buffer>(*m_device, vkt::Buffer::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
+                                                vkt::no_mem);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -162,8 +162,8 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    VkImageObj image(DeviceObj());
-    image.init_no_mem(*DeviceObj(), image_create_info);
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
 
     const auto buffer_memory_requirements = buffer->memory_requirements();
     const auto image_memory_requirements = image.memory_requirements();
@@ -177,7 +177,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a host visible memory type for both a buffer and an image";
     }
-    mem.init(*DeviceObj(), alloc_info);
+    mem.init(*m_device, alloc_info);
 
     auto pData = mem.map();
     std::memset(pData, 0xCADECADE, static_cast<size_t>(buff_size));

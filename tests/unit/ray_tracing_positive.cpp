@@ -177,13 +177,12 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
         ASSERT_EQ(VK_SUCCESS, result);
     }
 
-    vkt::Buffer buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage =
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
     buffer_ci.size = 4096;
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
@@ -479,8 +478,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-        auto scratch_buffer = std::make_shared<vkt::Buffer>();
-        scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
+        auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
         vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
         for (size_t i = 0; i < build_info_count; ++i) {

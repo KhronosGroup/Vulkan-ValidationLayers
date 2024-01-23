@@ -177,12 +177,10 @@ TEST_F(NegativeProtectedMemory, Memory) {
 
     // Create actual protected and unprotected buffers
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
-    vkt::Buffer buffer_protected;
-    buffer_protected.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer_protected(*m_device, buffer_create_info, vkt::no_mem);
 
     buffer_create_info.flags = 0;
-    vkt::Buffer buffer_unprotected;
-    buffer_unprotected.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer_unprotected(*m_device, buffer_create_info, vkt::no_mem);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
@@ -727,12 +725,10 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
-    vkt::Buffer buffer_protected;
-    buffer_protected.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer_protected(*m_device, buffer_create_info, vkt::no_mem);
 
     buffer_create_info.flags = 0;
-    vkt::Buffer buffer_unprotected;
-    buffer_unprotected.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer_unprotected(*m_device, buffer_create_info, vkt::no_mem);
 
     // Create actual protected and unprotected images
     const VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;

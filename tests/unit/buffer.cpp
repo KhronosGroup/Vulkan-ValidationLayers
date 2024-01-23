@@ -902,8 +902,7 @@ TEST_F(NegativeBuffer, CompletelyOverlappingBufferCopy) {
     copy_info.size = 256;
     vkt::Buffer buffer(*m_device, copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
-    vkt::Buffer buffer_shared_memory;
-    buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());
+    vkt::Buffer buffer_shared_memory(*m_device, buffer.create_info(), vkt::no_mem);
     buffer_shared_memory.bind_memory(buffer.memory(), 0u);
 
     m_commandBuffer->begin();
@@ -939,8 +938,7 @@ TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
-    vkt::Buffer buffer_shared_memory;
-    buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());
+    vkt::Buffer buffer_shared_memory(*m_device, buffer.create_info(), vkt::no_mem);
     buffer_shared_memory.bind_memory(buffer.memory(), 0u);
 
     m_commandBuffer->begin();

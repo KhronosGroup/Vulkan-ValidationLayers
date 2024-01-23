@@ -505,8 +505,7 @@ TEST_F(NegativeMemory, BindMemory) {
         VkImageObj image(m_device);
         image.init_no_mem(*m_device, image_create_info);
 
-        vkt::Buffer buffer;
-        buffer.init_no_mem(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
@@ -540,8 +539,7 @@ TEST_F(NegativeMemory, BindMemory) {
         VkImageObj image(m_device);
         image.init_no_mem(*m_device, image_create_info);
 
-        vkt::Buffer buffer;
-        buffer.init_no_mem(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
@@ -572,8 +570,7 @@ TEST_F(NegativeMemory, BindMemory) {
         VkImageObj image(m_device);
         image.init_no_mem(*m_device, image_create_info);
 
-        vkt::Buffer buffer;
-        buffer.init_no_mem(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
@@ -679,8 +676,7 @@ TEST_F(NegativeMemory, BindMemory) {
         if (!m_device->phy().features().sparseResidencyBuffer) {
             // most likely means sparse formats aren't supported here; skip this test.
         } else {
-            vkt::Buffer sparse_buffer;
-            sparse_buffer.init_no_mem(*m_device, sparse_buffer_create_info);
+            vkt::Buffer sparse_buffer(*m_device, sparse_buffer_create_info, vkt::no_mem);
             VkMemoryRequirements sparse_mem_reqs = {};
             vk::GetBufferMemoryRequirements(m_device->device(), sparse_buffer.handle(), &sparse_mem_reqs);
             if (sparse_mem_reqs.memoryTypeBits != 0) {
@@ -715,8 +711,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
     image.init_no_mem(*m_device, image_create_info);
 
     auto buffer_info = vkt::Buffer::create_info(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
@@ -1386,8 +1381,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
     auto buffer_info = vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
     auto buffer_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
     VkMemoryDedicatedAllocateInfoKHR buffer_dedicated_info = vku::InitStructHelper();
     buffer_dedicated_info.buffer = buffer.handle();
@@ -1395,8 +1389,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vkt::DeviceMemory dedicated_buffer_memory;
     dedicated_buffer_memory.init(*m_device, buffer_alloc_info);
 
-    vkt::Buffer wrong_buffer;
-    wrong_buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer wrong_buffer(*m_device, buffer_info, vkt::no_mem);
 
     // Bind with wrong buffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-01508");
@@ -2239,9 +2232,8 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
         GTEST_SKIP() << "Test requires a physical device group with more than 1 device";
     }
 
-    vkt::Buffer buffer;
     auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &buffer_mem_reqs);
@@ -2336,8 +2328,7 @@ TEST_F(NegativeMemory, SetDeviceMemoryPriority) {
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     vkt::DeviceMemory buffer_memory;
     buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));

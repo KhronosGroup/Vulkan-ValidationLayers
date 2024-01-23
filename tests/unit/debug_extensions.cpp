@@ -29,8 +29,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.size = 1;
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements memRequirements;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
@@ -158,8 +157,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.size = 1;
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements memRequirements;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);

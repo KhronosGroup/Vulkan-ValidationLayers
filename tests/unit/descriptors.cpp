@@ -1945,8 +1945,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         bci.usage = test_case.buffer_usage;
         bci.size = test_case.max_range + test_case.min_align;  // Make buffer bigger than range limit
         bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        vkt::Buffer buffer;
-        buffer.init_no_mem(*m_device, bci);
+        vkt::Buffer buffer(*m_device, bci, vkt::no_mem);
         if (buffer.handle() == VK_NULL_HANDLE) {
             std::string msg = "Failed to allocate buffer of size " + std::to_string(bci.size) + " in DSBufferLimitErrors; skipped";
             printf("%s\n", msg.c_str());

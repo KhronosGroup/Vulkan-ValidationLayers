@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,9 +91,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buf_info);
-    ASSERT_TRUE(buffer.initialized());
+    vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
