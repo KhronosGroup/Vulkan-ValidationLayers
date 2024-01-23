@@ -424,6 +424,13 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
         skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
     }
 
+    if (pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorSetsInfo->pNext)) {
+        skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-layout-09496", commandBuffer,
+                         error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout),
+                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+    }
+
     return skip;
 }
 
@@ -2239,6 +2246,13 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
         skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
     }
 
+    if (pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pSetDescriptorBufferOffsetsInfo->pNext)) {
+        skip |= LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-layout-09496", commandBuffer,
+                         error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo).dot(Field::layout),
+                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
+    }
+
     return skip;
 }
 
@@ -2316,6 +2330,13 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         skip |= ValidatePipelineBindPoint(cb_state.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    }
+
+    if (pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorBufferEmbeddedSamplersInfo->pNext)) {
+        skip |= LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-layout-09496", commandBuffer,
+                         error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout),
+                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
     }
 
     return skip;
@@ -3716,6 +3737,13 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
     if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
         skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", device,
                          error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout), "is not valid.");
+    }
+
+    if (pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE &&
+        !vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetWithTemplateInfo->pNext)) {
+        skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-09496", commandBuffer,
+                         error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout),
+                         "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
     }
     return skip;
 }
