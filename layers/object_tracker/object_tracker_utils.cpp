@@ -1189,6 +1189,48 @@ void ObjectLifetimes::PostCallRecordCreateFramebuffer(VkDevice device, const VkF
     CreateObject(*pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator, record_obj.location);
 }
 
+bool ObjectLifetimes::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT *pTagInfo,
+                                                                const ErrorObject &error_obj) const {
+    // Checked by chassis: device: "VUID-vkDebugMarkerSetObjectTagEXT-device-parameter"
+    bool skip = false;
+    if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {
+        skip |=
+            LogError("VUID-VkDebugMarkerObjectTagInfoEXT-objectType-01493", device,
+                     error_obj.location.dot(Field::pTagInfo).dot(Field::objectType), "is VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT.");
+    } else {
+        const auto object_type = ConvertDebugReportObjectToVulkanObject(pTagInfo->objectType);
+        if (pTagInfo->object == (uint64_t)VK_NULL_HANDLE) {
+            skip |= LogError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01494", device,
+                             error_obj.location.dot(Field::pTagInfo).dot(Field::object), "is VK_NULL_HANDLE.");
+        } else if (!object_map[object_type].contains(pTagInfo->object)) {
+            skip |= LogError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01495", device,
+                             error_obj.location.dot(Field::pTagInfo).dot(Field::objectType), "doesn't match the object.");
+        }
+    }
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo,
+                                                                 const ErrorObject &error_obj) const {
+    // Checked by chassis: device: "VUID-vkDebugMarkerSetObjectNameEXT-device-parameter"
+    bool skip = false;
+    if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {
+        skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-objectType-01490", device,
+                         error_obj.location.dot(Field::pNameInfo).dot(Field::objectType),
+                         "is VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT.");
+    } else {
+        const auto object_type = ConvertDebugReportObjectToVulkanObject(pNameInfo->objectType);
+        if (pNameInfo->object == (uint64_t)VK_NULL_HANDLE) {
+            skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01491", device,
+                             error_obj.location.dot(Field::pNameInfo).dot(Field::object), "is VK_NULL_HANDLE.");
+        } else if (!object_map[object_type].contains(pNameInfo->object)) {
+            skip |= LogError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01492", device,
+                             error_obj.location.dot(Field::pNameInfo).dot(Field::objectType), "doesn't match the object.");
+        }
+    }
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;

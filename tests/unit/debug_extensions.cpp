@@ -16,7 +16,6 @@
 
 TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     TEST_DESCRIPTION("Ensure debug marker object names are printed in debug report output");
-
     AddRequiredExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -25,45 +24,35 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
 
-    VkBuffer buffer;
-    VkDeviceMemory memory_1, memory_2;
     std::string memory_name = "memory_name";
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.size = 1;
-
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
     memory_allocate_info.allocationSize = memRequirements.size;
     memory_allocate_info.memoryTypeIndex = 0;
 
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
-
+    vkt::DeviceMemory memory_1(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory_2(*m_device, memory_allocate_info);
     VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
-    name_info.object = (uint64_t)memory_2;
+    name_info.object = (uint64_t)memory_2.handle();
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
 
-    vk::BindBufferMemory(device(), buffer, memory_1, 0);
+    vk::BindBufferMemory(device(), buffer.handle(), memory_1.handle(), 0);
 
     // Test core_validation layer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, memory_name);
-    vk::BindBufferMemory(device(), buffer, memory_2, 0);
+    vk::BindBufferMemory(device(), buffer.handle(), memory_2.handle(), 0);
     m_errorMonitor->VerifyFound();
-
-    vk::FreeMemory(device(), memory_1, nullptr);
-    memory_1 = VK_NULL_HANDLE;
-    vk::FreeMemory(device(), memory_2, nullptr);
-    memory_2 = VK_NULL_HANDLE;
-    vk::DestroyBuffer(device(), buffer, nullptr);
-    buffer = VK_NULL_HANDLE;
 
     VkCommandBuffer commandBuffer;
     std::string commandBuffer_name = "command_buffer_name";
@@ -102,6 +91,42 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugExtensions, DebugMarkerSetObject) {
+    AddRequiredExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping object naming test with MockICD.";
+    }
+
+    std::string memory_name = "memory_name";
+
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
+    memory_allocate_info.allocationSize = 64;
+    memory_allocate_info.memoryTypeIndex = 0;
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
+
+    VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.object = (uint64_t)VK_NULL_HANDLE;
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
+    name_info.pObjectName = memory_name.c_str();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectNameInfoEXT-object-01491");
+    vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    name_info.object = (uint64_t)memory.handle();
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectNameInfoEXT-objectType-01490");
+    vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectNameInfoEXT-object-01492");
+    vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
 
@@ -128,25 +153,23 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
-    VkBuffer buffer;
-    VkDeviceMemory memory_1, memory_2;
     std::string memory_name = "memory_name";
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.size = 1;
-
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
     memory_allocate_info.allocationSize = memRequirements.size;
     memory_allocate_info.memoryTypeIndex = 0;
 
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
+    vkt::DeviceMemory memory_1(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory_2(*m_device, memory_allocate_info);
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
@@ -166,7 +189,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
 
     // Pass in 'unknown' object type and see if parameter validation catches it
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587");
-    name_info.objectHandle = (uint64_t)memory_2;
+    name_info.objectHandle = (uint64_t)memory_2.handle();
     name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
@@ -174,19 +197,12 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
-    vk::BindBufferMemory(device(), buffer, memory_1, 0);
+    vk::BindBufferMemory(device(), buffer.handle(), memory_1.handle(), 0);
 
     // Test core_validation layer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, memory_name);
-    vk::BindBufferMemory(device(), buffer, memory_2, 0);
+    vk::BindBufferMemory(device(), buffer.handle(), memory_2.handle(), 0);
     m_errorMonitor->VerifyFound();
-
-    vk::FreeMemory(device(), memory_1, nullptr);
-    memory_1 = VK_NULL_HANDLE;
-    vk::FreeMemory(device(), memory_2, nullptr);
-    memory_2 = VK_NULL_HANDLE;
-    vk::DestroyBuffer(device(), buffer, nullptr);
-    buffer = VK_NULL_HANDLE;
 
     VkCommandBuffer commandBuffer;
     std::string commandBuffer_name = "command_buffer_name";
@@ -248,6 +264,43 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
+}
+
+TEST_F(NegativeDebugExtensions, DebugMarkerSetUtils) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping object naming test with MockICD.";
+    }
+
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
+    memory_allocate_info.allocationSize = 64;
+    memory_allocate_info.memoryTypeIndex = 0;
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
+
+    int tags[3] = {1, 2, 3};
+    VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
+    name_info.object = (uint64_t)VK_NULL_HANDLE;
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
+    name_info.tagName = 1;
+    name_info.tagSize = 4;
+    name_info.pTag = tags;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectTagInfoEXT-object-01494");
+    vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    name_info.object = (uint64_t)memory.handle();
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectTagInfoEXT-objectType-01493");
+    vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectTagInfoEXT-object-01495");
+    vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
