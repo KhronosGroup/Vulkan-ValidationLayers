@@ -690,11 +690,11 @@ class CommandBuffer : public RefcountedStateObject {
     void EndLabel();
     int LabelStackDepth() const { return label_stack_depth_; }
 
-    struct DebugLabelCommand {
+    struct LabelCommand {
         bool begin = false;      // vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT
         std::string label_name;  // used when begin == true
     };
-    const std::vector<DebugLabelCommand> &GetDebugLabelCommands() const { return debug_label_commands_; }
+    const std::vector<LabelCommand> &GetLabelCommands() const { return label_commands_; }
 
   private:
     void ResetCBState();
@@ -704,7 +704,7 @@ class CommandBuffer : public RefcountedStateObject {
     // Negative value for a primary command buffer is allowed. Validation is done at submit time accross all command buffers.
     int label_stack_depth_ = 0;
     // Used during sumbit time validation.
-    std::vector<DebugLabelCommand> debug_label_commands_;
+    std::vector<LabelCommand> label_commands_;
 
     uint32_t active_subpass_;
     // Stores rasterization samples count obtained from the first pipeline with a pMultisampleState in the active subpass,

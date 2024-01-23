@@ -102,7 +102,6 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     cb_access_context_.ImportAsyncContexts(*from_context);
 
     events_context_ = from.events_context_;
-    debug_regions_ = from.debug_regions_;
 
     // We don't want to copy the full render_pass_context_ history just for the proxy.
 }
@@ -124,7 +123,6 @@ void CommandBufferAccessContext::Reset() {
     current_renderpass_context_ = nullptr;
     events_context_.Clear();
     dynamic_rendering_info_.reset();
-    debug_regions_ = DebugRegions{};
 }
 
 std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) const {
@@ -133,7 +131,8 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
     std::stringstream out;
     assert(tag < access_log_->size());
     const auto &record = (*access_log_)[tag];
-    out << record.Formatter(*sync_state_, cb_state_);
+    const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
+    out << record.Formatter(*sync_state_, cb_state_, debug_name_provider);
     return out.str();
 }
 
@@ -842,6 +841,20 @@ void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContex
 void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &recorded_context) {
     cbs_referenced_->emplace(recorded_context.GetCBStateShared());
     access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
+
+    // Adjust command indices for the log records added from recorded_context.
+    const auto &recorded_label_commands = recorded_context.cb_state_->GetLabelCommands();
+    const bool use_proxy = !proxy_label_commands_.empty();
+    const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
+    if (!label_commands.empty()) {
+        assert(label_commands.size() >= recorded_label_commands.size());
+        const uint32_t command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_commands.size());
+        for (size_t i = 0; i < recorded_context.access_log_->size(); i++) {
+            size_t index = (access_log_->size() - 1) - i;
+            assert((*access_log_)[index].label_command_index != vvl::kU32Max);
+            (*access_log_)[index].label_command_index += command_offset;
+        }
+    }
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
@@ -858,8 +871,8 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command
     if (handle) {
         access_log_->back().AddHandle(std::move(handle));
     }
-    if (!debug_regions_.commands.empty()) {
-        access_log_->back().debug_region_command_index = static_cast<uint32_t>(debug_regions_.commands.size() - 1);
+    if (!cb_state_->GetLabelCommands().empty()) {
+        access_log_->back().label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
     }
     return next;
 }
@@ -879,8 +892,8 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, N
         access_log_->back().AddHandle(handle);
         command_handles_.emplace_back(std::move(handle));
     }
-    if (!debug_regions_.commands.empty()) {
-        access_log_->back().debug_region_command_index = static_cast<uint32_t>(debug_regions_.commands.size() - 1);
+    if (!cb_state_->GetLabelCommands().empty()) {
+        access_log_->back().label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
     }
     CheckCommandTagDebugCheckpoint();
     return next;
@@ -893,46 +906,28 @@ ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(vvl::Func com
     return NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
 }
 
-void CommandBufferAccessContext::PushDebugRegion(const char *region_name) {
-    std::string name = (region_name == nullptr || region_name[0] == 0) ? "(unnamed debug region)" : region_name;
-    debug_regions_.label_names.push_back(std::move(name));
+std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRecord &record) const {
+    const bool use_proxy = !proxy_label_commands_.empty();
+    const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
 
-    DebugRegions::DebugRegionCommand command;
-    command.start_region = true;
-    command.label_name_index = static_cast<uint32_t>(debug_regions_.label_names.size() - 1);
-    debug_regions_.commands.push_back(command);
-}
-
-void CommandBufferAccessContext::PopDebugRegion() {
-    DebugRegions::DebugRegionCommand command;
-    command.start_region = false;
-    debug_regions_.commands.push_back(command);
-}
-
-std::string CommandBufferAccessContext::GetDebugRegionFullyQualifiedName(uint32_t debug_region_command_index) const {
-    return debug_regions_.GetDebugRegionFullyQualifiedName(debug_region_command_index);
-}
-
-std::string CommandBufferAccessContext::DebugRegions::GetDebugRegionFullyQualifiedName(uint32_t debug_region_command_index) const {
-    // Replay commands up to specified command index. nested_label_indices will be populated
-    // with nested debug regions that correspond to the location of the specified command.
-    assert(debug_region_command_index < commands.size());
-    std::vector<uint32_t> nested_label_indices;
-    for (uint32_t i = 0; i <= debug_region_command_index; i++) {
-        if (commands[i].start_region) {
-            assert(commands[i].label_name_index < label_names.size());
-            nested_label_indices.push_back(commands[i].label_name_index);
-        } else {
-            nested_label_indices.pop_back();
+    // Replay commands up to the specified command index.
+    assert(record.label_command_index < label_commands.size());
+    std::vector<std::string> label_stack;
+    for (uint32_t i = 0; i <= record.label_command_index; i++) {
+        const auto &command = label_commands[i];
+        if (command.begin) {
+            label_stack.push_back(command.label_name.empty() ? "(unnamed region)" : command.label_name);
+        } else if (!label_stack.empty()) {  // primary command buffer labels are not necessarily balanced
+            label_stack.pop_back();
         }
     }
-    // Concatenate nested region names
+    // Concatenate nested labels
     std::string name;
-    for (uint32_t label_index : nested_label_indices) {
+    for (const std::string &label_name : label_stack) {
         if (!name.empty()) {
             name += "::";
         }
-        name += label_names[label_index];
+        name += label_name;
     }
     return name;
 }
@@ -1145,13 +1140,11 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         }
         out << ", reset_no: " << std::to_string(record.reset_count);
 
-        if (record.debug_region_command_index != vvl::kU32Max) {
-            const auto &access_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state)->access_context;
-            const std::string region_name = access_context.GetDebugRegionFullyQualifiedName(record.debug_region_command_index);
-            // Empty region name means that we are not inside any debug region.
-            // If we are inside debug region with an empty name then it will reported as "(unnamed debug region)".
-            if (!region_name.empty()) {
-                out << ", debug region: " << region_name;
+        // Report debug region name. Empty name means that we are not inside any debug region.
+        if (formatter.debug_name_provider) {
+            const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
+            if (!debug_region_name.empty()) {
+                out << ", debug region: " << debug_region_name;
             }
         }
     }

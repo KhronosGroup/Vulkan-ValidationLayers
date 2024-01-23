@@ -1151,6 +1151,36 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
     }
 }
 
+static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
+    if (queue_state.found_unbalanced_cmdbuf_label) return;
+    for (const auto &command : cb_state.GetLabelCommands()) {
+        if (command.begin) {
+            queue_state.cmdbuf_label_stack.push_back(command.label_name);
+        } else {
+            if (queue_state.cmdbuf_label_stack.empty()) {
+                queue_state.found_unbalanced_cmdbuf_label = true;
+                return;
+            }
+            queue_state.last_closed_cmdbuf_label = queue_state.cmdbuf_label_stack.back();
+            queue_state.cmdbuf_label_stack.pop_back();
+        }
+    }
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                       VkFence fence, const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(submit->pCommandBuffers[i])) {
+                auto queue_state = Get<vvl::Queue>(queue);
+                UpdateCmdBufLabelStack(*cb_state, *queue_state);
+            }
+        }
+    }
+}
+
 void ValidationStateTracker::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                           VkFence fence, const RecordObject &record_obj) {
     PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
@@ -1192,6 +1222,24 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
     }
     if (early_retire_seq) {
         queue_state->NotifyAndWait(record_obj.location, early_retire_seq);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                           VkFence fence, const RecordObject &record_obj) {
+    PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                        VkFence fence, const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    for (const auto &submit : vvl::make_span(pSubmits, submitCount)) {
+        for (const auto &cmdbuf_info : vvl::make_span(submit.pCommandBufferInfos, submit.commandBufferInfoCount)) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(cmdbuf_info.commandBuffer)) {
+                auto queue_state = Get<vvl::Queue>(queue);
+                UpdateCmdBufLabelStack(*cb_state, *queue_state);
+            }
+        }
     }
 }
 
@@ -4063,9 +4111,17 @@ void ValidationStateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBu
     BeginCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 }
 
+void ValidationStateTracker::PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,
+                                                                      const VkDebugUtilsLabelEXT *pLabelInfo,
+                                                                      const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    cb_state->BeginLabel((pLabelInfo && pLabelInfo->pLabelName) ? pLabelInfo->pLabelName : "");
+}
+
 void ValidationStateTracker::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
+    cb_state->EndLabel();
     EndCmdDebugUtilsLabel(report_data, commandBuffer);
 }
 

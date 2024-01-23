@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,10 +163,11 @@ class BatchAccessLog {
     struct AccessRecord {
         const BatchRecord *batch;
         const ResourceUsageRecord *record;
-        bool IsValid() const { return batch && record; }
+        const DebugNameProvider *debug_name_provider;
+        bool IsValid() const { return batch && record && debug_name_provider; }
     };
 
-    struct CBSubmitLog {
+    struct CBSubmitLog : DebugNameProvider {
       public:
         CBSubmitLog() = default;
         CBSubmitLog(const CBSubmitLog &batch) = default;
@@ -174,16 +175,26 @@ class BatchAccessLog {
         CBSubmitLog &operator=(const CBSubmitLog &other) = default;
         CBSubmitLog &operator=(CBSubmitLog &&other) = default;
         CBSubmitLog(const BatchRecord &batch, std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs,
-                    std::shared_ptr<const CommandExecutionContext::AccessLog> log)
-            : batch_(batch), cbs_(cbs), log_(log) {}
+                    std::shared_ptr<const CommandExecutionContext::AccessLog> log);
         CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb);
         size_t Size() const { return log_->size(); }
         AccessRecord operator[](ResourceUsageTag tag) const;
+
+        // DebugNameProvider
+        std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
 
       private:
         BatchRecord batch_;
         std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs_;
         std::shared_ptr<const CommandExecutionContext::AccessLog> log_;
+
+        struct DebugRegions {
+            std::vector<uint32_t> region_index_for_tag;  // region index for each access log record
+            std::vector<std::string> regions;            // fully qualified region names
+            DebugRegions() = default;
+            DebugRegions(const BatchRecord &batch, const CommandBufferAccessContext &cb);
+        };
+        DebugRegions debug_regions_;
     };
 
     ResourceUsageTag Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access);

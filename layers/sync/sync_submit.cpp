@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -587,7 +587,7 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
         out << ", batch_tag: " << batch.bias;
 
         // Commandbuffer Usages Information
-        out << ", " << record.Formatter(*sync_state_, nullptr);
+        out << ", " << record.Formatter(*sync_state_, nullptr, access.debug_name_provider);
     }
     return out.str();
 }
@@ -892,16 +892,92 @@ BatchAccessLog::AccessRecord BatchAccessLog::operator[](ResourceUsageTag tag) co
     return AccessRecord();
 }
 
+std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageRecord& record) const {
+    assert(log_->size() == debug_regions_.region_index_for_tag.size());
+    ptrdiff_t record_index = &record - log_->data();
+    assert(record_index >= 0 && record_index < (ptrdiff_t)log_->size());
+    uint32_t region_index = debug_regions_.region_index_for_tag[record_index];
+    return debug_regions_.regions[region_index];
+}
+
 BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsageTag tag) const {
     assert(tag >= batch_.bias);
     const size_t index = tag - batch_.bias;
     assert(log_);
     assert(index < log_->size());
-    return AccessRecord{&batch_, &(*log_)[index]};
+    const auto debug_name_provider = debug_regions_.region_index_for_tag.empty() ? nullptr : this;
+    return AccessRecord{&batch_, &(*log_)[index], debug_name_provider};
 }
 
+BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch,
+                                         std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs,
+                                         std::shared_ptr<const CommandExecutionContext::AccessLog> log)
+    : batch_(batch), cbs_(cbs), log_(log) {}
+
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb)
-    : CBSubmitLog(batch, cb.GetCBReferencesShared(), cb.GetAccessLogShared()) {}
+    : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), debug_regions_(batch, cb) {}
+
+BatchAccessLog::CBSubmitLog::DebugRegions::DebugRegions(const BatchRecord& batch, const CommandBufferAccessContext& cb) {
+    const auto& label_commands = cb.GetCBState().GetLabelCommands();
+    if (label_commands.empty()) {
+        return;
+    }
+    // Get queue's active debug region
+    std::string current_debug_region;
+    const vvl::Queue& queue = *batch.queue->GetQueueState();
+    for (const std::string& label_name : queue.cmdbuf_label_stack) {
+        if (!current_debug_region.empty()) {
+            current_debug_region += "::";
+        }
+        current_debug_region += label_name;
+    }
+
+    uint32_t current_label_command_index = vvl::kU32Max;
+    std::vector<size_t> offset_stack;
+    std::unordered_map<std::string, uint32_t> name_to_index;
+
+    // Associate each tagged command with a debug region that encompasses it
+    const auto access_log = cb.GetAccessLogShared();
+    region_index_for_tag.reserve(access_log->size());
+    for (const ResourceUsageRecord& record : *access_log) {
+        if (record.command == vvl::Func::vkCmdExecuteCommands) {
+            // Debug regions reporting is fully supported for secondary buffers,
+            // but not specifically for vkCmdExecuteCommands command
+            region_index_for_tag.push_back(vvl::kU32Max);
+            continue;
+        }
+        // Find debug region this record's command belongs to.
+        assert(current_label_command_index == vvl::kU32Max || current_label_command_index <= record.label_command_index);
+        while (current_label_command_index != record.label_command_index) {
+            const auto& command = label_commands[++current_label_command_index];
+            if (command.begin) {
+                offset_stack.push_back(current_debug_region.size());
+                if (!current_debug_region.empty()) {
+                    current_debug_region += "::";
+                }
+                current_debug_region += command.label_name;
+            } else {
+                // Unbalanced labels are handled by the core validation but we also do a check
+                // here in case core validation is disabled.
+                if (offset_stack.empty()) {
+                    continue;
+                }
+                assert(offset_stack.back() < current_debug_region.size());
+                current_debug_region.resize(offset_stack.back());
+                offset_stack.pop_back();
+            }
+        }
+        // Associate record with a debug region
+        auto it = name_to_index.find(current_debug_region);
+        if (it == name_to_index.end()) {
+            regions.push_back(current_debug_region);
+            uint32_t index = static_cast<uint32_t>(regions.size() - 1);
+            it = name_to_index.insert(std::make_pair(current_debug_region, index)).first;
+        }
+        const uint32_t region_index = it->second;
+        region_index_for_tag.push_back(region_index);
+    }
+}
 
 PresentedImage::PresentedImage(const SyncValidator& sync_state, const std::shared_ptr<QueueBatchContext> batch_,
                                VkSwapchainKHR swapchain, uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)

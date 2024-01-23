@@ -32,9 +32,9 @@ struct CommandBufferSubmitState {
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
     std::vector<VkCommandBuffer> current_cmds;
     GlobalImageLayoutMap overlay_image_layout_map;
-    int cmdbuf_label_stack_depth;
-    std::vector<std::string> cmdbuf_label_names;
+    std::vector<std::string> cmdbuf_label_stack;
     std::string last_closed_cmdbuf_label;
+    bool found_unbalanced_cmdbuf_label;
 
     // The "local" prefix is about tracking state within a *single* queue submission
     // (accross all command buffers of that submission), as opposed to globally
@@ -46,9 +46,9 @@ struct CommandBufferSubmitState {
     CommandBufferSubmitState(const CoreChecks *c, const vvl::Queue *q) : core(c), queue_state(q) {
         // Queue label state is updated during PostRecord phase.
         // Copy state to be able to track labels during validation.
-        cmdbuf_label_stack_depth = queue_state->cmdbuf_label_stack_depth;
-        cmdbuf_label_names = queue_state->cmdbuf_label_names;
+        cmdbuf_label_stack = queue_state->cmdbuf_label_stack;
         last_closed_cmdbuf_label = queue_state->last_closed_cmdbuf_label;
+        found_unbalanced_cmdbuf_label = queue_state->found_unbalanced_cmdbuf_label;
     }
 
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
@@ -97,26 +97,24 @@ struct CommandBufferSubmitState {
 private:
     bool ValidateCmdBufLabelMatching(const Location &loc, const vvl::CommandBuffer &cb_state) {
         bool skip = false;
-        if (cmdbuf_label_stack_depth < 0) {
-            // If label state is already invalid it means we already reported an error.
-            // Per-queue label state is not updated after it becomes invalid, no need to perform further validation.
+        if (found_unbalanced_cmdbuf_label) {
+            // We already reported an error. After the first error, do not perform further validation or state tracking.
+            // The assumption that after label mismatch the label stack is corrupted and can't be reasoned about.
             return skip;
         }
-        bool mismatch = false;
-        for (const auto &label_cmd : cb_state.GetDebugLabelCommands()) {
-            cmdbuf_label_stack_depth += (label_cmd.begin ? 1 : -1);
-            if (cmdbuf_label_stack_depth < 0) {
-                mismatch = true;
-                break;
-            }
-            if (label_cmd.begin) {
-                cmdbuf_label_names.push_back(label_cmd.label_name);
+        for (const auto &command : cb_state.GetLabelCommands()) {
+            if (command.begin) {
+                cmdbuf_label_stack.push_back(command.label_name);
             } else {
-                last_closed_cmdbuf_label = cmdbuf_label_names.back();
-                cmdbuf_label_names.pop_back();
+                if (cmdbuf_label_stack.empty()) {
+                    found_unbalanced_cmdbuf_label = true;
+                    break;
+                }
+                last_closed_cmdbuf_label = cmdbuf_label_stack.back();
+                cmdbuf_label_stack.pop_back();
             }
         }
-        if (mismatch) {
+        if (found_unbalanced_cmdbuf_label) {
             std::string previous_debug_region;
             if (last_closed_cmdbuf_label.empty()) {
                 previous_debug_region = "There are no previous debug regions before the invalid command.";
@@ -365,23 +363,6 @@ bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount
     return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-static void UpdateCmdBufLabelStackDepth(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
-    if (queue_state.cmdbuf_label_stack_depth >= 0) {
-        for (const auto &label_cmd : cb_state.GetDebugLabelCommands()) {
-            queue_state.cmdbuf_label_stack_depth += (label_cmd.begin ? 1 : -1);
-            if (queue_state.cmdbuf_label_stack_depth < 0) {
-                return;
-            }
-            if (label_cmd.begin) {
-                queue_state.cmdbuf_label_names.push_back(label_cmd.label_name);
-            } else {
-                queue_state.last_closed_cmdbuf_label = queue_state.cmdbuf_label_names.back();
-                queue_state.cmdbuf_label_names.pop_back();
-            }
-        }
-    }
-}
-
 void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                            const RecordObject &record_obj) {
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
@@ -399,7 +380,6 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                 }
                 UpdateCmdBufImageLayouts(*cb_state);
                 RecordQueuedQFOTransfers(cb_state.get());
-                UpdateCmdBufLabelStackDepth(*cb_state, *Get<vvl::Queue>(queue));
             }
         }
     }
@@ -420,7 +400,6 @@ void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const V
                 }
                 UpdateCmdBufImageLayouts(*cb_state);
                 RecordQueuedQFOTransfers(cb_state.get());
-                UpdateCmdBufLabelStackDepth(*cb_state, *Get<vvl::Queue>(queue));
             }
         }
     }

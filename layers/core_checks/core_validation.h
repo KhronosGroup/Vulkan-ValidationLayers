@@ -2510,12 +2510,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                    const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
                                                    uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
-
-    // Debug label APIs
-    void PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
-                                                  const RecordObject& record_obj) override;
     bool PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
-    void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,

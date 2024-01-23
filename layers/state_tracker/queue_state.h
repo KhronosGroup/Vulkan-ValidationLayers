@@ -104,15 +104,17 @@ class Queue: public StateObject {
     const VkDeviceQueueCreateFlags flags;
     const VkQueueFamilyProperties queueFamilyProperties;
 
-    // Track command buffer label stack depth accross all command buffers submitted to this queue.
-    // Negative value indicates unbalanced usage of begin/end label commands.
+    // Track command buffer label stack accross all command buffers submitted to this queue.
     // Access to this variable relies on external queue synchronization.
-    int cmdbuf_label_stack_depth{0};
+    std::vector<std::string> cmdbuf_label_stack;
 
     // Track the last closed label. It is used in the error messages to help locate unbalanced vkCmdEndDebugUtilsLabelEXT command.
-    // Access to these variables relies on external queue synchronization.
-    std::vector<std::string> cmdbuf_label_names;
+    // Access to this variable relies on external queue synchronization.
     std::string last_closed_cmdbuf_label;
+
+    // Stop per-queue label tracking after the first label mismatch error.
+    // Access to this variable relies on external queue synchronization.
+    bool found_unbalanced_cmdbuf_label = false;
 
   private:
     using LockGuard = std::unique_lock<std::mutex>;

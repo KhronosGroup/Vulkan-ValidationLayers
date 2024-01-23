@@ -197,7 +197,7 @@ void CommandBuffer::ResetCBState() {
     // Clean up the label data
     debug_label.Reset();
     label_stack_depth_ = 0;
-    debug_label_commands_.clear();
+    label_commands_.clear();
 
     // Best practices info
     small_indexed_draw_call_count = 0;
@@ -1021,6 +1021,9 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             suspendsRenderPassInstance = sub_cb_state->suspendsRenderPassInstance;
             hasRenderPassInstance |= sub_cb_state->hasRenderPassInstance;
         }
+
+        label_stack_depth_ += sub_cb_state->label_stack_depth_;
+        label_commands_.insert(label_commands_.end(), sub_cb_state->label_commands_.begin(), sub_cb_state->label_commands_.end());
     }
 }
 
@@ -1649,12 +1652,12 @@ void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipel
 
 void CommandBuffer::BeginLabel(const char *label_name) {
     ++label_stack_depth_;
-    debug_label_commands_.push_back(DebugLabelCommand{true, label_name});
+    label_commands_.push_back(LabelCommand{true, label_name});
 }
 
 void CommandBuffer::EndLabel() {
     --label_stack_depth_;
-    debug_label_commands_.push_back(DebugLabelCommand{false, std::string()});
+    label_commands_.push_back(LabelCommand{false, std::string()});
 }
 
 }  // namespace vvl
