@@ -6240,11 +6240,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT: {  // Covers
                                                                                                       // VUID-VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT-sType-sType
 
-            if (!IsExtEnabled(device_extensions.vk_arm_rasterization_order_attachment_access)) {
+            if (!IsExtEnabled(device_extensions.vk_arm_rasterization_order_attachment_access) &&
+                !IsExtEnabled(device_extensions.vk_ext_rasterization_order_attachment_access)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT, but when "
                                  "creating VkDevice, the parent extension "
-                                 "(VK_ARM_rasterization_order_attachment_access) was not included in ppEnabledExtensionNames.");
+                                 "(VK_ARM_rasterization_order_attachment_access or VK_EXT_rasterization_order_attachment_access) "
+                                 "was not included in ppEnabledExtensionNames.");
             }
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
