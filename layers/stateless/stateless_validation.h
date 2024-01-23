@@ -988,6 +988,9 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                    const VkPipelineCache *pSrcCaches, const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT *pPipelineInfo,
+                                                        VkBaseOutStructure *pPipelineProperties,
+                                                        const ErrorObject &error_obj) const;
 
     bool manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
