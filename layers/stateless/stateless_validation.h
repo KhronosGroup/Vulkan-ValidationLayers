@@ -962,9 +962,11 @@ class StatelessValidation : public ValidationObject {
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
                                                      const ErrorObject &error_obj) const;
-    bool ValidateAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-                                                           uint32_t infoCount, uint64_t total_primitive_count,
-                                                           const VulkanTypedHandle &handle, const Location &loc) const;
+
+    bool ValidateTotalPrimitivesCount(uint64_t total_triangles_count, uint64_t total_aabbs_count, const VulkanTypedHandle &handle,
+                                      const Location &loc) const;
+    bool ValidateAccelerationStructureBuildGeometryInfoKHR(const VkAccelerationStructureBuildGeometryInfoKHR &info,
+                                                           const VulkanTypedHandle &handle, const Location &info_loc) const;
     bool manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
         const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const;

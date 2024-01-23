@@ -172,6 +172,7 @@ class BuildGeometryInfoKHR {
     // Should be 0 or 1
     BuildGeometryInfoKHR& SetInfoCount(uint32_t info_count);
     BuildGeometryInfoKHR& SetNullInfos(bool use_null_infos);
+    BuildGeometryInfoKHR& SetNullGeometries(bool use_null_geometries);
     BuildGeometryInfoKHR& SetNullBuildRangeInfos(bool use_null_build_range_infos);
     BuildGeometryInfoKHR& SetDeferredOp(VkDeferredOperationKHR deferred_op);
     BuildGeometryInfoKHR& SetUpdateDstAccelStructSizeBeforeBuild(bool update_before_build);
@@ -207,6 +208,7 @@ class BuildGeometryInfoKHR {
     const vkt::Device* device_;
     uint32_t vk_info_count_ = 1;
     bool use_null_infos_ = false;
+    bool use_null_geometries_ = false;
     bool use_null_build_range_infos_ = false;
     bool update_dst_as_size_before_build_ = false;
     VkAccelerationStructureBuildGeometryInfoKHR vk_info_;

@@ -401,6 +401,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullInfos(bool use_null_infos) {
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullGeometries(bool use_null_geometries) {
+    use_null_geometries_ = use_null_geometries;
+    return *this;
+}
+
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null_build_range_infos) {
     use_null_build_range_infos_ = use_null_build_range_infos;
     return *this;
@@ -540,7 +545,10 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer c
         pRange_infos[i] = &build_range_infos_[i];
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
-    if (use_ppGeometries) {
+    if (use_null_geometries_) {
+        vk_info_.pGeometries = nullptr;
+        vk_info_.ppGeometries = nullptr;
+    } else if (use_ppGeometries) {
         vk_info_.ppGeometries = pGeometries.data();
     } else {
         vk_info_.pGeometries = geometries.data();
@@ -582,8 +590,12 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
         pGeometries[i] = &geometry->GetVkObj();
         ranges_info[i] = geometry->GetFullBuildRange();
     }
-    vk_info_.ppGeometries = pGeometries.data();
-
+    if (use_null_geometries_) {
+        vk_info_.pGeometries = nullptr;
+        vk_info_.ppGeometries = nullptr;
+    } else {
+        vk_info_.ppGeometries = pGeometries.data();
+    }
     indirect_buffer_->memory().unmap();
 
     std::vector<uint32_t> p_max_primitive_counts(vk_info_.geometryCount, 1);
@@ -613,8 +625,12 @@ void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR() {
         pRange_infos[i] = &range_infos[i];
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
-    vk_info_.ppGeometries = pGeometries.data();
-
+    if (use_null_geometries_) {
+        vk_info_.pGeometries = nullptr;
+        vk_info_.ppGeometries = nullptr;
+    } else {
+        vk_info_.ppGeometries = pGeometries.data();
+    }
     // Build acceleration structure
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos = use_null_infos_ ? nullptr : &vk_info_;
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos =
@@ -631,6 +647,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
     uint32_t primitives_count = 0;
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
+
     if (use_ppGeometries) {
         pGeometries.reserve(geometries_.size());
     } else {
@@ -646,7 +663,10 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
         }
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
-    if (use_ppGeometries) {
+    if (use_null_geometries_) {
+        vk_info_.pGeometries = nullptr;
+        vk_info_.ppGeometries = nullptr;
+    } else if (use_ppGeometries) {
         vk_info_.ppGeometries = pGeometries.data();
     } else {
         vk_info_.pGeometries = geometries.data();

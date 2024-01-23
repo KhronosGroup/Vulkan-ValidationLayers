@@ -59,4 +59,5 @@ VkDeviceSize ComputeAccelerationStructureSize(const VkDevice device, const VkAcc
     const VkAccelerationStructureBuildSizesInfoKHR size_info = ComputeBuildSizes(device, build_info, range_infos);
     return size_info.accelerationStructureSize;
 }
+
 }  // namespace rt
