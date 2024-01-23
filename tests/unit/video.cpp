@@ -23,7 +23,7 @@ TEST_F(NegativeVideo, VideoCodingScope) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -406,7 +406,7 @@ TEST_F(NegativeVideo, InUseDestroyed) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -443,7 +443,7 @@ TEST_F(NegativeVideo, CreateSessionVideoMaintenance1NotEnabled) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -466,7 +466,7 @@ TEST_F(NegativeVideo, CreateSessionProtectedMemoryNotEnabled) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -493,7 +493,7 @@ TEST_F(NegativeVideo, CreateSessionProtectedContentUnsupported) {
         GTEST_SKIP() << "Test requires a video profile with no protected content support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -540,7 +540,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidReferencePictureCounts) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -591,7 +591,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidMaxCodedExtent) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -640,7 +640,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidDecodeReferencePictureFormat) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -666,7 +666,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidEncodeReferencePictureFormat) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -689,7 +689,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidDecodePictureFormat) {
         GTEST_SKIP() << "Test requires video decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -712,7 +712,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidEncodePictureFormat) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -735,7 +735,7 @@ TEST_F(NegativeVideo, CreateSessionInvalidStdHeaderVersion) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -767,7 +767,7 @@ TEST_F(NegativeVideo, CreateSessionEncodeH264InvalidMaxLevel) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -796,7 +796,7 @@ TEST_F(NegativeVideo, CreateSessionEncodeH265InvalidMaxLevel) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionKHR session;
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
@@ -825,7 +825,7 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     uint32_t mem_req_count;
     ASSERT_EQ(VK_SUCCESS,
@@ -1004,8 +1004,8 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplate) {
         GTEST_SKIP() << "Test requires a video profile with session parameters";
     }
 
-    VideoContext context1(DeviceObj(), config);
-    VideoContext context2(DeviceObj(), config);
+    VideoContext context1(m_device, config);
+    VideoContext context2(m_device, config);
 
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
     create_info.videoSessionParametersTemplate = context1.SessionParams();
@@ -1028,7 +1028,7 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateEncodeQualityLevel)
         GTEST_SKIP() << "Test requires an encode profile with support for parameters objects and at least two quality levels";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionParametersKHR params;
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1085,7 +1085,7 @@ TEST_F(NegativeVideo, CreateSessionParamsMissingCodecInfo) {
 
     if (GetConfigDecodeH264()) {
         VideoConfig config = GetConfigDecodeH264();
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
 
         VkVideoSessionParametersKHR params;
         VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1103,7 +1103,7 @@ TEST_F(NegativeVideo, CreateSessionParamsMissingCodecInfo) {
 
     if (GetConfigDecodeH265()) {
         VideoConfig config = GetConfigDecodeH265();
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
 
         VkVideoSessionParametersKHR params;
         VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1120,7 +1120,7 @@ TEST_F(NegativeVideo, CreateSessionParamsMissingCodecInfo) {
 
     if (GetConfigEncodeH264()) {
         VideoConfig config = GetConfigEncodeH264();
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
 
         VkVideoSessionParametersKHR params;
         VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1138,7 +1138,7 @@ TEST_F(NegativeVideo, CreateSessionParamsMissingCodecInfo) {
 
     if (GetConfigEncodeH265()) {
         VideoConfig config = GetConfigEncodeH265();
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
 
         VkVideoSessionParametersKHR params;
         VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
@@ -1164,7 +1164,7 @@ TEST_F(NegativeVideo, CreateSessionParamsInvalidEncodeQualityLevel) {
         GTEST_SKIP() << "Test requires an encode profile with session parameters";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
     auto quality_level_info = vku::InitStruct<VkVideoEncodeQualityLevelInfoKHR>();
@@ -1188,7 +1188,7 @@ TEST_F(NegativeVideo, CreateSessionParamsDecodeH264ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.264 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
@@ -1273,7 +1273,7 @@ TEST_F(NegativeVideo, CreateSessionParamsDecodeH265ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.265 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
     auto h265_ai = vku::InitStruct<VkVideoDecodeH265SessionParametersAddInfoKHR>();
@@ -1399,7 +1399,7 @@ TEST_F(NegativeVideo, CreateSessionParamsEncodeH264ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoEncodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoEncodeH264SessionParametersAddInfoKHR>();
@@ -1484,7 +1484,7 @@ TEST_F(NegativeVideo, CreateSessionParamsEncodeH265ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h265_ci = vku::InitStruct<VkVideoEncodeH265SessionParametersCreateInfoKHR>();
     auto h265_ai = vku::InitStruct<VkVideoEncodeH265SessionParametersAddInfoKHR>();
@@ -1610,7 +1610,7 @@ TEST_F(NegativeVideo, CreateUpdateSessionParamsEncodeH265InvalidTileColumnsRows)
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h265_ci = vku::InitStruct<VkVideoEncodeH265SessionParametersCreateInfoKHR>();
     auto h265_ai = vku::InitStruct<VkVideoEncodeH265SessionParametersAddInfoKHR>();
@@ -1726,7 +1726,7 @@ TEST_F(NegativeVideo, DecodeH264ParametersAddInfoUniqueness) {
         GTEST_SKIP() << "Test requires H.264 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
@@ -1796,7 +1796,7 @@ TEST_F(NegativeVideo, DecodeH265ParametersAddInfoUniqueness) {
         GTEST_SKIP() << "Test requires H.265 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
@@ -1892,7 +1892,7 @@ TEST_F(NegativeVideo, EncodeH264ParametersAddInfoUniqueness) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoEncodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoEncodeH264SessionParametersAddInfoKHR>();
@@ -1962,7 +1962,7 @@ TEST_F(NegativeVideo, EncodeH265ParametersAddInfoUniqueness) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto h265_ci = vku::InitStruct<VkVideoEncodeH265SessionParametersCreateInfoKHR>();
@@ -2058,7 +2058,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsIncorrectSequenceCount) {
         GTEST_SKIP() << "Test requires a video profile with session parameters";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
 
@@ -2093,7 +2093,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ConflictingKeys) {
         GTEST_SKIP() << "Test requires H.264 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
@@ -2160,7 +2160,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ConflictingKeys) {
         GTEST_SKIP() << "Test requires H.265 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
@@ -2251,7 +2251,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ConflictingKeys) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoEncodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoEncodeH264SessionParametersAddInfoKHR>();
@@ -2318,7 +2318,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ConflictingKeys) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto h265_ci = vku::InitStruct<VkVideoEncodeH265SessionParametersCreateInfoKHR>();
@@ -2409,7 +2409,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.264 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoDecodeH264SessionParametersAddInfoKHR>();
@@ -2474,7 +2474,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.265 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto h265_ci = vku::InitStruct<VkVideoDecodeH265SessionParametersCreateInfoKHR>();
@@ -2568,7 +2568,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_ci = vku::InitStruct<VkVideoEncodeH264SessionParametersCreateInfoKHR>();
     auto h264_ai = vku::InitStruct<VkVideoEncodeH264SessionParametersAddInfoKHR>();
@@ -2633,7 +2633,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ExceededCapacity) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto h265_ci = vku::InitStruct<VkVideoEncodeH265SessionParametersCreateInfoKHR>();
@@ -2728,8 +2728,8 @@ TEST_F(NegativeVideo, GetEncodedSessionParamsRequiresEncodeProfile) {
         GTEST_SKIP() << "Test requires video encode support and a decode profile with session parameters";
     }
 
-    VideoContext decode_context(DeviceObj(), decode_config);
-    VideoContext encode_context(DeviceObj(), encode_config);
+    VideoContext decode_context(m_device, decode_config);
+    VideoContext encode_context(m_device, encode_config);
 
     auto get_info = vku::InitStruct<VkVideoEncodeSessionParametersGetInfoKHR>();
     get_info.videoSessionParameters = decode_context.SessionParams();
@@ -2749,7 +2749,7 @@ TEST_F(NegativeVideo, GetEncodedSessionParamsMissingCodecInfo) {
     }
 
     if (GetConfigEncodeH264()) {
-        VideoContext context(DeviceObj(), GetConfigEncodeH264());
+        VideoContext context(m_device, GetConfigEncodeH264());
 
         auto get_info = vku::InitStruct<VkVideoEncodeSessionParametersGetInfoKHR>();
         get_info.videoSessionParameters = context.SessionParams();
@@ -2762,7 +2762,7 @@ TEST_F(NegativeVideo, GetEncodedSessionParamsMissingCodecInfo) {
     }
 
     if (GetConfigEncodeH265()) {
-        VideoContext context(DeviceObj(), GetConfigEncodeH265());
+        VideoContext context(m_device, GetConfigEncodeH265());
 
         auto get_info = vku::InitStruct<VkVideoEncodeSessionParametersGetInfoKHR>();
         get_info.videoSessionParameters = context.SessionParams();
@@ -2785,7 +2785,7 @@ TEST_F(NegativeVideo, GetEncodedSessionParamsH264) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_info = vku::InitStruct<VkVideoEncodeH264SessionParametersGetInfoKHR>();
     auto get_info = vku::InitStruct<VkVideoEncodeSessionParametersGetInfoKHR>(&h264_info);
@@ -2844,7 +2844,7 @@ TEST_F(NegativeVideo, GetEncodedSessionParamsH265) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h265_info = vku::InitStruct<VkVideoEncodeH265SessionParametersGetInfoKHR>();
     auto get_info = vku::InitStruct<VkVideoEncodeSessionParametersGetInfoKHR>(&h265_info);
@@ -2950,11 +2950,11 @@ TEST_F(NegativeVideo, BeginCodingUnsupportedCodecOp) {
         GTEST_SKIP() << "Test requires a queue family that supports video but not the specific codec op";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
-    vkt::CommandPool pool(*DeviceObj(), queue_family_index);
-    vkt::CommandBuffer cb(DeviceObj(), &pool);
+    vkt::CommandPool pool(*m_device, queue_family_index);
+    vkt::CommandBuffer cb(m_device, &pool);
 
     cb.begin();
 
@@ -2979,7 +2979,7 @@ TEST_F(NegativeVideo, BeginCodingActiveQueriesNotAllowed) {
         GTEST_SKIP() << "Test requires video queue to support result status queries";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool();
 
@@ -3010,13 +3010,13 @@ TEST_F(NegativeVideo, BeginCodingProtectedNoFaultSession) {
 
     const bool use_protected = true;
 
-    VideoContext unprotected_context(DeviceObj(), config);
+    VideoContext unprotected_context(m_device, config);
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources();
 
     vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
-    VideoContext protected_context(DeviceObj(), config, use_protected);
+    VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected /* bitstream */, use_protected /* DPB */, use_protected /* src/dst image */);
 
@@ -3054,13 +3054,13 @@ TEST_F(NegativeVideo, BeginCodingProtectedNoFaultSlots) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext unprotected_context(DeviceObj(), config);
+    VideoContext unprotected_context(m_device, config);
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources(false /* bitstream */, use_protected /* DPB */, false /* src/dst image */);
 
     vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
-    VideoContext protected_context(DeviceObj(), config, use_protected);
+    VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected /* bitstream */, false /* DPB */, use_protected /* src/dst image */);
 
@@ -3089,7 +3089,7 @@ TEST_F(NegativeVideo, BeginCodingSessionMemoryNotBound) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     uint32_t mem_req_count;
     context.vk.GetVideoSessionMemoryRequirementsKHR(m_device->device(), context.Session(), &mem_req_count, nullptr);
@@ -3148,8 +3148,8 @@ TEST_F(NegativeVideo, BeginCodingInvalidSessionParams) {
         GTEST_SKIP() << "Test requires a video profile with session parameters";
     }
 
-    VideoContext context1(DeviceObj(), config);
-    VideoContext context2(DeviceObj(), config);
+    VideoContext context1(m_device, config);
+    VideoContext context2(m_device, config);
     vkt::CommandBuffer& cb = context1.CmdBuffer();
 
     context1.CreateAndBindSessionMemory();
@@ -3174,7 +3174,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeH264RequiresParams) {
         GTEST_SKIP() << "Test requires H.264 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -3199,7 +3199,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeH265RequiresParams) {
         GTEST_SKIP() << "Test requires H.265 decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -3224,7 +3224,7 @@ TEST_F(NegativeVideo, BeginCodingEncodeH264RequiresParams) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -3249,7 +3249,7 @@ TEST_F(NegativeVideo, BeginCodingEncodeH265RequiresParams) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -3294,8 +3294,8 @@ TEST_F(NegativeVideo, BeginCodingIncompatRefPicProfile) {
         configs[i].SessionCreateInfo()->maxActiveReferencePictures = 1;
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateAndBindSessionMemory();
@@ -3323,7 +3323,7 @@ TEST_F(NegativeVideo, BeginCodingInvalidResourceLayer) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3355,7 +3355,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeSlotInactive) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3413,7 +3413,7 @@ TEST_F(NegativeVideo, BeginCodingDecodeInvalidSlotResourceAssociation) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3450,7 +3450,7 @@ TEST_F(NegativeVideo, BeginCodingInvalidSlotIndex) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 3;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3478,7 +3478,7 @@ TEST_F(NegativeVideo, BeginCodingResourcesNotUnique) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3517,7 +3517,7 @@ TEST_F(NegativeVideo, BeginCodingReferenceFormatMismatch) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3549,7 +3549,7 @@ TEST_F(NegativeVideo, BeginCodingInvalidCodedOffset) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3587,7 +3587,7 @@ TEST_F(NegativeVideo, BeginCodingInvalidCodedExtent) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3651,11 +3651,11 @@ TEST_F(NegativeVideo, BeginCodingInvalidSeparateReferenceImages) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
-    VideoDPB separate_dpb(DeviceObj(), config);
+    VideoDPB separate_dpb(m_device, config);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
@@ -3685,7 +3685,7 @@ TEST_F(NegativeVideo, BeginCodingMissingDecodeDpbUsage) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3733,7 +3733,7 @@ TEST_F(NegativeVideo, BeginCodingMissingEncodeDpbUsage) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3776,7 +3776,7 @@ TEST_F(NegativeVideo, BeginCodingEncodeH264MissingGopRemainingFrames) {
         GTEST_SKIP() << "Test requires an H.264 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3834,7 +3834,7 @@ TEST_F(NegativeVideo, BeginCodingEncodeH265MissingGopRemainingFrames) {
         GTEST_SKIP() << "Test requires an H.265 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3894,7 +3894,7 @@ TEST_F(NegativeVideo, EndCodingActiveQueriesNotAllowed) {
         GTEST_SKIP() << "Test requires video queue to support result status queries";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool();
 
@@ -3921,7 +3921,7 @@ TEST_F(NegativeVideo, ControlSessionUninitialized) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3954,7 +3954,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelControlInvalidQualityLevel) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -3987,7 +3987,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelControlRequiresEncodeSession) {
         GTEST_SKIP() << "Test requires video decode and encode support";
     }
 
-    VideoContext context(DeviceObj(), decode_config);
+    VideoContext context(m_device, decode_config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4017,7 +4017,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelControlMissingChain) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4045,7 +4045,7 @@ TEST_F(NegativeVideo, EncodeParamsQualityLevelMismatch) {
         GTEST_SKIP() << "Test requires an encode profile with support for parameters objects and at least two quality levels";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4166,7 +4166,7 @@ TEST_F(NegativeVideo, EncodeRateControlRequiresEncodeSession) {
         GTEST_SKIP() << "Test requires video decode and encode support";
     }
 
-    VideoContext context(DeviceObj(), decode_config);
+    VideoContext context(m_device, decode_config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4202,7 +4202,7 @@ TEST_F(NegativeVideo, EncodeRateControlUnsupportedMode) {
         GTEST_SKIP() << "Test requires an encode profile that does not support all rate control modes";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4243,7 +4243,7 @@ TEST_F(NegativeVideo, EncodeRateControlTooManyLayers) {
         GTEST_SKIP() << "Test requires video encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4287,7 +4287,7 @@ TEST_F(NegativeVideo, EncodeRateControlNoLayers) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4333,7 +4333,7 @@ TEST_F(NegativeVideo, EncodeRateControlMissingLayers) {
         GTEST_SKIP() << "Test requires video encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4376,7 +4376,7 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrate) {
         GTEST_SKIP() << "Test requires video encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
@@ -4448,7 +4448,7 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateCBR) {
         GTEST_SKIP() << "Test requires video encode support with CBR rate control mode";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config);
@@ -4490,7 +4490,7 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateVBR) {
         GTEST_SKIP() << "Test requires video encode support with VBR rate control mode";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config);
@@ -4526,7 +4526,7 @@ TEST_F(NegativeVideo, EncodeRateControlLayerFrameRate) {
         GTEST_SKIP() << "Test requires video encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
@@ -4570,7 +4570,7 @@ TEST_F(NegativeVideo, EncodeRateControlVirtualBufferSize) {
         GTEST_SKIP() << "Test requires video encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
@@ -4609,7 +4609,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpNonZero) {
         GTEST_SKIP() << "Test requires H.264 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4647,7 +4647,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpNotInCapRange) {
         GTEST_SKIP() << "Test requires H.264 encode support with DISABLED rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4696,7 +4696,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpPerSliceMismatch) {
                         "support for multiple slices but no support for per-slice constant QP";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4742,7 +4742,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpNonZero) {
         GTEST_SKIP() << "Test requires H.265 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4780,7 +4780,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpNotInCapRange) {
         GTEST_SKIP() << "Test requires H.265 encode support with DISABLED rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4829,7 +4829,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpPerSliceSegmentMismatch) {
                         "support for multiple slice segments but no support for per-slice-segment constant QP";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4878,7 +4878,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264LayerCountMismatch) {
         GTEST_SKIP() << "Test requires H.264 encode support with multi-layer rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4932,7 +4932,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265LayerCountMismatch) {
         GTEST_SKIP() << "Test requires H.265 encode support with multi-layer rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -4986,7 +4986,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264HrdCompliance) {
         GTEST_SKIP() << "Test requires H.264 encode without HRD compliance support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5023,7 +5023,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265HrdCompliance) {
         GTEST_SKIP() << "Test requires H.265 encode without HRD compliance support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5058,7 +5058,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264InvalidCodecInfo) {
         GTEST_SKIP() << "Test requires H.264 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5152,7 +5152,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265InvalidCodecInfo) {
         GTEST_SKIP() << "Test requires H.265 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5246,7 +5246,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264QpRange) {
         GTEST_SKIP() << "Test requires H.264 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5331,7 +5331,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265QpRange) {
         GTEST_SKIP() << "Test requires H.265 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5418,7 +5418,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264PerPicTypeQp) {
         GTEST_SKIP() << "Test requires H.264 encode without per picture type min/max QP support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5503,7 +5503,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265PerPicTypeQp) {
         GTEST_SKIP() << "Test requires H.265 encode without per picture type min/max QP support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5586,7 +5586,7 @@ TEST_F(NegativeVideo, EncodeRateControlH264MinQpGreaterThanMaxQp) {
         GTEST_SKIP() << "Test requires H.264 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5657,7 +5657,7 @@ TEST_F(NegativeVideo, EncodeRateControlH265MinQpGreaterThanMaxQp) {
         GTEST_SKIP() << "Test requires H.265 encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5728,7 +5728,7 @@ TEST_F(NegativeVideo, EncodeRateControlMissingChain) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5756,7 +5756,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchNotDefault) {
         GTEST_SKIP() << "Test requires video encode support with rate control";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5800,7 +5800,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatch) {
         GTEST_SKIP() << "Test requires an encode profile that supports both CBR and VBR rate control modes";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -5894,7 +5894,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
         GTEST_SKIP() << "Test requires an H.264 encode profile that supports both CBR and VBR rate control modes";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6028,7 +6028,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
         GTEST_SKIP() << "Test requires an H.265 encode profile that supports both CBR and VBR rate control modes";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6158,11 +6158,11 @@ TEST_F(NegativeVideo, DecodeSessionNotDecode) {
         GTEST_SKIP() << "Test requires both video decode and video encode support";
     }
 
-    VideoContext decode_context(DeviceObj(), decode_config);
+    VideoContext decode_context(m_device, decode_config);
     decode_context.CreateAndBindSessionMemory();
     decode_context.CreateResources();
 
-    VideoContext encode_context(DeviceObj(), encode_config);
+    VideoContext encode_context(m_device, encode_config);
     encode_context.CreateAndBindSessionMemory();
     encode_context.CreateResources();
 
@@ -6191,11 +6191,11 @@ TEST_F(NegativeVideo, EncodeSessionNotEncode) {
         GTEST_SKIP() << "Test requires both video decode and video encode support";
     }
 
-    VideoContext decode_context(DeviceObj(), decode_config);
+    VideoContext decode_context(m_device, decode_config);
     decode_context.CreateAndBindSessionMemory();
     decode_context.CreateResources();
 
-    VideoContext encode_context(DeviceObj(), encode_config);
+    VideoContext encode_context(m_device, encode_config);
     encode_context.CreateAndBindSessionMemory();
     encode_context.CreateResources();
 
@@ -6223,7 +6223,7 @@ TEST_F(NegativeVideo, DecodeSessionUninitialized) {
         GTEST_SKIP() << "Test requires video decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6251,7 +6251,7 @@ TEST_F(NegativeVideo, EncodeSessionUninitialized) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6285,13 +6285,13 @@ TEST_F(NegativeVideo, DecodeProtectedNoFaultBitstreamBuffer) {
 
     const bool use_protected = true;
 
-    VideoContext unprotected_context(DeviceObj(), config);
+    VideoContext unprotected_context(m_device, config);
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources(use_protected /* bitstream */, false /* DPB */, false /* dst image */);
 
     vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
-    VideoContext protected_context(DeviceObj(), config, use_protected);
+    VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(false /* bitstream */, use_protected /* DPB */, use_protected /* dst image */);
 
@@ -6334,13 +6334,13 @@ TEST_F(NegativeVideo, EncodeProtectedNoFaultBitstreamBuffer) {
         GTEST_SKIP() << "Test requires a video encode profile with protected content support";
     }
 
-    VideoContext unprotected_context(DeviceObj(), config);
+    VideoContext unprotected_context(m_device, config);
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources(use_protected /* bitstream */, false /* DPB */, false /* src image */);
 
     vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
-    VideoContext protected_context(DeviceObj(), config, use_protected);
+    VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(false /* bitstream */, use_protected /* DPB */, use_protected /* src image */);
 
@@ -6383,13 +6383,13 @@ TEST_F(NegativeVideo, DecodeProtectedNoFaultDecodeOutput) {
         GTEST_SKIP() << "Test requires a video decode profile with protected content support";
     }
 
-    VideoContext unprotected_context(DeviceObj(), config);
+    VideoContext unprotected_context(m_device, config);
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources(false /* bitstream */, false /* DPB */, use_protected /* dst image */);
 
     vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
-    VideoContext protected_context(DeviceObj(), config, use_protected);
+    VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected /* bitstream */, use_protected /* DPB */, false /* dst image */);
 
@@ -6432,13 +6432,13 @@ TEST_F(NegativeVideo, EncodeProtectedNoFaultEncodeInput) {
         GTEST_SKIP() << "Test requires a video encode profile with protected content support";
     }
 
-    VideoContext unprotected_context(DeviceObj(), config);
+    VideoContext unprotected_context(m_device, config);
     unprotected_context.CreateAndBindSessionMemory();
     unprotected_context.CreateResources(false /* bitstream */, false /* DPB */, use_protected /* src image */);
 
     vkt::CommandBuffer& unprotected_cb = unprotected_context.CmdBuffer();
 
-    VideoContext protected_context(DeviceObj(), config, use_protected);
+    VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
     protected_context.CreateResources(use_protected /* bitstream */, use_protected /* DPB */, false /* src image */);
 
@@ -6478,7 +6478,7 @@ TEST_F(NegativeVideo, DecodeImageLayouts) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6543,7 +6543,7 @@ TEST_F(NegativeVideo, EncodeImageLayouts) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6595,7 +6595,7 @@ TEST_F(NegativeVideo, DecodeInvalidResourceLayer) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6656,7 +6656,7 @@ TEST_F(NegativeVideo, DecodeQueryTooManyOperations) {
         GTEST_SKIP() << "Test requires video decode queue to support result status queries";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool(2);
@@ -6691,7 +6691,7 @@ TEST_F(NegativeVideo, EncodeQueryTooManyOperations) {
         GTEST_SKIP() << "Test requires video encode queue to support result status queries";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool(2);
@@ -6736,8 +6736,8 @@ TEST_F(NegativeVideo, DecodeIncompatBufferProfile) {
         GTEST_SKIP() << "Test requires two video decode profiles";
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateAndBindSessionMemory();
@@ -6766,8 +6766,8 @@ TEST_F(NegativeVideo, EncodeIncompatBufferProfile) {
         GTEST_SKIP() << "Test requires two video encode profiles";
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateAndBindSessionMemory();
@@ -6796,7 +6796,7 @@ TEST_F(NegativeVideo, DecodeBufferMissingDecodeSrcUsage) {
         GTEST_SKIP() << "Test requires video decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6836,7 +6836,7 @@ TEST_F(NegativeVideo, EncodeBufferMissingEncodeDstUsage) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6876,7 +6876,7 @@ TEST_F(NegativeVideo, DecodeBufferOffsetOutOfBounds) {
         GTEST_SKIP() << "Test requires video decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6909,7 +6909,7 @@ TEST_F(NegativeVideo, EncodeBufferOffsetOutOfBounds) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6943,7 +6943,7 @@ TEST_F(NegativeVideo, DecodeBufferOffsetAlignment) {
         GTEST_SKIP() << "Test requires a video decode profile with minBitstreamBufferOffsetAlignment > 1";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -6975,7 +6975,7 @@ TEST_F(NegativeVideo, EncodeBufferOffsetAlignment) {
         GTEST_SKIP() << "Test requires a video encode profile with minBitstreamBufferOffsetAlignment > 1";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7006,7 +7006,7 @@ TEST_F(NegativeVideo, DecodeBufferRangeOutOfBounds) {
         GTEST_SKIP() << "Test requires video decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7042,7 +7042,7 @@ TEST_F(NegativeVideo, EncodeBufferRangeOutOfBounds) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7079,7 +7079,7 @@ TEST_F(NegativeVideo, DecodeBufferRangeAlignment) {
         GTEST_SKIP() << "Test requires a video decode profile with minBitstreamBufferSizeAlignment > 1";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7110,7 +7110,7 @@ TEST_F(NegativeVideo, EncodeBufferRangeAlignment) {
         GTEST_SKIP() << "Test requires a video encode profile with minBitstreamBufferSizeAlignment > 1";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7147,7 +7147,7 @@ TEST_F(NegativeVideo, DecodeInvalidOutputAndSetupCoincide) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7182,7 +7182,7 @@ TEST_F(NegativeVideo, DecodeInvalidOutputAndSetupDistinct) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7212,7 +7212,7 @@ TEST_F(NegativeVideo, DecodeInvalidSetupSlotIndex) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7252,7 +7252,7 @@ TEST_F(NegativeVideo, EncodeInvalidSetupSlotIndex) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7292,7 +7292,7 @@ TEST_F(NegativeVideo, DecodeInvalidRefSlotIndex) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7327,7 +7327,7 @@ TEST_F(NegativeVideo, EncodeInvalidRefSlotIndex) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7362,7 +7362,7 @@ TEST_F(NegativeVideo, DecodeSetupNull) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7395,7 +7395,7 @@ TEST_F(NegativeVideo, DecodeSetupResourceNull) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7430,7 +7430,7 @@ TEST_F(NegativeVideo, EncodeSetupNull) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7463,7 +7463,7 @@ TEST_F(NegativeVideo, EncodeSetupResourceNull) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7498,7 +7498,7 @@ TEST_F(NegativeVideo, DecodeReferenceResourceNull) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7528,7 +7528,7 @@ TEST_F(NegativeVideo, EncodeReferenceResourceNull) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7570,8 +7570,8 @@ TEST_F(NegativeVideo, DecodeIncompatOutputPicProfile) {
         GTEST_SKIP() << "Test requires two video profiles with matching decode output format/size";
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateAndBindSessionMemory();
@@ -7615,8 +7615,8 @@ TEST_F(NegativeVideo, EncodeIncompatInputPicProfile) {
         GTEST_SKIP() << "Test requires two video profiles with matching encode input format/size";
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateAndBindSessionMemory();
@@ -7655,7 +7655,7 @@ TEST_F(NegativeVideo, DecodeOutputFormatMismatch) {
         GTEST_SKIP() << "Test requires a video decode profile with support for two output picture formats";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7696,7 +7696,7 @@ TEST_F(NegativeVideo, EncodeInputFormatMismatch) {
         GTEST_SKIP() << "Test requires a video encode profile with support for two input picture formats";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7731,7 +7731,7 @@ TEST_F(NegativeVideo, DecodeOutputMissingDecodeDstUsage) {
         GTEST_SKIP() << "Test requires output format to support at least one more usage besides DECODE_DST";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7777,7 +7777,7 @@ TEST_F(NegativeVideo, EncodeInputMissingEncodeSrcUsage) {
         GTEST_SKIP() << "Test requires input format to support at least one more usage besides ENCODE_SRC";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7819,7 +7819,7 @@ TEST_F(NegativeVideo, DecodeOutputCodedOffsetExtent) {
         GTEST_SKIP() << "Test requires video decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7868,7 +7868,7 @@ TEST_F(NegativeVideo, EncodeInputCodedOffsetExtent) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7920,7 +7920,7 @@ TEST_F(NegativeVideo, DecodeSetupAndRefCodedOffset) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -7982,7 +7982,7 @@ TEST_F(NegativeVideo, EncodeSetupAndRefCodedOffset) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8038,7 +8038,7 @@ TEST_F(NegativeVideo, DecodeSetupResourceNotBound) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8068,7 +8068,7 @@ TEST_F(NegativeVideo, EncodeSetupResourceNotBound) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8100,7 +8100,7 @@ TEST_F(NegativeVideo, DecodeRefResourceNotBoundToDPBSlot) {
     config.SessionCreateInfo()->maxDpbSlots = config.Caps()->maxDpbSlots;
     config.SessionCreateInfo()->maxActiveReferencePictures = config.Caps()->maxActiveReferencePictures;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8156,7 +8156,7 @@ TEST_F(NegativeVideo, EncodeRefResourceNotBoundToDPBSlot) {
     config.SessionCreateInfo()->maxDpbSlots = config.Caps()->maxDpbSlots;
     config.SessionCreateInfo()->maxActiveReferencePictures = config.Caps()->maxActiveReferencePictures;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8210,7 +8210,7 @@ TEST_F(NegativeVideo, DecodeTooManyReferences) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8240,7 +8240,7 @@ TEST_F(NegativeVideo, EncodeTooManyReferences) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8272,7 +8272,7 @@ TEST_F(NegativeVideo, DecodeTooManyReferencesH264Interlaced) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8306,7 +8306,7 @@ TEST_F(NegativeVideo, DecodeDuplicateRefResource) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8346,7 +8346,7 @@ TEST_F(NegativeVideo, DecodeDuplicateRefResourceH264Interlaced) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8376,7 +8376,7 @@ TEST_F(NegativeVideo, EncodeDuplicateRefResource) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8414,7 +8414,7 @@ TEST_F(NegativeVideo, DecodeDuplicateFrame) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8444,7 +8444,7 @@ TEST_F(NegativeVideo, EncodeDuplicateFrame) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8474,7 +8474,7 @@ TEST_F(NegativeVideo, DecodeDuplicateFrameFieldH264Interlaced) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 4;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8527,7 +8527,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivation) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8568,7 +8568,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8728,7 +8728,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8850,7 +8850,7 @@ TEST_F(NegativeVideo, DecodeInvalidationOnlyH264Interlaced) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -8920,7 +8920,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH264) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9073,7 +9073,7 @@ TEST_F(NegativeVideo, DecodeFieldFrameMismatchH264) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9129,7 +9129,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH265) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9254,7 +9254,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryOpCount) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool(2);
@@ -9292,7 +9292,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryOutOfBounds) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool(4);
@@ -9336,7 +9336,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool();
@@ -9404,7 +9404,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryType) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9447,8 +9447,8 @@ TEST_F(NegativeVideo, DecodeInlineQueryProfileMismatch) {
 
     configs[0].SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateStatusQueryPool();
@@ -9494,7 +9494,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryIncompatibleQueueFamily) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool();
@@ -9535,7 +9535,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryOpCount) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateEncodeFeedbackQueryPool(2);
@@ -9569,7 +9569,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryOutOfBounds) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateEncodeFeedbackQueryPool(4);
@@ -9609,7 +9609,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateEncodeFeedbackQueryPool();
@@ -9673,7 +9673,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryType) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9712,8 +9712,8 @@ TEST_F(NegativeVideo, EncodeInlineQueryProfileMismatch) {
 
     configs[0].SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context1.CreateResources();
     context2.CreateEncodeFeedbackQueryPool();
@@ -9759,7 +9759,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryIncompatibleQueueFamily) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
     context.CreateStatusQueryPool();
@@ -9796,7 +9796,7 @@ TEST_F(NegativeVideo, EncodeCapsH264GenPrefixNalu) {
         GTEST_SKIP() << "Test requires H.264 encode support without prefix NALU generation support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9836,7 +9836,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MaxSliceCount) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9885,7 +9885,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBs) {
         GTEST_SKIP() << "Test requires H.264 encode with row unaligned slice supported";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9935,7 +9935,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBRows) {
         GTEST_SKIP() << "Test requires H.264 encode without row unaligned slice supported";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -9975,7 +9975,7 @@ TEST_F(NegativeVideo, EncodeCapsH264DifferentSliceTypes) {
         GTEST_SKIP() << "Test requires H.264 encode support with multiple slice support but no different slice types";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10020,7 +10020,7 @@ TEST_F(NegativeVideo, EncodeCapsH265DifferentSliceSegmentTypes) {
             << "Test requires H.265 encode support with multiple slice segment support but no different slice segment types";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10073,7 +10073,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleTilesPerSliceSegment) {
     pps->num_tile_columns_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.width - 1;
     pps->num_tile_rows_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.height - 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10104,7 +10104,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleSliceSegmentsPerTile) {
             << "Test requires H.265 encode support with multiple slice segment but no multiple slice segments per tile support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10151,7 +10151,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MaxSliceSegmentCount) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10202,7 +10202,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBs) {
         GTEST_SKIP() << "Test requires H.265 encode with row unaligned slice segment supported";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10254,7 +10254,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBRows) {
         GTEST_SKIP() << "Test requires H.265 encode without row unaligned slice segment supported";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -10311,7 +10311,7 @@ TEST_F(NegativeVideo, EncodeCapsH264WeightTable) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10339,7 +10339,7 @@ TEST_F(NegativeVideo, EncodeCapsH264WeightTable) {
         config.SessionCreateInfo()->maxDpbSlots = 3;
         config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10387,7 +10387,7 @@ TEST_F(NegativeVideo, EncodeCapsH265WeightTable) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10415,7 +10415,7 @@ TEST_F(NegativeVideo, EncodeCapsH265WeightTable) {
         config.SessionCreateInfo()->maxDpbSlots = 3;
         config.SessionCreateInfo()->maxActiveReferencePictures = 2;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10455,7 +10455,7 @@ TEST_F(NegativeVideo, EncodeCapsH264PicType) {
     if (config_no_p) {
         VideoConfig config = config_no_p;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10478,7 +10478,7 @@ TEST_F(NegativeVideo, EncodeCapsH264PicType) {
     if (config_no_b) {
         VideoConfig config = config_no_b;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10522,7 +10522,7 @@ TEST_F(NegativeVideo, EncodeCapsH264RefPicType) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10550,7 +10550,7 @@ TEST_F(NegativeVideo, EncodeCapsH264RefPicType) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10597,7 +10597,7 @@ TEST_F(NegativeVideo, EncodeCapsH264BPicInRefList) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10623,7 +10623,7 @@ TEST_F(NegativeVideo, EncodeCapsH264BPicInRefList) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10662,7 +10662,7 @@ TEST_F(NegativeVideo, EncodeCapsH265PicType) {
     if (config_no_p) {
         VideoConfig config = config_no_p;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10685,7 +10685,7 @@ TEST_F(NegativeVideo, EncodeCapsH265PicType) {
     if (config_no_b) {
         VideoConfig config = config_no_b;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10729,7 +10729,7 @@ TEST_F(NegativeVideo, EncodeCapsH265RefPicType) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10757,7 +10757,7 @@ TEST_F(NegativeVideo, EncodeCapsH265RefPicType) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10804,7 +10804,7 @@ TEST_F(NegativeVideo, EncodeCapsH265BPicInRefList) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10830,7 +10830,7 @@ TEST_F(NegativeVideo, EncodeCapsH265BPicInRefList) {
         config.SessionCreateInfo()->maxDpbSlots = 2;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-        VideoContext context(DeviceObj(), config);
+        VideoContext context(m_device, config);
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
@@ -10864,7 +10864,7 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoH264) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -11036,7 +11036,7 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoH265) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -11508,7 +11508,7 @@ TEST_F(NegativeVideo, CreateImageIncompatibleProfile) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     profile_list.profileCount = 1;
@@ -11791,7 +11791,7 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeQueryAlreadyActive) {
         GTEST_SKIP() << "Test requires video queue to support result status queries";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool(2);
 
@@ -11825,8 +11825,8 @@ TEST_F(NegativeVideo, BeginQueryResultStatusProfileMismatch) {
         GTEST_SKIP() << "Test requires video queue to support result status queries";
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context2.CreateStatusQueryPool();
 
@@ -11853,8 +11853,8 @@ TEST_F(NegativeVideo, BeginQueryEncodeFeedbackProfileMismatch) {
         GTEST_SKIP() << "Test requires support for at least two video encode profiles";
     }
 
-    VideoContext context1(DeviceObj(), configs[0]);
-    VideoContext context2(DeviceObj(), configs[1]);
+    VideoContext context1(m_device, configs[0]);
+    VideoContext context2(m_device, configs[1]);
     context1.CreateAndBindSessionMemory();
     context2.CreateEncodeFeedbackQueryPool();
 
@@ -11881,7 +11881,7 @@ TEST_F(NegativeVideo, BeginQueryEncodeFeedbackNoBoundVideoSession) {
         GTEST_SKIP() << "Test requires video encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateEncodeFeedbackQueryPool();
 
@@ -11906,7 +11906,7 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeIncompatibleQueryType) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
@@ -11942,7 +11942,7 @@ TEST_F(NegativeVideo, BeginQueryInlineQueries) {
 
     config.SessionCreateInfo()->flags |= VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateStatusQueryPool();
 
@@ -11973,7 +11973,7 @@ TEST_F(NegativeVideo, GetQueryPoolResultsVideoQueryDataSize) {
     auto feedback_flag_count = GetBitSetCount(feedback_flags);
     uint32_t total_query_count = 4;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateEncodeFeedbackQueryPool(total_query_count, feedback_flags);
 
     auto query_pool = context.EncodeFeedbackQueryPool();
@@ -12103,7 +12103,7 @@ TEST_F(NegativeVideo, ImageLayoutUsageMismatch) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateResources();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -12198,7 +12198,7 @@ TEST_F(NegativeVideoSyncVal, DecodeOutputPicture) {
         GTEST_SKIP() << "Test requires decode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -12232,7 +12232,7 @@ TEST_F(NegativeVideoSyncVal, DecodeReconstructedPicture) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -12286,7 +12286,7 @@ TEST_F(NegativeVideoSyncVal, DecodeReferencePicture) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -12333,7 +12333,7 @@ TEST_F(NegativeVideoSyncVal, EncodeBitstream) {
         GTEST_SKIP() << "Test requires Encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -12366,7 +12366,7 @@ TEST_F(NegativeVideoSyncVal, EncodeReconstructedPicture) {
     config.SessionCreateInfo()->maxDpbSlots = 2;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -12420,7 +12420,7 @@ TEST_F(NegativeVideoSyncVal, EncodeReferencePicture) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -12467,7 +12467,7 @@ TEST_F(NegativeVideoBestPractices, GetVideoSessionMemoryRequirements) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto mem_req = vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>();
     uint32_t mem_req_count = 1;
@@ -12488,7 +12488,7 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     // Create a buffer to get non-video-related memory requirements
     VkBufferCreateInfo buffer_create_info =

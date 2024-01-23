@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -251,13 +251,10 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
 
     // Don't bind memory.
     {
-        vkt::Buffer buffer;
-        {
-            VkBufferCreateInfo info = vku::InitStructHelper();
-            info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
-            info.size = 4;
-            buffer.init_no_mem(*m_device, info);
-        }
+        VkBufferCreateInfo info = vku::InitStructHelper();
+        info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
+        info.size = 4;
+        vkt::Buffer buffer(*m_device, info, vkt::no_mem);
 
         VkDeviceSize const offsets[1]{};
 

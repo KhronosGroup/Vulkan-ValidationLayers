@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2023 The Khronos Group Inc.
- * Copyright (c) 2022-2023 RasterGrid Kft.
+ * Copyright (c) 2022-2024 The Khronos Group Inc.
+ * Copyright (c) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ TEST_F(PositiveVideo, VideoCodingScope) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    VideoContext context(DeviceObj(), GetConfigDecode());
+    VideoContext context(m_device, GetConfigDecode());
     context.CreateAndBindSessionMemory();
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -46,7 +46,7 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -90,7 +90,7 @@ TEST_F(PositiveVideo, VideoDecodeProfileIndependentResources) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -121,7 +121,7 @@ TEST_F(PositiveVideo, VideoEncodeProfileIndependentResources) {
     config.SessionCreateInfo()->maxDpbSlots = 1;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -151,7 +151,7 @@ TEST_F(PositiveVideo, VideoDecodeH264) {
     config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
     config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -199,7 +199,7 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
     config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
     config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -247,7 +247,7 @@ TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
     config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
     config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -294,7 +294,7 @@ TEST_F(PositiveVideo, VideoDecodeH265) {
     config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
     config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -343,7 +343,7 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
     config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
     config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -402,7 +402,7 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
     config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
     config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -459,7 +459,7 @@ TEST_F(PositiveVideo, EncodeRateControlH264LayerCount) {
         GTEST_SKIP() << "Test requires H.264 encode support with rate control and temporal layer support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -490,7 +490,7 @@ TEST_F(PositiveVideo, EncodeRateControlH265LayerCount) {
         GTEST_SKIP() << "Test requires H.265 encode support with rate control and sub-layer support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -517,7 +517,7 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH264) {
         GTEST_SKIP() << "Test requires H.264 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h264_info = vku::InitStruct<VkVideoEncodeH264SessionParametersGetInfoKHR>();
     h264_info.writeStdSPS = VK_TRUE;
@@ -551,7 +551,7 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH265) {
         GTEST_SKIP() << "Test requires H.265 encode support";
     }
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
 
     auto h265_info = vku::InitStruct<VkVideoEncodeH265SessionParametersGetInfoKHR>();
     h265_info.writeStdVPS = VK_TRUE;
@@ -599,7 +599,7 @@ TEST_F(PositiveVideoSyncVal, ImageRangeGenYcbcrSubsampling) {
 
     config.SessionCreateInfo()->maxCodedExtent = max_coded_extent;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -638,7 +638,7 @@ TEST_F(PositiveVideoSyncVal, DecodeCoincide) {
     config.SessionCreateInfo()->maxDpbSlots = 3;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -683,7 +683,7 @@ TEST_F(PositiveVideoSyncVal, DecodeDistinct) {
     config.SessionCreateInfo()->maxDpbSlots = 4;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 
@@ -725,7 +725,7 @@ TEST_F(PositiveVideoSyncVal, Encode) {
     config.SessionCreateInfo()->maxDpbSlots = 4;
     config.SessionCreateInfo()->maxActiveReferencePictures = 1;
 
-    VideoContext context(DeviceObj(), config);
+    VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
     context.CreateResources();
 

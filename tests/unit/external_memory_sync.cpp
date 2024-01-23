@@ -1132,8 +1132,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 
     auto buffer_info = vkt::Buffer::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
-    vkt::Buffer buffer_export;
-    buffer_export.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer_export(*m_device, buffer_info, vkt::no_mem);
     const VkMemoryRequirements buffer_export_reqs = buffer_export.memory_requirements();
 
     auto importable_buffer_types =
@@ -1144,8 +1143,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
         static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(importable_buffer_types));
     external_buffer_info.handleTypes = wrong_buffer_handle_type;
 
-    vkt::Buffer buffer_import;
-    buffer_import.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer_import(*m_device, buffer_info, vkt::no_mem);
     const VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
     assert(buffer_import_reqs.memoryTypeBits != 0);  // according to spec at least one bit is set
     if ((buffer_import_reqs.memoryTypeBits & buffer_export_reqs.memoryTypeBits) == 0) {
@@ -2086,8 +2084,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     external_buffer_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     buffer_info.pNext = &external_buffer_info;
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
     dedicated_info.buffer = buffer.handle();
@@ -2106,8 +2103,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     HANDLE handle = NULL;
     vk::GetMemoryWin32HandleKHR(m_device->device(), &get_handle_info, &handle);
 
-    vkt::Buffer buffer2;
-    buffer2.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
     dedicated_info.buffer = buffer2.handle();
 
     VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
@@ -2232,8 +2228,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferNoDedicated) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper();
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -2286,8 +2281,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
     dedicated_info.image = VK_NULL_HANDLE;
@@ -2307,8 +2301,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     int fd;
     vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd);
 
-    vkt::Buffer buffer2;
-    buffer2.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
 
     dedicated_info.buffer = buffer2.handle();
 
@@ -2336,8 +2329,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBadFd) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -2364,8 +2356,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdHandleType) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -2390,8 +2381,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferSupport) {
         GTEST_SKIP() << "Need buffer with no import support";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
     dedicated_info.image = VK_NULL_HANDLE;

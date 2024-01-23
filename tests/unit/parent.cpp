@@ -74,9 +74,7 @@ TEST_F(NegativeParent, BindBuffer) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_ci.queueFamilyIndexCount = 0;
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferMemoryRequirements-buffer-parent");

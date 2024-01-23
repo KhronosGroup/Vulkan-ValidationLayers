@@ -59,8 +59,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFd) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
     dedicated_info.image = VK_NULL_HANDLE;
@@ -174,10 +173,8 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
                                                                       nullptr, handle_type};
     auto buffer_info = vkt::Buffer::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
-    vkt::Buffer buffer_export;
-    buffer_export.init_no_mem(*m_device, buffer_info);
-    vkt::Buffer buffer_import;
-    buffer_import.init_no_mem(*m_device, buffer_info);
+    vkt::Buffer buffer_export(*m_device, buffer_info, vkt::no_mem);
+    vkt::Buffer buffer_import(*m_device, buffer_info, vkt::no_mem);
 
     // Allocation info
     auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);

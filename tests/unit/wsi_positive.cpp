@@ -982,7 +982,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     vkt::ImageView image_view(*m_device, ivci);
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle(), 1, 1);
 
-    vkt::CommandBuffer cmdbuff(DeviceObj(), m_commandPool);
+    vkt::CommandBuffer cmdbuff(m_device, m_commandPool);
     cmdbuff.begin();
     cmdbuff.BeginRenderPass(render_pass.handle(), framebuffer.handle());
 

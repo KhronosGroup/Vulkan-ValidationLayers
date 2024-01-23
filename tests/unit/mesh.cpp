@@ -1080,9 +1080,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
-    vkt::Buffer draw_buffer;
-    draw_buffer.init_no_mem(*m_device, buffer_create_info);
-    ASSERT_TRUE(draw_buffer.initialized());
+    vkt::Buffer draw_buffer(*m_device, buffer_create_info, vkt::no_mem);
     draw_buffer.allocate_and_bind_memory(*m_device);
 
     VkBufferCreateInfo count_buffer_create_info = vku::InitStructHelper();
@@ -1090,15 +1088,10 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 
     vkt::Buffer count_buffer(*m_device, count_buffer_create_info);
-    ASSERT_TRUE(count_buffer.initialized());
+    vkt::Buffer count_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
-    vkt::Buffer count_buffer_unbound;
-    count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
-    ASSERT_TRUE(count_buffer_unbound.initialized());
-
-    vkt::Buffer count_buffer_wrong_usage;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    count_buffer_wrong_usage.init(*m_device, count_buffer_create_info);
+    vkt::Buffer count_buffer_wrong_usage(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714");
     vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,

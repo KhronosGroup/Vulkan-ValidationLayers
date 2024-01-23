@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,10 @@ TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vkt::Buffer buffer;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = memory_allocate_info.allocationSize;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     // Should be able to bind memory with no error
     vkt::DeviceMemory memory(*m_device, memory_allocate_info);
@@ -124,9 +123,7 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = 8192;  // greater than the 4k AHB usually are
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     // Try to get memory requirements prior to binding memory
     VkMemoryRequirements mem_reqs;
@@ -171,9 +168,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);

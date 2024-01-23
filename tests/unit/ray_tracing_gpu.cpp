@@ -80,13 +80,12 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     ASSERT_EQ(VK_SUCCESS, result);
 
     // Create dummy shader binding table (SBT)
-    vkt::Buffer sbt_buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage =
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
     buffer_ci.size = 4096;
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    sbt_buffer.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer sbt_buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), sbt_buffer.handle(), &mem_reqs);

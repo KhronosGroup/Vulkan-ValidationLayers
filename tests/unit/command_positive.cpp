@@ -1229,10 +1229,10 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
         VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
 
-    vkt::Buffer buffer;
     VkDeviceSize buff_size = 32 * 32 * 4;
-    buffer.init_no_mem(*DeviceObj(),
-                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer(*m_device,
+                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                       vkt::no_mem);
     auto buffer_memory_requirements = buffer.memory_requirements();
 
     VkImageObj image(m_device);
@@ -1247,7 +1247,7 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
     }
-    mem.init(*DeviceObj(), alloc_info);
+    mem.init(*m_device, alloc_info);
 
     buffer.bind_memory(mem, 0);
     image.bind_memory(mem, buffer_memory_requirements.size);
@@ -1277,11 +1277,11 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
         printf("VK_FORMAT_BC7_UNORM_BLOCK with linear tiling not supported - skipping compressed format test.\n");
         return;
     }
-    vkt::Buffer buffer2;
     // 1 byte per texel
     buff_size = 32 * 32 * 1;
-    buffer2.init_no_mem(*DeviceObj(),
-                        vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer2(*m_device,
+                        vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                        vkt::no_mem);
     buffer_memory_requirements = buffer.memory_requirements();
 
     VkImageObj image2(m_device);
@@ -1297,7 +1297,7 @@ TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
     }
 
-    mem2.init(*DeviceObj(), alloc_info);
+    mem2.init(*m_device, alloc_info);
 
     buffer2.bind_memory(mem2, 0);
     image2.bind_memory(mem2, buffer_memory_requirements.size);

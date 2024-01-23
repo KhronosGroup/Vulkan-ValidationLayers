@@ -5039,9 +5039,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(VkDrawIndirectCommand);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vkt::Buffer draw_buffer;
-    draw_buffer.init_no_mem(*m_device, buffer_create_info);
-    ASSERT_TRUE(draw_buffer.initialized());
+    vkt::Buffer draw_buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkDeviceSize count_buffer_size = 128;
     VkBufferCreateInfo count_buffer_create_info = vku::InitStructHelper();
@@ -5056,9 +5054,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
 
     draw_buffer.allocate_and_bind_memory(*m_device);
 
-    vkt::Buffer count_buffer_unbound;
-    count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
-    ASSERT_TRUE(count_buffer_unbound.initialized());
+    vkt::Buffer count_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
     vkt::Buffer count_buffer_wrong;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -5138,18 +5134,14 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-    vkt::Buffer draw_buffer_unbound;
-    draw_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
-    ASSERT_TRUE(draw_buffer_unbound.initialized());
+    vkt::Buffer draw_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer_unbound.handle(), 0, count_buffer.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    vkt::Buffer count_buffer_unbound;
-    count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
-    ASSERT_TRUE(count_buffer_unbound.initialized());
+    vkt::Buffer count_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
     vkt::Buffer count_buffer_wrong;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -6198,10 +6190,10 @@ TEST_F(NegativeCommand, DISABLED_CopyImageOverlappingMemory) {
         VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
 
-    vkt::Buffer buffer;
     VkDeviceSize buff_size = 32 * 32 * 4;
-    buffer.init_no_mem(*DeviceObj(),
-                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer(*m_device,
+                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                       vkt::no_mem);
     const auto buffer_memory_requirements = buffer.memory_requirements();
 
     VkImageObj image(m_device);
@@ -6216,7 +6208,7 @@ TEST_F(NegativeCommand, DISABLED_CopyImageOverlappingMemory) {
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
     }
-    mem.init(*DeviceObj(), alloc_info);
+    mem.init(*m_device, alloc_info);
 
     buffer.bind_memory(mem, 0);
     image.bind_memory(mem, 0);

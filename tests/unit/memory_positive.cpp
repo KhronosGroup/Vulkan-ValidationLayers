@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Collabora, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Collabora, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,10 +72,9 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
 
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    // Create a test buffer
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device,
-                       vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer(*m_device,
+                       vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+                       vkt::no_mem);
 
     // Use extension to get buffer memory requirements
     VkBufferMemoryRequirementsInfo2KHR buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
@@ -138,9 +137,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    // Create a test buffer
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     // Allocate buffer memory
     vkt::DeviceMemory buffer_memory;
@@ -388,16 +385,10 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
-    ASSERT_TRUE(buffer.initialized());
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkDeviceBufferMemoryRequirements info = vku::InitStructHelper();
     info.pCreateInfo = &buffer_create_info;

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,8 +29,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -73,8 +72,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -119,8 +117,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -166,8 +163,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -223,10 +219,8 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
-    vkt::Buffer buffer_sparse2;
-    buffer_sparse2.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
+    vkt::Buffer buffer_sparse2(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -319,8 +313,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, b_info);
+    vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -391,8 +384,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     VkBufferCreateInfo buffer_ci =
         vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    vkt::Buffer buffer_sparse;
-    buffer_sparse.init_no_mem(*m_device, buffer_ci);
+    vkt::Buffer buffer_sparse(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
@@ -504,9 +496,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
-
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
     VkDeviceMemory bad_memory = CastToHandle<VkDeviceMemory, uintptr_t>(0xbaadbeef);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -544,8 +534,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
-    vkt::Buffer buffer;
-    buffer.init_no_mem(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
