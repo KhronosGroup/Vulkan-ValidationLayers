@@ -2800,13 +2800,14 @@ TEST_F(NegativeRayTracing, TransformBufferInvalid) {
                                      VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
-    auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    build_info.GetGeometries()[0].SetTrianglesTransformatData(transform_buffer.address());
-    transform_buffer.memory().destroy();
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetGeometries()[0].SetTrianglesTransformatData(transform_buffer.address());
 
     m_commandBuffer->begin();
+    blas.SetupBuild(*m_device, true);
+    transform_buffer.memory().destroy();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809");
-    build_info.BuildCmdBuffer(*m_commandBuffer);
+    blas.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
