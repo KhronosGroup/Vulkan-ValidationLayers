@@ -2692,7 +2692,7 @@ TEST_F(NegativeRayTracing, TrianglesIndexBufferInvalidAddress) {
     RETURN_IF_SKIP(InitState());
 
     auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    build_info.GetGeometries()[0].SetTrianglesIndexBufferDeviceAddress(2);
+    build_info.GetGeometries()[0].SetTrianglesIndexBufferDeviceAddress(32);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806");
@@ -2713,7 +2713,7 @@ TEST_F(NegativeRayTracing, AabbBufferInvalidAddress) {
 
     auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     build_info.GetGeometries()[0] = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
-    build_info.GetGeometries()[0].SetAABBsDeviceAddress(2);
+    build_info.GetGeometries()[0].SetAABBsDeviceAddress(32);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811");
@@ -2757,6 +2757,30 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) 
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03767");
     build_info.BuildCmdBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, BuildNullGeometries) {
+    TEST_DESCRIPTION("Have a geometryCount > 0 but both pGeometries and ppGeometries be NULL");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    m_commandBuffer->begin();
+    // Build Bottom Level Acceleration Structure
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+    blas->SetNullGeometries(true);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries");
+    blas->GetSizeInfo();
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }

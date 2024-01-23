@@ -495,10 +495,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                              const Location &info_loc) const {
     bool skip = false;
 
-    const auto geometry_count = info.geometryCount;
-    const auto *p_geometries = info.pGeometries;
-    const auto *const *const pp_geometries = info.ppGeometries;
-
     auto buffer_check = [this](uint32_t gi, const VkDeviceOrHostAddressConstKHR address, const Location &geom_loc) -> bool {
         const auto buffer_states = GetBuffersByAddress(address.deviceAddress);
         const bool no_valid_buffer_found =
@@ -520,226 +516,154 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         return false;
     };
 
-    // Parameter validation has already checked VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788
-    // !(pGeometries && ppGeometries)
-    std::function<const VkAccelerationStructureGeometryKHR &(uint32_t)> geom_accessor;
-    if (p_geometries) {
-        geom_accessor = [p_geometries](uint32_t i) -> const VkAccelerationStructureGeometryKHR & { return p_geometries[i]; };
-    } else if (pp_geometries) {
-        geom_accessor = [pp_geometries](uint32_t i) -> const VkAccelerationStructureGeometryKHR & {
-            // pp_geometries[i] is assumed to be a valid pointer
-            return *pp_geometries[i];
-        };
-    }
+    const Location pp_build_range_info_loc(info_loc.function, Field::ppBuildRangeInfos, info_i);
+    for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
+        const Location p_geom_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
+        const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
+        const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
+        const VkAccelerationStructureGeometryKHR &geom_data = rt::GetGeometry(info, geom_i);
 
-    if (geom_accessor) {
-        const Location pp_build_range_info_loc(info_loc.function, Field::ppBuildRangeInfos, info_i);
-        for (uint32_t geom_i = 0; geom_i < geometry_count; ++geom_i) {
-            const Location p_geom_loc = info_loc.dot(pp_geometries ? Field::pGeometries : Field::ppGeometries, geom_i);
-            const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
-            const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
-            const auto &geom_data = geom_accessor(geom_i);
-            switch (geom_data.geometryType) {
-                case VK_GEOMETRY_TYPE_TRIANGLES_KHR:  // == VK_GEOMETRY_TYPE_TRIANGLES_NV
-                {
-                    skip |= buffer_check(geom_i, geom_data.geometry.triangles.vertexData,
-                                         p_geom_geom_triangles_loc.dot(Field::vertexData));
-                    skip |= buffer_check(geom_i, geom_data.geometry.triangles.indexData,
-                                         p_geom_geom_triangles_loc.dot(Field::indexData));
-                    skip |= buffer_check(geom_i, geom_data.geometry.triangles.transformData,
-                                         p_geom_geom_triangles_loc.dot(Field::transformData));
+        switch (geom_data.geometryType) {
+            case VK_GEOMETRY_TYPE_TRIANGLES_KHR:  // == VK_GEOMETRY_TYPE_TRIANGLES_NV
+            {
+                skip |=
+                    buffer_check(geom_i, geom_data.geometry.triangles.vertexData, p_geom_geom_triangles_loc.dot(Field::vertexData));
+                skip |=
+                    buffer_check(geom_i, geom_data.geometry.triangles.indexData, p_geom_geom_triangles_loc.dot(Field::indexData));
+                skip |= buffer_check(geom_i, geom_data.geometry.triangles.transformData,
+                                     p_geom_geom_triangles_loc.dot(Field::transformData));
 
-                    auto vertex_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
-                    if (vertex_buffer_states.empty()) {
-                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804", cmd_buffer,
-                                         p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                         "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
-                                         geom_data.geometry.triangles.vertexData.deviceAddress);
+                auto vertex_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
+                if (vertex_buffer_states.empty()) {
+                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804", cmd_buffer,
+                                     p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                     "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
+                                     geom_data.geometry.triangles.vertexData.deviceAddress);
+                } else {
+                    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+                    BufferAddressValidation<1> buffer_address_validator = {
+                        {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03805", LogObjectList(cmd_buffer),
+                           [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                               return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
+                           },
+                           []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
+
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, vertex_buffer_states, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                        geom_data.geometry.triangles.vertexData.deviceAddress);
+                }
+
+                if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                    auto index_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
+                    if (index_buffer_states.empty()) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806", cmd_buffer,
+                                         p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                         "(0x%" PRIx64 ") is not an address belonging to an existing buffer. %s is %s.",
+                                         geom_data.geometry.triangles.indexData.deviceAddress,
+                                         p_geom_geom_triangles_loc.dot(Field::indexType).Fields().c_str(),
+                                         string_VkIndexType(geom_data.geometry.triangles.indexType));
                     } else {
                         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                         BufferAddressValidation<1> buffer_address_validator = {
-                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03805", LogObjectList(cmd_buffer),
+                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03807", LogObjectList(cmd_buffer),
                                [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
-                                                                                                  out_error_msg);
+                                   if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
+                                       if (out_error_msg) {
+                                           if (const auto mem_state = buffer_state->MemState();
+                                               mem_state && mem_state->Destroyed()) {
+                                               *out_error_msg += "buffer is bound to memory (" + FormatHandle(mem_state->Handle()) +
+                                                                 ") but it has been freed";
+                                           } else {
+                                               *out_error_msg += "buffer has not been bound to memory";
+                                           }
+                                       }
+                                       return false;
+                                   }
+                                   return true;
                                },
-                               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
+                               []() { return "The following buffers are not bound to memory or it has been freed:\n"; }}}}};
 
                         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                            *this, vertex_buffer_states, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                            geom_data.geometry.triangles.vertexData.deviceAddress);
+                            *this, index_buffer_states, p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                            geom_data.geometry.triangles.indexData.deviceAddress);
                     }
 
-                    if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
-                        auto index_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
-                        if (index_buffer_states.empty()) {
-                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806", cmd_buffer,
-                                             p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
-                                             "(0x%" PRIx64 ") is not an address belonging to an existing buffer. %s is %s.",
-                                             geom_data.geometry.triangles.indexData.deviceAddress,
-                                             p_geom_geom_triangles_loc.dot(Field::indexType).Fields().c_str(),
-                                             string_VkIndexType(geom_data.geometry.triangles.indexType));
-                        } else {
-                            using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
-                            BufferAddressValidation<1> buffer_address_validator = {
-                                {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03807", LogObjectList(cmd_buffer),
-                                   [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                       if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
-                                           if (out_error_msg) {
-                                               if (const auto mem_state = buffer_state->MemState();
-                                                   mem_state && mem_state->Destroyed()) {
-                                                   *out_error_msg += "buffer is bound to memory (" +
-                                                                     FormatHandle(mem_state->Handle()) + ") but it has been freed";
-                                               } else {
-                                                   *out_error_msg += "buffer has not been bound to memory";
-                                               }
-                                           }
-                                           return false;
-                                       }
-                                       return true;
-                                   },
-                                   []() { return "The following buffers are not bound to memory or it has been freed:\n"; }}}}};
-
-                            skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                                *this, index_buffer_states,
-                                p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
-                                geom_data.geometry.triangles.indexData.deviceAddress);
-                        }
-
-                        if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
-                            if (geom_i < src_as_state->build_range_infos.size()) {
-                                if (const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
-                                    recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
-                                    const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
-                                    skip |=
-                                        LogError("VUID-vkCmdBuildAccelerationStructuresKHR-firstVertex-03770", objlist, p_geom_loc,
+                    if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
+                        if (geom_i < src_as_state->build_range_infos.size()) {
+                            if (const uint32_t recorded_first_vertex = src_as_state->build_range_infos[geom_i].firstVertex;
+                                recorded_first_vertex != geometry_build_ranges[geom_i].firstVertex) {
+                                const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
+                                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-firstVertex-03770", objlist, p_geom_loc,
                                                  " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
                                                  "], but this build range has its firstVertex member set to (%" PRIu32
                                                  ") when it was last specified as (%" PRIu32 ").",
                                                  pp_build_range_info_loc.Fields().c_str(), geom_i,
                                                  geometry_build_ranges[geom_i].firstVertex, recorded_first_vertex);
-                                }
+                            }
 
-                                if (const uint32_t recorded_primitive_count =
-                                        src_as_state->build_range_infos[geom_i].primitiveCount;
-                                    recorded_primitive_count != geometry_build_ranges[geom_i].primitiveCount) {
-                                    const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
-                                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-primitiveCount-03769", objlist,
-                                                     p_geom_loc,
-                                                     " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
-                                                     "], but this build range has its primitiveCount member set to (%" PRIu32
-                                                     ") when it was last specified as (%" PRIu32 ").",
-                                                     pp_build_range_info_loc.Fields().c_str(), geom_i,
-                                                     geometry_build_ranges[geom_i].primitiveCount, recorded_primitive_count);
-                                }
+                            if (const uint32_t recorded_primitive_count = src_as_state->build_range_infos[geom_i].primitiveCount;
+                                recorded_primitive_count != geometry_build_ranges[geom_i].primitiveCount) {
+                                const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
+                                skip |=
+                                    LogError("VUID-vkCmdBuildAccelerationStructuresKHR-primitiveCount-03769", objlist, p_geom_loc,
+                                             " has corresponding VkAccelerationStructureBuildRangeInfoKHR %s[%" PRIu32
+                                             "], but this build range has its primitiveCount member set to (%" PRIu32
+                                             ") when it was last specified as (%" PRIu32 ").",
+                                             pp_build_range_info_loc.Fields().c_str(), geom_i,
+                                             geometry_build_ranges[geom_i].primitiveCount, recorded_primitive_count);
                             }
                         }
                     }
-
-                    VkFormatProperties vertex_format_props{};
-                    DispatchGetPhysicalDeviceFormatProperties(physical_device, geom_data.geometry.triangles.vertexFormat,
-                                                              &vertex_format_props);
-                    if (!(vertex_format_props.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
-                        skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797", cmd_buffer,
-                                         p_geom_geom_triangles_loc.dot(Field::vertexFormat),
-                                         "is %s, and only has the following VkFormatProperties::bufferFeatures: %s.",
-                                         string_VkFormat(geom_data.geometry.triangles.vertexFormat),
-                                         string_VkFormatFeatureFlags(vertex_format_props.bufferFeatures).c_str());
-                    }
-                    // Only try to get format info if vertex format is valid
-                    else {
-                        const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(geom_data.geometry.triangles.vertexFormat);
-                        uint32_t min_component_bits_size = format_info.components[0].size;
-                        for (uint32_t component_i = 1; component_i < format_info.component_count; ++component_i) {
-                            min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
-                        }
-                        const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                        if (SafeModulo(geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size) != 0) {
-                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711", cmd_buffer,
-                                             p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                             "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                             ") of its corresponding vertex "
-                                             "format (%s).",
-                                             geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size,
-                                             string_VkFormat(geom_data.geometry.triangles.vertexFormat));
-                        }
-                        if (SafeModulo(geom_data.geometry.triangles.vertexStride, min_component_byte_size) != 0) {
-                            skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735", cmd_buffer,
-                                             p_geom_geom_triangles_loc.dot(Field::vertexStride),
-                                             "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                             ") of its corresponding vertex "
-                                             "format (%s).",
-                                             geom_data.geometry.triangles.vertexStride, min_component_byte_size,
-                                             string_VkFormat(geom_data.geometry.triangles.vertexFormat));
-                        }
-                    }
-                    if (geom_data.geometry.triangles.transformData.deviceAddress != 0) {
-                        auto tranform_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.transformData.deviceAddress);
-                        if (tranform_buffer_states.empty()) {
-                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03808", cmd_buffer,
-                                             p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
-                                             "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
-                                             geom_data.geometry.triangles.transformData.deviceAddress);
-                        } else {
-                            using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
-                            BufferAddressValidation<1> buffer_address_validator = {
-                                {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809", LogObjectList(cmd_buffer),
-                                   [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                       return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
-                                                                                                      out_error_msg);
-                                   },
-                                   []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
-
-                            skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                                *this, tranform_buffer_states,
-                                p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
-                                geom_data.geometry.triangles.transformData.deviceAddress);
-                        }
-                    }
-                    break;
                 }
-                case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
-                    const Location instances_loc = p_geom_geom_loc.dot(Field::instances);
-                    const Location instances_data_loc = instances_loc.dot(Field::data);
 
-                    skip |= buffer_check(geom_i, geom_data.geometry.instances.data, instances_data_loc);
-                    auto buffer_states = GetBuffersByAddress(geom_data.geometry.instances.data.deviceAddress);
-                    if (buffer_states.empty()) {
-                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813", cmd_buffer,
-                                         instances_data_loc.dot(Field::deviceAddress),
-                                         "(%" PRIu64 ") is not an address belonging to an existing buffer.",
-                                         geom_data.geometry.instances.data.deviceAddress);
-                    } else {
-                        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
-                        BufferAddressValidation<1> buffer_address_validator = {
-                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814", LogObjectList(cmd_buffer),
-                               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
-                                                                                                  out_error_msg);
-                               },
-                               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
-
-                        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states,
-                                                                                  instances_data_loc.dot(Field::deviceAddress),
-                                                                                  geom_data.geometry.instances.data.deviceAddress);
-                    }
-
-                    break;
+                VkFormatProperties vertex_format_props{};
+                DispatchGetPhysicalDeviceFormatProperties(physical_device, geom_data.geometry.triangles.vertexFormat,
+                                                          &vertex_format_props);
+                if (!(vertex_format_props.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+                    skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797", cmd_buffer,
+                                     p_geom_geom_triangles_loc.dot(Field::vertexFormat),
+                                     "is %s, and only has the following VkFormatProperties::bufferFeatures: %s.",
+                                     string_VkFormat(geom_data.geometry.triangles.vertexFormat),
+                                     string_VkFormatFeatureFlags(vertex_format_props.bufferFeatures).c_str());
                 }
-                case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
-                {
-                    skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
-
-                    auto aabb_buffer_states = GetBuffersByAddress(geom_data.geometry.aabbs.data.deviceAddress);
-                    if (aabb_buffer_states.empty()) {
-                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811", cmd_buffer,
-                                         p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
+                // Only try to get format info if vertex format is valid
+                else {
+                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(geom_data.geometry.triangles.vertexFormat);
+                    uint32_t min_component_bits_size = format_info.components[0].size;
+                    for (uint32_t component_i = 1; component_i < format_info.component_count; ++component_i) {
+                        min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
+                    }
+                    const uint32_t min_component_byte_size = min_component_bits_size / 8;
+                    if (SafeModulo(geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size) != 0) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711", cmd_buffer,
+                                         p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                         "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                         ") of its corresponding vertex "
+                                         "format (%s).",
+                                         geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size,
+                                         string_VkFormat(geom_data.geometry.triangles.vertexFormat));
+                    }
+                    if (SafeModulo(geom_data.geometry.triangles.vertexStride, min_component_byte_size) != 0) {
+                        skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735", cmd_buffer,
+                                         p_geom_geom_triangles_loc.dot(Field::vertexStride),
+                                         "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                         ") of its corresponding vertex "
+                                         "format (%s).",
+                                         geom_data.geometry.triangles.vertexStride, min_component_byte_size,
+                                         string_VkFormat(geom_data.geometry.triangles.vertexFormat));
+                    }
+                }
+                if (geom_data.geometry.triangles.transformData.deviceAddress != 0) {
+                    auto tranform_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.transformData.deviceAddress);
+                    if (tranform_buffer_states.empty()) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03808", cmd_buffer,
+                                         p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
                                          "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
-                                         geom_data.geometry.aabbs.data.deviceAddress);
+                                         geom_data.geometry.triangles.transformData.deviceAddress);
                     } else {
                         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                         BufferAddressValidation<1> buffer_address_validator = {
-                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03812", LogObjectList(cmd_buffer),
+                            {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809", LogObjectList(cmd_buffer),
                                [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                                    return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
                                                                                                   out_error_msg);
@@ -747,15 +671,69 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
 
                         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                            *this, aabb_buffer_states, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
-                            geom_data.geometry.aabbs.data.deviceAddress);
+                            *this, tranform_buffer_states,
+                            p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
+                            geom_data.geometry.triangles.transformData.deviceAddress);
                     }
-                    break;
                 }
-                default:
-                    // no-op
-                    break;
+                break;
             }
+            case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
+                const Location instances_loc = p_geom_geom_loc.dot(Field::instances);
+                const Location instances_data_loc = instances_loc.dot(Field::data);
+
+                skip |= buffer_check(geom_i, geom_data.geometry.instances.data, instances_data_loc);
+
+                auto buffer_states = GetBuffersByAddress(geom_data.geometry.instances.data.deviceAddress);
+                if (buffer_states.empty()) {
+                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813", cmd_buffer,
+                                     instances_data_loc.dot(Field::deviceAddress),
+                                     "(%" PRIu64 ") is not an address belonging to an existing buffer.",
+                                     geom_data.geometry.instances.data.deviceAddress);
+                } else {
+                    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+                    BufferAddressValidation<1> buffer_address_validator = {
+                        {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814", LogObjectList(cmd_buffer),
+                           [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                               return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
+                           },
+                           []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
+
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states,
+                                                                              instances_data_loc.dot(Field::deviceAddress),
+                                                                              geom_data.geometry.instances.data.deviceAddress);
+                }
+
+                break;
+            }
+            case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
+            {
+                skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
+
+                auto aabb_buffer_states = GetBuffersByAddress(geom_data.geometry.aabbs.data.deviceAddress);
+                if (aabb_buffer_states.empty()) {
+                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811", cmd_buffer,
+                                     p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
+                                     "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
+                                     geom_data.geometry.aabbs.data.deviceAddress);
+                } else {
+                    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+                    BufferAddressValidation<1> buffer_address_validator = {
+                        {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03812", LogObjectList(cmd_buffer),
+                           [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                               return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
+                           },
+                           []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
+
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, aabb_buffer_states, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
+                        geom_data.geometry.aabbs.data.deviceAddress);
+                }
+                break;
+            }
+            default:
+                // no-op
+                break;
         }
     }
 
