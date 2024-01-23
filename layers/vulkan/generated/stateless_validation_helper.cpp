@@ -24678,6 +24678,7 @@ bool StatelessValidation::PreCallValidateGetPipelinePropertiesEXT(VkDevice devic
         skip |= OutputExtensionError(loc, "VK_EXT_pipeline_properties");
     skip |= ValidateRequiredPointer(loc.dot(Field::pPipelineInfo), pPipelineInfo,
                                     "VUID-vkGetPipelinePropertiesEXT-pPipelineInfo-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, error_obj);
     return skip;
 }
 

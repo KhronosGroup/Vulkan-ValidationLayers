@@ -1479,3 +1479,20 @@ bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice dev
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT *pPipelineInfo,
+                                                                         VkBaseOutStructure *pPipelineProperties,
+                                                                         const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    const auto *pipeline_props_features =
+        vku::FindStructInPNextChain<VkPhysicalDevicePipelinePropertiesFeaturesEXT>(device_createinfo_pnext);
+    if (!pipeline_props_features || !pipeline_props_features->pipelinePropertiesIdentifier) {
+        skip |= LogError("VUID-vkGetPipelinePropertiesEXT-None-06766", device, error_obj.location,
+                         "the pipelinePropertiesIdentifier feature was not enabled.");
+    }
+
+    skip |= ValidateRequiredPointer(error_obj.location.dot(Field::pPipelineProperties), pPipelineProperties,
+                                    "VUID-vkGetPipelinePropertiesEXT-pPipelineProperties-06739");
+    return skip;
+}

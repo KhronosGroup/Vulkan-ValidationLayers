@@ -180,6 +180,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkQueueBindSparse',
             'vkCmdBindDescriptorBuffersEXT',
             'vkGetPhysicalDeviceExternalBufferProperties',
+            'vkGetPipelinePropertiesEXT',
             ]
 
         # Commands to ignore

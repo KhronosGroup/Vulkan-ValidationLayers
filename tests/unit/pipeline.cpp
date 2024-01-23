@@ -3641,3 +3641,21 @@ TEST_F(NegativePipeline, RasterizationStateFlag) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, GetPipelinePropertiesEXT) {
+    AddRequiredExtensions(VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());  // missing feature
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = pipe.Handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelinePropertiesEXT-None-06766");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelinePropertiesEXT-pPipelineProperties-06739");
+    vk::GetPipelinePropertiesEXT(device(), &pipeline_info, nullptr);
+    m_errorMonitor->VerifyFound();
+}
