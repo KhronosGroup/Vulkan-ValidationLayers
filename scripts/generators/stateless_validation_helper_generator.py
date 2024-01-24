@@ -382,15 +382,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
             extension_feature_struct = 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends and len(struct.extensions) > 0
             if extension_feature_struct:
-                # workaround for https://gitlab.khronos.org/vulkan/vulkan/-/issues/3753
-                if struct.name == 'VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT':
-                    if len(struct.extensions) > 1:
-                        print("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3753 has been fixed, this logic should be removed")
-                        sys.exit(1)
-                    struct.extensions.append(self.vk.extensions['VK_EXT_mutable_descriptor_type'])
-                if struct.name == 'VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT':
-                    struct.extensions.append(self.vk.extensions['VK_EXT_rasterization_order_attachment_access'])
-
                 extension_check = []
                 extensions = [x.name for x in struct.extensions]
                 for extension in extensions:
