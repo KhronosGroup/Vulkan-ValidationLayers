@@ -1665,7 +1665,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(PositiveGraphicsLibrary, MissingLinkingLayout) {
+TEST_F(NegativeGraphicsLibrary, MissingLinkingLayout) {
     TEST_DESCRIPTION("Create an executable library with no layout at linking time");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2431,5 +2431,177 @@ TEST_F(NegativeGraphicsLibrary, NullLayoutPreRasterDiscardEnable) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06683");
     pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MultisampleStateFragOutputLibrary) {
+    TEST_DESCRIPTION("different pMultisampleState, but from a fragment output library");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.pipe_ms_state_ci_.minSampleShading = 0.5f;
+    frag_out_lib.pipe_ms_state_ci_.sampleShadingEnable = VK_TRUE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &frag_out_lib.pipeline_;
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper frag_shader_lib(*this);
+
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
+    frag_shader_lib.pipe_ms_state_ci_.minSampleShading = 0.2f;
+    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06633");
+    frag_shader_lib.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MultisampleStateFragShaderLibrary) {
+    TEST_DESCRIPTION("different pMultisampleState, but from a fragment shader library");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper frag_shader_lib(*this);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.pipe_ms_state_ci_.minSampleShading = 0.2f;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &frag_shader_lib.pipeline_;
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo(&link_info);
+    frag_out_lib.pipe_ms_state_ci_.minSampleShading = 0.5f;
+    frag_out_lib.pipe_ms_state_ci_.sampleShadingEnable = VK_TRUE;
+    frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
+    frag_out_lib.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MultisampleStateFragOutputNull) {
+    TEST_DESCRIPTION("fragment output has null Multisample state while Fragment Shader has one");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper frag_shader_lib(*this);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &frag_shader_lib.pipeline_;
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo(&link_info);
+    frag_out_lib.gp_ci_.pMultisampleState = nullptr;
+    frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
+    frag_out_lib.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MultisampleStateFragShaderNull) {
+    TEST_DESCRIPTION("fragment output has null Multisample state while Fragment Shader has one");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.pipe_ms_state_ci_.sampleShadingEnable = VK_TRUE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &frag_out_lib.pipeline_;
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper frag_shader_lib(*this);
+
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
+    frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
+    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-MultisampleState");
+    frag_shader_lib.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MultisampleStateBothLibrary) {
+    TEST_DESCRIPTION("different pMultisampleState, but from a Library");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.InitState();
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    layout = pre_raster_lib.gp_ci_.layout;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = layout;
+        frag_shader_lib.pipe_ms_state_ci_.minSampleShading = 0.2f;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.pipe_ms_state_ci_.minSampleShading = 0.5f;
+    frag_out_lib.pipe_ms_state_ci_.sampleShadingEnable = VK_TRUE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }

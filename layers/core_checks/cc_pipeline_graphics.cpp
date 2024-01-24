@@ -442,6 +442,28 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
     return skip;
 }
 
+// Using memcmp will fail sometimes as the alignment/padding in the struct can have undefined values, so because we can't ensure the
+// memory was zero-intialized, we need to just do a normal compare on each member
+static bool ComparePipelineMultisampleStateCreateInfo(VkPipelineMultisampleStateCreateInfo a,
+                                                      VkPipelineMultisampleStateCreateInfo b) {
+    return (a.sType == b.sType) && (a.pNext == b.pNext) && (a.flags == b.flags) &&
+           (a.rasterizationSamples == b.rasterizationSamples) && (a.sampleShadingEnable == b.sampleShadingEnable) &&
+           (a.minSampleShading == b.minSampleShading) && (a.pSampleMask == b.pSampleMask) &&
+           (a.alphaToCoverageEnable == b.alphaToCoverageEnable) && (a.alphaToOneEnable == b.alphaToOneEnable);
+}
+
+static bool CompareDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding a, VkDescriptorSetLayoutBinding b) {
+    return (a.binding == b.binding) && (a.descriptorType == b.descriptorType) && (a.descriptorCount == b.descriptorCount) &&
+           (a.stageFlags == b.stageFlags) && (a.pImmutableSamplers == b.pImmutableSamplers);
+}
+
+static bool ComparePipelineColorBlendAttachmentState(VkPipelineColorBlendAttachmentState a, VkPipelineColorBlendAttachmentState b) {
+    return (a.blendEnable == b.blendEnable) && (a.srcColorBlendFactor == b.srcColorBlendFactor) &&
+           (a.dstColorBlendFactor == b.dstColorBlendFactor) && (a.colorBlendOp == b.colorBlendOp) &&
+           (a.srcAlphaBlendFactor == b.srcAlphaBlendFactor) && (a.dstAlphaBlendFactor == b.dstAlphaBlendFactor) &&
+           (a.alphaBlendOp == b.alphaBlendOp) && (a.colorWriteMask == b.colorWriteMask);
+}
+
 bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
@@ -537,7 +559,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
     }
 
-    // The PreRaster and FragmentShader can be declared in two different ways
+    // The pipeline libraries can be declared in two different ways
     enum GPLInitType : uint8_t {
         uninitialized = 0,
         gpl_flags,       // VkGraphicsPipelineLibraryCreateInfoEXT::flags
@@ -548,10 +570,13 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         GPLInitType init = GPLInitType::uninitialized;
         VkPipelineLayoutCreateFlags flags = VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM;
         const vvl::PipelineLayout *layout = nullptr;
+        // Can't use MultisampleState() to get this value as we are checking here if they are identical
+        const VkPipelineMultisampleStateCreateInfo *ms_state = nullptr;
     };
 
     GPLValidInfo pre_raster_info;
     GPLValidInfo frag_shader_info;
+    GPLValidInfo frag_output_info;
 
     const auto gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.PNext());
     if (gpl_info) {
@@ -566,6 +591,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             frag_shader_info.flags =
                 (pipeline.FragmentShaderPipelineLayoutState()) ? pipeline.FragmentShaderPipelineLayoutState()->CreateFlags() : 0;
             frag_shader_info.layout = pipeline.FragmentShaderPipelineLayoutState().get();
+            frag_shader_info.ms_state = pipeline.fragment_shader_state->ms_state.get()->ptr();
+        }
+        if (gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
+            frag_output_info.init = GPLInitType::gpl_flags;
+            frag_output_info.ms_state = pipeline.fragment_output_state->ms_state.get()->ptr();
         }
     }
 
@@ -574,16 +604,27 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 
         for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
             const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
-            if (lib && lib->PipelineLayoutState()) {
-                if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-                    pre_raster_info.init = GPLInitType::link_libraries;
-                    pre_raster_info.flags = lib->PreRasterPipelineLayoutState()->CreateFlags();
-                    pre_raster_info.layout = lib->PreRasterPipelineLayoutState().get();
-                } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-                    frag_shader_info.init = GPLInitType::link_libraries;
-                    frag_shader_info.flags = lib->FragmentShaderPipelineLayoutState()->CreateFlags();
-                    frag_shader_info.layout = lib->FragmentShaderPipelineLayoutState().get();
+            if (!lib) {
+                continue;
+            }
+            if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
+                pre_raster_info.init = GPLInitType::link_libraries;
+                const auto layout_state = lib->PreRasterPipelineLayoutState();
+                if (layout_state) {
+                    pre_raster_info.flags = layout_state->CreateFlags();
+                    pre_raster_info.layout = layout_state.get();
                 }
+            } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
+                frag_shader_info.init = GPLInitType::link_libraries;
+                const auto layout_state = lib->FragmentShaderPipelineLayoutState();
+                if (layout_state) {
+                    frag_shader_info.flags = layout_state->CreateFlags();
+                    frag_shader_info.layout = layout_state.get();
+                }
+                frag_shader_info.ms_state = lib->fragment_shader_state->ms_state.get()->ptr();
+            } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
+                frag_output_info.init = GPLInitType::link_libraries;
+                frag_output_info.ms_state = lib->fragment_output_state->ms_state.get()->ptr();
             }
         }
     }
@@ -872,7 +913,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     for (uint32_t binding_index = 0; binding_index < binding_count; binding_index++) {
                         const auto &pre_raster_binding = pre_raster_bindings[binding_index];
                         const auto &fs_binding = fs_bindings[binding_index];
-                        if (memcmp(pre_raster_binding.ptr(), fs_binding.ptr(), sizeof(VkDescriptorSetLayoutBinding)) != 0) {
+                        if (!CompareDescriptorSetLayoutBinding(*pre_raster_binding.ptr(), *fs_binding.ptr())) {
                             const char *vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
                                                          : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
                             LogObjectList objlist(pre_raster_info.layout->layout(), frag_shader_info.layout->layout());
@@ -907,6 +948,66 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                         }
                     }
                 }
+            }
+        }
+    }
+
+    if ((frag_shader_info.init != GPLInitType::uninitialized) && (frag_output_info.init != GPLInitType::uninitialized)) {
+        if (!frag_shader_info.ms_state && frag_output_info.ms_state) {
+            // if Fragment Output has sampleShadingEnable == false, Fragement Shader may be null
+            if (frag_output_info.ms_state->sampleShadingEnable) {
+                // Missing VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6408
+                const char *vuid =
+                    (frag_shader_info.init == GPLInitType::gpl_flags)   ? "UNASSIGNED-VkGraphicsPipelineCreateInfo-MultisampleState"
+                    : (frag_output_info.init == GPLInitType::gpl_flags) ? "VUID-VkGraphicsPipelineCreateInfo-flags-06637"
+                                                                        : "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06636";
+                skip |= LogError(
+                    vuid, device, create_info_loc,
+                    "Fragment Output Interface were created with VkPipelineMultisampleStateCreateInfo::sampleShadingEnable to "
+                    "VK_TRUE, but Fragment Shader has a pMultisampleState of NULL.");
+            }
+        } else if (frag_shader_info.ms_state && !frag_output_info.ms_state) {
+            const char *vuid = (frag_shader_info.init == GPLInitType::gpl_flags) ? "VUID-VkGraphicsPipelineCreateInfo-flags-06633"
+                               : (frag_output_info.init == GPLInitType::gpl_flags)
+                                   ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634"
+                                   : "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635";
+            skip |= LogError(vuid, device, create_info_loc,
+                             "Fragment Shader has a valid VkPipelineMultisampleStateCreateInfo, but Fragment Output Interface has "
+                             "a pMultisampleState of NULL.");
+        } else if (frag_shader_info.ms_state && frag_output_info.ms_state) {
+            if (!ComparePipelineMultisampleStateCreateInfo(*frag_shader_info.ms_state, *frag_output_info.ms_state)) {
+                const char *vuid =
+                    (frag_shader_info.init == GPLInitType::gpl_flags)   ? "VUID-VkGraphicsPipelineCreateInfo-flags-06633"
+                    : (frag_output_info.init == GPLInitType::gpl_flags) ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634"
+                                                                        : "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635";
+                skip |= LogError(vuid, device, create_info_loc,
+                                 "Fragment Shader and Fragment Output Interface were created with different "
+                                 "VkPipelineMultisampleStateCreateInfo."
+                                 "Fragment Shader pMultisampleState:\n"
+                                 "\tpNext: %p\n"
+                                 "\trasterizationSamples: %s\n"
+                                 "\tsampleShadingEnable: %d\n"
+                                 "\tminSampleShading: %f\n"
+                                 "\tpSampleMask: %p\n"
+                                 "\talphaToCoverageEnable: %d\n"
+                                 "\talphaToOneEnable: %d\n"
+                                 "Fragment Output Interface pMultisampleState:\n"
+                                 "\tpNext: %p\n"
+                                 "\trasterizationSamples: %s\n"
+                                 "\tsampleShadingEnable: %d\n"
+                                 "\tminSampleShading: %f\n"
+                                 "\tpSampleMask: %p\n"
+                                 "\talphaToCoverageEnable: %d\n"
+                                 "\talphaToOneEnable: %d\n",
+                                 frag_shader_info.ms_state->pNext,
+                                 string_VkSampleCountFlagBits(frag_shader_info.ms_state->rasterizationSamples),
+                                 frag_shader_info.ms_state->sampleShadingEnable, frag_shader_info.ms_state->minSampleShading,
+                                 frag_shader_info.ms_state->pSampleMask, frag_shader_info.ms_state->alphaToCoverageEnable,
+                                 frag_shader_info.ms_state->alphaToOneEnable, frag_output_info.ms_state->pNext,
+                                 string_VkSampleCountFlagBits(frag_output_info.ms_state->rasterizationSamples),
+                                 frag_output_info.ms_state->sampleShadingEnable, frag_output_info.ms_state->minSampleShading,
+                                 frag_output_info.ms_state->pSampleMask, frag_output_info.ms_state->alphaToCoverageEnable,
+                                 frag_output_info.ms_state->alphaToOneEnable);
             }
         }
     }
@@ -1296,11 +1397,7 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
         if (pipe_attachments.size() > 1) {
             const auto *const attachments = &pipe_attachments[0];
             for (size_t i = 1; i < pipe_attachments.size(); i++) {
-                // Quoting the spec: "If [the independent blend] feature is not enabled, the VkPipelineColorBlendAttachmentState
-                // settings for all color attachments must be identical." VkPipelineColorBlendAttachmentState contains
-                // only attachment state, so memcmp is best suited for the comparison
-                if (memcmp(static_cast<const void *>(attachments), static_cast<const void *>(&attachments[i]),
-                           sizeof(attachments[0]))) {
+                if (!ComparePipelineColorBlendAttachmentState(attachments[0], attachments[i])) {
                     skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605", device,
                                      color_loc.dot(Field::pAttachments, (uint32_t)i),
                                      "is different than pAttachments[0] and independentBlend feature was not enabled.");

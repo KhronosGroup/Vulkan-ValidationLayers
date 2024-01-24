@@ -1653,3 +1653,32 @@ TEST_F(PositiveGraphicsLibrary, SetLayoutCount) {
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
 }
+
+TEST_F(PositiveGraphicsLibrary, MultisampleStateFragShaderNull) {
+    TEST_DESCRIPTION(
+        "you're allowed to have the fragment shader subset have a multisample state of NULL and the fragment output subset have a "
+        "non-NULL multisample state as long as sample shading is false.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.pipe_ms_state_ci_.sampleShadingEnable = VK_FALSE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &frag_out_lib.pipeline_;
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper frag_shader_lib(*this);
+
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
+    frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
+    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+}
