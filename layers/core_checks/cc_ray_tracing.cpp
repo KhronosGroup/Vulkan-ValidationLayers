@@ -1639,6 +1639,26 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pInfo).dot(Field::src),
                                               "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
     }
+
+    const VkDeviceAddress dst_address = pInfo->dst.deviceAddress;
+
+    const auto buffer_states = GetBuffersByAddress(dst_address);
+    if (buffer_states.empty()) {
+        skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03739", device,
+                         error_obj.location.dot(Field::pInfo).dot(Field::dst).dot(Field::deviceAddress),
+                         "(0x%" PRIx64 ") is not a valid buffer address.", dst_address);
+    } else {
+        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+        BufferAddressValidation<1> buffer_address_validator = {
+            {{{"VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03741", LogObjectList(commandBuffer),
+               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
+               },
+               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
+
+        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+            *this, buffer_states, error_obj.location.dot(Field::pInfo).dot(Field::dst).dot(Field::deviceAddress), dst_address);
+    }
     return skip;
 }
 
