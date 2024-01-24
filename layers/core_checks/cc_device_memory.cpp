@@ -603,11 +603,11 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
         }
 
         LogObjectList objlist(mem_info->deviceMemory(), typed_handle);
-        skip = LogError(vuid, objlist, loc,
-                        "attempting to bind %s to %s, memoryOffset (%" PRIu64
-                        ") must be less than the memory allocation size (%" PRIu64 ").",
-                        FormatHandle(mem_info->deviceMemory()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
-                        mem_info->alloc_info.allocationSize);
+        skip |= LogError(vuid, objlist, loc,
+                         "attempting to bind %s to %s, memoryOffset (%" PRIu64
+                         ") must be less than the memory allocation size (%" PRIu64 ").",
+                         FormatHandle(mem_info->deviceMemory()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
+                         mem_info->alloc_info.allocationSize);
     }
 
     return skip;
@@ -627,9 +627,9 @@ bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory *mem_info, const ui
                                      const Location &resource_loc, const char *vuid) const {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
-        skip = LogError(vuid, mem_info->deviceMemory(), resource_loc,
-                        "require memoryTypeBits (0x%x) but %s was allocated with memoryTypeIndex (%" PRIu32 ").", memory_type_bits,
-                        FormatHandle(mem_info->deviceMemory()).c_str(), mem_info->alloc_info.memoryTypeIndex);
+        skip |= LogError(vuid, mem_info->deviceMemory(), resource_loc,
+                         "require memoryTypeBits (0x%x) but %s was allocated with memoryTypeIndex (%" PRIu32 ").", memory_type_bits,
+                         FormatHandle(mem_info->deviceMemory()).c_str(), mem_info->alloc_info.memoryTypeIndex);
     }
     return skip;
 }
@@ -1005,39 +1005,40 @@ bool CoreChecks::ValidateMapMemory(const vvl::DeviceMemory &mem_info, VkDeviceSi
     const uint32_t memoryTypeIndex = mem_info.alloc_info.memoryTypeIndex;
     const VkMemoryPropertyFlags propertyFlags = phys_dev_mem_props.memoryTypes[memoryTypeIndex].propertyFlags;
     if ((propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-        skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-memory-07962" : "VUID-vkMapMemory-memory-00682", memory, loc,
-                        "Mapping memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set. "
-                        "Memory has type %" PRIu32 " which has properties %s.",
-                        memoryTypeIndex, string_VkMemoryPropertyFlags(propertyFlags).c_str());
+        skip |= LogError(map2 ? "VUID-VkMemoryMapInfoKHR-memory-07962" : "VUID-vkMapMemory-memory-00682", memory, loc,
+                         "Mapping memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set. "
+                         "Memory has type %" PRIu32 " which has properties %s.",
+                         memoryTypeIndex, string_VkMemoryPropertyFlags(propertyFlags).c_str());
     }
 
     if (mem_info.multi_instance) {
-        skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-memory-07963" : "VUID-vkMapMemory-memory-00683", instance, loc,
-                        "Memory allocated with multiple instances.");
+        skip |= LogError(map2 ? "VUID-VkMemoryMapInfoKHR-memory-07963" : "VUID-vkMapMemory-memory-00683", instance, loc,
+                         "Memory allocated with multiple instances.");
     }
 
     if (size == 0) {
-        skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-size-07960" : "VUID-vkMapMemory-size-00680", memory, size_loc, "is zero.");
+        skip |= LogError(map2 ? "VUID-VkMemoryMapInfoKHR-size-07960" : "VUID-vkMapMemory-size-00680", memory, size_loc, "is zero.");
     }
 
     // It is an application error to call VkMapMemory on an object that is already mapped
     if (mem_info.mapped_range.size != 0) {
-        skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-memory-07958" : "VUID-vkMapMemory-memory-00678", memory, loc,
-                        "memory has already be mapped.");
+        skip |= LogError(map2 ? "VUID-VkMemoryMapInfoKHR-memory-07958" : "VUID-vkMapMemory-memory-00678", memory, loc,
+                         "memory has already be mapped.");
     }
 
     // Validate offset is not over allocation size
     const VkDeviceSize allocationSize = mem_info.alloc_info.allocationSize;
     if (offset >= allocationSize) {
-        skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-offset-07959" : "VUID-vkMapMemory-offset-00679", memory, offset_loc,
-                        "0x%" PRIx64 " is larger than the total array size 0x%" PRIx64, offset, allocationSize);
+        skip |= LogError(map2 ? "VUID-VkMemoryMapInfoKHR-offset-07959" : "VUID-vkMapMemory-offset-00679", memory, offset_loc,
+                         "0x%" PRIx64 " is larger than the total array size 0x%" PRIx64, offset, allocationSize);
     }
     // Validate that offset + size is within object's allocationSize
     if (size != VK_WHOLE_SIZE) {
         if ((offset + size) > allocationSize) {
-            skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-size-07961" : "VUID-vkMapMemory-size-00681", memory, offset_loc,
-                            "0x%" PRIx64 " plus size 0x%" PRIx64 " (total 0x%" PRIx64 ") oversteps total array size 0x%" PRIx64 ".",
-                            offset, size, size + offset, allocationSize);
+            skip |=
+                LogError(map2 ? "VUID-VkMemoryMapInfoKHR-size-07961" : "VUID-vkMapMemory-size-00681", memory, offset_loc,
+                         "0x%" PRIx64 " plus size 0x%" PRIx64 " (total 0x%" PRIx64 ") oversteps total array size 0x%" PRIx64 ".",
+                         offset, size, size + offset, allocationSize);
         }
     }
     return skip;
@@ -1098,9 +1099,9 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappe
         }
         // Makes sure the memory is already mapped
         if (mem_info->mapped_range.size == 0) {
-            skip = LogError("VUID-VkMappedMemoryRange-memory-00684", pMemoryRanges[i].memory, memory_range_loc,
-                            "Attempting to use memory (%s) that is not currently host mapped.",
-                            FormatHandle(pMemoryRanges[i].memory).c_str());
+            skip |= LogError("VUID-VkMappedMemoryRange-memory-00684", pMemoryRanges[i].memory, memory_range_loc,
+                             "Attempting to use memory (%s) that is not currently host mapped.",
+                             FormatHandle(pMemoryRanges[i].memory).c_str());
         }
 
         if (pMemoryRanges[i].size == VK_WHOLE_SIZE) {
@@ -1202,10 +1203,10 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
     if (mem_info) {
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
-            skip = LogError("VUID-vkGetDeviceMemoryCommitment-memory-00690", memory, error_obj.location,
-                            "Querying commitment for memory without "
-                            "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT set: %s.",
-                            FormatHandle(memory).c_str());
+            skip |= LogError("VUID-vkGetDeviceMemoryCommitment-memory-00690", memory, error_obj.location,
+                             "Querying commitment for memory without "
+                             "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT set: %s.",
+                             FormatHandle(memory).c_str());
         }
     }
     return skip;

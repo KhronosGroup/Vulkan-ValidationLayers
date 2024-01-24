@@ -37,9 +37,9 @@ bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buf
     }
 
     if (!correct_usage) {
-        skip = LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s.",
-                        FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str(),
-                        string_VkBufferUsageFlags(desired).c_str());
+        skip |= LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s.",
+                         FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str(),
+                         string_VkBufferUsageFlags(desired).c_str());
     }
     return skip;
 }

@@ -1346,9 +1346,9 @@ bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer cb, vvl::Image const &i
     }
 
     if (!correct_usage) {
-        skip = LogError(vuid, objlist, image_loc, "(%s) was created with %s but requires %s.",
-                        FormatHandle(image_state.Handle()).c_str(), string_VkImageUsageFlags(image_state.createInfo.usage).c_str(),
-                        string_VkImageUsageFlags(desired).c_str());
+        skip |= LogError(vuid, objlist, image_loc, "(%s) was created with %s but requires %s.",
+                         FormatHandle(image_state.Handle()).c_str(), string_VkImageUsageFlags(image_state.createInfo.usage).c_str(),
+                         string_VkImageUsageFlags(desired).c_str());
     }
     return skip;
 }

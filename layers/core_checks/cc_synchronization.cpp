@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1233,8 +1233,8 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     } else {
         if (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
-            skip = LogError("VUID-vkCmdPipelineBarrier2-dependencyFlags-01186", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                            "VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance.");
+            skip |= LogError("VUID-vkCmdPipelineBarrier2-dependencyFlags-01186", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                             "VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance.");
         }
     }
     if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
@@ -1822,12 +1822,12 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
     if (!inserted.second && inserted.first->second != &cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
         const LogObjectList objlist(cb_state.commandBuffer(), barrier.handle, inserted.first->second->commandBuffer());
-        skip = LogWarning(TransferBarrier::DuplicateQFOInSubmit(), objlist, loc,
-                          "%s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
-                          " duplicates existing barrier submitted in this batch from %s.",
-                          TransferBarrier::BarrierName(), operation, TransferBarrier::HandleName(),
-                          FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
-                          FormatHandle(inserted.first->second->commandBuffer()).c_str());
+        skip |= LogWarning(TransferBarrier::DuplicateQFOInSubmit(), objlist, loc,
+                           "%s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
+                           " duplicates existing barrier submitted in this batch from %s.",
+                           TransferBarrier::BarrierName(), operation, TransferBarrier::HandleName(),
+                           FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
+                           FormatHandle(inserted.first->second->commandBuffer()).c_str());
     }
     return skip;
 }

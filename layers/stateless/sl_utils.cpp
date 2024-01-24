@@ -22,10 +22,10 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instan
                                                                const uint32_t promoted_version) const {
     bool skip = false;
     if (api_version < promoted_version) {
-        skip = LogError(kVUID_PVError_ApiVersionViolation, instance, loc,
-                        "Attempted to call with an effective API version of %s"
-                        "but this API was not promoted until version %s.",
-                        StringAPIVersion(api_version).c_str(), StringAPIVersion(promoted_version).c_str());
+        skip |= LogError(kVUID_PVError_ApiVersionViolation, instance, loc,
+                         "Attempted to call with an effective API version of %s"
+                         "but this API was not promoted until version %s.",
+                         StringAPIVersion(api_version).c_str(), StringAPIVersion(promoted_version).c_str());
     }
     return skip;
 }
@@ -37,7 +37,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
     if (target_pdev != physical_device_properties_map.end()) {
         auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);
         if (effective_api_version < promoted_version) {
-            skip = LogError(
+            skip |= LogError(
                 kVUID_PVError_ApiVersionViolation, instance, loc,
                 "Attempted to call with an effective API version of %s, "
                 "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
@@ -76,9 +76,9 @@ bool StatelessValidation::ValidateString(const Location &loc, const std::string 
     if (result == VK_STRING_ERROR_NONE) {
         return skip;
     } else if (result & VK_STRING_ERROR_LENGTH) {
-        skip = LogError(vuid, device, loc, "exceeds max length %" PRIu32 ".", kMaxParamCheckerStringLength);
+        skip |= LogError(vuid, device, loc, "exceeds max length %" PRIu32 ".", kMaxParamCheckerStringLength);
     } else if (result & VK_STRING_ERROR_BAD_DATA) {
-        skip = LogError(vuid, device, loc, "contains invalid characters or is badly formed.");
+        skip |= LogError(vuid, device, loc, "contains invalid characters or is badly formed.");
     }
     return skip;
 }

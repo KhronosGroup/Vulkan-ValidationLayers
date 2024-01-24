@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -312,9 +312,9 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(const spirv::Module &module_
             // "Group operations with subgroup scope" must have stage support
             const VkSubgroupFeatureFlags supported_stages = phys_dev_props_core11.subgroupSupportedStages;
             if ((supported_stages & stage) == 0) {
-                skip = LogError("VUID-RuntimeSpirv-None-06343", module_state.handle(), loc,
-                                "%s is not supported in subgroupSupportedStages (%s).", string_VkShaderStageFlagBits(stage),
-                                string_VkShaderStageFlags(supported_stages).c_str());
+                skip |= LogError("VUID-RuntimeSpirv-None-06343", module_state.handle(), loc,
+                                 "%s is not supported in subgroupSupportedStages (%s).", string_VkShaderStageFlagBits(stage),
+                                 string_VkShaderStageFlags(supported_stages).c_str());
             }
         }
 
