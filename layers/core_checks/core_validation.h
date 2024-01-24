@@ -455,6 +455,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAttachmentIndex(uint32_t attachment, uint32_t attachment_count, const Location& loc) const;
     bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
 
+    bool ValidateRenderPassPipelineStage(VkRenderPass render_pass, const Location& barrier_loc,
+                                         VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask) const;
     bool ValidateRenderPassPipelineBarriers(const Location& loc, const vvl::CommandBuffer* cb_state,
                                             VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                                             VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,

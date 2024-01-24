@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2306,13 +2306,13 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInf
                     LogError(vuid, device, dependencies_loc,
                              "specifies a self-dependency but has a non-zero view offset of %" PRIu32 "", dependency.viewOffset);
             } else if ((dependency.dependencyFlags | VK_DEPENDENCY_VIEW_LOCAL_BIT) != dependency.dependencyFlags &&
-                       pCreateInfo->pSubpasses[dependency.srcSubpass].viewMask > 1) {
+                       GetBitSetCount(pCreateInfo->pSubpasses[dependency.srcSubpass].viewMask) > 1) {
                 vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03060" : "VUID-VkSubpassDependency-srcSubpass-00872";
                 skip |= LogError(vuid, device, dependencies_loc,
-                                 "specifies a self-dependency for subpass %" PRIu32
-                                 " with a non-zero view mask, but does not "
+                                 "specifies a self-dependency for subpass %" PRIu32 " with a viewMask 0x%" PRIx32
+                                 ", but does not "
                                  "specify VK_DEPENDENCY_VIEW_LOCAL_BIT.",
-                                 dependency.srcSubpass);
+                                 pCreateInfo->pSubpasses[dependency.srcSubpass].viewMask, dependency.srcSubpass);
             } else if (HasFramebufferStagePipelineStageFlags(dependency.srcStageMask) &&
                        HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask)) {
                 vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-06810" : "VUID-VkSubpassDependency-srcSubpass-06809";
