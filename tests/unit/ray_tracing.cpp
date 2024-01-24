@@ -1964,48 +1964,29 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    constexpr VkDeviceSize buffer_size = 4096;
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = buffer_size;
-    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas->SetDeviceBufferInitNoMem(true);
+    blas->Build();
 
-    VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
-    as_create_info.pNext = NULL;
-    as_create_info.buffer = buffer.handle();
-    as_create_info.createFlags = 0;
-    as_create_info.offset = 0;
-    as_create_info.size = 0;
-    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    as_create_info.deviceAddress = 0;
-
-    VkAccelerationStructureKHR as;
-    vk::CreateAccelerationStructureKHR(device(), &as_create_info, nullptr, &as);
-
-    constexpr intptr_t alignment_padding = 256 - 1;
-    int8_t output[buffer_size + alignment_padding];
     VkDeviceOrHostAddressKHR output_data;
-    output_data.hostAddress = reinterpret_cast<void *>(((intptr_t)output + alignment_padding) & ~alignment_padding);
+    output_data.deviceAddress = 256;
     VkCopyAccelerationStructureToMemoryInfoKHR copy_info = vku::InitStructHelper();
-    copy_info.src = as;
+    copy_info.src = blas->handle();
     copy_info.dst = output_data;
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
-    vkt::CommandBuffer cb(m_device, m_commandPool);
-    cb.begin();
 
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03739");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
-    vk::CmdCopyAccelerationStructureToMemoryKHR(cb.handle(), &copy_info);
+    vk::CmdCopyAccelerationStructureToMemoryKHR(*m_commandBuffer, &copy_info);
     m_errorMonitor->VerifyFound();
 
-    cb.end();
-
-    vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
+    m_commandBuffer->end();
 }
 
 TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
