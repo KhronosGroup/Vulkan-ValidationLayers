@@ -158,6 +158,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBeginConditionalRenderingEXT',
             'vkGetDeviceImageMemoryRequirements',
             'vkGetDeviceImageSparseMemoryRequirements',
+            'vkCreateAndroidSurfaceKHR',
             'vkCreateWin32SurfaceKHR',
             'vkCreateWaylandSurfaceKHR',
             'vkCreateXcbSurfaceKHR',

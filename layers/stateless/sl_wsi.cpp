@@ -450,3 +450,18 @@ bool StatelessValidation::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance 
     return skip;
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+bool StatelessValidation::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance,
+                                                                        const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSurfaceKHR *pSurface,
+                                                                        const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (pCreateInfo->window == nullptr) {
+        skip |= LogError("VUID-VkAndroidSurfaceCreateInfoKHR-window-01248", instance,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::window), "is NULL.");
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_ANDROID_KHR

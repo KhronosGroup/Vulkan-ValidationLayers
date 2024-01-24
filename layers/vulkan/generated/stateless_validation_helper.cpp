@@ -16626,6 +16626,7 @@ bool StatelessValidation::PreCallValidateCreateAndroidSurfaceKHR(VkInstance inst
         }
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateAndroidSurfaceKHR-pSurface-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
     return skip;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
