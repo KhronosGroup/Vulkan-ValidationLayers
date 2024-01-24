@@ -61,7 +61,7 @@ struct CommandBufferSubmitState {
             &qfo_buffer_scoreboards);
         skip |= core->ValidateQueueFamilyIndices(loc, cb_state, queue_state->VkHandle());
         skip |= ValidateCmdBufLabelMatching(loc, cb_state);
-        
+
         // Potential early exit here as bad object state may crash in delayed function calls
         if (skip) {
             return true;
@@ -452,10 +452,10 @@ bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer &cb_state, const
 
     if (!found) {
         const LogObjectList objlist(cb_state.commandBuffer(), object);
-        skip = LogError("VUID-vkQueueSubmit-pSubmits-04626", objlist, loc,
-                        "%s contains %s which was not created allowing concurrent access to "
-                        "this queue family %d.",
-                        FormatHandle(cb_state).c_str(), FormatHandle(object).c_str(), queueFamilyIndex);
+        skip |= LogError("VUID-vkQueueSubmit-pSubmits-04626", objlist, loc,
+                         "%s contains %s which was not created allowing concurrent access to "
+                         "this queue family %d.",
+                         FormatHandle(cb_state).c_str(), FormatHandle(object).c_str(), queueFamilyIndex);
     }
     return skip;
 }

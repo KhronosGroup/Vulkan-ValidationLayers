@@ -3946,11 +3946,11 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         // validation for matching parameters object encode quality level
         if (vsp_state->GetEncodeQualityLevel() != cb_state->video_encode_quality_level.value()) {
             const LogObjectList objlist(vs_state->videoSession(), vsp_state->videoSessionParameters());
-            skip = LogError("VUID-vkCmdEncodeVideoKHR-None-08318", objlist, error_obj.location,
-                            "the currently configured encode quality level (%u) for %s "
-                            "does not match the encode quality level (%u) %s was created with.",
-                            cb_state->video_encode_quality_level.value(), FormatHandle(*vs_state).c_str(),
-                            vsp_state->GetEncodeQualityLevel(), FormatHandle(*vsp_state).c_str());
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-None-08318", objlist, error_obj.location,
+                             "the currently configured encode quality level (%u) for %s "
+                             "does not match the encode quality level (%u) %s was created with.",
+                             cb_state->video_encode_quality_level.value(), FormatHandle(*vs_state).c_str(),
+                             vsp_state->GetEncodeQualityLevel(), FormatHandle(*vsp_state).c_str());
         }
     }
 

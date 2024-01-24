@@ -285,8 +285,8 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV
                                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     if (dataSize < 8) {
-        skip = LogError("VUID-vkGetAccelerationStructureHandleNV-dataSize-02240", accelerationStructure,
-                        error_obj.location.dot(Field::dataSize), "must be greater than or equal to 8.");
+        skip |= LogError("VUID-vkGetAccelerationStructureHandleNV-dataSize-02240", accelerationStructure,
+                         error_obj.location.dot(Field::dataSize), "must be greater than or equal to 8.");
     }
     return skip;
 }

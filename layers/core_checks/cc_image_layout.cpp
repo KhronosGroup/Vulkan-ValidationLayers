@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -589,7 +589,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                         const char *vuid = rp_begin_loc.function != Func::vkCmdBeginRenderPass
                                                ? "VUID-vkCmdBeginRenderPass2-initialLayout-03100"
                                                : "VUID-vkCmdBeginRenderPass-initialLayout-00900";
-                        subres_skip = LogError(
+                        subres_skip |= LogError(
                             vuid, objlist, attachment_loc,
                             "You cannot start a render pass using attachment %" PRIu32
                             " where the render pass initial layout is %s and the %s layout of the attachment is %s. The layouts "

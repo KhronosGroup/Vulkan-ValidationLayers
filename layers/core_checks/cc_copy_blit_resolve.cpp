@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2457,9 +2457,9 @@ bool CoreChecks::ValidateImageSampleCount(const HandleT handle, const vvl::Image
     bool skip = false;
     if (image_state.createInfo.samples != sample_count) {
         const LogObjectList objlist(handle, image_state.Handle());
-        skip = LogError(vuid, objlist, loc, "%s was created with a sample count of %s but must be %s.",
-                        FormatHandle(image_state).c_str(), string_VkSampleCountFlagBits(image_state.createInfo.samples),
-                        string_VkSampleCountFlagBits(sample_count));
+        skip |= LogError(vuid, objlist, loc, "%s was created with a sample count of %s but must be %s.",
+                         FormatHandle(image_state).c_str(), string_VkSampleCountFlagBits(image_state.createInfo.samples),
+                         string_VkSampleCountFlagBits(sample_count));
     }
     return skip;
 }
@@ -3122,6 +3122,7 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(VkDevice device, const vvl::Im
 bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
                                              const VkImageLayout *supported_image_layouts, const VkImageLayout image_layout,
                                              const Location &loc, const char *supported_name, const char *vuid) const {
+    bool skip = false;
     for (uint32_t i = 0; i < layout_count; ++i) {
         if (supported_image_layouts[i] == image_layout) {
             return false;
@@ -3129,10 +3130,10 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImag
     }
 
     LogObjectList objlist(device, image);
-    bool skip = LogError(vuid, objlist, loc,
-                         "is %s which is not one of the layouts returned in "
-                         "VkPhysicalDeviceHostImageCopyPropertiesEXT::%s",
-                         string_VkImageLayout(image_layout), supported_name);
+    skip |= LogError(vuid, objlist, loc,
+                     "is %s which is not one of the layouts returned in "
+                     "VkPhysicalDeviceHostImageCopyPropertiesEXT::%s",
+                     string_VkImageLayout(image_layout), supported_name);
 
     return skip;
 }

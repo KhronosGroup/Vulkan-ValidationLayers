@@ -3468,8 +3468,9 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
         if (dsl) {
             if (!dsl->IsPushDescriptor()) {
                 const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfoKHR-set-00365" : "VUID-vkCmdPushDescriptorSetKHR-set-00365";
-                skip = LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
-                                set, FormatHandle(layout).c_str());
+                skip |=
+                    LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
+                             set, FormatHandle(layout).c_str());
             } else {
                 // Create an empty proxy in order to use the existing descriptor set update validation
                 // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
@@ -3481,8 +3482,8 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
         }
     } else {
         const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfoKHR-set-00364" : "VUID-vkCmdPushDescriptorSetKHR-set-00364";
-        skip = LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
-                        FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+        skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
+                         FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
     }
 
     return skip;
@@ -3651,14 +3652,14 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         if (!dsl->IsPushDescriptor()) {
             const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07305"
                                     : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305";
-            skip = LogError(vuid, layout, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.", set,
-                            FormatHandle(layout).c_str());
+            skip |= LogError(vuid, layout, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
+                             set, FormatHandle(layout).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
         const char *vuid =
             is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304";
-        skip = LogError(vuid, layout, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
-                        FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
+        skip |= LogError(vuid, layout, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
+                         FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
