@@ -3745,3 +3745,29 @@ TEST_F(NegativeSyncObject, ResetEventThenSet) {
 
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
 }
+
+TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
+    TEST_DESCRIPTION("Use non-graphics pipeline stage inside a renderpass");
+    RETURN_IF_SKIP(Init());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency();
+    rp.CreateRenderPass();
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-None-07889");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-None-07889");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-None-07892");
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+                           0, nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}

@@ -752,6 +752,30 @@ struct RenderPassDepState {
     }
 };
 
+// If inside a renderpass, validate
+bool CoreChecks::ValidateRenderPassPipelineStage(VkRenderPass render_pass, const Location &loc,
+                                                 VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask) const {
+    bool skip = false;
+    const VkPipelineStageFlags2 graphics_stages = syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT);
+    const VkPipelineStageFlags2 src_diff =
+        sync_utils::ExpandPipelineStages(src_stage_mask, VK_QUEUE_GRAPHICS_BIT) & ~graphics_stages;
+    const VkPipelineStageFlags2 dst_diff =
+        sync_utils::ExpandPipelineStages(dst_stage_mask, VK_QUEUE_GRAPHICS_BIT) & ~graphics_stages;
+    if (src_diff != 0) {
+        const char *vuid = loc.function == Func::vkCmdPipelineBarrier ? "VUID-vkCmdPipelineBarrier-None-07892"
+                                                                      : "VUID-vkCmdPipelineBarrier2-None-07892";
+        skip |= LogError(vuid, render_pass, loc.dot(Field::srcStageMask), "contains non graphics stage %s.",
+                         string_VkPipelineStageFlags2(src_diff).c_str());
+    }
+    if (dst_diff != 0) {
+        const char *vuid = loc.function == Func::vkCmdPipelineBarrier ? "VUID-vkCmdPipelineBarrier-None-07892"
+                                                                      : "VUID-vkCmdPipelineBarrier2-None-07892";
+        skip |= LogError(vuid, render_pass, loc.dot(Field::dstStageMask), "contains non graphics stage %s.",
+                         string_VkPipelineStageFlags2(dst_diff).c_str());
+    }
+    return skip;
+}
+
 // Validate VUs for Pipeline Barriers that are within a renderPass
 // Pre: cb_state->activeRenderPass must be a pointer to valid renderPass state
 bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const vvl::CommandBuffer *cb_state,
@@ -775,6 +799,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     // Grab ref to current subpassDescription up-front for use below
     const auto &sub_desc = rp_state->createInfo.pSubpasses[state.active_subpass];
     skip |= state.ValidateStage(outer_loc, src_stage_mask, dst_stage_mask);
+    skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, src_stage_mask, dst_stage_mask);
 
     if (0 != buffer_mem_barrier_count) {
         skip |= LogError("VUID-vkCmdPipelineBarrier-bufferMemoryBarrierCount-01178", state.rp_handle,
@@ -804,6 +829,13 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                    sub_desc, state.rp_handle, img_barrier);
         }
     }
+
+    if (GetBitSetCount(sub_desc.viewMask) > 1 && ((dependency_flags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
+        skip |= LogError("VUID-vkCmdPipelineBarrier-None-07893", state.rp_handle, outer_loc.dot(Field::dependencyFlags),
+                         "%s is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
+                         string_VkDependencyFlags(dependency_flags).c_str(), state.active_subpass, sub_desc.viewMask);
+    }
+
     skip |= state.ValidateDependencyFlag(outer_loc.dot(Field::dependencyFlags), dependency_flags);
     return skip;
 }
@@ -832,6 +864,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
         skip |= state.ValidateStage(barrier_loc, mem_barrier.srcStageMask, mem_barrier.dstStageMask);
         skip |= state.ValidateAccess(barrier_loc, mem_barrier.srcAccessMask, mem_barrier.dstAccessMask);
+        skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, mem_barrier.srcStageMask, mem_barrier.dstStageMask);
     }
     if (0 != dep_info->bufferMemoryBarrierCount) {
         skip |= LogError("VUID-vkCmdPipelineBarrier2-bufferMemoryBarrierCount-01178", state.rp_handle,
@@ -844,6 +877,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
 
         skip |= state.ValidateStage(barrier_loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
+        skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
 
         if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
             skip |= LogError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182", state.rp_handle,
@@ -857,6 +891,13 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                    sub_desc, state.rp_handle, img_barrier);
         }
     }
+
+    if (GetBitSetCount(sub_desc.viewMask) > 1 && ((dep_info->dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
+        skip |= LogError("VUID-vkCmdPipelineBarrier2-None-07893", state.rp_handle, outer_loc.dot(Field::dependencyFlags),
+                         "%s is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
+                         string_VkDependencyFlags(dep_info->dependencyFlags).c_str(), state.active_subpass, sub_desc.viewMask);
+    }
+
     skip |= state.ValidateDependencyFlag(outer_loc.dot(Field::dependencyFlags), dep_info->dependencyFlags);
     return skip;
 }
