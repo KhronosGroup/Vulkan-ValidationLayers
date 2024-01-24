@@ -714,6 +714,13 @@ class StatelessValidation : public ValidationObject {
                                                     const ErrorObject &error_obj) const;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    bool manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                       const ErrorObject &error_obj) const;
+
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     const ErrorObject &error_obj) const;
