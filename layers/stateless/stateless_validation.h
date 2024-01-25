@@ -27,9 +27,6 @@
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
-// String returned by string_VkStructureType for an unrecognized type.
-const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
-
 class StatelessValidation : public ValidationObject {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
