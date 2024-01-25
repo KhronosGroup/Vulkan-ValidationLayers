@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ class ObjectLifetimes : public ValidationObject {
                            "Couldn't insert %s Object 0x%" PRIxLEAST64
                            ", already existed. This should not happen and may indicate a "
                            "race condition in the application.",
-                           object_string[object_type], object_handle);
+                           string_VulkanObjectType(object_type), object_handle);
         }
     }
 
@@ -183,13 +183,13 @@ class ObjectLifetimes : public ValidationObject {
                     skip |= LogError(expected_custom_allocator_code, object_handle, loc,
                                      "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64
                                      " but specified at creation.",
-                                     object_string[object_type], object);
+                                     string_VulkanObjectType(object_type), object);
 
                 } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
                     skip |= LogError(expected_default_allocator_code, object_handle, loc,
                                      "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64
                                      " but not specified at creation.",
-                                     object_string[object_type], object);
+                                     string_VulkanObjectType(object_type), object);
                 }
             }
         }

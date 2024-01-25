@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ class counter {
             object_data->LogError("UNASSIGNED-Threading-Info", object, loc,
                                   "Couldn't find %s Object 0x%" PRIxLEAST64
                                   ". This should not happen and may indicate a bug in the application.",
-                                  object_string[object_type], (uint64_t)(object));
+                                  string_VulkanObjectType(object_type), (uint64_t)(object));
             return nullptr;
         }
     }
@@ -217,7 +217,7 @@ class counter {
   private:
     std::string GetErrorMessage(std::thread::id tid, std::thread::id other_tid) const {
         std::stringstream err_str;
-        err_str << "THREADING ERROR : object of type " << object_string[object_type]
+        err_str << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
                 << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
         return err_str.str();
     }
