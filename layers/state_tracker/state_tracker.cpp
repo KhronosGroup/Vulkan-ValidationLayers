@@ -1726,7 +1726,7 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
             }
         }
 
-        DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->PhysDev(), perf, &n_perf_pass);
+        DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->VkHandle(), perf, &n_perf_pass);
     }
 
     VkVideoEncodeFeedbackFlagsKHR video_encode_feedback_flags = 0;

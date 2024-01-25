@@ -717,7 +717,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
         // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
         // null handle.
         const auto pipeline_layout_handle =
-            (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->layout();
+            (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
         if (pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(),
                                           0, nullptr);

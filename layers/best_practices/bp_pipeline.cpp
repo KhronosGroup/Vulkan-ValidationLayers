@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -180,7 +180,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     }
                     auto slot = variable.decorations.input_attachment_index_start;
                     if (!rpci->pSubpasses[subpass].pInputAttachments || slot >= rpci->pSubpasses[subpass].inputAttachmentCount) {
-                        const LogObjectList objlist(stage.module_state->Handle(), pipeline.PipelineLayoutState()->layout());
+                        const LogObjectList objlist(stage.module_state->Handle(), pipeline.PipelineLayoutState()->Handle());
                         skip |= LogWarning(kVUID_BestPractices_Shader_MissingInputAttachment, device, create_info_loc,
                                            "Shader consumes input attachment index %" PRIu32 " but not provided in subpass", slot);
                     }

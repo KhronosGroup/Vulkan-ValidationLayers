@@ -362,7 +362,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 ", index %" PRIu32 ". Access info %s.",
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(img_view_state->Handle()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_->FormatHandle(pipe->pipeline()).c_str(),
+                                sync_state_->FormatHandle(pipe->Handle()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
                                 variable.decorations.binding, index, FormatHazard(hazard).c_str());
@@ -384,7 +384,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_view_state->Handle()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_->FormatHandle(pipe->pipeline()).c_str(),
+                                sync_state_->FormatHandle(pipe->Handle()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
@@ -406,7 +406,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_state->Handle()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_->FormatHandle(pipe->pipeline()).c_str(),
+                                sync_state_->FormatHandle(pipe->Handle()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());

@@ -35,10 +35,10 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
         if (pipeline_state && pipeline_state->vertex_input_state &&
             pipeline_state->vertex_input_state->binding_descriptions.size() <= 0) {
             if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
-                skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), loc,
-                                              "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
-                                              FormatHandle(cb_state->Handle()).c_str(),
-                                              FormatHandle(pipeline_state->pipeline()).c_str());
+                skip |=
+                    LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), loc,
+                                          "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
+                                          FormatHandle(cb_state->Handle()).c_str(), FormatHandle(pipeline_state->Handle()).c_str());
             }
         }
 

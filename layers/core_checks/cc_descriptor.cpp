@@ -2090,7 +2090,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
         const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
         if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
-            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->layout());
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
             const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-firstSet-09006"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006";
             skip |= LogError(vuid, objlist, loc,

@@ -38,7 +38,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
-    const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     // Verify vkCmdSet* calls since last bound pipeline
     const CBDynamicFlags unset_status_pipeline =
@@ -446,7 +446,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     if (discard_rectangle_state && pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
         for (uint32_t i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
             if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(
                     vuid.dynamic_discard_rectangle_07751, objlist, loc,
                     "vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32 " for this command buffer.", i);
@@ -457,7 +457,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
         if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT]) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.color_blend_equation_07628, objlist, loc,
                              "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT dynamic state, but "
                              "vkCmdSetColorBlendEquationEXT() was not called.");
@@ -465,7 +465,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     }
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT]) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.color_write_mask_07629, objlist, loc,
                              "Pipeline was created with VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic state, but "
                              "vkCmdSetColorWriteMaskEXT() was not called.");
@@ -473,7 +473,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     }
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
         if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT]) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.color_blend_advanced_07635, objlist, loc,
                              "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT dynamic state, but "
                              "vkCmdSetColorBlendAdvancedEXT() was not called.");
@@ -484,7 +484,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     for (const uint32_t &color_index : cb_state.active_color_attachments_index) {
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
             !cb_state.dynamic_state_value.color_blend_enable_attachments.test(color_index)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |=
                 LogError(vuid.dynamic_color_blend_enable_07476, objlist, loc,
                          "vkCmdSetColorBlendEnableEXT was not set for color attachment index %" PRIu32 " for this command buffer.",
@@ -492,7 +492,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         }
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
             !cb_state.dynamic_state_value.color_blend_equation_attachments.test(color_index)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.dynamic_color_blend_equation_07477, objlist, loc,
                              "vkCmdSetColorBlendEquationEXT was not set for color attachment index %" PRIu32
                              " for this command buffer.",
@@ -500,7 +500,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         }
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
             !cb_state.dynamic_state_value.color_write_mask_attachments.test(color_index)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |=
                 LogError(vuid.dynamic_color_write_mask_07478, objlist, loc,
                          "vkCmdSetColorWriteMaskEXT was not set for color attachment index %" PRIu32 " for this command buffer.",
@@ -508,7 +508,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         }
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
             !cb_state.dynamic_state_value.color_blend_advanced_attachments.test(color_index)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.dynamic_color_blend_advanced_07479, objlist, loc,
                              "vkCmdSetColorBlendAdvancedEXT was not set for color attachment index %" PRIu32
                              " for this command buffer.",
@@ -517,7 +517,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     }
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
         if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT]) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.color_blend_enable_07627, objlist, loc,
                              "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT dynamic state, but "
                              "vkCmdSetColorBlendEnableEXT() was not called.");
@@ -534,7 +534,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
                 const auto attachment = (*cb_state.active_attachments)[i];
                 if (attachment && ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0)) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(vuid.blend_feature_07470, objlist, loc,
                                      "Attachment %" PRIu32
                                      " format features (%s) do not include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
@@ -546,7 +546,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
             if (advanced_blend &&
                 attachment_count > phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |=
                     LogError(vuid.blend_advanced_07480, objlist, loc,
                              "Advanced blend is enabled, but color attachment count (%" PRIu32
@@ -560,7 +560,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
                 pipeline.MultisampleState()->rasterizationSamples) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(
                     vuid.sample_locations_07482, objlist, loc,
                     "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
@@ -572,7 +572,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT] &&
                 cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
                     cb_state.dynamic_state_value.rasterization_samples) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(
                     vuid.sample_locations_07483, objlist, loc,
                     "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
@@ -604,7 +604,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                         << string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) << ").";
             }
             if (!message.str().empty()) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.sample_locations_07471, objlist, loc, "%s.", message.str().c_str());
             }
         }
@@ -626,7 +626,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
             if (SafeModulo(multisample_prop.maxSampleLocationGridSize.width,
                            sample_locations->sampleLocationsInfo.sampleLocationGridSize.width) != 0) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.sample_locations_enable_07936, objlist, loc,
                                  "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
                                  ") with rasterization samples %s is not evenly divided by "
@@ -637,7 +637,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             }
             if (SafeModulo(multisample_prop.maxSampleLocationGridSize.height,
                            sample_locations->sampleLocationsInfo.sampleLocationGridSize.height) != 0) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.sample_locations_enable_07937, objlist, loc,
                                  "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32
                                  ") with rasterization samples %s is not evenly divided by "
@@ -648,7 +648,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             }
             if (sample_locations->sampleLocationsInfo.sampleLocationsPerPixel !=
                 cb_state.dynamic_state_value.rasterization_samples) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.sample_locations_enable_07938, objlist, loc,
                                  "Pipeline was created with "
                                  "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo.sampleLocationsPerPixel %s "
@@ -671,7 +671,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                        VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT] &&
                 cb_state.dynamic_state_value.conservative_rasterization_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(
                     vuid.convervative_rasterization_07499, objlist, loc,
                     "Primitive topology is %s and conservativePointAndLineRasterization is VK_FALSE, but "
@@ -699,7 +699,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             const auto required_viewports_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_viewport_mask = ~cb_state.viewportMask & required_viewports_mask;
             if (missing_viewport_mask) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_viewport_07831, objlist, loc,
                                  "Dynamic viewport(s) (0x%x) are used by pipeline state object, but were not provided via calls "
                                  "to vkCmdSetViewport().",
@@ -711,7 +711,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             const auto required_scissor_mask = (1 << viewport_state->scissorCount) - 1;
             const auto missing_scissor_mask = ~cb_state.scissorMask & required_scissor_mask;
             if (missing_scissor_mask) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_scissor_07832, objlist, loc,
                                  "Dynamic scissor(s) (0x%x) are used by pipeline state object, but were not provided via calls "
                                  "to vkCmdSetScissor().",
@@ -726,7 +726,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             const auto required_viewport_mask = (1 << viewport_state->scissorCount) - 1;
             const auto missing_viewport_mask = ~cb_state.viewportWithCountMask & required_viewport_mask;
             if (missing_viewport_mask || !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT]) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.viewport_count_03417, objlist, loc,
                                  "Dynamic viewport with count 0x%x are used by pipeline state object, but were not provided "
                                  "via calls to vkCmdSetViewportWithCountEXT().",
@@ -738,7 +738,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             const auto required_scissor_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_scissor_mask = ~cb_state.scissorWithCountMask & required_scissor_mask;
             if (missing_scissor_mask || !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.scissor_count_03418, objlist, loc,
                                  "Dynamic scissor with count 0x%x are used by pipeline state object, but were not provided via "
                                  "calls to vkCmdSetScissorWithCountEXT().",
@@ -750,7 +750,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             if (cb_state.viewportWithCountMask != cb_state.scissorWithCountMask ||
                 !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT] ||
                 !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.viewport_scissor_count_03419, objlist, loc,
                                  "Dynamic viewport and scissor with count 0x%x are used by pipeline state object, but were not "
                                  "provided via matching calls to "
@@ -765,7 +765,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         const uint32_t viewport_count = viewport_state->viewportCount;
         const uint32_t max_inherited = uint32_t(cb_state.inheritedViewportDepths.size());
         if (viewport_count > max_inherited) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.dynamic_state_inherited_07850, objlist, loc,
                              "Pipeline requires more viewports (%" PRIu32 ".) than inherited (viewportDepthCount = %" PRIu32 ".).",
                              viewport_count, max_inherited);
@@ -779,7 +779,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
             uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
             if (dynamic_attachment_count < blend_attachment_count) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(
                     vuid.dynamic_color_write_enable_count_07750, objlist, loc,
                     "Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
@@ -794,7 +794,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_MASK_EXT] &&
                 cb_state.dynamic_state_value.samples_mask_samples < pipeline.MultisampleState()->rasterizationSamples) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |=
                     LogError(vuid.sample_mask_07472, objlist, loc,
                              "Currently bound pipeline was created with VkPipelineMultisampleStateCreateInfo::rasterizationSamples "
@@ -806,7 +806,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SAMPLE_MASK_EXT] &&
                 cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT]) {
                 if (cb_state.dynamic_state_value.samples_mask_samples < cb_state.dynamic_state_value.rasterization_samples) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(vuid.sample_mask_07473, objlist, loc,
                                      "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() %s are greater than samples "
                                      "set with vkCmdSetSampleMaskEXT() were %s",
@@ -872,7 +872,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
             if (depth_read && dyn_depth_write_enable && mode_early_fragment_test &&
                 cb_state.dynamic_state_value.depth_write_enable) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_depth_enable_08715, objlist, loc,
                                  "Fragment shader contains OpDepthAttachmentReadEXT, but depthWriteEnable parameter in the last "
                                  "call to vkCmdSetDepthWriteEnable is not false.");
@@ -880,7 +880,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
             if (stencil_read && dyn_stencil_write_mask && mode_early_fragment_test &&
                 ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_stencil_write_mask_08716, objlist, loc,
                                  "Fragment shader contains OpStencilAttachmentReadEXT, but writeMask parameter in the last "
                                  "call to vkCmdSetStencilWriteMask is not equal to 0 for both front (=%" PRIu32
@@ -952,7 +952,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
                 break;
         }
         if (!compatible_topology) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.primitive_topology_class_07500, objlist, loc,
                              "the last primitive topology %s state set by vkCmdSetPrimitiveTopology is "
                              "not compatible with the pipeline topology %s.",
@@ -965,7 +965,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
             msrtss_info->rasterizationSamples != pipeline.MultisampleState()->rasterizationSamples) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.rasterization_samples_07935, objlist, loc,
                              "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, but "
                              "the rasterizationSamples (%" PRIu32 ") is not equal to rasterizationSamples (%" PRIu32
@@ -1464,7 +1464,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         const auto fragment_shader_stage = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT);
         if (fragment_shader_stage && fragment_shader_stage->entrypoint &&
             !fragment_shader_stage->entrypoint->has_alpha_to_coverage_variable) {
-            const LogObjectList frag_objlist(cb_state.Handle(), fragment_shader_stage->shader());
+            const LogObjectList frag_objlist(cb_state.Handle(), fragment_shader_stage->Handle());
             skip |= LogError(vuid.alpha_component_word_08920, frag_objlist, loc,
                              "alphaToCoverageEnable is set, but fragment shader doesn't declare a variable that covers "
                              "Location 0, Component 0.");
@@ -1507,7 +1507,7 @@ bool CoreChecks::ValidateRayTracingDynamicStateSetStatus(const LastBound& last_b
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
-    const LogObjectList objlist(cb_state.Handle(), pipeline.pipeline());
+    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     // Verify vkCmdSet* calls since last bound pipeline
     const CBDynamicFlags unset_status_pipeline =

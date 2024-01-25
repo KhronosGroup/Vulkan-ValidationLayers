@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,7 +59,7 @@ class PipelineCache : public StateObject {
     PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
         : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
 
-    VkPipelineCache pipelineCache() const { return handle_.Cast<VkPipelineCache>(); }
+    VkPipelineCache VkHandle() const { return handle_.Cast<VkPipelineCache>(); }
 
     const safe_VkPipelineCacheCreateInfo create_info;
 };
@@ -193,7 +193,7 @@ class Pipeline : public StateObject {
     Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
              std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
-    VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
+    VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 
     void SetHandle(VkPipeline p) { handle_.handle = CastToUint64(p); }
 

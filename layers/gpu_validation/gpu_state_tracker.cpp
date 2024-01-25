@@ -1084,7 +1084,7 @@ void gpu_tracker::Validator::PostCallRecordPipelineCreations(const uint32_t coun
                 // the pipeline is used, so we have to keep another copy.
                 if (module_state && module_state->spirv) code = module_state->spirv->words_;
 
-                shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->pipeline(),
+                shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->VkHandle(),
                                             shader_module.Cast<VkShaderModule>(), VK_NULL_HANDLE, std::move(code));
             }
         }
