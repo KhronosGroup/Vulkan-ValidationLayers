@@ -120,13 +120,13 @@ bool CoreChecks::ValidateVideoInlineQueryInfo(const vvl::QueryPool &query_pool_s
     bool skip = false;
 
     if (query_info.firstQuery >= query_pool_state.createInfo.queryCount) {
-        skip |= LogError("VUID-VkVideoInlineQueryInfoKHR-queryPool-08372", query_pool_state.pool(), loc.dot(Field::firstQuery),
+        skip |= LogError("VUID-VkVideoInlineQueryInfoKHR-queryPool-08372", query_pool_state.Handle(), loc.dot(Field::firstQuery),
                          "(%u) is greater than or equal to the number of queries (%u) in %s.", query_info.firstQuery,
                          query_pool_state.createInfo.queryCount, FormatHandle(query_pool_state).c_str());
     }
 
     if (query_info.firstQuery + query_info.queryCount > query_pool_state.createInfo.queryCount) {
-        skip |= LogError("VUID-VkVideoInlineQueryInfoKHR-queryPool-08373", query_pool_state.pool(), loc.dot(Field::firstQuery),
+        skip |= LogError("VUID-VkVideoInlineQueryInfoKHR-queryPool-08373", query_pool_state.Handle(), loc.dot(Field::firstQuery),
                          "(%u) plus queryCount (%u) is greater than the number of queries (%u) in %s.", query_info.firstQuery,
                          query_info.queryCount, query_pool_state.createInfo.queryCount, FormatHandle(query_pool_state).c_str());
     }

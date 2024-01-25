@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -141,7 +141,7 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
             const LogObjectList objlist(queryPool);
             skip |= LogWarning(kVUID_BestPractices_QueryPool_Unavailable, objlist, error_obj.location,
                                "QueryPool %s and query %" PRIu32 ": vkCmdBeginQuery() was never called.",
-                               FormatHandle(query_pool_state.pool()).c_str(), i);
+                               FormatHandle(query_pool_state.Handle()).c_str(), i);
             break;
         }
     }
