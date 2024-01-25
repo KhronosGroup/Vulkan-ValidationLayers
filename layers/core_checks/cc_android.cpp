@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -153,7 +153,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     const VkImage dedicated_image = mem_info->GetDedicatedImage();
     if (dedicated_image != VK_NULL_HANDLE) {
         auto image_state = Get<vvl::Image>(dedicated_image);
-        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->deviceMemory())))) {
+        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->VkHandle())))) {
             const LogObjectList objlist(device, pInfo->memory, dedicated_image);
             skip |= LogError("VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883", objlist,
                              error_obj.location.dot(Field::pInfo).dot(Field::memory),

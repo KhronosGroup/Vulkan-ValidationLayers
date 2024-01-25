@@ -155,10 +155,10 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindabl
             } else {
                 assert(false);  // Unsupported object type
             }
-            const LogObjectList objlist(memory, typed_handle, prev_binding->deviceMemory());
+            const LogObjectList objlist(memory, typed_handle, prev_binding->Handle());
             skip |= LogError(vuid, objlist, loc, "attempting to bind %s to %s which has already been bound to %s.",
                              FormatHandle(memory).c_str(), FormatHandle(typed_handle).c_str(),
-                             FormatHandle(prev_binding->deviceMemory()).c_str());
+                             FormatHandle(prev_binding->Handle()).c_str());
         }
     }
     return skip;
@@ -602,11 +602,11 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
             assert(false);  // Unsupported object type
         }
 
-        LogObjectList objlist(mem_info->deviceMemory(), typed_handle);
+        LogObjectList objlist(mem_info->Handle(), typed_handle);
         skip |= LogError(vuid, objlist, loc,
                          "attempting to bind %s to %s, memoryOffset (%" PRIu64
                          ") must be less than the memory allocation size (%" PRIu64 ").",
-                         FormatHandle(mem_info->deviceMemory()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
+                         FormatHandle(mem_info->Handle()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
                          mem_info->alloc_info.allocationSize);
     }
 
@@ -627,9 +627,9 @@ bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory *mem_info, const ui
                                      const Location &resource_loc, const char *vuid) const {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
-        skip |= LogError(vuid, mem_info->deviceMemory(), resource_loc,
+        skip |= LogError(vuid, mem_info->Handle(), resource_loc,
                          "require memoryTypeBits (0x%x) but %s was allocated with memoryTypeIndex (%" PRIu32 ").", memory_type_bits,
-                         FormatHandle(mem_info->deviceMemory()).c_str(), mem_info->alloc_info.memoryTypeIndex);
+                         FormatHandle(mem_info->Handle()).c_str(), mem_info->alloc_info.memoryTypeIndex);
     }
     return skip;
 }
@@ -1000,7 +1000,7 @@ bool CoreChecks::ValidateMapMemory(const vvl::DeviceMemory &mem_info, VkDeviceSi
     bool skip = false;
     const bool map2 = offset_loc.function != Func::vkMapMemory;
     const Location loc(offset_loc.function);
-    const VkDeviceMemory memory = mem_info.deviceMemory();
+    const VkDeviceMemory memory = mem_info.VkHandle();
 
     const uint32_t memoryTypeIndex = mem_info.alloc_info.memoryTypeIndex;
     const VkMemoryPropertyFlags propertyFlags = phys_dev_mem_props.memoryTypes[memoryTypeIndex].propertyFlags;

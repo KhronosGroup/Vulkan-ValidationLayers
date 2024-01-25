@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -119,7 +119,7 @@ DeviceMemoryState vvl::BindableLinearMemoryTracker::GetBoundMemoryStates() const
 
 BoundMemoryRange vvl::BindableLinearMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
     return binding_.memory_state ? BoundMemoryRange{BoundMemoryRange::value_type{
-                                       binding_.memory_state->deviceMemory(),
+                                       binding_.memory_state->VkHandle(),
                                        BoundMemoryRange::value_type::second_type{
                                            {binding_.memory_offset + range.begin, binding_.memory_offset + range.end}}}}
                                  : BoundMemoryRange{};
@@ -129,7 +129,7 @@ unsigned vvl::BindableSparseMemoryTracker::CountDeviceMemory(VkDeviceMemory memo
     unsigned count = 0u;
     auto guard = ReadLockGuard{binding_lock_};
     for (const auto &range_state : binding_map_) {
-        count += (range_state.second.memory_state && range_state.second.memory_state->deviceMemory() == memory);
+        count += (range_state.second.memory_state && range_state.second.memory_state->VkHandle() == memory);
     }
     return count;
 }
@@ -178,14 +178,14 @@ BoundMemoryRange vvl::BindableSparseMemoryTracker::GetBoundMemoryRange(const Mem
 
     for (auto it = range_bounds.begin; it != range_bounds.end; ++it) {
         const auto &[resource_range, memory_data] = *it;
-        if (memory_data.memory_state && memory_data.memory_state->deviceMemory() != VK_NULL_HANDLE) {
+        if (memory_data.memory_state && memory_data.memory_state->VkHandle() != VK_NULL_HANDLE) {
             const VkDeviceSize memory_range_start = std::max(range.begin, memory_data.resource_offset) -
                 memory_data.resource_offset + memory_data.memory_offset;
             const VkDeviceSize memory_range_end =
                 std::min(range.end, memory_data.resource_offset + resource_range.distance()) - memory_data.resource_offset +
                 memory_data.memory_offset;
 
-            mem_ranges[memory_data.memory_state->deviceMemory()].emplace_back(memory_range_start, memory_range_end);
+            mem_ranges[memory_data.memory_state->VkHandle()].emplace_back(memory_range_start, memory_range_end);
         }
     }
     return mem_ranges;
@@ -215,7 +215,7 @@ unsigned vvl::BindableMultiplanarMemoryTracker::CountDeviceMemory(VkDeviceMemory
     unsigned count = 0u;
     for (size_t i = 0u; i < planes_.size(); i++) {
         const auto &plane = planes_[i];
-        count += (plane.binding.memory_state && plane.binding.memory_state->deviceMemory() == memory);
+        count += (plane.binding.memory_state && plane.binding.memory_state->VkHandle() == memory);
     }
 
     return count;
@@ -253,7 +253,7 @@ BoundMemoryRange vvl::BindableMultiplanarMemoryTracker::GetBoundMemoryRange(cons
         MemoryRange plane_range{start_offset, start_offset + plane.size};
         if (plane.binding.memory_state && range.intersects(plane_range)) {
             VkDeviceSize range_end = range.end > plane_range.end ? plane_range.end : range.end;
-            const auto &dev_mem = plane.binding.memory_state->deviceMemory();
+            const VkDeviceMemory dev_mem = plane.binding.memory_state->VkHandle();
             mem_ranges[dev_mem].emplace_back(MemoryRange{plane.binding.memory_offset + range.begin,
                                                                                    plane.binding.memory_offset + range_end});
         }
