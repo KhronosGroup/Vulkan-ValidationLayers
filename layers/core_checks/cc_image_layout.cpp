@@ -475,14 +475,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
     bool skip = false;
     auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     const auto *render_pass_info = render_pass_state->createInfo.ptr();
-    auto render_pass = render_pass_state->renderPass();
+    const VkRenderPass render_pass = render_pass_state->VkHandle();
     auto const &framebuffer_info = framebuffer_state.createInfo;
     const VkImageView *attachments = framebuffer_info.pAttachments;
 
-    auto framebuffer = framebuffer_state.framebuffer();
+    const VkFramebuffer framebuffer = framebuffer_state.VkHandle();
 
     if (render_pass_info->attachmentCount != framebuffer_info.attachmentCount) {
-        const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer());
+        const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.Handle());
         // VU bieng worked on at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2267
         skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass", objlist, rp_begin_loc,
                          "You cannot start a render pass using a framebuffer with a different number of attachments (%" PRIu32
@@ -510,7 +510,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
         auto view_state = Get<vvl::ImageView>(image_view);
 
         if (!view_state) {
-            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.Handle(), image_view);
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-parameter", objlist, attachment_loc, "%s is invalid.",
                              FormatHandle(image_view).c_str());
             continue;
@@ -520,13 +520,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
         const auto *image_state = view_state->image_state.get();
 
         if (!image_state) {
-            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view, image);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.Handle(), image_view, image);
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-parameter", objlist, attachment_loc,
                              "%s references invalid image (%s).", FormatHandle(image_view).c_str(), FormatHandle(image).c_str());
             continue;
         }
         if (image_state->IsSwapchainImage() && image_state->owned_by_swapchain && !image_state->bind_swapchain) {
-            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view, image);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.Handle(), image_view, image);
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-parameter", objlist, attachment_loc,
                              "%s references a swapchain image (%s) from a swapchain that has been destroyed.",
                              FormatHandle(image_view).c_str(), FormatHandle(image).c_str());
@@ -580,7 +580,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
 
             skip |= subresource_map->AnyInRange(
                 normalized_range, [this, &layout_check, i, cb = cb_state.commandBuffer(),
-                                   render_pass = pRenderPassBegin->renderPass, framebuffer = framebuffer_state.framebuffer(),
+                                   render_pass = pRenderPassBegin->renderPass, framebuffer = framebuffer_state.Handle(),
                                    image = view_state->image_state->image(), image_view = view_state->image_view(), attachment_loc,
                                    rp_begin_loc](const LayoutRange &range, const LayoutEntry &state) {
                     bool subres_skip = false;
