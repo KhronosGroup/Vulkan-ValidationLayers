@@ -435,18 +435,18 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (image_state->sparse_residency) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->image(), error_obj.location,
+                    skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
                                        "Binding sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
-                                       FormatHandle(image_state->image()).c_str());
+                                       FormatHandle(image_state->Handle()).c_str());
                 }
             }
             if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->image(), error_obj.location,
+                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
                                    "Binding sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
-                                   FormatHandle(image_state->image()).c_str());
+                                   FormatHandle(image_state->Handle()).c_str());
             }
         }
         for (uint32_t i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
@@ -459,18 +459,18 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (image_state->sparse_residency) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->image(), error_obj.location,
+                    skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
                                        "Binding opaque sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
-                                       FormatHandle(image_state->image()).c_str());
+                                       FormatHandle(image_state->Handle()).c_str());
                 }
             }
             if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->image(), error_obj.location,
+                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, image_state->Handle(), error_obj.location,
                                    "Binding opaque sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
-                                   FormatHandle(image_state->image()).c_str());
+                                   FormatHandle(image_state->Handle()).c_str());
             }
             for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
                 if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
@@ -482,10 +482,10 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound &&
                 sparse_images_with_metadata.find(sparse_image_state) == sparse_images_with_metadata.end()) {
                 // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
-                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, sparse_image_state->image(), error_obj.location,
+                skip |= LogWarning(kVUID_BestPractices_MemTrack_InvalidState, sparse_image_state->Handle(), error_obj.location,
                                    "Binding sparse memory to %s which requires a metadata aspect but no "
                                    "binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
-                                   FormatHandle(sparse_image_state->image()).c_str());
+                                   FormatHandle(sparse_image_state->Handle()).c_str());
             }
         }
     }

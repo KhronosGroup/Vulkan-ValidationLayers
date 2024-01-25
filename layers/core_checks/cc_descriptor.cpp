@@ -1907,14 +1907,14 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                         auto sampler_state = Get<vvl::Sampler>(desc.GetSampler());
                         if (iv_state && sampler_state) {
                             if (iv_state->samplerConversion != sampler_state->samplerConversion) {
-                                const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->image_view());
+                                const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->Handle());
                                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, write_loc,
                                                  "Attempted write update to combined image sampler and image view and sampler "
                                                  "YCbCr conversions are not identical.");
                             }
                         }
                     } else if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
-                        const LogObjectList objlist(update.dstSet, iv_state->image_view());
+                        const LogObjectList objlist(update.dstSet, iv_state->Handle());
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02738", objlist, write_loc.dot(Field::dstSet),
                                          "is bound to image view that includes a YCbCr conversion, it must have been allocated "
                                          "with a layout that includes an immutable sampler.");
@@ -1925,7 +1925,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                     // multiplane formats must be created with mutable format bit
                     const VkFormat image_format = image_state->createInfo.format;
                     if (0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-                        const LogObjectList objlist(update.dstSet, image_state->image());
+                        const LogObjectList objlist(update.dstSet, image_state->Handle());
                         skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
                                          "combined image sampler is a multi-planar format %s and was created with %s.",
                                          string_VkFormat(image_format),
@@ -1933,7 +1933,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                     }
                     const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
                     if (!IsValidPlaneAspect(image_format, image_aspect)) {
-                        const LogObjectList objlist(update.dstSet, image_state->image(), iv_state->image_view());
+                        const LogObjectList objlist(update.dstSet, image_state->Handle(), iv_state->Handle());
                         skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
                                          "combined image sampler is a multi-planar format %s and imageView aspectMask is %s.",
                                          string_VkFormat(image_format), string_VkImageAspectFlags(image_aspect).c_str());

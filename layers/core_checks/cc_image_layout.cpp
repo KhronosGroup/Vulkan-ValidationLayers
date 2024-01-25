@@ -70,7 +70,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
                                         const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
                                         bool *error) const {
     bool skip = false;
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.image());
+    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
     if (!subresource_map) return skip;
 
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
@@ -81,7 +81,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
             if (!layout_check.Check(state)) {
                 *error = true;
                 auto subres = subresource_map->Decode(range.begin);
-                const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
+                const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
                 subres_skip |= LogError(mismatch_layout_vuid, objlist, loc,
                                         "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
                                         ") with specific layout %s that doesn't match the "
@@ -567,7 +567,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                 continue;
             }
             if (!has_queried_map) {
-                subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state->image());
+                subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state->VkHandle());
                 has_queried_map = true;
             }
             if (!subresource_map) {
@@ -581,7 +581,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
             skip |= subresource_map->AnyInRange(
                 normalized_range, [this, &layout_check, i, cb = cb_state.commandBuffer(),
                                    render_pass = pRenderPassBegin->renderPass, framebuffer = framebuffer_state.Handle(),
-                                   image = view_state->image_state->image(), image_view = view_state->image_view(), attachment_loc,
+                                   image = view_state->image_state->Handle(), image_view = view_state->Handle(), attachment_loc,
                                    rp_begin_loc](const LayoutRange &range, const LayoutEntry &state) {
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
@@ -778,7 +778,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     bool skip = false;
     if (loc.function == Func::vkCmdClearDepthStencilImage) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-            LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
+            LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
             skip |= LogError("VUID-vkCmdClearDepthStencilImage-imageLayout-00012", objlist, loc,
                              "Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.",
                              string_VkImageLayout(dest_image_layout));
@@ -787,7 +787,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     } else if (loc.function == Func::vkCmdClearColorImage) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
             (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
-            LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
+            LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
             skip |= LogError("VUID-vkCmdClearColorImage-imageLayout-01394", objlist, loc,
                              "Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
                              string_VkImageLayout(dest_image_layout));
@@ -795,13 +795,13 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.image());
+    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
     if (subresource_map) {
         LayoutUseCheckAndMessage layout_check(dest_image_layout);
         auto normalized_isr = image_state.NormalizeSubresourceRange(range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
-        skip |= subresource_map->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, loc, image = image_state.image()](
+        skip |= subresource_map->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, loc, image = image_state.Handle()](
                                                                 const LayoutRange &range, const LayoutEntry &state) {
             bool subres_skip = false;
             if (!layout_check.Check(state)) {
@@ -826,13 +826,13 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer *cb_
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(img_barrier.image);
-    auto &write_subresource_map = layout_updates[image_state->image()];
+    auto &write_subresource_map = layout_updates[image_state->VkHandle()];
     bool new_write = false;
     if (!write_subresource_map) {
         write_subresource_map = std::make_shared<ImageSubresourceLayoutMap>(*image_state);
         new_write = true;
     }
-    const auto &current_subresource_map = current_map.find(image_state->image());
+    const auto &current_subresource_map = current_map.find(image_state->VkHandle());
     const auto &read_subresource_map =
         (new_write && current_subresource_map != current_map.end()) ? (*current_subresource_map).second : write_subresource_map;
     // Validate aspects in isolation.
@@ -1014,7 +1014,7 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLay
 
     if (check_state.found_range.non_empty()) {
         const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);
-        LogObjectList objlist(device, image_state.image());
+        LogObjectList objlist(device, image_state.Handle());
         skip |=
             LogError(vuid, objlist, loc,
                      "expected to be %s. Incorrect image layout for %s %s. Current layout is %s for subresource in region %" PRIu32

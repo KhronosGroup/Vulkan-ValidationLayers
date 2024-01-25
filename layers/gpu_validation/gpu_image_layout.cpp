@@ -673,7 +673,7 @@ bool gpuav::Validator::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state
                                               const RangeFactory &range_factory, const Location &loc,
                                               const char *mismatch_layout_vuid, bool *error) const {
     bool skip = false;
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.image());
+    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
     if (!subresource_map) {
         return skip;
     }

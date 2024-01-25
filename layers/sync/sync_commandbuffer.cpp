@@ -357,10 +357,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 
                         if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
-                                string_SyncHazardVUID(hazard.Hazard()), img_view_state->image_view(), loc,
+                                string_SyncHazardVUID(hazard.Hazard()), img_view_state->Handle(), loc,
                                 "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
                                 ", index %" PRIu32 ". Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(img_view_state->image_view()).c_str(),
+                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(img_view_state->Handle()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),

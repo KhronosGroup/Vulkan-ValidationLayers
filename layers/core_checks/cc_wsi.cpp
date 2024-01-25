@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -735,7 +735,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
                 if (!swapchain_image.image_state) continue;
-                qfo_release_image_barrier_map.erase(swapchain_image.image_state->image());
+                qfo_release_image_barrier_map.erase(swapchain_image.image_state->VkHandle());
             }
         }
     }
@@ -815,18 +815,18 @@ bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_i
 
         const Location image_index_loc = present_info_loc.dot(Field::pImageIndices, image_index);
         if (semaphore && fence) {
-            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->Handle(), fence->Handle());
+            const LogObjectList objlist(swapchain_image.image_state->VkHandle(), semaphore->Handle(), fence->Handle());
             skip |= LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
                              "was acquired with a semaphore %s and fence %s and neither of them have since been waited on",
                              FormatHandle(semaphore->Handle()).c_str(), FormatHandle(fence->Handle()).c_str());
         } else if (semaphore) {
-            const LogObjectList objlist(swapchain_image.image_state->image(), semaphore->Handle());
+            const LogObjectList objlist(swapchain_image.image_state->VkHandle(), semaphore->Handle());
             skip |= LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
                              "was acquired with a semaphore %s that has not since been waited on",
                              FormatHandle(semaphore->Handle()).c_str());
         } else {
             assert(fence != nullptr);  // if both fence and semaphore are not provided we have an early exit
-            const LogObjectList objlist(swapchain_image.image_state->image(), fence->Handle());
+            const LogObjectList objlist(swapchain_image.image_state->VkHandle(), fence->Handle());
             skip |=
                 LogError(missing_acquire_wait_vuid, objlist, image_index_loc,
                          "was acquired with a fence %s that has not since been waited on", FormatHandle(fence->Handle()).c_str());

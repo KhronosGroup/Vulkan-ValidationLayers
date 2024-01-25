@@ -379,7 +379,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
             }
         }
         if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
-            const VkImage depth_image = depth_image_view->image_state->image();
+            const VkImage depth_image = depth_image_view->image_state->VkHandle();
             const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
             RecordBindZcullScope(*cb_state, depth_image, subresource_range);
         } else {
@@ -529,7 +529,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
             }
         }
         if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
-            const VkImage depth_image = depth_image_view->image_state->image();
+            const VkImage depth_image = depth_image_view->image_state->VkHandle();
             const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
             RecordBindZcullScope(*cb_state, depth_image, subresource_range);
         } else {

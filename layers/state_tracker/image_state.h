@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -151,7 +151,7 @@ class Image : public Bindable {
     std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Image> shared_from_this() { return SharedFromThisImpl(this); }
 
-    VkImage image() const { return handle_.Cast<VkImage>(); }
+    VkImage VkHandle() const { return handle_.Cast<VkImage>(); }
 
     bool HasAHBFormat() const { return ahb_format != 0; }
     bool IsCompatibleAliasing(const Image *other_image_state) const;
@@ -298,7 +298,7 @@ class ImageView : public StateObject {
     ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
               VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     ImageView(const ImageView &rh_obj) = delete;
-    VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
+    VkImageView VkHandle() const { return handle_.Cast<VkImageView>(); }
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
@@ -357,7 +357,7 @@ class Swapchain : public StateObject {
         }
     }
 
-    VkSwapchainKHR swapchain() const { return handle_.Cast<VkSwapchainKHR>(); }
+    VkSwapchainKHR VkHandle() const { return handle_.Cast<VkSwapchainKHR>(); }
 
     void PresentImage(uint32_t image_index, uint64_t present_id);
 
@@ -417,11 +417,11 @@ class Surface : public StateObject {
         }
     }
 
-    VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
+    VkSurfaceKHR VkHandle() const { return handle_.Cast<VkSurfaceKHR>(); }
     VkPhysicalDeviceSurfaceInfo2KHR GetSurfaceInfo2(const void *surface_info2_pnext = nullptr) const {
         VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper();
         surface_info2.pNext = surface_info2_pnext;
-        surface_info2.surface = surface();
+        surface_info2.surface = VkHandle();
         return surface_info2;
     }
 

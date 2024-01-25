@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -267,11 +267,11 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
             // PHASE1 TODO -- add tag information to log msg when useful.
             const Location loc(command_);
             const auto &sync_state = cb_context.GetSyncState();
-            const auto image_handle = image_state->image();
-            skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), image_handle, loc,
+            skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), image_state->Handle(), loc,
                                         "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.",
                                         string_SyncHazard(hazard.Hazard()), image_barrier.index,
-                                        sync_state.FormatHandle(image_handle).c_str(), cb_context.FormatHazard(hazard).c_str());
+                                        sync_state.FormatHandle(image_state->Handle()).c_str(),
+                                        cb_context.FormatHazard(hazard).c_str());
         }
     }
     return skip;
@@ -643,10 +643,10 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
                     sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
                 if (hazard.IsHazard()) {
-                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), image_state->image(), loc,
+                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), image_state->Handle(), loc,
                                                 "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.",
                                                 string_SyncHazard(hazard.Hazard()), image_memory_barrier.index,
-                                                sync_state.FormatHandle(image_state->image()).c_str(),
+                                                sync_state.FormatHandle(image_state->Handle()).c_str(),
                                                 exec_context.FormatHazard(hazard).c_str());
                     break;
                 }
