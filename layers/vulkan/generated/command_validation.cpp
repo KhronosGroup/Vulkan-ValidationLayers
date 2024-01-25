@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2023 Valve Corporation
- * Copyright (c) 2021-2023 LunarG, Inc.
+ * Copyright (c) 2021-2024 Valve Corporation
+ * Copyright (c) 2021-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1822,7 +1822,7 @@ bool CoreChecks::ValidateCmd(const vvl::CommandBuffer& cb_state, const Location&
 
         default:
             assert(loc.function != Func::Empty);
-            skip |= LogError(info.recording_vuid, cb_state.commandBuffer(), loc, "was called before vkBeginCommandBuffer().");
+            skip |= LogError(info.recording_vuid, cb_state.Handle(), loc, "was called before vkBeginCommandBuffer().");
     }
 
     // Validate the command pool from which the command buffer is from that the command is allowed for queue type

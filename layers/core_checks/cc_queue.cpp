@@ -54,7 +54,7 @@ struct CommandBufferSubmitState {
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
         skip |= core->ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
-        auto cmd = cb_state.commandBuffer();
+        const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
         skip |= core->ValidatePrimaryCommandBufferState(
             loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)), &qfo_image_scoreboards,
@@ -124,7 +124,7 @@ private:
                 previous_debug_region =
                     std::string("The previous debug region before the invalid command is '") + last_closed_cmdbuf_label + "'.";
             }
-            skip |= core->LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912", cb_state.commandBuffer(), loc,
+            skip |= core->LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912", cb_state.Handle(), loc,
                                    "(%s) contains vkCmdEndDebugUtilsLabelEXT that does not have a matching "
                                    "vkCmdBeginDebugUtilsLabelEXT in this or one of the previously submitted command buffers. %s",
                                    core->FormatHandle(cb_state).c_str(), previous_debug_region.c_str());
@@ -239,17 +239,17 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
             auto cb_state = GetRead<vvl::CommandBuffer>(submit.pCommandBuffers[i]);
             if (cb_state) {
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
-                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
+                    const LogObjectList objlist(cb_state->Handle(), queue);
                     skip |= LogError("VUID-VkSubmitInfo-pNext-04148", objlist, cb_loc,
                                      "(%s) is unprotected while queue %s pSubmits[%u] has "
                                      "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
-                                     FormatHandle(cb_state->commandBuffer()).c_str(), FormatHandle(queue).c_str(), submit_idx);
+                                     FormatHandle(cb_state->Handle()).c_str(), FormatHandle(queue).c_str(), submit_idx);
                 }
                 if ((cb_state->unprotected == false) && (protected_submit == false)) {
-                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
+                    const LogObjectList objlist(cb_state->Handle(), queue);
                     skip |= LogError("VUID-VkSubmitInfo-pNext-04120", objlist, cb_loc,
                                      "(%s) is protected while queue %s pSubmits[%u] has %s",
-                                     FormatHandle(cb_state->commandBuffer()).c_str(), FormatHandle(queue).c_str(), submit_idx,
+                                     FormatHandle(cb_state->Handle()).c_str(), FormatHandle(queue).c_str(), submit_idx,
                                      protected_submit_info ? "VkProtectedSubmitInfo:protectedSubmit set to VK_FALSE"
                                                            : "no VkProtectedSubmitInfo in the pNext chain");
                 }
@@ -316,13 +316,13 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             if (cb_state != nullptr) {
                 // Make sure command buffers are all protected or unprotected
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
-                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
+                    const LogObjectList objlist(cb_state->Handle(), queue);
                     skip |= LogError("VUID-VkSubmitInfo2-flags-03886", objlist, info_loc.dot(Field::commandBuffer),
                                      "is unprotected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR set",
                                      submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
                 }
                 if ((cb_state->unprotected == false) && (protected_submit == false)) {
-                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
+                    const LogObjectList objlist(cb_state->Handle(), queue);
                     skip |= LogError("VUID-VkSubmitInfo2-flags-03887", objlist, info_loc.dot(Field::commandBuffer),
                                      "is protected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR not set",
                                      submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
@@ -451,7 +451,7 @@ bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer &cb_state, const
     }
 
     if (!found) {
-        const LogObjectList objlist(cb_state.commandBuffer(), object);
+        const LogObjectList objlist(cb_state.Handle(), object);
         skip |= LogError("VUID-vkQueueSubmit-pSubmits-04626", objlist, loc,
                          "%s contains %s which was not created allowing concurrent access to "
                          "this queue family %d.",
@@ -471,7 +471,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
 
     if (pool && queue_state) {
         if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
-            const LogObjectList objlist(cb_state.commandBuffer(), queue);
+            const LogObjectList objlist(cb_state.Handle(), queue);
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
             skip |= LogError(vuid, objlist, loc,
                              "Primary command buffer %s created in queue family %d is being submitted on %s "
@@ -521,7 +521,7 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
     if (const uint64_t submissions = cb_state.submitCount + current_submit_count;
         (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && (submissions > 1)) {
         // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
-        skip |= LogError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation", cb_state.commandBuffer(), loc,
+        skip |= LogError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation", cb_state.Handle(), loc,
                          "%s recorded with VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT has been submitted %" PRIu64 " times.",
                          FormatHandle(cb_state).c_str(), submissions);
     }
@@ -534,12 +534,12 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
             break;
 
         case CbState::New:
-            skip |= LogError(vuid, cb_state.commandBuffer(), loc, "%s is unrecorded and contains no commands.",
+            skip |= LogError(vuid, cb_state.Handle(), loc, "%s is unrecorded and contains no commands.",
                              FormatHandle(cb_state).c_str());
             break;
 
         case CbState::Recording:
-            skip |= LogError(vuid, cb_state.commandBuffer(), loc, "You must call vkEndCommandBuffer() on %s before this call.",
+            skip |= LogError(vuid, cb_state.Handle(), loc, "You must call vkEndCommandBuffer() on %s before this call.",
                              FormatHandle(cb_state).c_str());
             break;
 
@@ -577,22 +577,20 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 
     if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdInSubmit);
-        skip |=
-            LogError(vuid, cb_state.commandBuffer(), loc,
-                     "Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.", FormatHandle(cb_state).c_str());
+        skip |= LogError(vuid, cb_state.Handle(), loc, "Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.",
+                         FormatHandle(cb_state).c_str());
     } else {
         for (const auto *sub_cb : cb_state.linkedCommandBuffers) {
             skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards, loc);
             // TODO: replace with InvalidateCommandBuffers() at recording.
-            if ((sub_cb->primaryCommandBuffer != cb_state.commandBuffer()) &&
+            if ((sub_cb->primaryCommandBuffer != cb_state.VkHandle()) &&
                 !(sub_cb->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
                 const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdNotSimultaneous);
-                const LogObjectList objlist(device, cb_state.commandBuffer(), sub_cb->commandBuffer(),
-                                            sub_cb->primaryCommandBuffer);
+                const LogObjectList objlist(device, cb_state.Handle(), sub_cb->Handle(), sub_cb->primaryCommandBuffer);
                 skip |= LogError(vuid, objlist, loc,
                                  "%s was submitted with secondary %s but that buffer has subsequently been bound to "
                                  "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                                 FormatHandle(cb_state).c_str(), FormatHandle(sub_cb->commandBuffer()).c_str(),
+                                 FormatHandle(cb_state).c_str(), FormatHandle(sub_cb->Handle()).c_str(),
                                  FormatHandle(sub_cb->primaryCommandBuffer).c_str());
             }
 
@@ -600,11 +598,10 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                 const char *const finished_cb_vuid = (loc.function == Func::vkQueueSubmit)
                                                          ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
                                                          : "VUID-vkQueueSubmit2-commandBuffer-03876";
-                const LogObjectList objlist(device, cb_state.commandBuffer(), sub_cb->commandBuffer(),
-                                            sub_cb->primaryCommandBuffer);
+                const LogObjectList objlist(device, cb_state.Handle(), sub_cb->Handle(), sub_cb->primaryCommandBuffer);
                 skip |= LogError(finished_cb_vuid, objlist, loc,
                                  "Secondary command buffer %s is not in a valid (pending or executable) state.",
-                                 FormatHandle(sub_cb->commandBuffer()).c_str());
+                                 FormatHandle(sub_cb->Handle()).c_str());
             }
         }
     }

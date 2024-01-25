@@ -150,9 +150,9 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_sta
                                                 const char *vuid) const {
     bool skip = false;
     if ((deviceMask & cb_state.active_render_pass_device_mask) != deviceMask) {
-        skip |= LogError(vuid, cb_state.commandBuffer(), loc, "(0x%" PRIx32 ") is not a subset of %s device mask (0x%" PRIx32 ").",
-                         deviceMask, FormatHandle(cb_state.activeRenderPass->Handle()).c_str(),
-                         cb_state.active_render_pass_device_mask);
+        skip |=
+            LogError(vuid, cb_state.Handle(), loc, "(0x%" PRIx32 ") is not a subset of %s device mask (0x%" PRIx32 ").", deviceMask,
+                     FormatHandle(cb_state.activeRenderPass->Handle()).c_str(), cb_state.active_render_pass_device_mask);
     }
     return skip;
 }

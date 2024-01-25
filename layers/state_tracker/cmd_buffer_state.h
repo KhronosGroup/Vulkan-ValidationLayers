@@ -82,7 +82,7 @@ class Event : public StateObject {
           flags(pCreateInfo->flags) {
     }
 
-    VkEvent event() const { return handle_.Cast<VkEvent>(); }
+    VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
 };
 
 }  // namespace vvl
@@ -107,7 +107,7 @@ class CommandPool : public StateObject {
     CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo, VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
 
-    VkCommandPool commandPool() const { return handle_.Cast<VkCommandPool>(); }
+    VkCommandPool VkHandle() const { return handle_.Cast<VkCommandPool>(); }
 
     void Allocate(const VkCommandBufferAllocateInfo *create_info, const VkCommandBuffer *command_buffers);
     void Free(uint32_t count, const VkCommandBuffer *command_buffers);
@@ -484,7 +484,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     void Destroy() override;
 
-    VkCommandBuffer commandBuffer() const { return handle_.Cast<VkCommandBuffer>(); }
+    VkCommandBuffer VkHandle() const { return handle_.Cast<VkCommandBuffer>(); }
 
     vvl::ImageView *GetActiveAttachmentImageViewState(uint32_t index);
     const vvl::ImageView *GetActiveAttachmentImageViewState(uint32_t index) const;

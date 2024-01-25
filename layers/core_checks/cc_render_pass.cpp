@@ -4090,7 +4090,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool inside = false;
     if (cb_state.activeRenderPass) {
-        inside = LogError(vuid, cb_state.commandBuffer(), loc, "It is invalid to issue this call inside an active %s.",
+        inside = LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
                           FormatHandle(cb_state.activeRenderPass->Handle()).c_str());
     }
     return inside;
@@ -4103,7 +4103,7 @@ bool CoreChecks::OutsideRenderPass(const vvl::CommandBuffer &cb_state, const Loc
     if (((cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) && (!cb_state.activeRenderPass)) ||
         ((cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (!cb_state.activeRenderPass) &&
          !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))) {
-        outside = LogError(vuid, cb_state.commandBuffer(), loc, "This call must be issued inside an active render pass.");
+        outside = LogError(vuid, cb_state.Handle(), loc, "This call must be issued inside an active render pass.");
     }
     return outside;
 }
@@ -4197,7 +4197,7 @@ bool CoreChecks::ValidateCmdSubpassState(const vvl::CommandBuffer &cb_state, con
          loc.function != Func::vkCmdEndRenderPass && loc.function != Func::vkCmdNextSubpass2 &&
          loc.function != Func::vkCmdNextSubpass2KHR && loc.function != Func::vkCmdEndRenderPass2 &&
          loc.function != Func::vkCmdEndRenderPass2KHR)) {
-        skip |= LogError(vuid, cb_state.commandBuffer(), loc, "cannot be called in a subpass using secondary command buffers.");
+        skip |= LogError(vuid, cb_state.Handle(), loc, "cannot be called in a subpass using secondary command buffers.");
     }
     return skip;
 }

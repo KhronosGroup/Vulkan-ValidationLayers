@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -35,9 +35,9 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
         if (pipeline_state && pipeline_state->vertex_input_state &&
             pipeline_state->vertex_input_state->binding_descriptions.size() <= 0) {
             if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
-                skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->commandBuffer(), loc,
+                skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), loc,
                                               "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
-                                              FormatHandle(cb_state->commandBuffer()).c_str(),
+                                              FormatHandle(cb_state->Handle()).c_str(),
                                               FormatHandle(pipeline_state->pipeline()).c_str());
             }
         }
@@ -54,7 +54,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
                     const auto* raster_state = pipe->RasterizationState();
                     if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && raster_state &&
                         raster_state->depthBiasEnable == VK_TRUE) {
-                        skip |= LogWarning(kVUID_BestPractices_DepthBiasNoAttachment, cb_state->commandBuffer(), loc,
+                        skip |= LogWarning(kVUID_BestPractices_DepthBiasNoAttachment, cb_state->Handle(), loc,
                                            "depthBiasEnable == VK_TRUE without a depth-stencil attachment.");
                     }
                 }

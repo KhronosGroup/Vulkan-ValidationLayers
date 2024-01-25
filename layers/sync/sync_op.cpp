@@ -501,7 +501,7 @@ const char *const SyncOpWaitEvents::kIgnored = "Wait operation is ignored for th
 bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) const {
     bool skip = false;
     const auto &sync_state = cb_context.GetSyncState();
-    const auto command_buffer_handle = cb_context.GetCBState().commandBuffer();
+    const VkCommandBuffer command_buffer_handle = cb_context.GetCBState().VkHandle();
 
     // This is only interesting at record and not replay (Execute/Submit) time.
     for (size_t barrier_set_index = 0; barrier_set_index < barriers_.size(); barrier_set_index++) {
@@ -564,7 +564,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
         // For replay calls, don't revalidate "same command buffer" events
         if (sync_event->last_command_tag >= base_tag) continue;
 
-        const auto event_handle = sync_event->event->event();
+        const VkEvent event_handle = sync_event->event->VkHandle();
         // TODO add "destroyed" checks
 
         if (sync_event->first_scope) {
@@ -839,7 +839,7 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, c
         }
         if (vuid) {
             const Location loc(command_);
-            skip |= sync_state.LogError(vuid, event_->event(), loc, message, sync_state.FormatHandle(event_->event()).c_str(),
+            skip |= sync_state.LogError(vuid, event_->Handle(), loc, message, sync_state.FormatHandle(event_->Handle()).c_str(),
                                         CmdName(), vvl::String(sync_event->last_command));
         }
     }
@@ -961,7 +961,7 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, con
             std::string vuid("SYNC-");
             vuid.append(CmdName()).append(vuid_stem);
             skip |=
-                sync_state.LogError(vuid.c_str(), event_->event(), loc, message, sync_state.FormatHandle(event_->event()).c_str(),
+                sync_state.LogError(vuid.c_str(), event_->Handle(), loc, message, sync_state.FormatHandle(event_->Handle()).c_str(),
                                     CmdName(), vvl::String(sync_event->last_command));
         }
     }
@@ -1229,7 +1229,7 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range
         if (hazard.IsHazard()) {
             const SyncValidator &sync_state = exec_context_.GetSyncState();
             const auto handle = exec_context_.Handle();
-            const auto recorded_handle = recorded_context_.GetCBState().commandBuffer();
+            const VkCommandBuffer recorded_handle = recorded_context_.GetCBState().VkHandle();
             skip = sync_state.LogError(
                 string_SyncHazardVUID(hazard.Hazard()), handle, error_obj_.location,
                 "Hazard %s for entry %" PRIu32 ", %s, %s access info %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
