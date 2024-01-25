@@ -28,8 +28,8 @@
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
                                           const VulkanTypedHandle &typed_handle, const Location &loc, const char *vuid) const {
     bool result = false;
-    auto type_name = object_string[typed_handle.type];
     if (!mem_state) {
+        const char *type_name = string_VulkanObjectType(typed_handle.type);
         result |=
             LogError(vuid, objlist, loc, "(%s) is used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      FormatHandle(typed_handle).c_str(), type_name + 2);

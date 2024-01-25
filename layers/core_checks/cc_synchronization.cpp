@@ -2050,7 +2050,7 @@ class ValidatorState {
                 return invalid;
         }
     }
-    const char *GetTypeString() const { return object_string[barrier_handle_.type]; }
+    const char *GetTypeString() const { return string_VulkanObjectType(barrier_handle_.type); }
     VkSharingMode GetSharingMode() const { return sharing_mode_; }
 
   protected:

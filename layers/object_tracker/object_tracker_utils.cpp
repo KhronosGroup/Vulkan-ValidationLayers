@@ -73,8 +73,8 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
 
     // Object was not found anywhere
     if (!other_lifetimes) {
-        return LogError(invalid_handle_vuid, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
-                        object_handle);
+        return LogError(invalid_handle_vuid, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".",
+                        string_VulkanObjectType(object_type), object_handle);
     }
     // Anonymous object validation does not check parent, only that the object exists
     if (wrong_parent_vuid == kVUIDUndefined) {
@@ -105,7 +105,7 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
                     "(%s 0x%" PRIxLEAST64
                     ") was created, allocated or retrieved from %s, but command is using (or its dispatchable parameter is "
                     "associated with) %s",
-                    object_string[object_type], object_handle, other_handle_str.c_str(), handle_str.c_str());
+                    string_VulkanObjectType(object_type), object_handle, other_handle_str.c_str(), handle_str.c_str());
 }
 
 void ObjectLifetimes::DestroyObjectSilently(uint64_t object, VulkanObjectType object_type) {
@@ -119,7 +119,7 @@ void ObjectLifetimes::DestroyObjectSilently(uint64_t object, VulkanObjectType ob
         (void)LogError("UNASSIGNED-ObjectTracker-Destroy", device, loc,
                        "Couldn't destroy %s Object 0x%" PRIxLEAST64
                        ", not found. This should not happen and may indicate a race condition in the application.",
-                       object_string[object_type], object);
+                       string_VulkanObjectType(object_type), object);
 
         return;
     }
@@ -437,7 +437,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
         auto node = iit.second;
 
         VkDevice device = reinterpret_cast<VkDevice>(node->handle);
-        VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[node->object_type];
+        VkDebugReportObjectTypeEXT debug_object_type = GetDebugReport(node->object_type);
 
         skip |=
             LogError("VUID-vkDestroyInstance-instance-00629", instance, error_obj.location, "%s object %s has not been destroyed.",

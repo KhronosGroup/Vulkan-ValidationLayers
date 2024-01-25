@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,7 +245,7 @@ typedef struct _debug_report_data {
     }
 
     std::string FormatHandle(const VulkanTypedHandle &handle) const {
-        return FormatHandle(object_string[handle.type], handle.handle);
+        return FormatHandle(string_VulkanObjectType(handle.type), handle.handle);
     }
 
     std::string FormatHandle(const TypedHandleWrapper &wrapper) const { return FormatHandle(wrapper.Handle()); }

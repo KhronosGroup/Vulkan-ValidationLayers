@@ -191,6 +191,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ObjectTypesOutputGenerator,
             'genCombined': True,
         },
+        'vk_object_types.cpp' : {
+            'generator' : ObjectTypesOutputGenerator,
+            'genCombined': True,
+        },
         'vk_extension_helper.h' : {
             'generator' : ExtensionHelperOutputGenerator,
             'genCombined': True,

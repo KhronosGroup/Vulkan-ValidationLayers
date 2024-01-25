@@ -423,6 +423,7 @@ source_set("vulkan_layer_utils") {
     "layers/vulkan/generated/vk_extension_helper.h",
     "layers/vulkan/generated/vk_layer_dispatch_table.h",
     "layers/vulkan/generated/vk_object_types.h",
+    "layers/vulkan/generated/vk_object_types.cpp",
     "layers/vulkan/generated/vk_safe_struct.h",
     "layers/vulkan/generated/vk_validation_error_messages.h",
   ]
