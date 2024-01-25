@@ -763,7 +763,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
     const auto &rp_state = cb_state->activeRenderPass;
-    RenderPassDepState state(this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state->GetActiveSubpass(), rp_state->renderPass(),
+    RenderPassDepState state(this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state->GetActiveSubpass(), rp_state->VkHandle(),
                              enabled_features, device_extensions, rp_state->self_dependencies[cb_state->GetActiveSubpass()],
                              rp_state->createInfo.pDependencies);
     if (state.self_dependencies.size() == 0) {
@@ -779,7 +779,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     if (0 != buffer_mem_barrier_count) {
         skip |= LogError("VUID-vkCmdPipelineBarrier-bufferMemoryBarrierCount-01178", state.rp_handle,
                          outer_loc.dot(Field::bufferMemoryBarrierCount), "is non-zero (%" PRIu32 ") for subpass %" PRIu32 " of %s.",
-                         buffer_mem_barrier_count, state.active_subpass, FormatHandle(rp_state->renderPass()).c_str());
+                         buffer_mem_barrier_count, state.active_subpass, FormatHandle(rp_state->Handle()).c_str());
     }
     for (uint32_t i = 0; i < mem_barrier_count; ++i) {
         const auto &mem_barrier = mem_barriers[i];
@@ -815,14 +815,14 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     if (rp_state->UsesDynamicRendering()) {
         return skip;
     }
-    RenderPassDepState state(this, "VUID-vkCmdPipelineBarrier2-None-07889", cb_state->GetActiveSubpass(), rp_state->renderPass(),
+    RenderPassDepState state(this, "VUID-vkCmdPipelineBarrier2-None-07889", cb_state->GetActiveSubpass(), rp_state->VkHandle(),
                              enabled_features, device_extensions, rp_state->self_dependencies[cb_state->GetActiveSubpass()],
                              rp_state->createInfo.pDependencies);
 
     if (state.self_dependencies.size() == 0) {
         skip |= LogError(state.vuid, state.rp_handle, outer_loc,
                          "Barriers cannot be set during subpass %" PRIu32 " of %s with no self-dependency specified.",
-                         state.active_subpass, FormatHandle(rp_state->renderPass()).c_str());
+                         state.active_subpass, FormatHandle(rp_state->Handle()).c_str());
         return skip;
     }
     // Grab ref to current subpassDescription up-front for use below
@@ -1702,8 +1702,8 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, vvl
 
     } else {  // !image_match
         const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassMismatch);
-        skip |= LogError(vuid, fb_state->framebuffer(), image_loc, "(%s) does not match an image from the current %s.",
-                         FormatHandle(img_bar_image).c_str(), FormatHandle(fb_state->framebuffer()).c_str());
+        skip |= LogError(vuid, fb_state->Handle(), image_loc, "(%s) does not match an image from the current %s.",
+                         FormatHandle(img_bar_image).c_str(), FormatHandle(fb_state->Handle()).c_str());
     }
     if (img_barrier.oldLayout != img_barrier.newLayout) {
         const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassLayoutChange);
@@ -1736,7 +1736,7 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
         // Secondary CB case w/o FB specified delay validation
         auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
         vvl::LocationCapture loc_capture(loc);
-        const auto render_pass = rp_state->renderPass();
+        const VkRenderPass render_pass = rp_state->VkHandle();
         cb_state->cmd_execute_commands_functions.emplace_back(
             [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
                 const vvl::CommandBuffer &secondary_cb, const vvl::CommandBuffer *primary_cb, const vvl::Framebuffer *fb) {

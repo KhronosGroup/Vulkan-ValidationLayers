@@ -596,7 +596,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     VkPipeline validation_pipeline = VK_NULL_HANDLE;
     if (!use_shader_objects) {
-        validation_pipeline = GetDrawValidationPipeline(cb_node->activeRenderPass.get()->renderPass());
+        validation_pipeline = GetDrawValidationPipeline(cb_node->activeRenderPass.get()->VkHandle());
         if (validation_pipeline == VK_NULL_HANDLE) {
             ReportSetupProblem(device, "Could not find or create a pipeline. Aborting GPU-AV");
             aborted = true;

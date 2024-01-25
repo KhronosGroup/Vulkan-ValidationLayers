@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,14 +154,14 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncValidationInfo
             const Location loc(command);
             if (hazard.Tag() == kInvalidTag) {
                 skip |= val_info.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state.renderPass(), loc,
+                    string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
                     "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                     " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32,
                     string_SyncHazard(hazard.Hazard()), subpass, transition.attachment, string_VkImageLayout(transition.old_layout),
                     string_VkImageLayout(transition.new_layout), transition.prev_pass);
             } else {
                 skip |= val_info.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state.renderPass(), loc,
+                    string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
                     "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                     " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                     string_SyncHazard(hazard.Hazard()), subpass, transition.attachment, string_VkImageLayout(transition.old_layout),
@@ -225,12 +225,12 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &va
                 const Location loc(command);
                 if (hazard.Tag() == kInvalidTag) {
                     // Hazard vs. ILT
-                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state.renderPass(), loc,
+                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
                                                 "Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s.",
                                                 string_SyncHazard(hazard.Hazard()), subpass, i, aspect, load_op_string);
                 } else {
-                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state.renderPass(), loc,
+                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
                                                 "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Access info %s.",
                                                 string_SyncHazard(hazard.Hazard()), subpass, i, aspect, load_op_string,
@@ -293,7 +293,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const SyncValidationInfo &v
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
                 const Location loc(command);
-                skip |= val_info.GetSyncState().LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state_->renderPass(), loc,
+                skip |= val_info.GetSyncState().LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
                                                          "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                          " %s aspect during store with %s %s. Access info %s",
                                                          string_SyncHazard(hazard.Hazard()), current_subpass_, i, aspect,
@@ -397,7 +397,7 @@ void ResolveOperation(Action &action, const vvl::RenderPass &rp_state, const Att
 }
 
 bool RenderPassAccessContext::ValidateResolveOperations(const SyncValidationInfo &val_info, vvl::Func command) const {
-    ValidateResolveAction validate_action(rp_state_->renderPass(), current_subpass_, CurrentContext(), val_info, command);
+    ValidateResolveAction validate_action(rp_state_->VkHandle(), current_subpass_, CurrentContext(), val_info, command);
     ResolveOperation(validate_action, *rp_state_, attachment_views_, current_subpass_);
     return validate_action.GetSkip();
 }
@@ -808,14 +808,14 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             if (hazard.Tag() == kInvalidTag) {
                 // Hazard vs. ILT
                 skip |= exec_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->renderPass(), loc,
+                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
                     "Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
                     " final image layout transition (old_layout: %s, new_layout: %s).",
                     string_SyncHazard(hazard.Hazard()), transition.prev_pass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout));
             } else {
                 skip |= exec_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->renderPass(), loc,
+                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
                     "Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
                     " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                     string_SyncHazard(hazard.Hazard()), transition.prev_pass, transition.attachment,

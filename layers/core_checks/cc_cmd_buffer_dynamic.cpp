@@ -1476,24 +1476,24 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         cb_state.HasExternalFormatResolveAttachment()) {
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT] &&
             cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
-            const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->renderPass());
+            const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->Handle());
             skip |= LogError(vuid.external_format_resolve_09366, rp_objlist, loc,
                              "blend enable for attachment zero was set to VK_TRUE.");
         }
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT] &&
             cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
-            const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->renderPass());
+            const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->Handle());
             skip |= LogError(vuid.external_format_resolve_09367, rp_objlist, loc, "rasterization samples set to %s.",
                              string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
         }
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR]) {
             if (cb_state.dynamic_state_value.fragment_size.width != 1) {
-                const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->renderPass());
+                const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.external_format_resolve_09370, rp_objlist, loc, "fragment size width is %" PRIu32 ".",
                                  cb_state.dynamic_state_value.fragment_size.width);
             }
             if (cb_state.dynamic_state_value.fragment_size.height != 1) {
-                const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->renderPass());
+                const LogObjectList rp_objlist(cb_state.commandBuffer(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.external_format_resolve_09371, rp_objlist, loc, "fragment size height is %" PRIu32 ".",
                                  cb_state.dynamic_state_value.fragment_size.height);
             }
