@@ -120,14 +120,20 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     binaries[0].reserve(input.size());
     binaries[0].insert(binaries[0].end(), &input.front(), &input.back() + 1);
 
-    // Call the optimizer to instrument the shader.
-    // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
-    // If descriptor indexing is enabled, enable length checks and updated descriptor checks
+    if (debug_dump_instrumented_shaders) {
+        std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
+        std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
+        debug_file.write(reinterpret_cast<char *>(binaries[0].data()),
+                         static_cast<std::streamsize>(binaries[0].size() * sizeof(uint32_t)));
+    }
+
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
 
+    // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
     gpuav::spirv::Module module(binaries[0], unique_shader_id, desc_set_bind_index);
 
+    // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.validate_descriptors) {
         module.RunPassBindlessDescriptorPass();
     }
@@ -144,8 +150,14 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
 
     module.ToBinary(new_pgm);
 
+    if (debug_dump_instrumented_shaders) {
+        std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
+        std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
+        debug_file.write(reinterpret_cast<char *>(new_pgm.data()), static_cast<std::streamsize>(new_pgm.size() * sizeof(uint32_t)));
+    }
+
     // (Maybe) validate the instrumented and linked shader
-    if (validate_instrumented_shaders) {
+    if (debug_validate_instrumented_shaders) {
         std::string instrumented_error;
         if (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout, device_extensions.vk_ext_scalar_block_layout,
                                target_env, instrumented_error)) {
@@ -171,7 +183,15 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
             assert(false);
             return false;
         }
+
+        if (debug_dump_instrumented_shaders) {
+            std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_opt.spv";
+            std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
+            debug_file.write(reinterpret_cast<char *>(new_pgm.data()),
+                             static_cast<std::streamsize>(new_pgm.size() * sizeof(uint32_t)));
+        }
     }
+
     return true;
 }
 
