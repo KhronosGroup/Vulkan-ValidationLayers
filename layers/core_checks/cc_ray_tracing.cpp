@@ -260,8 +260,8 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
                                      other_scratch_var_name_ss << "pInfos[" << other_info_j << "].scratchData";
 
                                      *out_error_msg += no_as_buffer_memory_overlap_msg(
-                                         dst_as_var_name_ss.str().c_str(), dst_as_buffer.buffer(),
-                                         other_scratch_var_name_ss.str().c_str(), other_scratch->buffer(), memory, overlap_range);
+                                         dst_as_var_name_ss.str().c_str(), dst_as_buffer.VkHandle(),
+                                         other_scratch_var_name_ss.str().c_str(), other_scratch->VkHandle(), memory, overlap_range);
                                  }
                                  return false;
                              }
@@ -319,8 +319,8 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
                                      other_scratch_var_name_ss << "pInfos[" << other_info_j << "].scratchData";
 
                                      *out_error_msg += no_as_buffer_memory_overlap_msg(
-                                         src_as_var_name_ss.str().c_str(), src_as_buffer.buffer(),
-                                         other_scratch_var_name_ss.str().c_str(), other_scratch->buffer(), memory, overlap_range);
+                                         src_as_var_name_ss.str().c_str(), src_as_buffer.VkHandle(),
+                                         other_scratch_var_name_ss.str().c_str(), other_scratch->VkHandle(), memory, overlap_range);
                                  }
                                  return false;
                              }
@@ -394,7 +394,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
                                                 memory != VK_NULL_HANDLE) {
                                                 if (parent_out_error_msg) {
                                                     std::stringstream scratch_error_msg_ss;
-                                                    scratch_error_msg_ss << " {" << FormatHandle(scratch->buffer())
+                                                    scratch_error_msg_ss << " {" << FormatHandle(scratch->Handle())
                                                                          << ", backed by " << FormatHandle(memory)
                                                                          << " - overlap on VkDeviceMemory space range "
                                                                          << string_range_hex(overlap_range) << "}";

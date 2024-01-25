@@ -206,7 +206,7 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_s
         VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
         if (end_offset > index_buffer_binding.size) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            objlist.add(index_buffer_binding.buffer_state->buffer());
+            objlist.add(index_buffer_binding.buffer_state->Handle());
             skip |= LogError(first_index_vuid, objlist, loc,
                              "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
                              ")) "

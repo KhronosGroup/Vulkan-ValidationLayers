@@ -380,10 +380,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
-                                string_SyncHazardVUID(hazard.Hazard()), buf_view_state->buffer_view(), loc,
+                                string_SyncHazardVUID(hazard.Hazard()), buf_view_state->Handle(), loc,
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                string_SyncHazard(hazard.Hazard()),
-                                sync_state_->FormatHandle(buf_view_state->buffer_view()).c_str(),
+                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_view_state->Handle()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
@@ -403,9 +402,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
-                                string_SyncHazardVUID(hazard.Hazard()), buf_state->buffer(), loc,
+                                string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_state->buffer()).c_str(),
+                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_state->Handle()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
@@ -543,9 +542,9 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
             const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
-                skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->buffer(), loc,
+                skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                                               "Hazard %s for vertex %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
-                                              sync_state_->FormatHandle(buf_state->buffer()).c_str(),
+                                              sync_state_->FormatHandle(buf_state->Handle()).c_str(),
                                               sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                               FormatHazard(hazard).c_str());
             }
@@ -592,9 +591,9 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
-        skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), index_buf_state->buffer(), loc,
+        skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), index_buf_state->Handle(), loc,
                                       "Hazard %s for index %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
-                                      sync_state_->FormatHandle(index_buf_state->buffer()).c_str(),
+                                      sync_state_->FormatHandle(index_buf_state->Handle()).c_str(),
                                       sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
     }
 
