@@ -704,7 +704,7 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
             }
 
             // Enqueue submission time DPB slot deactivation
-            video_session_updates[bound_video_session->videoSession()].emplace_back(
+            video_session_updates[bound_video_session->VkHandle()].emplace_back(
                 [deactivated_slots](const ValidationStateTracker *dev_data, const vvl::VideoSession *vs_state,
                                     vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     for (const auto &slot_index : deactivated_slots) {
@@ -735,7 +735,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
             }
 
             // Enqueue submission time video session state reset/initialization
-            video_session_updates[bound_video_session->videoSession()].emplace_back(
+            video_session_updates[bound_video_session->VkHandle()].emplace_back(
                 [](const ValidationStateTracker *dev_data, const vvl::VideoSession *vs_state,
                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     dev_state.Reset();
@@ -749,7 +749,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
                 video_encode_rate_control_state = state;
 
                 // Enqueue rate control specific device state changes
-                video_session_updates[bound_video_session->videoSession()].emplace_back(
+                video_session_updates[bound_video_session->VkHandle()].emplace_back(
                     [state](const ValidationStateTracker *dev_data, const vvl::VideoSession *vs_state,
                             vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                         dev_state.SetRateControlState(state);
@@ -765,7 +765,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
                 video_encode_quality_level = quality_level;
 
                 // Enqueue encode quality level device state change
-                video_session_updates[bound_video_session->videoSession()].emplace_back(
+                video_session_updates[bound_video_session->VkHandle()].emplace_back(
                     [quality_level](const ValidationStateTracker *dev_data, const vvl::VideoSession *vs_state,
                                     vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                         dev_state.SetEncodeQualityLevel(quality_level);
@@ -801,7 +801,7 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
 
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pDecodeInfo);
-            video_session_updates[bound_video_session->videoSession()].emplace_back(
+            video_session_updates[bound_video_session->VkHandle()].emplace_back(
                 [setup_slot, reference_setup_requested](const ValidationStateTracker *dev_data, const vvl::VideoSession *vs_state,
                                                         vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     if (reference_setup_requested) {
@@ -841,7 +841,7 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
 
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pEncodeInfo);
-            video_session_updates[bound_video_session->videoSession()].emplace_back(
+            video_session_updates[bound_video_session->VkHandle()].emplace_back(
                 [setup_slot, reference_setup_requested](const ValidationStateTracker *dev_data, const vvl::VideoSession *vs_state,
                                                         vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     if (reference_setup_requested) {

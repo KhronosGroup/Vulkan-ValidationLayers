@@ -503,7 +503,7 @@ class VideoSession : public StateObject {
     VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR vs, VkVideoSessionCreateInfoKHR const *pCreateInfo,
                  std::shared_ptr<const VideoProfileDesc> &&profile_desc);
 
-    VkVideoSessionKHR videoSession() const { return handle_.Cast<VkVideoSessionKHR>(); }
+    VkVideoSessionKHR VkHandle() const { return handle_.Cast<VkVideoSessionKHR>(); }
     bool IsDecode() const { return profile->IsDecode(); }
     bool IsEncode() const { return profile->IsEncode(); }
     VkVideoCodecOperationFlagBitsKHR GetCodecOp() const { return profile->GetCodecOp(); }
@@ -680,7 +680,7 @@ class VideoSessionParameters : public StateObject {
     VideoSessionParameters(VkVideoSessionParametersKHR vsp, VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
                            std::shared_ptr<VideoSession> &&vsstate, std::shared_ptr<VideoSessionParameters> &&vsp_template);
 
-    VkVideoSessionParametersKHR videoSessionParameters() const { return handle_.Cast<VkVideoSessionParametersKHR>(); }
+    VkVideoSessionParametersKHR VkHandle() const { return handle_.Cast<VkVideoSessionParametersKHR>(); }
 
     bool IsDecode() const { return vs_state->IsDecode(); }
     bool IsEncode() const { return vs_state->IsEncode(); }

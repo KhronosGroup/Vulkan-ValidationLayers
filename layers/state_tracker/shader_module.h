@@ -667,6 +667,8 @@ struct ShaderModule : public StateObject {
         : StateObject(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
           gpu_validation_shader_id(unique_shader_id) {}
 
+    VkShaderModule VkHandle() const { return handle_.Cast<VkShaderModule>(); }
+
     // If null, means this is a empty object and no shader backing it
     // TODO - This (and vvl::ShaderObject) could be unique, but need handle multiple ValidationObjects
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6265/files
