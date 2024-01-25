@@ -1532,6 +1532,31 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
                              error_obj.location.dot(Field::pBuildInfo).dot(Field::geometryCount),
                              "is %" PRIu32 ", but pMaxPrimitiveCounts is NULL.", pBuildInfo->geometryCount);
         }
+
+        if (pMaxPrimitiveCounts && (pBuildInfo->pGeometries || pBuildInfo->ppGeometries)) {
+            for (uint32_t geom_i = 0; geom_i < pBuildInfo->geometryCount; ++geom_i) {
+                const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(*pBuildInfo, geom_i);
+                switch (geom.geometryType) {
+                    case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
+                        if (pMaxPrimitiveCounts[geom_i] > phys_dev_ext_props.acc_structure_props.maxInstanceCount) {
+                            const Field p_geom = pBuildInfo->pGeometries ? Field::pGeometries : Field::ppGeometries;
+                            skip |= LogError(
+                                "VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03785", device,
+                                error_obj.location.dot(Field::pBuildInfo).dot(p_geom, geom_i).dot(Field::geometryType),
+                                "is %s, but pMaxPrimitiveCount[%" PRIu32 "] (%" PRIu32
+                                ") is larger than VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount (%" PRIu64
+                                ").",
+                                string_VkGeometryTypeKHR(geom.geometryType), geom_i, pMaxPrimitiveCounts[geom_i],
+                                phys_dev_ext_props.acc_structure_props.maxInstanceCount);
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }
     }
+
     return skip;
 }
