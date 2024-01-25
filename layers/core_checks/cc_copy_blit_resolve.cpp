@@ -2312,7 +2312,7 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
                     if (const auto [memory, overlap_range] =
                             src_buffer_state->GetResourceMemoryOverlap(src, dst_buffer_state.get(), dst);
                         memory != VK_NULL_HANDLE) {
-                        const LogObjectList objlist(commandBuffer, src_buffer_state->buffer(), dst_buffer_state->buffer(), memory);
+                        const LogObjectList objlist(commandBuffer, src_buffer_state->Handle(), dst_buffer_state->Handle(), memory);
                         skip |= this->LogError(vuid, objlist, loc,
                                                "Memory (%s) has copy overlap on range %s. Source "
                                                "buffer range is pRegions[%" PRIu32

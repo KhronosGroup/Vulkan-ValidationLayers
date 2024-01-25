@@ -1115,13 +1115,13 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     if (dstOffset >= dst_buff_state->requirements.size) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819", buffer_objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of buffer (%s).", dstOffset,
-                         dst_buff_state->requirements.size, FormatHandle(dst_buff_state->buffer()).c_str());
+                         dst_buff_state->requirements.size, FormatHandle(dst_buff_state->Handle()).c_str());
     } else if (dstOffset + (queryCount * stride) > dst_buff_state->requirements.size) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", buffer_objlist, error_obj.location,
                          "storage required (%" PRIu64
                          ") equal to dstOffset + (queryCount * stride) is greater than the size (%" PRIu64 ") of buffer (%s).",
                          dstOffset + (queryCount * stride), dst_buff_state->requirements.size,
-                         FormatHandle(dst_buff_state->buffer()).c_str());
+                         FormatHandle(dst_buff_state->Handle()).c_str());
     }
 
     if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {

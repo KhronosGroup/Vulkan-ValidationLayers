@@ -464,7 +464,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
         if (!buffer_state) {
             continue;
         }
-        const LogObjectList objlist(commandBuffer, buffer_state->buffer());
+        const LogObjectList objlist(commandBuffer, buffer_state->Handle());
         skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", error_obj.location.dot(Field::pBuffers, i));
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pBuffers, i),
@@ -1369,7 +1369,7 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer &cb_st
     uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
     if (validation_value > buffer_state->createInfo.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(buffer_state->buffer());
+        objlist.add(buffer_state->Handle());
         skip |=
             LogError(vuid, objlist, loc,
                      "stride (%" PRIu32 ") * [drawCount (%" PRIu32 ") - 1] + offset (%" PRIu64 ") + sizeof(%s) (%" PRIu32
@@ -1650,14 +1650,14 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
                                                   "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01981");
 
             if ((buffer_state->usage & VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
-                const LogObjectList objlist(commandBuffer, buffer_state->buffer());
+                const LogObjectList objlist(commandBuffer, buffer_state->Handle());
                 skip |=
                     LogError("VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982", objlist, conditional_loc.dot(Field::buffer),
                              "(%s) was created with %s.", FormatHandle(pConditionalRenderingBegin->buffer).c_str(),
                              string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
             }
             if (pConditionalRenderingBegin->offset + 4 > buffer_state->createInfo.size) {
-                const LogObjectList objlist(commandBuffer, buffer_state->buffer());
+                const LogObjectList objlist(commandBuffer, buffer_state->Handle());
                 skip |= LogError(
                     "VUID-VkConditionalRenderingBeginInfoEXT-offset-01983", objlist, conditional_loc.dot(Field::offset),
                     "(%" PRIu64 ") + 4 bytes is not less than the size of pConditionalRenderingBegin->buffer (%" PRIu64 ").",

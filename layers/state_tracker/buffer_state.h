@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -51,7 +51,7 @@ class Buffer : public Bindable {
         }
     }
 
-    VkBuffer buffer() const { return handle_.Cast<VkBuffer>(); }
+    VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
     std::optional<VkDeviceSize> ComputeValidSize(VkDeviceSize offset, VkDeviceSize size) const {
         return ::ComputeValidSize(offset, size, createInfo.size);
     }
@@ -96,7 +96,7 @@ class BufferView : public StateObject {
 
     BufferView(const BufferView &rh_obj) = delete;
 
-    VkBufferView buffer_view() const { return handle_.Cast<VkBufferView>(); }
+    VkBufferView VkHandle() const { return handle_.Cast<VkBufferView>(); }
 
     void Destroy() override {
         if (buffer_state) {

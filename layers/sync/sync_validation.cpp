@@ -1219,7 +1219,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
         const ResourceAccessRange range = MakeRange(offset, size);
         auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
         if (hazard.IsHazard()) {
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->buffer(), loc,
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                              "Hazard %s for indirect %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(),
                              cb_context.FormatHazard(hazard).c_str());
@@ -1229,7 +1229,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
             const ResourceAccessRange range = MakeRange(offset + i * stride, size);
             auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->buffer(), loc,
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                                  "Hazard %s for indirect %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                                  FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(),
                                  cb_context.FormatHazard(hazard).c_str());
@@ -1268,7 +1268,7 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
     auto hazard = context.DetectHazard(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
     if (hazard.IsHazard()) {
         skip |=
-            LogError(string_SyncHazardVUID(hazard.Hazard()), count_buf_state->buffer(), loc,
+            LogError(string_SyncHazardVUID(hazard.Hazard()), count_buf_state->Handle(), loc,
                      "Hazard %s for countBuffer %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                      FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(), cb_context.FormatHazard(hazard).c_str());
     }
@@ -2179,7 +2179,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         auto hazard = context->DetectHazard(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range);
         if (hazard.IsHazard()) {
             // PHASE1 TODO -- add tag information to log msg when useful.
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), src_buffer->buffer(), decode_info_loc.dot(Field::srcBuffer),
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), src_buffer->Handle(), decode_info_loc.dot(Field::srcBuffer),
                              "Hazard %s for bitstream buffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(pDecodeInfo->srcBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
@@ -2291,7 +2291,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, src_range);
         if (hazard.IsHazard()) {
             // PHASE1 TODO -- add tag information to log msg when useful.
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dst_buffer->buffer(), encode_info_loc.dot(Field::dstBuffer),
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dst_buffer->Handle(), encode_info_loc.dot(Field::dstBuffer),
                              "Hazard %s for bitstream buffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(pEncodeInfo->dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }

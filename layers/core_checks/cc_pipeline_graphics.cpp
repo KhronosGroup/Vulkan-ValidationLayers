@@ -2826,7 +2826,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
                 const VkDeviceSize vtx_attrib_req_alignment = pipeline->vertex_input_state->vertex_attribute_alignments[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
-                    const LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer(),
+                    const LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->Handle(),
                                                 pipeline->pipeline());
                     skip |= LogError(
                         vuid.vertex_binding_attribute_02721, objlist, loc,
