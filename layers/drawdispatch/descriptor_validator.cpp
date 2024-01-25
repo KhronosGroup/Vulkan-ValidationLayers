@@ -677,13 +677,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             if (image_view_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 || image_view_format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
                 image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 || image_view_format == VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                 return dev_state.LogError(
                     "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015", objlist, loc,
                     "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                     ") has %s which has a custom border color with format = VK_FORMAT_UNDEFINED and is used to sample an image "
                     "view %s with format %s",
-                    FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->sampler()).c_str(),
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
                     FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format));
             }
         }
@@ -694,24 +694,24 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                 return dev_state.LogError(vuids.linear_filter_sampler_04553, objlist, loc,
                                           "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                           ") has %s which is set to use VK_FILTER_LINEAR with compareEnable is set "
                                           "to VK_FALSE, but image view's (%s) format (%s) does not contain "
                                           "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
-                                          FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->sampler()).c_str(),
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
                                           FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format));
             }
             if (sampler_state->createInfo.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                 return dev_state.LogError(vuids.linear_mipmap_sampler_04770, objlist, loc,
                                           "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                           ") has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
                                           "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not contain "
                                           "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
-                                          FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->sampler()).c_str(),
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
                                           FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format));
             }
         }
@@ -719,13 +719,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
             if (!(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                 return dev_state.LogError(
                     vuids.cubic_sampler_02692, objlist, loc,
                     "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                     ") has %s which is set to use VK_FILTER_CUBIC_EXT, then image view's (%s) format (%s) "
                     "MUST contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in its format features.",
-                    FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->sampler()).c_str(),
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
                     FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_state->create_info.format));
             }
 
@@ -736,26 +736,26 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                      reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
                     !image_view_state->filter_cubic_props.filterCubicMinmax) {
                     auto set = descriptor_set.Handle();
-                    const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                    const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                     return dev_state.LogError(vuids.filter_cubic_min_max_02695, objlist, loc,
                                               "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                               ") has %s which is set to use VK_FILTER_CUBIC_EXT & %s, but image view "
                                               "(%s) doesn't support filterCubicMinmax.",
                                               FormatHandle(set).c_str(), binding, index,
-                                              FormatHandle(sampler_state->sampler()).c_str(),
+                                              FormatHandle(sampler_state->Handle()).c_str(),
                                               string_VkSamplerReductionMode(reduction_mode_info->reductionMode),
                                               FormatHandle(image_view_state->Handle()).c_str());
                 }
 
                 if (!image_view_state->filter_cubic_props.filterCubic) {
                     auto set = descriptor_set.Handle();
-                    const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                    const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                     return dev_state.LogError(vuids.filter_cubic_02694, objlist, loc,
                                               "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                               ") has %s which is set to use VK_FILTER_CUBIC_EXT, but image view (%s) "
                                               "doesn't support filterCubic.",
                                               FormatHandle(set).c_str(), binding, index,
-                                              FormatHandle(sampler_state->sampler()).c_str(),
+                                              FormatHandle(sampler_state->Handle()).c_str(),
                                               FormatHandle(image_view_state->Handle()).c_str());
                 }
             }
@@ -765,13 +765,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                     image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                     image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
                     auto set = descriptor_set.Handle();
-                    const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->Handle());
+                    const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                     return dev_state.LogError(vuids.img_filter_cubic_02693, objlist, loc,
                                               "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                               ") has %s which is set to use VK_FILTER_CUBIC_EXT while the VK_IMG_filter_cubic "
                                               "extension is enabled, but image view (%s) has an invalid imageViewType (%s).",
                                               FormatHandle(set).c_str(), binding, index,
-                                              FormatHandle(sampler_state->sampler()).c_str(),
+                                              FormatHandle(sampler_state->Handle()).c_str(),
                                               FormatHandle(image_view_state->Handle()).c_str(),
                                               string_VkImageViewType(image_view_state->create_info.viewType));
                 }
@@ -792,7 +792,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                                     ? sampler_state->createInfo.addressModeV
                                                     : sampler_state->createInfo.addressModeW;
             auto set = descriptor_set.Handle();
-            const LogObjectList objlist(set, sampler_state->sampler(), image_state->Handle(), image_view_state->Handle());
+            const LogObjectList objlist(set, sampler_state->Handle(), image_state->Handle(), image_view_state->Handle());
             return dev_state.LogError(vuids.corner_sampled_address_mode_02696, objlist, loc,
                                       "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
                                       ") image (%s) in image view (%s) is created with flag "
@@ -801,7 +801,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                       "createInfo.addressMode%s set to %s.",
                                       FormatHandle(set).c_str(), binding, index, FormatHandle(image_state->Handle()).c_str(),
                                       FormatHandle(image_view_state->Handle()).c_str(),
-                                      FormatHandle(sampler_state->sampler()).c_str(), address_mode_letter.c_str(),
+                                      FormatHandle(sampler_state->Handle()).c_str(), address_mode_letter.c_str(),
                                       string_VkSamplerAddressMode(address_mode));
         }
 
@@ -813,43 +813,43 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, image_view, sampler_state->sampler());
-                return dev_state.LogError(vuids.sampler_imageview_type_08609, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") Image View %s, type %s, is used by %s.",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                string_VkImageViewType(image_view_ci.viewType), FormatHandle(sampler_state->sampler()).c_str());
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
+                return dev_state.LogError(
+                    vuids.sampler_imageview_type_08609, objlist, loc,
+                    "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32 ") Image View %s, type %s, is used by %s.",
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                    string_VkImageViewType(image_view_ci.viewType), FormatHandle(sampler_state->Handle()).c_str());
             }
 
             // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
             // instructions with ImplicitLod, Dref or Proj in their name
             if (variable->info.is_sampler_implicitLod_dref_proj) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, image_view, sampler_state->sampler());
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
                 return dev_state.LogError(vuids.sampler_implicitLod_dref_proj_08610, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") Image View %s is used by %s that uses invalid operator.",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                FormatHandle(sampler_state->sampler()).c_str());
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") Image View %s is used by %s that uses invalid operator.",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                                          FormatHandle(sampler_state->Handle()).c_str());
             }
 
             // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
             // instructions that includes a LOD bias or any offset values
             if (variable->info.is_sampler_bias_offset) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, image_view, sampler_state->sampler());
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
                 return dev_state.LogError(vuids.sampler_bias_offset_08611, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") Image View %s is used by %s that uses invalid bias or offset operator.",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                FormatHandle(sampler_state->sampler()).c_str());
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") Image View %s is used by %s that uses invalid bias or offset operator.",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                                          FormatHandle(sampler_state->Handle()).c_str());
             }
         }
 
         if (sampler_state->samplerConversion) {
             if (variable->info.is_not_sampler_sampled) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, image_view, sampler_state->sampler());
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
                 return dev_state.LogError(
                     vuids.image_ycbcr_sampled_06550, set, loc,
                     "the sampler descriptor (%s, binding %" PRIu32 ", index %" PRIu32
@@ -858,7 +858,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             }
             if (variable->info.is_sampler_offset) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, image_view, sampler_state->sampler());
+                const LogObjectList objlist(set, image_view, sampler_state->Handle());
                 return dev_state.LogError(
                     vuids.image_ycbcr_offset_06551, set, loc,
                     "the sampler descriptor (%s, binding %" PRIu32 ", index %" PRIu32

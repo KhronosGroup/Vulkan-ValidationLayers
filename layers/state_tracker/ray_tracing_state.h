@@ -38,7 +38,7 @@ class AccelerationStructureNV : public Bindable {
     }
     AccelerationStructureNV(const AccelerationStructureNV &rh_obj) = delete;
 
-    VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }
+    VkAccelerationStructureNV VkHandle() const { return handle_.Cast<VkAccelerationStructureNV>(); }
 
     void Build(const VkAccelerationStructureInfoNV *pInfo) {
         built = true;
@@ -82,7 +82,7 @@ class AccelerationStructureKHR : public StateObject {
         }
     }
 
-    VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
+    VkAccelerationStructureKHR VkHandle() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
