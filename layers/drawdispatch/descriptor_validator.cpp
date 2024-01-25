@@ -153,10 +153,10 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         for (const auto &binding : buffer_node->GetInvalidMemory()) {
             auto set = descriptor_set.Handle();
             return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") is using buffer %s that references invalid memory %s.",
-                            FormatHandle(set).c_str(), binding_info.first, index, FormatHandle(buffer).c_str(),
-                            FormatHandle(binding->deviceMemory()).c_str());
+                                      "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                      ") is using buffer %s that references invalid memory %s.",
+                                      FormatHandle(set).c_str(), binding_info.first, index, FormatHandle(buffer).c_str(),
+                                      FormatHandle(binding->Handle()).c_str());
         }
     }
     if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
@@ -1087,10 +1087,10 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             for (const auto &mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
                 auto set = descriptor_set.Handle();
                 return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") is using acceleration structure %s that references invalid memory %s.",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(acc).c_str(),
-                                FormatHandle(mem_binding->deviceMemory()).c_str());
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") is using acceleration structure %s that references invalid memory %s.",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(acc).c_str(),
+                                          FormatHandle(mem_binding->Handle()).c_str());
             }
         }
     } else {
@@ -1108,10 +1108,10 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
             for (const auto &mem_binding : acc_node->GetInvalidMemory()) {
                 auto set = descriptor_set.Handle();
                 return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") is using acceleration structure %s that references invalid memory %s.",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(acc).c_str(),
-                                FormatHandle(mem_binding->deviceMemory()).c_str());
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") is using acceleration structure %s that references invalid memory %s.",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(acc).c_str(),
+                                          FormatHandle(mem_binding->Handle()).c_str());
             }
         }
     }

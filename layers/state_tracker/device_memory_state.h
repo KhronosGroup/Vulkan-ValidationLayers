@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,7 +81,7 @@ class DeviceMemory : public StateObject {
     }
     bool IsDedicatedImage() const { return GetDedicatedImage() != VK_NULL_HANDLE; }
 
-    VkDeviceMemory deviceMemory() const { return handle_.Cast<VkDeviceMemory>(); }
+    VkDeviceMemory VkHandle() const { return handle_.Cast<VkDeviceMemory>(); }
 };
 
 // Generic memory binding struct to track objects bound to objects
@@ -138,7 +138,7 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
 
     const MEM_BINDING *Binding() const override { return binding_.memory_state ? &binding_ : nullptr; }
     unsigned CountDeviceMemory(VkDeviceMemory memory) const override {
-        return binding_.memory_state && binding_.memory_state->deviceMemory() == memory ? 1 : 0;
+        return binding_.memory_state && binding_.memory_state->VkHandle() == memory ? 1 : 0;
     }
 
     bool HasFullRangeBound() const override { return binding_.memory_state != nullptr; }

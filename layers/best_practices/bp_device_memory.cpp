@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -139,9 +139,9 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 
     for (const auto& item : mem_info->ObjectBindings()) {
         const auto& obj = item.first;
-        const LogObjectList objlist(device, obj, mem_info->deviceMemory());
+        const LogObjectList objlist(device, obj, mem_info->Handle());
         skip |= LogWarning(layer_name.c_str(), objlist, error_obj.location, "VK Object %s still has a reference to mem obj %s.",
-                           FormatHandle(obj).c_str(), FormatHandle(mem_info->deviceMemory()).c_str());
+                           FormatHandle(obj).c_str(), FormatHandle(mem_info->Handle()).c_str());
     }
 
     return skip;
