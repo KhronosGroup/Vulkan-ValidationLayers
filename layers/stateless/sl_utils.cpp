@@ -210,7 +210,8 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
                     }
                     if (!custom) {
                         if (std::find(start, end, current->sType) == end) {
-                            if (type_name.compare(UnsupportedStructureTypeString) == 0) {
+                            // String returned by string_VkStructureType for an unrecognized type.
+                            if (type_name.compare("Unhandled VkStructureType") == 0) {
                                 std::string message = "chain includes a structure with unknown VkStructureType (%" PRIu32 "). ";
                                 message += disclaimer;
                                 skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), current->sType, header_version,
