@@ -1067,13 +1067,12 @@ void gpu_tracker::Validator::PostCallRecordPipelineCreations(const uint32_t coun
             const auto pipeline_layout = pipeline_state->PipelineLayoutState();
             for (auto &stage_state : pipeline_state->stage_states) {
                 auto &module_state = stage_state.module_state;
-                const auto shader_module = module_state->Handle();
 
                 if (pipeline_state->active_slots.find(desc_set_bind_index) != pipeline_state->active_slots.end() ||
                     (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets)) {
                     auto *modified_ci = reinterpret_cast<const CreateInfo *>(modified_create_infos[pipeline].ptr());
                     auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
-                    assert(uninstrumented_module != shader_module.Cast<VkShaderModule>());
+                    assert(uninstrumented_module != module_state->VkHandle());
                     DispatchDestroyShaderModule(device, uninstrumented_module, pAllocator);
                 }
 
@@ -1085,7 +1084,7 @@ void gpu_tracker::Validator::PostCallRecordPipelineCreations(const uint32_t coun
                 if (module_state && module_state->spirv) code = module_state->spirv->words_;
 
                 shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->VkHandle(),
-                                            shader_module.Cast<VkShaderModule>(), VK_NULL_HANDLE, std::move(code));
+                                            module_state->VkHandle(), VK_NULL_HANDLE, std::move(code));
             }
         }
     }

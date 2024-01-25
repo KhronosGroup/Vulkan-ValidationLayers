@@ -639,7 +639,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
             skip |= LogError(vuid, objlist, loc,
                              "cannot start a query with this command as the bound video session "
                              "%s was created with VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR.",
-                             FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                             FormatHandle(cb_state.bound_video_session->Handle()).c_str());
         }
 
         if (!cb_state.activeQueries.empty()) {
@@ -647,7 +647,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
             skip |= LogError(vuids->vuid_no_active_in_vc_scope, objlist, loc,
                              "cannot start another query while there is already an active query in a "
                              "video coding scope (%s is bound).",
-                             FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                             FormatHandle(cb_state.bound_video_session->Handle()).c_str());
         }
 
         switch (query_pool_ci.queryType) {
@@ -661,7 +661,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                     skip |= LogError(vuid, objlist, loc,
                                      "the video profile %s was created with does not match the video profile of %s.",
                                      FormatHandle(query_pool_state->Handle()).c_str(),
-                                     FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                                     FormatHandle(cb_state.bound_video_session->Handle()).c_str());
                 }
                 break;
             }
@@ -676,7 +676,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                     skip |= LogError(vuid, objlist, loc,
                                      "the video profile %s was created with does not match the video profile of %s.",
                                      FormatHandle(query_pool_state->Handle()).c_str(),
-                                     FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                                     FormatHandle(cb_state.bound_video_session->Handle()).c_str());
                 }
                 break;
             }
@@ -687,7 +687,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                                        : "VUID-vkCmdBeginQuery-queryType-07131";
                 const LogObjectList objlist(cb_state.Handle(), cb_state.bound_video_session->Handle());
                 skip |= LogError(vuid, objlist, loc, "invalid query type used in a video coding scope (%s is bound).",
-                                 FormatHandle(cb_state.bound_video_session->videoSession()).c_str());
+                                 FormatHandle(cb_state.bound_video_session->Handle()).c_str());
                 break;
             }
         }
