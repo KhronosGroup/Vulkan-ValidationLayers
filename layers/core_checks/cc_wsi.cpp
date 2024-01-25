@@ -372,7 +372,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     const auto surface_caps2 =
         surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                       physical_device_state->PhysDev(), surface_caps_query_pnext, create_info_loc, this);
+                                       physical_device_state->VkHandle(), surface_caps_query_pnext, create_info_loc, this);
 
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
@@ -470,7 +470,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = vku::InitStructHelper();
             VkSurfaceCapabilities2KHR surface_capabilities =
                 vku::InitStructHelper(&surface_protected_capabilities);
-            const VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->PhysDev(),
+            const VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(),
                                                                                      &surface_info, &surface_capabilities);
 
             log_error = (result == VK_SUCCESS) && !surface_protected_capabilities.supportsProtected;
@@ -495,7 +495,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         vvl::span<const safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
             formats = surface_state->GetFormats(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                physical_device_state->PhysDev(), surface_caps_query_pnext, create_info_loc, this);
+                                                physical_device_state->VkHandle(), surface_caps_query_pnext, create_info_loc, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             formats = physical_device_state->surfaceless_query_state.formats;
         }
@@ -536,7 +536,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             safe_VkSurfaceCapabilities2KHR cached_capabilities{};
             if (surface_state) {
                 cached_capabilities = surface_state->GetCapabilities(
-                    IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2), physical_device_state->PhysDev(),
+                    IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2), physical_device_state->VkHandle(),
                     surface_caps_query_pnext, create_info_loc, this);
             } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
                 cached_capabilities = physical_device_state->surfaceless_query_state.capabilities;
@@ -585,7 +585,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&shared_present_capabilities);
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
         surface_info.surface = pCreateInfo->surface;
-        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->PhysDev(), &surface_info, &capabilities2);
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(), &surface_info, &capabilities2);
 
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device, create_info_loc.dot(Field::imageUsage),

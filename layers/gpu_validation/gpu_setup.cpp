@@ -693,7 +693,7 @@ void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer *cb_state, VkPipe
 
     LastBound &last_bound = cb_state->lastBound[lv_bind_point];
     if (last_bound.pipeline_state) {
-        pipeline = last_bound.pipeline_state->pipeline();
+        pipeline = last_bound.pipeline_state->VkHandle();
         pipeline_layout = last_bound.pipeline_layout;
         descriptor_sets.reserve(last_bound.per_set.size());
         for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {

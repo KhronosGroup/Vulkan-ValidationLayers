@@ -280,7 +280,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                         skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
                                          "Previous %s's provokingVertexMode is %s, but %s doesn't chain "
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
-                                         FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
+                                         FormatHandle(last_bound.pipeline_state->Handle()).c_str(),
                                          string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode),
                                          FormatHandle(pipeline).c_str());
                     } else if (!last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci) {
@@ -290,7 +290,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
                                          FormatHandle(pipeline).c_str(),
                                          string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                         FormatHandle(last_bound.pipeline_state->pipeline()).c_str());
+                                         FormatHandle(last_bound.pipeline_state->Handle()).c_str());
                     } else if (last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci &&
                                last_bound_provoking_vertex_state_ci->provokingVertexMode !=
                                    current_provoking_vertex_state_ci->provokingVertexMode) {
@@ -300,7 +300,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                      "%s's provokingVertexMode is %s, but previous %s's provokingVertexMode is %s.",
                                      FormatHandle(pipeline).c_str(),
                                      string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                     FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
+                                     FormatHandle(last_bound.pipeline_state->Handle()).c_str(),
                                      string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode));
                     }
                 }
@@ -371,7 +371,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             }
 
             if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && cb_state->GetCurrentPipeline(pipelineBindPoint) &&
-                pipeline == cb_state->GetCurrentPipeline(pipelineBindPoint)->pipeline() && cb_state->dirtyStaticState &&
+                pipeline == cb_state->GetCurrentPipeline(pipelineBindPoint)->VkHandle() && cb_state->dirtyStaticState &&
                 IsBeforeCtsVersion(1, 3, 8)) {
                 const LogObjectList objlist(commandBuffer, pipeline);
                 // This catches a bug in some drivers with conformance version lower than 1.3.8

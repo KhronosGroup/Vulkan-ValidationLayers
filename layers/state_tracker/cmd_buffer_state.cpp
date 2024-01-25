@@ -1044,7 +1044,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
     }
 
     UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr);
-    last_bound.pipeline_layout = pipeline_layout.layout();
+    last_bound.pipeline_layout = pipeline_layout.VkHandle();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
     push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
@@ -1164,7 +1164,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.pipeline_layout = pipeline_layout.layout();
+    last_bound.pipeline_layout = pipeline_layout.VkHandle();
     auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.per_set.size()) {
@@ -1245,7 +1245,7 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.pipeline_layout = pipeline_layout.layout();
+    last_bound.pipeline_layout = pipeline_layout.VkHandle();
     auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.per_set.size()) {
@@ -1585,7 +1585,7 @@ LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (pipeline_state) {
-        objlist.add(pipeline_state->pipeline());
+        objlist.add(pipeline_state->Handle());
     } else if (VkShaderEXT shader = last_bound.GetShader(ConvertToShaderObjectStage(stage))) {
         objlist.add(shader);
     }
@@ -1599,7 +1599,7 @@ LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_poi
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (pipeline_state) {
-        objlist.add(pipeline_state->pipeline());
+        objlist.add(pipeline_state->Handle());
     } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
         if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::COMPUTE)) {
             objlist.add(shader);

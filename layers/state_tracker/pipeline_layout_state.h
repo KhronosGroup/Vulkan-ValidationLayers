@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,7 +85,7 @@ class PipelineLayout : public StateObject {
     template <typename Container>
     PipelineLayout(const Container &layouts) : PipelineLayout(vvl::span<const PipelineLayout *const>{layouts}) {}
 
-    VkPipelineLayout layout() const { return handle_.Cast<VkPipelineLayout>(); }
+    VkPipelineLayout VkHandle() const { return handle_.Cast<VkPipelineLayout>(); }
 
     std::shared_ptr<vvl::DescriptorSetLayout const> GetDsl(uint32_t set) const {
         std::shared_ptr<vvl::DescriptorSetLayout const> dsl = nullptr;

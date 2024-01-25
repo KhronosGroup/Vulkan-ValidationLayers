@@ -529,7 +529,7 @@ gpuav::CommandResources gpuav::Validator::AllocateCommandResources(const VkComma
     if (last_bound.pipeline_layout) {
         pipeline_layout_handle = last_bound.pipeline_layout;
     } else if (pipeline_state && !pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
-        pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->layout();
+        pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
     }
     if ((pipeline_layout && pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
         pipeline_layout_handle != VK_NULL_HANDLE) {

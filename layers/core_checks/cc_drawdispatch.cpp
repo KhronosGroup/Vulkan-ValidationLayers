@@ -819,7 +819,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
     const vvl::Pipeline *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
     const bool is_indirect = loc.function == Func::vkCmdTraceRaysIndirectKHR;
 
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
+    if (!pipeline_state || (pipeline_state && !pipeline_state->VkHandle())) {
         return skip;
     }
     if (pHitShaderBindingTable) {
@@ -1469,11 +1469,11 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
     const auto *last_pipeline = last_bound_state.pipeline_state;
-    const bool has_last_pipeline = last_pipeline && last_pipeline->pipeline() != VK_NULL_HANDLE;
+    const bool has_last_pipeline = last_pipeline && last_pipeline->VkHandle() != VK_NULL_HANDLE;
 
     bool skip = false;
 
-    if (!last_pipeline || !last_pipeline->pipeline()) {
+    if (!last_pipeline || !last_pipeline->VkHandle()) {
         if (enabled_features.shaderObject == VK_FALSE) {
             return LogError(vuid.pipeline_bound_08606, cb_state.GetObjectList(bind_point), loc,
                             "A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.",
@@ -1559,13 +1559,13 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         if (!pipeline->descriptor_buffer_mode) {
             if (!pipeline->active_slots.empty() &&
                 !IsBoundSetCompat(pipeline->max_active_slot, last_bound_state, *pipeline_layout)) {
-                LogObjectList objlist(pipeline->pipeline());
+                LogObjectList objlist(pipeline->Handle());
                 const auto layouts = pipeline->PipelineLayoutStateUnion();
                 std::ostringstream pipe_layouts_log;
                 if (layouts.size() > 1) {
                     pipe_layouts_log << "a union of layouts [ ";
                     for (const auto &layout : layouts) {
-                        objlist.add(layout->layout());
+                        objlist.add(layout->Handle());
                         pipe_layouts_log << FormatHandle(*layout) << " ";
                     }
                     pipe_layouts_log << "]";
@@ -1593,7 +1593,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
                         LogObjectList objlist = cb_state.GetObjectList(bind_point);
                         objlist.add(set_handle);
-                        objlist.add(pipeline_layout->layout());
+                        objlist.add(pipeline_layout->Handle());
                         skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
                                          "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                          FormatHandle(set_handle).c_str(), set_index, FormatHandle(*pipeline_layout).c_str(),
@@ -1647,29 +1647,29 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
 
             if (shader_state && !shader_state->active_slots.empty() &&
                 !are_bound_sets_compat(shader_state->max_active_slot, last_bound_state, *shader_state)) {
-                LogObjectList objlist(cb_state.Handle(), shader_state->shader());
+                LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
                 skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
                                  "The %s statically uses descriptor set (index #%" PRIu32
                                  ") which is not compatible with the currently bound descriptor set's layout",
-                                 FormatHandle(shader_state->shader()).c_str(), shader_state->max_active_slot);
+                                 FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot);
             } else {
                 // if the bound set is not copmatible, the rest will just be extra redundant errors
                 for (const auto &set_binding_pair : shader_state->active_slots) {
                     uint32_t set_index = set_binding_pair.first;
                     const auto set_info = last_bound_state.per_set[set_index];
                     if (!set_info.bound_descriptor_set) {
-                        const LogObjectList objlist(cb_state.Handle(), shader_state->shader());
+                        const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
                         skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
                                          "%s uses set #%" PRIu32 " but that set is not bound.",
-                                         FormatHandle(shader_state->shader()).c_str(), set_index);
+                                         FormatHandle(shader_state->Handle()).c_str(), set_index);
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, shader_state->set_layouts,
                                                              shader_state->Handle(), set_index, error_string)) {
                         // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
-                        const LogObjectList objlist(cb_state.Handle(), set_handle, shader_state->shader());
+                        const LogObjectList objlist(cb_state.Handle(), set_handle, shader_state->Handle());
                         skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
                                          "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
-                                         FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->shader()).c_str(),
+                                         FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->Handle()).c_str(),
                                          error_string.c_str());
                     } else {  // Valid set is bound and layout compatible, validate that it's updated
                         // Pull the set node
@@ -1712,12 +1712,12 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
 
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                 if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline_layout->layout(), pipeline->pipeline());
+                    const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
                     skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                      "pipeline layout %s.",
                                      string_VkShaderStageFlags(stage.GetStage()).c_str(),
-                                     FormatHandle(pipeline_layout->layout()).c_str());
+                                     FormatHandle(pipeline_layout->Handle()).c_str());
                 }
             }
         }
@@ -1729,7 +1729,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                 }
                 // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                 if (!cb_state.push_constant_data_ranges && !enabled_features.maintenance4) {
-                    const LogObjectList objlist(cb_state.Handle(), stage->shader());
+                    const LogObjectList objlist(cb_state.Handle(), stage->Handle());
                     skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
                                      string_VkShaderStageFlags(stage->create_info.stage).c_str());
