@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2023 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2023 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2024 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2024 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -581,7 +581,6 @@ typedef VkFlags VkStringErrorFlags;
 void layer_debug_messenger_actions(debug_report_data *report_data, const char *layer_identifier);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
-bool white_list(const char *item, const std::set<std::string> &whitelist);
 std::string GetTempFilePath();
 
 // Aliases to avoid excessive typing. We can't easily auto these away because

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -124,7 +124,7 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
+        if (IsDeviceExtension(pCreateInfo->ppEnabledExtensionNames[i])) {
             skip |= LogWarning(kVUID_BestPractices_CreateInstance_ExtensionMismatch, instance, error_obj.location,
                                "Attempting to enable Device Extension %s at CreateInstance time.",
                                pCreateInfo->ppEnabledExtensionNames[i]);
@@ -179,7 +179,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
         APIVersion extension_api_version = std::min(api_version, APIVersion(device_api_version));
 
-        if (white_list(extension_name, kInstanceExtensionNames)) {
+        if (IsInstanceExtension(extension_name)) {
             skip |= LogWarning(kVUID_BestPractices_CreateDevice_ExtensionMismatch, instance, error_obj.location,
                                "Attempting to enable Instance Extension %s at CreateDevice time.", extension_name);
             extension_api_version = api_version;

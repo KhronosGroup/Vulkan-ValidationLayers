@@ -195,6 +195,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ExtensionHelperOutputGenerator,
             'genCombined': True,
         },
+        'vk_extension_helper.cpp' : {
+            'generator' : ExtensionHelperOutputGenerator,
+            'genCombined': True,
+        },
         'vk_api_version.h' : {
             'generator' : ApiVersionOutputGenerator,
             'genCombined': True,

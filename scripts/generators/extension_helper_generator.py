@@ -92,25 +92,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             ''')
 
     def generate(self):
-        # [ Feature name | name in struct InstanceExtensions ]
-        fieldName = dict()
-        # [ Extension name : List[Extension | Version] ]
-        requiredExpression = dict()
-        guard_helper = PlatformGuardHelper()
-        for extension in self.vk.extensions.values():
-            fieldName[extension.name] = extension.name.lower()
-            requiredExpression[extension.name] = list()
-            if extension.depends is not None:
-                # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
-                temp = re.sub(r',VK_VERSION_1_\d+', '', extension.depends)
-                for reqs in exprValues(parseExpr(temp)):
-                    feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
-                    requiredExpression[extension.name].append(feature)
-        for version in self.vk.versions.keys():
-            fieldName[version] = version.lower().replace('version', 'feature_version')
-
-        out = []
-        out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
 
             /***************************************************************************
@@ -132,14 +114,41 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             * See the License for the specific language governing permissions and
             * limitations under the License.
             ****************************************************************************/\n''')
-        out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
+        if self.filename == 'vk_extension_helper.h':
+            self.generateHeader()
+        elif self.filename == 'vk_extension_helper.cpp':
+            self.generateSource()
+        else:
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
+
+        self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
+
+    def generateHeader(self):
+        guard_helper = PlatformGuardHelper()
+
+        # [ Feature name | name in struct InstanceExtensions ]
+        fieldName = dict()
+        # [ Extension name : List[Extension | Version] ]
+        requiredExpression = dict()
+        for extension in self.vk.extensions.values():
+            fieldName[extension.name] = extension.name.lower()
+            requiredExpression[extension.name] = list()
+            if extension.depends is not None:
+                # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
+                temp = re.sub(r',VK_VERSION_1_\d+', '', extension.depends)
+                for reqs in exprValues(parseExpr(temp)):
+                    feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
+                    requiredExpression[extension.name].append(feature)
+        for version in self.vk.versions.keys():
+            fieldName[version] = version.lower().replace('version', 'feature_version')
+        out = []
         out.append('''
             #pragma once
 
             #include <string>
             #include <utility>
-            #include <set>
             #include <array>
             #include <vector>
             #include <cassert>
@@ -147,6 +156,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             #include <vulkan/vulkan.h>
             #include "containers/custom_containers.h"
             #include "generated/vk_api_version.h"
+
+            bool IsInstanceExtension(const char *item);
+            bool IsDeviceExtension(const char *item);
 
             enum ExtEnabled : unsigned char {
                 kNotEnabled,
@@ -271,13 +283,6 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             };
             ''')
 
-        out.append('static const std::set<std::string> kInstanceExtensionNames = {\n')
-        for extension in [x for x in self.vk.extensions.values() if x.instance]:
-            out.extend(guard_helper.add_guard(extension.protect))
-            out.append(f'    {extension.nameString},\n')
-        out.extend(guard_helper.add_guard(None))
-        out.append('};\n')
-
         out.append('\nstruct DeviceExtensions : public InstanceExtensions {\n')
         for version in self.vk.versions.keys():
             out.append(f'    ExtEnabled {fieldName[version]}{{kNotEnabled}};\n')
@@ -395,12 +400,39 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             };
 
             ''')
-        out.append('static const std::set<std::string> kDeviceExtensionNames = {\n')
+
+        self.write(''.join(out))
+
+    def generateSource(self):
+        guard_helper = PlatformGuardHelper()
+
+        out = []
+        out.append('''
+            #include "vk_extension_helper.h"
+
+            ''')
+
+        out.append('static const vvl::unordered_set<std::string> kInstanceExtensionNames = {\n')
+        for extension in [x for x in self.vk.extensions.values() if x.instance]:
+            out.extend(guard_helper.add_guard(extension.protect))
+            out.append(f'    {extension.nameString},\n')
+        out.extend(guard_helper.add_guard(None))
+        out.append('};\n')
+
+        out.append('static const vvl::unordered_set<std::string> kDeviceExtensionNames = {\n')
         for extension in [x for x in self.vk.extensions.values() if x.device]:
             out.extend(guard_helper.add_guard(extension.protect))
             out.append(f'    {extension.nameString},\n')
         out.extend(guard_helper.add_guard(None))
         out.append('};\n')
 
-        out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
+        out.append('''
+            bool IsInstanceExtension(const char *item) {
+                return (kInstanceExtensionNames.find(item) != kInstanceExtensionNames.end());
+            }
+
+            bool IsDeviceExtension(const char *item) {
+                return (kDeviceExtensionNames.find(item) != kDeviceExtensionNames.end());
+            }
+            ''')
         self.write(''.join(out))
