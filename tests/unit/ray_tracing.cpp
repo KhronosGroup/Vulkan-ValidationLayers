@@ -2902,17 +2902,17 @@ TEST_F(NegativeRayTracing, InstanceBufferBadAddress) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    auto bot_lvl_as =
+    auto blas =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
 
     m_commandBuffer->begin();
-    bot_lvl_as->BuildCmdBuffer(*m_commandBuffer);
+    blas->BuildCmdBuffer(*m_commandBuffer);
     m_commandBuffer->end();
 
     m_commandBuffer->QueueCommandBuffer();
     vk::DeviceWaitIdle(*m_device);
 
-    auto top_lvl_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, bot_lvl_as);
+    auto top_lvl_as = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
 
     m_commandBuffer->begin();
     top_lvl_as.SetupBuild(*m_device, true);
@@ -3211,4 +3211,33 @@ TEST_F(NegativeRayTracing, DstAsTooSmall) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, TooManyInstances) {
+    TEST_DESCRIPTION(
+        "Call vkGetAccelerationStructureBuildSizesKHR with pMaxPrimitiveCounts[0] > "
+        "VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_commandBuffer->begin();
+    blas->BuildCmdBuffer(*m_commandBuffer);
+    m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer();
+    vk::DeviceWaitIdle(*m_device);
+
+    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    tlas.GetGeometries()[0].SetPrimitiveCount(std::numeric_limits<uint32_t>::max());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03785");
+    tlas.GetSizeInfo();
+    m_errorMonitor->VerifyFound();
 }
