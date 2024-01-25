@@ -171,7 +171,7 @@ void gpuav::CommandBuffer::Process(VkQueue queue, const Location &loc) {
             } else {
                 assert(false);
             }
-            cmd_info->LogErrorIfAny(*device_state, queue, commandBuffer(), operation_index);
+            cmd_info->LogErrorIfAny(*device_state, queue, VkHandle(), operation_index);
         }
 
         // For each vkCmdBindDescriptorSets()...

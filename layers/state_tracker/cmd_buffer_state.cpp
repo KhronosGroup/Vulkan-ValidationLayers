@@ -205,7 +205,7 @@ void CommandBuffer::ResetCBState() {
     transform_feedback_active = false;
 
     // Clean up the label data
-    ResetCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
+    ResetCmdDebugUtilsLabel(dev_data->report_data, VkHandle());
 }
 
 void CommandBuffer::Reset() {
@@ -254,7 +254,7 @@ void CommandBuffer::ResetPushConstantDataIfIncompatible(const vvl::PipelineLayou
 
 void CommandBuffer::Destroy() {
     // Remove the cb debug labels
-    EraseCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
+    EraseCmdDebugUtilsLabel(dev_data->report_data, VkHandle());
     {
         auto guard = WriteLock();
         ResetCBState();
@@ -974,7 +974,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             }
         }
 
-        sub_cb_state->primaryCommandBuffer = commandBuffer();
+        sub_cb_state->primaryCommandBuffer = VkHandle();
         linkedCommandBuffers.insert(sub_cb_state.get());
         AddChild(sub_cb_state);
         // Add a query update that runs all the query updates that happen in the sub command buffer.

@@ -81,7 +81,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
             if (!layout_check.Check(state)) {
                 *error = true;
                 auto subres = subresource_map->Decode(range.begin);
-                const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
+                const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
                 subres_skip |= LogError(mismatch_layout_vuid, objlist, loc,
                                         "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
                                         ") with specific layout %s that doesn't match the "
@@ -241,7 +241,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
-                        const LogObjectList objlist(cb_state.commandBuffer(), image_state->Handle());
+                        const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
                         skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
                                          "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                          ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
@@ -579,9 +579,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
             LayoutUseCheckAndMessage layout_check(check_layout, test_aspect);
 
             skip |= subresource_map->AnyInRange(
-                normalized_range, [this, &layout_check, i, cb = cb_state.commandBuffer(),
-                                   render_pass = pRenderPassBegin->renderPass, framebuffer = framebuffer_state.Handle(),
-                                   image = view_state->image_state->Handle(), image_view = view_state->Handle(), attachment_loc,
+                normalized_range, [this, &layout_check, i, cb = cb_state.Handle(), render_pass = pRenderPassBegin->renderPass,
+                                   framebuffer = framebuffer_state.Handle(), image = view_state->image_state->Handle(),
+                                   image_view = view_state->Handle(), attachment_loc,
                                    rp_begin_loc](const LayoutRange &range, const LayoutEntry &state) {
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
@@ -778,7 +778,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     bool skip = false;
     if (loc.function == Func::vkCmdClearDepthStencilImage) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-            LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
+            LogObjectList objlist(cb_state.Handle(), image_state.Handle());
             skip |= LogError("VUID-vkCmdClearDepthStencilImage-imageLayout-00012", objlist, loc,
                              "Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.",
                              string_VkImageLayout(dest_image_layout));
@@ -787,7 +787,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     } else if (loc.function == Func::vkCmdClearColorImage) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
             (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
-            LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
+            LogObjectList objlist(cb_state.Handle(), image_state.Handle());
             skip |= LogError("VUID-vkCmdClearColorImage-imageLayout-01394", objlist, loc,
                              "Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
                              string_VkImageLayout(dest_image_layout));
@@ -808,7 +808,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
                 const char *vuid = (loc.function == Func::vkCmdClearDepthStencilImage)
                                        ? "VUID-vkCmdClearDepthStencilImage-imageLayout-00011"
                                        : "VUID-vkCmdClearColorImage-imageLayout-00004";
-                LogObjectList objlist(cb_state.commandBuffer(), image);
+                LogObjectList objlist(cb_state.Handle(), image);
                 subres_skip |=
                     LogError(vuid, objlist, loc, "Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
                              string_VkImageLayout(layout_check.expected_layout), layout_check.message,
@@ -854,7 +854,7 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer *cb_
                 if (!layout_check.Check(state)) {
                     const auto &vuid = GetImageBarrierVUID(image_loc, sync_vuid_maps::ImageError::kConflictingLayout);
                     auto subres = read_subresource_map->Decode(range.begin);
-                    const LogObjectList objlist(cb_state->commandBuffer(), img_barrier.image);
+                    const LogObjectList objlist(cb_state->Handle(), img_barrier.image);
                     subres_skip =
                         LogError(vuid, objlist, image_loc,
                                  "(%s) cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32

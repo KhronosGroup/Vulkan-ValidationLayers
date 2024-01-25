@@ -441,7 +441,7 @@ void debug_printf::CommandBuffer::Process(VkQueue queue, const Location &loc) {
 
             VkResult result = vmaMapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&data);
             if (result == VK_SUCCESS) {
-                device_state->AnalyzeAndGenerateMessages(commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)data);
+                device_state->AnalyzeAndGenerateMessages(VkHandle(), queue, buffer_info, operation_index, (uint32_t *)data);
                 vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
             }
         }

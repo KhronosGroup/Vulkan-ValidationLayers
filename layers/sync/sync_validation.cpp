@@ -784,7 +784,7 @@ void SyncValidator::PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer
     StateTracker::PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
     vvl::TlsGuard<syncval_state::BeginRenderingCmdState> cmd_state;
 
-    assert(cmd_state && cmd_state->cb_state && (cmd_state->cb_state->commandBuffer() == commandBuffer));
+    assert(cmd_state && cmd_state->cb_state && (cmd_state->cb_state->VkHandle() == commandBuffer));
     // Note: for fine grain locking need to to something other than cast.
     auto cb_state = std::const_pointer_cast<syncval_state::CommandBuffer>(cmd_state->cb_state);
     cb_state->access_context.RecordBeginRendering(*cmd_state, record_obj);

@@ -361,7 +361,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
                                 ", index %" PRIu32 ". Access info %s.",
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(img_view_state->Handle()).c_str(),
-                                sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
+                                sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
@@ -383,7 +383,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 string_SyncHazardVUID(hazard.Hazard()), buf_view_state->Handle(), loc,
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_view_state->Handle()).c_str(),
-                                sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
+                                sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
@@ -405,7 +405,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
                                 string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_state->Handle()).c_str(),
-                                sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
+                                sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
@@ -545,8 +545,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
                 skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                                               "Hazard %s for vertex %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                                               sync_state_->FormatHandle(buf_state->Handle()).c_str(),
-                                              sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
-                                              FormatHazard(hazard).c_str());
+                                              sync_state_->FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
             }
         }
     }
@@ -594,7 +593,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
         skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), index_buf_state->Handle(), loc,
                                       "Hazard %s for index %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                                       sync_state_->FormatHandle(index_buf_state->Handle()).c_str(),
-                                      sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
+                                      sync_state_->FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
     }
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
