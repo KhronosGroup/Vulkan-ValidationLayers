@@ -187,7 +187,7 @@ extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
 static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkInstanceCreateInfo* pCreateInfo, VkInstance instance) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized instance extensions
-        if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
+        if (!IsInstanceExtension(pCreateInfo->ppEnabledExtensionNames[i])) {
             Location loc(vvl::Func::vkCreateInstance);
             layer_data->LogWarning(kVUIDUndefined, layer_data->instance,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
@@ -202,7 +202,7 @@ static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkIns
 static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized device extensions
-        if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
+        if (!IsDeviceExtension(pCreateInfo->ppEnabledExtensionNames[i])) {
             Location loc(vvl::Func::vkCreateDevice);
             layer_data->LogWarning(kVUIDUndefined, layer_data->device,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),

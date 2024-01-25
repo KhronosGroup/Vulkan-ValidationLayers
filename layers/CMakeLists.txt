@@ -51,6 +51,7 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_object_types.cpp
     ${API_TYPE}/generated/vk_api_version.h
     ${API_TYPE}/generated/vk_extension_helper.h
+    ${API_TYPE}/generated/vk_extension_helper.cpp
     utils/cast_utils.h
     utils/convert_utils.cpp
     utils/convert_utils.h

@@ -322,6 +322,7 @@ vvl_sources = [
   "layers/vulkan/generated/vk_dispatch_table_helper.cpp",
   "layers/vulkan/generated/vk_dispatch_table_helper.h",
   "layers/vulkan/generated/vk_extension_helper.h",
+  "layers/vulkan/generated/vk_extension_helper.cpp",
   "layers/vulkan/generated/vk_safe_struct_core.cpp",
   "layers/vulkan/generated/vk_safe_struct_ext.cpp",
   "layers/vulkan/generated/vk_safe_struct_khr.cpp",

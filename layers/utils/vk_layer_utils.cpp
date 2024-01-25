@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016, 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020-2023 Valve Corporation
- * Copyright (c) 2015-2016, 2020-2023 LunarG, Inc.
+/* Copyright (c) 2015-2016, 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2020-2024 Valve Corporation
+ * Copyright (c) 2015-2016, 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,9 +70,6 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
     }
     return result;
 }
-
-// Utility function for determining if a string is in a set of strings
-bool white_list(const char *item, const std::set<std::string> &list) { return (list.find(item) != list.end()); }
 
 // Debug callbacks get created in three ways:
 //   o  Application-defined debug callbacks
