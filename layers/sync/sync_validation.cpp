@@ -2189,7 +2189,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     if (dst_resource) {
         auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dst_resource.image_view_state->image_view(),
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dst_resource.image_view_state->Handle(),
                              decode_info_loc.dot(Field::dstPictureResource), "Hazard %s for decode output picture. Access info %s.",
                              string_SyncHazard(hazard.Hazard()), cb_access_context->FormatHazard(hazard).c_str());
         }
@@ -2200,7 +2200,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         if (setup_resource && (setup_resource != dst_resource)) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), setup_resource.image_view_state->image_view(),
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), setup_resource.image_view_state->Handle(),
                                  decode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource),
                                  "Hazard %s for reconstructed picture. Access info %s.", string_SyncHazard(hazard.Hazard()),
                                  cb_access_context->FormatHazard(hazard).c_str());
@@ -2214,7 +2214,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
-                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), reference_resource.image_view_state->image_view(),
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), reference_resource.image_view_state->Handle(),
                                      decode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource),
                                      "Hazard %s for reference picture #%u. Access info %s.", string_SyncHazard(hazard.Hazard()), i,
                                      cb_access_context->FormatHazard(hazard).c_str());
@@ -2301,7 +2301,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     if (src_resource) {
         auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), src_resource.image_view_state->image_view(),
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), src_resource.image_view_state->Handle(),
                              encode_info_loc.dot(Field::srcPictureResource), "Hazard %s for encode input picture. Access info %s.",
                              string_SyncHazard(hazard.Hazard()), cb_access_context->FormatHazard(hazard).c_str());
         }
@@ -2312,7 +2312,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         if (setup_resource) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), setup_resource.image_view_state->image_view(),
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), setup_resource.image_view_state->Handle(),
                                  encode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource),
                                  "Hazard %s for reconstructed picture. Access info %s.", string_SyncHazard(hazard.Hazard()),
                                  cb_access_context->FormatHazard(hazard).c_str());
@@ -2326,7 +2326,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
-                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), reference_resource.image_view_state->image_view(),
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), reference_resource.image_view_state->Handle(),
                                      encode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource),
                                      "Hazard %s for reference picture #%u. Access info %s.", string_SyncHazard(hazard.Hazard()), i,
                                      cb_access_context->FormatHazard(hazard).c_str());

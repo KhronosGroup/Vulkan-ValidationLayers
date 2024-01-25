@@ -66,7 +66,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, cons
                 "(%s) is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
                 "includes VkBindImageMemorySwapchainInfoKHR.",
                 FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str());
-        } else if (image_state.create_from_swapchain != image_state.bind_swapchain->swapchain()) {
+        } else if (image_state.create_from_swapchain != image_state.bind_swapchain->VkHandle()) {
             result |=
                 LogError(vuid, objlist, loc,
                          "(%s) is created by %s, but the image is bound by %s. The image should be created and bound by the same "
@@ -242,7 +242,7 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image &image, VkExter
         vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&info, &drm_format_modifier);
 
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
-        if (DispatchGetImageDrmFormatModifierPropertiesEXT(device, image.image(), &drm_format_properties) != VK_SUCCESS) {
+        if (DispatchGetImageDrmFormatModifierPropertiesEXT(device, image.VkHandle(), &drm_format_properties) != VK_SUCCESS) {
             return false;
         }
         drm_format_modifier.drmFormatModifier = drm_format_properties.drmFormatModifier;
@@ -1295,10 +1295,10 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 if (bind_image_mem_2 == true) {
                     // since its a non-disjoint image, finding VkImage in map is a duplicate
-                    auto it = resources_bound.find(image_state->image());
+                    auto it = resources_bound.find(image_state->VkHandle());
                     if (it == resources_bound.end()) {
                         std::array<uint32_t, 3> bound_index = {i, vvl::kU32Max, vvl::kU32Max};
-                        resources_bound.emplace(image_state->image(), bound_index);
+                        resources_bound.emplace(image_state->VkHandle(), bound_index);
                     } else {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-04006", objlist, loc.dot(Field::image),
@@ -1349,11 +1349,11 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     }
                 }
 
-                auto it = resources_bound.find(image_state->image());
+                auto it = resources_bound.find(image_state->VkHandle());
                 if (it == resources_bound.end()) {
                     std::array<uint32_t, 3> bound_index = {vvl::kU32Max, vvl::kU32Max, vvl::kU32Max};
                     bound_index[plane] = i;
-                    resources_bound.emplace(image_state->image(), bound_index);
+                    resources_bound.emplace(image_state->VkHandle(), bound_index);
                 } else {
                     if (it->second[plane] == vvl::kU32Max) {
                         it->second[plane] = i;
@@ -1901,7 +1901,7 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
 
 bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const &image_state, VkImageSubresource const &subresource,
                                                                const Location &bind_loc, const Location &subresource_loc) const {
-    bool skip = ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask,
+    bool skip = ValidateImageAspectMask(image_state.VkHandle(), image_state.createInfo.format, subresource.aspectMask,
                                         image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBind-subresource-01106");
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
@@ -1938,7 +1938,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
 
         if (mem_state->IsExport()) {
             if (!(mem_state->export_handle_types & image_state->external_memory_handle_types)) {
-                const LogObjectList objlist(bind.memory, image_state->image());
+                const LogObjectList objlist(bind.memory, image_state->Handle());
                 skip |= LogError("VUID-VkSparseImageMemoryBind-memory-02732", objlist,
                                  memory_loc.dot(Field::memory).pNext(Struct::VkExportMemoryAllocateInfo).dot(Field::handleTypes),
                                  "is %s, but the external handle types specified in resource are %s.",
@@ -1949,7 +1949,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
 
         if (mem_state->IsImport()) {
             if (!(*mem_state->import_handle_type & image_state->external_memory_handle_types)) {
-                const LogObjectList objlist(bind.memory, image_state->image());
+                const LogObjectList objlist(bind.memory, image_state->Handle());
                 skip |= LogError("VUID-VkSparseImageMemoryBind-memory-02733", objlist, memory_loc.dot(Field::memory),
                                  "was created with memory import operation, with handle type %s, but the external handle types "
                                  "specified in resource are %s.",

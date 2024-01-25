@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -268,7 +268,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
                 Location loc(command);
                 LogWarning(
-                    kVUID_BestPractices_ConcurrentUsageOfExclusiveImage, state.image(), loc,
+                    kVUID_BestPractices_ConcurrentUsageOfExclusiveImage, state.Handle(), loc,
                     "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32 ") of image is used on queue family index %" PRIu32
                     " after being used on "
                     "queue family index %" PRIu32

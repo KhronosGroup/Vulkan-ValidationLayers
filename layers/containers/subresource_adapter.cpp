@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
- * Copyright (C) 2019-2023 Google Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (C) 2019-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,7 +287,7 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
     if (image.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
         const VkImageAspectFlags first_aspect = AspectBit(0);  // AspectBit returns aspects by index
         subres = {first_aspect, 0, 0};
-        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);
+        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.VkHandle(), &subres, &layout);
         if (layout.size > 0) {
             linear_image_ = true;
         }
@@ -321,7 +321,7 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
             auto subres_extent = image.GetEffectiveSubresourceExtent(subres_layers);
 
             if (linear_image_) {
-                DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);
+                DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.VkHandle(), &subres, &layout);
                 if (is_3_d_) {
                     if ((layout.depthPitch == 0) && (subres_extent.depth == 1)) {
                         layout.depthPitch = layout.size;  // Certain implmentations don't supply pitches when size is 1

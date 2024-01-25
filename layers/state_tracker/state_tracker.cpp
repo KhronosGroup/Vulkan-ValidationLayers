@@ -445,7 +445,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
     } else {
         format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
                                                  IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device,
-                                                 image_state->image(), pCreateInfo->format, image_state->createInfo.tiling);
+                                                 image_state->VkHandle(), pCreateInfo->format, image_state->createInfo.tiling);
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.

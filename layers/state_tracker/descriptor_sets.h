@@ -422,7 +422,7 @@ class ImageDescriptor : public Descriptor {
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state);
-    VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view() : VK_NULL_HANDLE; }
+    VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->VkHandle() : VK_NULL_HANDLE; }
     const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
     vvl::ImageView *GetImageViewState() { return image_view_state_.get(); }
     std::shared_ptr<vvl::ImageView> GetSharedImageViewState() const { return image_view_state_; }

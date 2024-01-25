@@ -509,7 +509,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                 current_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                              SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
             if (hazard.IsHazard()) {
-                const VkImageView view_handle = view_gen.GetViewState()->image_view();
+                const VkImageView view_handle = view_gen.GetViewState()->VkHandle();
                 const Location loc(command);
                 skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), view_handle, loc,
                                             "Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.",
@@ -545,7 +545,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
             if (hazard.IsHazard()) {
                 const Location loc(command);
                 skip |= sync_state.LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), view_state.image_view(), loc,
+                    string_SyncHazardVUID(hazard.Hazard()), view_state.Handle(), loc,
                     "Hazard %s for %s in %s, Subpass #%d, and depth part of pDepthStencilAttachment. Access info %s.",
                     string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_state).c_str(),
                     sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
@@ -559,7 +559,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
             if (hazard.IsHazard()) {
                 const Location loc(command);
                 skip |= sync_state.LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), view_state.image_view(), loc,
+                    string_SyncHazardVUID(hazard.Hazard()), view_state.Handle(), loc,
                     "Hazard %s for %s in %s, Subpass #%d, and stencil part of pDepthStencilAttachment. Access info %s.",
                     string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_state).c_str(),
                     sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),

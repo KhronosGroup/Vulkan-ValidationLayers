@@ -321,7 +321,7 @@ const ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(VkI
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
 ImageSubresourceLayoutMap *CommandBuffer::GetImageSubresourceLayoutMap(const vvl::Image &image_state) {
-    auto &layout_map = image_layout_map[image_state.image()];
+    auto &layout_map = image_layout_map[image_state.VkHandle()];
     if (!layout_map) {
         // Make sure we don't create a nullptr keyed entry for a zombie Image
         if (image_state.Destroyed() || !image_state.layout_range_map) {

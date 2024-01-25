@@ -3167,8 +3167,8 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
                     if (!IsImageCompatibleWithVideoProfile(*reference_resource.image_state, vs_state->profile)) {
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
-                                                    reference_resource.image_view_state->image_view(),
-                                                    reference_resource.image_state->image());
+                                                    reference_resource.image_view_state->Handle(),
+                                                    reference_resource.image_state->Handle());
                         skip |= LogError(
                             "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07240", objlist,
                             begin_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource).dot(Field::imageViewBinding),
@@ -3181,8 +3181,8 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
                     if (reference_resource.image_view_state->create_info.format != vs_state->create_info.referencePictureFormat) {
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
-                                                    reference_resource.image_view_state->image_view(),
-                                                    reference_resource.image_state->image());
+                                                    reference_resource.image_view_state->Handle(),
+                                                    reference_resource.image_state->Handle());
                         skip |= LogError(
                             "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07241", objlist,
                             begin_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource).dot(Field::imageViewBinding),
@@ -3199,8 +3199,8 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
                     if (vs_state->IsDecode() && (supported_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) == 0) {
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
-                                                    reference_resource.image_view_state->image_view(),
-                                                    reference_resource.image_state->image());
+                                                    reference_resource.image_view_state->Handle(),
+                                                    reference_resource.image_state->Handle());
                         skip |= LogError(
                             "VUID-VkVideoBeginCodingInfoKHR-slotIndex-07245", objlist,
                             begin_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource).dot(Field::imageViewBinding),
@@ -3214,8 +3214,8 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
                     if (vs_state->IsEncode() && (supported_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) == 0) {
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
-                                                    reference_resource.image_view_state->image_view(),
-                                                    reference_resource.image_state->image());
+                                                    reference_resource.image_view_state->Handle(),
+                                                    reference_resource.image_state->Handle());
                         skip |= LogError(
                             "VUID-VkVideoBeginCodingInfoKHR-slotIndex-07246", objlist,
                             begin_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource).dot(Field::imageViewBinding),
@@ -3643,8 +3643,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                          "VUID-vkCmdDecodeVideoKHR-commandBuffer-07148", where);
 
         if (!IsImageCompatibleWithVideoProfile(*dst_resource.image_state, vs_state->profile)) {
-            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), dst_resource.image_view_state->image_view(),
-                                        dst_resource.image_state->image());
+            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), dst_resource.image_view_state->Handle(),
+                                        dst_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07142", objlist,
                              decode_info_loc.dot(Field::dstPictureResource).dot(Field::imageViewBinding),
                              "(%s created from %s) is not compatible with the video profile the bound "
@@ -3654,8 +3654,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         }
 
         if (dst_resource.image_view_state->create_info.format != vs_state->create_info.pictureFormat) {
-            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), dst_resource.image_view_state->image_view(),
-                                        dst_resource.image_state->image());
+            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), dst_resource.image_view_state->Handle(),
+                                        dst_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07143", objlist,
                              decode_info_loc.dot(Field::dstPictureResource).dot(Field::imageViewBinding),
                              "(%s created from %s) format (%s) does not match the pictureFormat (%s) "
@@ -3668,8 +3668,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
 
         auto supported_usage = dst_resource.image_view_state->inherited_usage;
         if ((supported_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
-            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), dst_resource.image_view_state->image_view(),
-                                        dst_resource.image_state->image());
+            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), dst_resource.image_view_state->Handle(),
+                                        dst_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07146", objlist,
                              decode_info_loc.dot(Field::dstPictureResource).dot(Field::imageViewBinding),
                              "(%s created from %s) was not created with VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR "
@@ -4077,8 +4077,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                          "VUID-vkCmdEncodeVideoKHR-commandBuffer-08212", where);
 
         if (!IsImageCompatibleWithVideoProfile(*src_resource.image_state, vs_state->profile)) {
-            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), src_resource.image_view_state->image_view(),
-                                        src_resource.image_state->image());
+            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), src_resource.image_view_state->Handle(),
+                                        src_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08206", objlist,
                              encode_info_loc.dot(Field::srcPictureResource).dot(Field::imageViewBinding),
                              "(%s created from %s) is not compatible with the video profile the bound "
@@ -4088,8 +4088,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         }
 
         if (src_resource.image_view_state->create_info.format != vs_state->create_info.pictureFormat) {
-            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), src_resource.image_view_state->image_view(),
-                                        src_resource.image_state->image());
+            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), src_resource.image_view_state->Handle(),
+                                        src_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08207", objlist,
                              encode_info_loc.dot(Field::srcPictureResource).dot(Field::imageViewBinding),
                              "(%s created from %s) format (%s) does not match the pictureFormat (%s) "
@@ -4102,8 +4102,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
 
         auto supported_usage = src_resource.image_view_state->inherited_usage;
         if ((supported_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR) == 0) {
-            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), src_resource.image_view_state->image_view(),
-                                        src_resource.image_state->image());
+            const LogObjectList objlist(commandBuffer, vs_state->videoSession(), src_resource.image_view_state->Handle(),
+                                        src_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08210", objlist,
                              encode_info_loc.dot(Field::srcPictureResource).dot(Field::imageViewBinding),
                              "(%s created from %s) was not created with VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR "
