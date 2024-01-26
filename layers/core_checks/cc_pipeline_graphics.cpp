@@ -464,6 +464,13 @@ static bool ComparePipelineColorBlendAttachmentState(VkPipelineColorBlendAttachm
            (a.alphaBlendOp == b.alphaBlendOp) && (a.colorWriteMask == b.colorWriteMask);
 }
 
+static bool ComparePipelineFragmentShadingRateStateCreateInfo(VkPipelineFragmentShadingRateStateCreateInfoKHR a,
+                                                              VkPipelineFragmentShadingRateStateCreateInfoKHR b) {
+    // Since this is chained in a pnext, we don't want to check the pNext/sType
+    return (a.fragmentSize.width == b.fragmentSize.width) && (a.fragmentSize.height == b.fragmentSize.height) &&
+           (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
+}
+
 bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
@@ -572,6 +579,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         const vvl::PipelineLayout *layout = nullptr;
         // Can't use MultisampleState() to get this value as we are checking here if they are identical
         const VkPipelineMultisampleStateCreateInfo *ms_state = nullptr;
+        const VkPipelineFragmentShadingRateStateCreateInfoKHR *shading_rate_state = nullptr;
     };
 
     GPLValidInfo pre_raster_info;
@@ -585,6 +593,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             pre_raster_info.flags =
                 (pipeline.PreRasterPipelineLayoutState()) ? pipeline.PreRasterPipelineLayoutState()->CreateFlags() : 0;
             pre_raster_info.layout = pipeline.PreRasterPipelineLayoutState().get();
+            pre_raster_info.shading_rate_state =
+                vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
         }
         if (gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
             frag_shader_info.init = GPLInitType::gpl_flags;
@@ -592,6 +602,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 (pipeline.FragmentShaderPipelineLayoutState()) ? pipeline.FragmentShaderPipelineLayoutState()->CreateFlags() : 0;
             frag_shader_info.layout = pipeline.FragmentShaderPipelineLayoutState().get();
             frag_shader_info.ms_state = pipeline.fragment_shader_state->ms_state.get()->ptr();
+            frag_shader_info.shading_rate_state =
+                vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
         }
         if (gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
             frag_output_info.init = GPLInitType::gpl_flags;
@@ -614,6 +626,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     pre_raster_info.flags = layout_state->CreateFlags();
                     pre_raster_info.layout = layout_state.get();
                 }
+                pre_raster_info.shading_rate_state =
+                    vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(lib->PNext());
             } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
                 frag_shader_info.init = GPLInitType::link_libraries;
                 const auto layout_state = lib->FragmentShaderPipelineLayoutState();
@@ -622,6 +636,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     frag_shader_info.layout = layout_state.get();
                 }
                 frag_shader_info.ms_state = lib->fragment_shader_state->ms_state.get()->ptr();
+                frag_shader_info.shading_rate_state =
+                    vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(lib->PNext());
             } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
                 frag_output_info.init = GPLInitType::link_libraries;
                 frag_output_info.ms_state = lib->fragment_output_state->ms_state.get()->ptr();
@@ -731,6 +747,46 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                                          frag_shader_range.offset, frag_shader_range.size);
                     }
                 }
+            }
+        }
+
+        // Check VkPipelineFragmentShadingRateStateCreateInfoKHR
+        if (frag_shader_info.shading_rate_state || pre_raster_info.shading_rate_state) {
+            const char *vuid =
+                only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06639" : "VUID-VkGraphicsPipelineCreateInfo-flags-06638";
+            if (!pre_raster_info.shading_rate_state) {
+                skip |= LogError(
+                    vuid, device, create_info_loc,
+                    "Fragment Shader has a valid VkPipelineFragmentShadingRateStateCreateInfoKHR, but Pre Rasterization has "
+                    "no VkPipelineFragmentShadingRateStateCreateInfoKHR in the pNext.");
+            } else if (!frag_shader_info.shading_rate_state) {
+                skip |= LogError(
+                    vuid, device, create_info_loc,
+                    "Pre Rasterization has a valid VkPipelineFragmentShadingRateStateCreateInfoKHR, but Fragment Shader has "
+                    "no VkPipelineFragmentShadingRateStateCreateInfoKHR in the pNext.");
+            } else if (!ComparePipelineFragmentShadingRateStateCreateInfo(*frag_shader_info.shading_rate_state,
+                                                                          *pre_raster_info.shading_rate_state)) {
+                skip |= LogError(vuid, device, create_info_loc,
+                                 "Fragment Shader and Pre Rasterization were created with different "
+                                 "VkPipelineFragmentShadingRateStateCreateInfoKHR.\n"
+                                 "Fragment Shader:\n"
+                                 "\tfragmentSize: (W = %" PRIu32 ", H = %" PRIu32
+                                 ")\n"
+                                 "\tcombinerOps[0]: %s\n"
+                                 "\tcombinerOps[1]: %s\n"
+                                 "Pre Rasterization:\n"
+                                 "\tfragmentSize: (W = %" PRIu32 ", H = %" PRIu32
+                                 ")\n"
+                                 "\tcombinerOps[0]: %s\n"
+                                 "\tcombinerOps[1]: %s\n",
+                                 frag_shader_info.shading_rate_state->fragmentSize.width,
+                                 frag_shader_info.shading_rate_state->fragmentSize.height,
+                                 string_VkFragmentShadingRateCombinerOpKHR(frag_shader_info.shading_rate_state->combinerOps[0]),
+                                 string_VkFragmentShadingRateCombinerOpKHR(frag_shader_info.shading_rate_state->combinerOps[1]),
+                                 pre_raster_info.shading_rate_state->fragmentSize.width,
+                                 pre_raster_info.shading_rate_state->fragmentSize.height,
+                                 string_VkFragmentShadingRateCombinerOpKHR(pre_raster_info.shading_rate_state->combinerOps[0]),
+                                 string_VkFragmentShadingRateCombinerOpKHR(pre_raster_info.shading_rate_state->combinerOps[1]));
             }
         }
 
