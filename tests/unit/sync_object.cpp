@@ -3471,7 +3471,7 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *queue_forward_progress_message = "UNASSIGNED-vkQueueSubmit-QueueForwardProgress";
+    const char *queue_forward_progress_message = "VUID-vkQueueSubmit-pCommandBuffers-00065";
 
     vkt::CommandBuffer cb1(m_device, m_commandPool);
     cb1.begin();
@@ -3736,7 +3736,7 @@ TEST_F(NegativeSyncObject, ResetEventThenSet) {
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     }
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkSetEvent-QueueForwardProgress");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetEvent-event-09543");
         vk::SetEvent(m_device->device(), event.handle());
         m_errorMonitor->VerifyFound();
     }
