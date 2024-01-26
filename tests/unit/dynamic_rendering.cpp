@@ -3151,6 +3151,28 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentFormat) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRendering, PipelineRenderingCreateInfoFormat) {
+    TEST_DESCRIPTION("Create pipeline with invalid color attachment format");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitRenderTarget();
+
+    uint32_t over_limit = m_device->phy().limits_.maxColorAttachments + 1;
+    std::vector<VkFormat> color_format(over_limit);
+    std::fill(color_format.begin(), color_format.end(), VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = over_limit;
+    pipeline_rendering_info.pColorAttachmentFormats = color_format.data();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRenderingCreateInfo-colorAttachmentCount-09533");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     TEST_DESCRIPTION("Create pipeline with invalid view mask");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);

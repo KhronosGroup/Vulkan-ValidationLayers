@@ -149,6 +149,12 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRe
                                         "VkFormat", rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats,
                                         true, true, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
                                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579");
+        if (rendering_struct.colorAttachmentCount > device_limits.maxColorAttachments) {
+            skip |= LogError("VUID-VkPipelineRenderingCreateInfo-colorAttachmentCount-09533", device,
+                             loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
+                             "(%" PRIu32 ") is larger than maxColorAttachments (%" PRIu32 ").",
+                             rendering_struct.colorAttachmentCount, device_limits.maxColorAttachments);
+        }
     }
 
     if (rendering_struct.pColorAttachmentFormats) {
