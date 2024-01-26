@@ -227,7 +227,10 @@ class ValidationTests:
                         for sub_str in line_list:
                             if any(prefix in sub_str for prefix in vuid_prefixes):
                                 vuid_str = sub_str.strip(',);:"*')
-                                if vuid_str.startswith('kVUID_'): vuid_str = kvuid_dict[vuid_str]
+                                if 'BestPractices' in vuid_str:
+                                    continue
+                                if vuid_str.startswith('kVUID_'):
+                                    vuid_str = kvuid_dict[vuid_str]
                                 self.vuid_to_tests[vuid_str].add(testname)
                                 if (vuid_str.startswith('VUID-')):
                                     vuid_number = vuid_str[-5:]
@@ -545,7 +548,6 @@ def main(argv):
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
     unassigned_vuid_files = [repo_relative(path) for path in [
-        'layers/best_practices/best_practices_error_enums.h',
         'layers/stateless/stateless_validation.h',
         'layers/object_tracker/object_lifetime_validation.h'
     ]]
