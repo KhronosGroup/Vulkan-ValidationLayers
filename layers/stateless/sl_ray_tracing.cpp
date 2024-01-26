@@ -967,7 +967,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
     }
 
     if (info.geometryCount > 0 && !info.pGeometries && !info.ppGeometries) {
-        skip |= LogError("UNASSIGNED-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries", handle,
+        skip |= LogError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788", handle,
                          info_loc.dot(Field::geometryCount), "is (%" PRIu32 ") but both pGeometries and ppGeometries are NULL.",
                          info.geometryCount);
         return skip;

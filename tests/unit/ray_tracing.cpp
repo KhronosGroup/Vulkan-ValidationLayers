@@ -2815,7 +2815,7 @@ TEST_F(NegativeRayTracing, BuildNullGeometries) {
     auto blas =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
     blas->SetNullGeometries(true);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788");
     blas->GetSizeInfo();
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
