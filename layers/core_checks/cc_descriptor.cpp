@@ -1888,15 +1888,21 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
             auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
             for (uint32_t di = 0; di < update.descriptorCount && !iter.AtEnd(); ++di, ++iter) {
+                const ImageSamplerDescriptor &desc = (const ImageSamplerDescriptor &)*iter;
                 // Validate image
                 const VkImageView image_view = update.pImageInfo[di].imageView;
                 if (image_view == VK_NULL_HANDLE) {
+                    if (desc.IsImmutableSampler()) {
+                        // Only hit if using nullDescriptor
+                        const LogObjectList objlist(update.dstSet, desc.GetSampler());
+                        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09506", objlist,
+                                         write_loc.dot(Field::pImageInfo, di).dot(Field::imageView), "is VK_NULL_HANDLE.");
+                    }
                     continue;
                 }
                 auto image_layout = update.pImageInfo[di].imageLayout;
                 auto sampler = update.pImageInfo[di].sampler;
                 auto iv_state = Get<vvl::ImageView>(image_view);
-                const ImageSamplerDescriptor &desc = (const ImageSamplerDescriptor &)*iter;
 
                 const auto *image_state = iv_state->image_state.get();
                 skip |= ValidateImageUpdate(image_view, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
@@ -2880,8 +2886,16 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT &des
     }
 
     if (descriptor_info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && descriptor_info.data.pCombinedImageSampler) {
-        auto combined_image_sampler = descriptor_info.data.pCombinedImageSampler;
-        if (combined_image_sampler->imageView != VK_NULL_HANDLE) {
+        const VkDescriptorImageInfo *combined_image_sampler = descriptor_info.data.pCombinedImageSampler;
+        if (!combined_image_sampler || combined_image_sampler->imageView == VK_NULL_HANDLE) {
+            // Only hit if using nullDescriptor
+            if (size != data_size) {
+                skip |= LogError("VUID-vkGetDescriptorEXT-pDescriptorInfo-09507", device, descriptor_info_loc.dot(Field::type),
+                                 "(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) and combinedImageSamplerDescriptorSize (%zu) not "
+                                 "equal to dataSize %zu",
+                                 phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize, data_size);
+            }
+        } else if (combined_image_sampler && combined_image_sampler->imageView != VK_NULL_HANDLE) {
             const auto image_view_state = Get<vvl::ImageView>(combined_image_sampler->imageView);
             if (image_view_state && image_view_state->samplerConversion != VK_NULL_HANDLE) {
                 auto image_info = image_view_state->image_state->createInfo;
@@ -2908,7 +2922,7 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT &des
             }
         }
 
-        if (combined_image_sampler->sampler != VK_NULL_HANDLE) {
+        if (combined_image_sampler && combined_image_sampler->sampler != VK_NULL_HANDLE) {
             const auto sampler_state = Get<vvl::Sampler>(combined_image_sampler->sampler);
             if (sampler_state && (0 != (sampler_state->createInfo.flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT))) {
                 size = phys_dev_ext_props.descriptor_buffer_density_props.combinedImageSamplerDensityMapDescriptorSize;

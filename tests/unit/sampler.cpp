@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -638,6 +638,56 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.pImageInfo = &image_infos[0];
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02738");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, ImageSamplerConversionNullImageView) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                  NULL,
+                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
+                                  VK_IMAGE_TYPE_2D,
+                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
+                                  {128, 128, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_LINEAR,
+                                  VK_IMAGE_USAGE_SAMPLED_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
+    if (!ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR);
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
+    ycbcr_info.conversion = conversion.handle();
+    VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
+    sci.pNext = &ycbcr_info;
+    vkt::Sampler sampler(*m_device, sci);
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()},
+                  });
+    if (!descriptor_set.set_) {
+        GTEST_SKIP() << "Failed to allocate descriptor set, skipping test.";
+    }
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-09506");
+    descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
 
