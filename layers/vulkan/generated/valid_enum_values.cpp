@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ std::vector<VkImageLayout> ValidationObject::ValidParamValues() const {
         { &DeviceExtensions::vk_khr_shared_presentable_image, { VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR } },
         { &DeviceExtensions::vk_khr_maintenance2, { VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL } },
         { &DeviceExtensions::vk_khr_fragment_shading_rate, { VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR } },
+        { &DeviceExtensions::vk_khr_dynamic_rendering_local_read, { VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR } },
         { &DeviceExtensions::vk_khr_separate_depth_stencil_layouts, { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL } },
         { &DeviceExtensions::vk_khr_video_encode_queue, { VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR } },
         { &DeviceExtensions::vk_khr_synchronization2, { VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } },
@@ -333,17 +334,18 @@ std::vector<VkDynamicState> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkDynamicStateEnums = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH, VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_BLEND_CONSTANTS, VK_DYNAMIC_STATE_DEPTH_BOUNDS, VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK, VK_DYNAMIC_STATE_STENCIL_WRITE_MASK, VK_DYNAMIC_STATE_STENCIL_REFERENCE};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkDynamicState>> ExtendedVkDynamicStateEnums = {
         { &DeviceExtensions::vk_khr_fragment_shading_rate, { VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR } },
+        { &DeviceExtensions::vk_khr_line_rasterization, { VK_DYNAMIC_STATE_LINE_STIPPLE_KHR } },
         { &DeviceExtensions::vk_nv_clip_space_w_scaling, { VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV } },
         { &DeviceExtensions::vk_ext_discard_rectangles, { VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT } },
         { &DeviceExtensions::vk_ext_sample_locations, { VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT } },
         { &DeviceExtensions::vk_nv_shading_rate_image, { VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV } },
         { &DeviceExtensions::vk_nv_scissor_exclusive, { VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV } },
-        { &DeviceExtensions::vk_ext_line_rasterization, { VK_DYNAMIC_STATE_LINE_STIPPLE_EXT } },
+        { &DeviceExtensions::vk_ext_line_rasterization, { VK_DYNAMIC_STATE_LINE_STIPPLE_KHR } },
         { &DeviceExtensions::vk_ext_extended_dynamic_state, { VK_DYNAMIC_STATE_CULL_MODE, VK_DYNAMIC_STATE_FRONT_FACE, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP, VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE, VK_DYNAMIC_STATE_STENCIL_OP } },
         { &DeviceExtensions::vk_ext_vertex_input_dynamic_state, { VK_DYNAMIC_STATE_VERTEX_INPUT_EXT } },
         { &DeviceExtensions::vk_ext_extended_dynamic_state2, { VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, VK_DYNAMIC_STATE_LOGIC_OP_EXT } },
         { &DeviceExtensions::vk_ext_color_write_enable, { VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT } },
-        { &DeviceExtensions::vk_ext_extended_dynamic_state3, { VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT, VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, VK_DYNAMIC_STATE_POLYGON_MODE_EXT, VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT, VK_DYNAMIC_STATE_SAMPLE_MASK_EXT, VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT, VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT, VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT, VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV, VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV, VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV, VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV, VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV, VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV, VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV } },
+        { &DeviceExtensions::vk_ext_extended_dynamic_state3, { VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, VK_DYNAMIC_STATE_POLYGON_MODE_EXT, VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT, VK_DYNAMIC_STATE_SAMPLE_MASK_EXT, VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT, VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT, VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT, VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT, VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV, VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV, VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV, VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV, VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV, VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV, VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV } },
         { &DeviceExtensions::vk_ext_attachment_feedback_loop_dynamic_state, { VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT } },
         { &DeviceExtensions::vk_khr_ray_tracing_pipeline, { VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR } },
     };
@@ -549,7 +551,8 @@ template<>
 std::vector<VkAttachmentLoadOp> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkAttachmentLoadOpEnums = {VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_DONT_CARE};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkAttachmentLoadOp>> ExtendedVkAttachmentLoadOpEnums = {
-        { &DeviceExtensions::vk_ext_load_store_op_none, { VK_ATTACHMENT_LOAD_OP_NONE_EXT } },
+        { &DeviceExtensions::vk_khr_load_store_op_none, { VK_ATTACHMENT_LOAD_OP_NONE_KHR } },
+        { &DeviceExtensions::vk_ext_load_store_op_none, { VK_ATTACHMENT_LOAD_OP_NONE_KHR } },
     };
     std::vector<VkAttachmentLoadOp> values(CoreVkAttachmentLoadOpEnums.cbegin(), CoreVkAttachmentLoadOpEnums.cend());
     std::set<VkAttachmentLoadOp> unique_exts;
@@ -567,6 +570,7 @@ std::vector<VkAttachmentStoreOp> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkAttachmentStoreOpEnums = {VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_STORE_OP_DONT_CARE};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkAttachmentStoreOp>> ExtendedVkAttachmentStoreOpEnums = {
         { &DeviceExtensions::vk_khr_dynamic_rendering, { VK_ATTACHMENT_STORE_OP_NONE } },
+        { &DeviceExtensions::vk_khr_load_store_op_none, { VK_ATTACHMENT_STORE_OP_NONE } },
         { &DeviceExtensions::vk_qcom_render_pass_store_ops, { VK_ATTACHMENT_STORE_OP_NONE } },
         { &DeviceExtensions::vk_ext_load_store_op_none, { VK_ATTACHMENT_STORE_OP_NONE } },
     };
@@ -621,8 +625,9 @@ template<>
 std::vector<VkIndexType> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkIndexTypeEnums = {VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkIndexType>> ExtendedVkIndexTypeEnums = {
+        { &DeviceExtensions::vk_khr_index_type_uint8, { VK_INDEX_TYPE_UINT8_KHR } },
         { &DeviceExtensions::vk_nv_ray_tracing, { VK_INDEX_TYPE_NONE_KHR } },
-        { &DeviceExtensions::vk_ext_index_type_uint8, { VK_INDEX_TYPE_UINT8_EXT } },
+        { &DeviceExtensions::vk_ext_index_type_uint8, { VK_INDEX_TYPE_UINT8_KHR } },
         { &DeviceExtensions::vk_khr_acceleration_structure, { VK_INDEX_TYPE_NONE_KHR } },
     };
     std::vector<VkIndexType> values(CoreVkIndexTypeEnums.cbegin(), CoreVkIndexTypeEnums.cend());
@@ -851,29 +856,13 @@ std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() con
 }
 
 template<>
-std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const {
-    constexpr std::array CoreVkComponentTypeKHREnums = {VK_COMPONENT_TYPE_FLOAT16_KHR, VK_COMPONENT_TYPE_FLOAT32_KHR, VK_COMPONENT_TYPE_FLOAT64_KHR, VK_COMPONENT_TYPE_SINT8_KHR, VK_COMPONENT_TYPE_SINT16_KHR, VK_COMPONENT_TYPE_SINT32_KHR, VK_COMPONENT_TYPE_SINT64_KHR, VK_COMPONENT_TYPE_UINT8_KHR, VK_COMPONENT_TYPE_UINT16_KHR, VK_COMPONENT_TYPE_UINT32_KHR, VK_COMPONENT_TYPE_UINT64_KHR};
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkComponentTypeKHR>> ExtendedVkComponentTypeKHREnums = {
+std::vector<VkLineRasterizationModeKHR> ValidationObject::ValidParamValues() const {
+    constexpr std::array CoreVkLineRasterizationModeKHREnums = {VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR, VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR};
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkLineRasterizationModeKHR>> ExtendedVkLineRasterizationModeKHREnums = {
     };
-    std::vector<VkComponentTypeKHR> values(CoreVkComponentTypeKHREnums.cbegin(), CoreVkComponentTypeKHREnums.cend());
-    std::set<VkComponentTypeKHR> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkComponentTypeKHREnums) {
-        if (IsExtEnabled(device_extensions.*extension)) {
-            unique_exts.insert(enums.cbegin(), enums.cend());
-        }
-    }
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
-    return values;
-}
-
-template<>
-std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const {
-    constexpr std::array CoreVkScopeKHREnums = {VK_SCOPE_DEVICE_KHR, VK_SCOPE_WORKGROUP_KHR, VK_SCOPE_SUBGROUP_KHR, VK_SCOPE_QUEUE_FAMILY_KHR};
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkScopeKHR>> ExtendedVkScopeKHREnums = {
-    };
-    std::vector<VkScopeKHR> values(CoreVkScopeKHREnums.cbegin(), CoreVkScopeKHREnums.cend());
-    std::set<VkScopeKHR> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkScopeKHREnums) {
+    std::vector<VkLineRasterizationModeKHR> values(CoreVkLineRasterizationModeKHREnums.cbegin(), CoreVkLineRasterizationModeKHREnums.cend());
+    std::set<VkLineRasterizationModeKHR> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkLineRasterizationModeKHREnums) {
         if (IsExtEnabled(device_extensions.*extension)) {
             unique_exts.insert(enums.cbegin(), enums.cend());
         }
@@ -1418,22 +1407,6 @@ std::vector<VkFullScreenExclusiveEXT> ValidationObject::ValidParamValues() const
     return values;
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-
-template<>
-std::vector<VkLineRasterizationModeEXT> ValidationObject::ValidParamValues() const {
-    constexpr std::array CoreVkLineRasterizationModeEXTEnums = {VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT, VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT};
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkLineRasterizationModeEXT>> ExtendedVkLineRasterizationModeEXTEnums = {
-    };
-    std::vector<VkLineRasterizationModeEXT> values(CoreVkLineRasterizationModeEXTEnums.cbegin(), CoreVkLineRasterizationModeEXTEnums.cend());
-    std::set<VkLineRasterizationModeEXT> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkLineRasterizationModeEXTEnums) {
-        if (IsExtEnabled(device_extensions.*extension)) {
-            unique_exts.insert(enums.cbegin(), enums.cend());
-        }
-    }
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
-    return values;
-}
 
 template<>
 std::vector<VkIndirectCommandsTokenTypeNV> ValidationObject::ValidParamValues() const {

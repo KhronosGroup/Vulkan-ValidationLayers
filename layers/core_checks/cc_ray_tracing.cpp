@@ -1436,7 +1436,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     if (!cb_state->unprotected) {
-        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-03649", commandBuffer, error_obj.location,
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-09547", commandBuffer, error_obj.location,
                          "called in a protected command buffer.");
     }
     for (uint32_t i = 0; i < infoCount; ++i) {

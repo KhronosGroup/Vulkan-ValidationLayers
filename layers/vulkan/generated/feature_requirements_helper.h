@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,6 +198,8 @@ enum class Feature {
     displacementMicromap,
     // VkPhysicalDeviceDynamicRenderingFeatures, VkPhysicalDeviceVulkan13Features
     dynamicRendering,
+    // VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR
+    dynamicRenderingLocalRead,
     // VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT
     dynamicRenderingUnusedAttachments,
     // VkPhysicalDeviceExclusiveScissorFeaturesNV
@@ -458,7 +460,7 @@ enum class Feature {
     minLod,
     // VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceVulkan12Features
     imagelessFramebuffer,
-    // VkPhysicalDeviceIndexTypeUint8FeaturesEXT
+    // VkPhysicalDeviceIndexTypeUint8FeaturesKHR
     indexTypeUint8,
     // VkPhysicalDeviceInheritedViewportScissorFeaturesNV
     inheritedViewportScissor2D,
@@ -470,17 +472,17 @@ enum class Feature {
     invocationMask,
     // VkPhysicalDeviceLegacyDitheringFeaturesEXT
     legacyDithering,
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bresenhamLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     rectangularLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     smoothLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     stippledBresenhamLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     stippledRectangularLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     stippledSmoothLines,
     // VkPhysicalDeviceLinearColorAttachmentFeaturesNV
     linearColorAttachment,
@@ -730,10 +732,14 @@ enum class Feature {
     shaderEarlyAndLateFragmentTests,
     // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
     shaderEnqueue,
+    // VkPhysicalDeviceShaderExpectAssumeFeaturesKHR
+    shaderExpectAssume,
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     shaderFloat16,
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     shaderInt8,
+    // VkPhysicalDeviceShaderFloatControls2FeaturesKHR
+    shaderFloatControls2,
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
     shaderImageInt64Atomics,
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
@@ -744,14 +750,22 @@ enum class Feature {
     shaderIntegerDotProduct,
     // VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL
     shaderIntegerFunctions2,
+    // VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
+    shaderMaximalReconvergence,
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
     shaderModuleIdentifier,
     // VkPhysicalDeviceShaderObjectFeaturesEXT
     shaderObject,
+    // VkPhysicalDeviceShaderQuadControlFeaturesKHR
+    shaderQuadControl,
     // VkPhysicalDeviceShaderSMBuiltinsFeaturesNV
     shaderSMBuiltins,
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features
     shaderSubgroupExtendedTypes,
+    // VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR
+    shaderSubgroupRotate,
+    // VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR
+    shaderSubgroupRotateClustered,
     // VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR
     shaderSubgroupUniformControlFlow,
     // VkPhysicalDeviceShaderTerminateInvocationFeatures, VkPhysicalDeviceVulkan13Features

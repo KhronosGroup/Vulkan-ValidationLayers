@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023 Google Inc.
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Google Inc.
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,6 +203,8 @@ struct DeviceFeatures {
     bool displacementMicromap;
     // VkPhysicalDeviceDynamicRenderingFeatures, VkPhysicalDeviceVulkan13Features
     bool dynamicRendering;
+    // VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR
+    bool dynamicRenderingLocalRead;
     // VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT
     bool dynamicRenderingUnusedAttachments;
     // VkPhysicalDeviceExclusiveScissorFeaturesNV
@@ -463,7 +465,7 @@ struct DeviceFeatures {
     bool minLod;
     // VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceVulkan12Features
     bool imagelessFramebuffer;
-    // VkPhysicalDeviceIndexTypeUint8FeaturesEXT
+    // VkPhysicalDeviceIndexTypeUint8FeaturesKHR
     bool indexTypeUint8;
     // VkPhysicalDeviceInheritedViewportScissorFeaturesNV
     bool inheritedViewportScissor2D;
@@ -475,17 +477,17 @@ struct DeviceFeatures {
     bool invocationMask;
     // VkPhysicalDeviceLegacyDitheringFeaturesEXT
     bool legacyDithering;
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool bresenhamLines;
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool rectangularLines;
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool smoothLines;
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool stippledBresenhamLines;
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool stippledRectangularLines;
-    // VkPhysicalDeviceLineRasterizationFeaturesEXT
+    // VkPhysicalDeviceLineRasterizationFeaturesKHR
     bool stippledSmoothLines;
     // VkPhysicalDeviceLinearColorAttachmentFeaturesNV
     bool linearColorAttachment;
@@ -735,10 +737,14 @@ struct DeviceFeatures {
     bool shaderEarlyAndLateFragmentTests;
     // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
     bool shaderEnqueue;
+    // VkPhysicalDeviceShaderExpectAssumeFeaturesKHR
+    bool shaderExpectAssume;
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     bool shaderFloat16;
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     bool shaderInt8;
+    // VkPhysicalDeviceShaderFloatControls2FeaturesKHR
+    bool shaderFloatControls2;
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
     bool shaderImageInt64Atomics;
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
@@ -749,14 +755,22 @@ struct DeviceFeatures {
     bool shaderIntegerDotProduct;
     // VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL
     bool shaderIntegerFunctions2;
+    // VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
+    bool shaderMaximalReconvergence;
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
     bool shaderModuleIdentifier;
     // VkPhysicalDeviceShaderObjectFeaturesEXT
     bool shaderObject;
+    // VkPhysicalDeviceShaderQuadControlFeaturesKHR
+    bool shaderQuadControl;
     // VkPhysicalDeviceShaderSMBuiltinsFeaturesNV
     bool shaderSMBuiltins;
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features
     bool shaderSubgroupExtendedTypes;
+    // VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR
+    bool shaderSubgroupRotate;
+    // VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR
+    bool shaderSubgroupRotateClustered;
     // VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR
     bool shaderSubgroupUniformControlFlow;
     // VkPhysicalDeviceShaderTerminateInvocationFeatures, VkPhysicalDeviceVulkan13Features

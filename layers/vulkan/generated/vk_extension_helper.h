@@ -392,6 +392,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_vulkan_memory_model{kNotEnabled};
     ExtEnabled vk_khr_shader_terminate_invocation{kNotEnabled};
     ExtEnabled vk_khr_fragment_shading_rate{kNotEnabled};
+    ExtEnabled vk_khr_dynamic_rendering_local_read{kNotEnabled};
+    ExtEnabled vk_khr_shader_quad_control{kNotEnabled};
     ExtEnabled vk_khr_spirv_1_4{kNotEnabled};
     ExtEnabled vk_khr_separate_depth_stencil_layouts{kNotEnabled};
     ExtEnabled vk_khr_present_wait{kNotEnabled};
@@ -414,12 +416,19 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_format_feature_flags2{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_maintenance4{kNotEnabled};
+    ExtEnabled vk_khr_shader_subgroup_rotate{kNotEnabled};
+    ExtEnabled vk_khr_shader_maximal_reconvergence{kNotEnabled};
     ExtEnabled vk_khr_maintenance5{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_khr_video_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_vertex_attribute_divisor{kNotEnabled};
+    ExtEnabled vk_khr_load_store_op_none{kNotEnabled};
+    ExtEnabled vk_khr_shader_float_controls2{kNotEnabled};
+    ExtEnabled vk_khr_index_type_uint8{kNotEnabled};
+    ExtEnabled vk_khr_line_rasterization{kNotEnabled};
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
+    ExtEnabled vk_khr_shader_expect_assume{kNotEnabled};
     ExtEnabled vk_khr_maintenance6{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
@@ -945,6 +954,15 @@ struct DeviceExtensions : public InstanceExtensions {
                         {{{&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_dynamic_rendering_local_read,
+                        {{{&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
+            {VK_KHR_SHADER_QUAD_CONTROL_EXTENSION_NAME,
+             DeviceInfo(
+                 &DeviceExtensions::vk_khr_shader_quad_control,
+                 {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
+                   {&DeviceExtensions::vk_khr_vulkan_memory_model, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME},
+                   {&DeviceExtensions::vk_khr_shader_maximal_reconvergence, VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME}}})},
             {VK_KHR_SPIRV_1_4_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_spirv_1_4,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -1017,6 +1035,10 @@ struct DeviceExtensions : public InstanceExtensions {
                         {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
             {VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance4, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_rotate, {})},
+            {VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_shader_maximal_reconvergence,
+                        {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {VK_KHR_MAINTENANCE_5_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance5,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -1034,9 +1056,23 @@ struct DeviceExtensions : public InstanceExtensions {
              DeviceInfo(&DeviceExtensions::vk_khr_vertex_attribute_divisor,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_load_store_op_none, {})},
+            {VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls2,
+                        {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
+                          {&DeviceExtensions::vk_khr_shader_float_controls, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME}}})},
+            {VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME,
+             DeviceInfo(&DeviceExtensions::vk_khr_index_type_uint8, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_line_rasterization,
+                                                                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_calibrated_timestamps,
                                                                      {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_expect_assume,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_MAINTENANCE_6_EXTENSION_NAME,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance6, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},

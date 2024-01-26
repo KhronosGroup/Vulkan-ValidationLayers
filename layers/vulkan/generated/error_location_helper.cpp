@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,6 +244,7 @@ const char* String(Func func) {
     {"vkCmdSetLineRasterizationModeEXT", 33},
     {"vkCmdSetLineStippleEXT", 23},
     {"vkCmdSetLineStippleEnableEXT", 29},
+    {"vkCmdSetLineStippleKHR", 23},
     {"vkCmdSetLineWidth", 18},
     {"vkCmdSetLogicOpEXT", 19},
     {"vkCmdSetLogicOpEnableEXT", 25},
@@ -262,6 +263,8 @@ const char* String(Func func) {
     {"vkCmdSetRasterizerDiscardEnable", 32},
     {"vkCmdSetRasterizerDiscardEnableEXT", 35},
     {"vkCmdSetRayTracingPipelineStackSizeKHR", 39},
+    {"vkCmdSetRenderingAttachmentLocationsKHR", 40},
+    {"vkCmdSetRenderingInputAttachmentIndicesKHR", 43},
     {"vkCmdSetRepresentativeFragmentTestEnableNV", 43},
     {"vkCmdSetSampleLocationsEXT", 27},
     {"vkCmdSetSampleLocationsEnableEXT", 33},
@@ -1206,6 +1209,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDriverProperties", 33},
     {"VkPhysicalDeviceDrmPropertiesEXT", 33},
     {"VkPhysicalDeviceDynamicRenderingFeatures", 41},
+    {"VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR", 53},
     {"VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT", 61},
     {"VkPhysicalDeviceExclusiveScissorFeaturesNV", 43},
     {"VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", 49},
@@ -1264,7 +1268,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceImageViewImageFormatInfoEXT", 44},
     {"VkPhysicalDeviceImageViewMinLodFeaturesEXT", 43},
     {"VkPhysicalDeviceImagelessFramebufferFeatures", 45},
-    {"VkPhysicalDeviceIndexTypeUint8FeaturesEXT", 42},
+    {"VkPhysicalDeviceIndexTypeUint8FeaturesKHR", 42},
     {"VkPhysicalDeviceInheritedViewportScissorFeaturesNV", 51},
     {"VkPhysicalDeviceInlineUniformBlockFeatures", 43},
     {"VkPhysicalDeviceInlineUniformBlockProperties", 45},
@@ -1272,8 +1276,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceLayeredDriverPropertiesMSFT", 44},
     {"VkPhysicalDeviceLegacyDitheringFeaturesEXT", 43},
     {"VkPhysicalDeviceLimits", 23},
-    {"VkPhysicalDeviceLineRasterizationFeaturesEXT", 45},
-    {"VkPhysicalDeviceLineRasterizationPropertiesEXT", 47},
+    {"VkPhysicalDeviceLineRasterizationFeaturesKHR", 45},
+    {"VkPhysicalDeviceLineRasterizationPropertiesKHR", 47},
     {"VkPhysicalDeviceLinearColorAttachmentFeaturesNV", 48},
     {"VkPhysicalDeviceMaintenance3Properties", 39},
     {"VkPhysicalDeviceMaintenance4Features", 37},
@@ -1374,19 +1378,24 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD", 59},
     {"VkPhysicalDeviceShaderEnqueueFeaturesAMDX", 42},
     {"VkPhysicalDeviceShaderEnqueuePropertiesAMDX", 44},
+    {"VkPhysicalDeviceShaderExpectAssumeFeaturesKHR", 46},
     {"VkPhysicalDeviceShaderFloat16Int8Features", 42},
+    {"VkPhysicalDeviceShaderFloatControls2FeaturesKHR", 48},
     {"VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", 50},
     {"VkPhysicalDeviceShaderImageFootprintFeaturesNV", 47},
     {"VkPhysicalDeviceShaderIntegerDotProductFeatures", 48},
     {"VkPhysicalDeviceShaderIntegerDotProductProperties", 50},
     {"VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL", 53},
+    {"VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR", 54},
     {"VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT", 50},
     {"VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT", 52},
     {"VkPhysicalDeviceShaderObjectFeaturesEXT", 40},
     {"VkPhysicalDeviceShaderObjectPropertiesEXT", 42},
+    {"VkPhysicalDeviceShaderQuadControlFeaturesKHR", 45},
     {"VkPhysicalDeviceShaderSMBuiltinsFeaturesNV", 43},
     {"VkPhysicalDeviceShaderSMBuiltinsPropertiesNV", 45},
     {"VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures", 52},
+    {"VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR", 48},
     {"VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR", 60},
     {"VkPhysicalDeviceShaderTerminateInvocationFeatures", 50},
     {"VkPhysicalDeviceShaderTileImageFeaturesEXT", 43},
@@ -1466,7 +1475,7 @@ const char* String(Struct structure) {
     {"VkPipelinePropertiesIdentifierEXT", 34},
     {"VkPipelineRasterizationConservativeStateCreateInfoEXT", 54},
     {"VkPipelineRasterizationDepthClipStateCreateInfoEXT", 51},
-    {"VkPipelineRasterizationLineStateCreateInfoEXT", 46},
+    {"VkPipelineRasterizationLineStateCreateInfoKHR", 46},
     {"VkPipelineRasterizationProvokingVertexStateCreateInfoEXT", 57},
     {"VkPipelineRasterizationStateCreateInfo", 39},
     {"VkPipelineRasterizationStateRasterizationOrderAMD", 50},
@@ -1543,9 +1552,11 @@ const char* String(Struct structure) {
     {"VkRenderPassTransformBeginInfoQCOM", 35},
     {"VkRenderingAreaInfoKHR", 23},
     {"VkRenderingAttachmentInfo", 26},
+    {"VkRenderingAttachmentLocationInfoKHR", 37},
     {"VkRenderingFragmentDensityMapAttachmentInfoEXT", 47},
     {"VkRenderingFragmentShadingRateAttachmentInfoKHR", 48},
     {"VkRenderingInfo", 16},
+    {"VkRenderingInputAttachmentIndexInfoKHR", 39},
     {"VkResolveImageInfo2", 20},
     {"VkSRTDataNV", 12},
     {"VkSampleLocationEXT", 20},
@@ -2176,6 +2187,7 @@ const char* String(Field field) {
     {"dynamicPipelineLayout", 22},
     {"dynamicPrimitiveTopologyUnrestricted", 37},
     {"dynamicRendering", 17},
+    {"dynamicRenderingLocalRead", 26},
     {"dynamicRenderingUnusedAttachments", 34},
     {"dynamicStateCount", 18},
     {"earliestPresentTime", 20},
@@ -3061,6 +3073,8 @@ const char* String(Field field) {
     {"pCollection", 12},
     {"pColor", 7},
     {"pColorAttachmentFormats", 24},
+    {"pColorAttachmentInputIndices", 29},
+    {"pColorAttachmentLocations", 26},
     {"pColorAttachmentSamples", 24},
     {"pColorAttachments", 18},
     {"pColorBlendAdvanced", 20},
@@ -3114,6 +3128,7 @@ const char* String(Field field) {
     {"pDependencyInfos", 17},
     {"pDepthAttachment", 17},
     {"pDepthBiasInfo", 15},
+    {"pDepthInputAttachmentIndex", 27},
     {"pDepthStencil", 14},
     {"pDepthStencilAttachment", 24},
     {"pDepthStencilResolveAttachment", 31},
@@ -3250,6 +3265,7 @@ const char* String(Field field) {
     {"pLibraries", 11},
     {"pLibraryInfo", 13},
     {"pLibraryInterface", 18},
+    {"pLocationInfo", 14},
     {"pMapEntries", 12},
     {"pMarkerInfo", 12},
     {"pMarkerName", 12},
@@ -3415,6 +3431,7 @@ const char* String(Field field) {
     {"pStdSliceSegmentHeader", 23},
     {"pStdVPSs", 9},
     {"pStencilAttachment", 19},
+    {"pStencilInputAttachmentIndex", 29},
     {"pStorageBuffer", 15},
     {"pStorageImage", 14},
     {"pStorageTexelBuffer", 20},
@@ -3872,8 +3889,10 @@ const char* String(Field field) {
     {"shaderEarlyAndLateFragmentTests", 32},
     {"shaderEngineCount", 18},
     {"shaderEnqueue", 14},
+    {"shaderExpectAssume", 19},
     {"shaderFloat16", 14},
     {"shaderFloat64", 14},
+    {"shaderFloatControls2", 21},
     {"shaderGroupBaseAlignment", 25},
     {"shaderGroupHandleAlignment", 27},
     {"shaderGroupHandleCaptureReplaySize", 35},
@@ -3891,12 +3910,14 @@ const char* String(Field field) {
     {"shaderInt8", 11},
     {"shaderIntegerDotProduct", 24},
     {"shaderIntegerFunctions2", 24},
+    {"shaderMaximalReconvergence", 27},
     {"shaderModule", 13},
     {"shaderModuleIdentifier", 23},
     {"shaderModuleIdentifierAlgorithmUUID", 36},
     {"shaderObject", 13},
     {"shaderOutputLayer", 18},
     {"shaderOutputViewportIndex", 26},
+    {"shaderQuadControl", 18},
     {"shaderResourceMinLod", 21},
     {"shaderResourceResidency", 24},
     {"shaderRoundingModeRTEFloat16", 29},
@@ -3940,6 +3961,8 @@ const char* String(Field field) {
     {"shaderStorageTexelBufferArrayNonUniformIndexing", 48},
     {"shaderSubgroupClock", 20},
     {"shaderSubgroupExtendedTypes", 28},
+    {"shaderSubgroupRotate", 21},
+    {"shaderSubgroupRotateClustered", 30},
     {"shaderSubgroupUniformControlFlow", 33},
     {"shaderTerminateInvocation", 26},
     {"shaderTessellationAndGeometryPointSize", 39},
@@ -4392,6 +4415,8 @@ bool IsFieldPointer(Field field) {
     case Field::pCollection:
     case Field::pColor:
     case Field::pColorAttachmentFormats:
+    case Field::pColorAttachmentInputIndices:
+    case Field::pColorAttachmentLocations:
     case Field::pColorAttachmentSamples:
     case Field::pColorAttachments:
     case Field::pColorBlendAdvanced:
@@ -4445,6 +4470,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDependencyInfos:
     case Field::pDepthAttachment:
     case Field::pDepthBiasInfo:
+    case Field::pDepthInputAttachmentIndex:
     case Field::pDepthStencil:
     case Field::pDepthStencilAttachment:
     case Field::pDepthStencilResolveAttachment:
@@ -4581,6 +4607,7 @@ bool IsFieldPointer(Field field) {
     case Field::pLibraries:
     case Field::pLibraryInfo:
     case Field::pLibraryInterface:
+    case Field::pLocationInfo:
     case Field::pMapEntries:
     case Field::pMarkerInfo:
     case Field::pMarkerName:
@@ -4746,6 +4773,7 @@ bool IsFieldPointer(Field field) {
     case Field::pStdSliceSegmentHeader:
     case Field::pStdVPSs:
     case Field::pStencilAttachment:
+    case Field::pStencilInputAttachmentIndex:
     case Field::pStorageBuffer:
     case Field::pStorageImage:
     case Field::pStorageTexelBuffer:

@@ -3833,6 +3833,12 @@ bool ObjectLifetimes::PreCallValidateSignalSemaphoreKHR(VkDevice device, const V
 // vkCmdSetFragmentShadingRateKHR:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetFragmentShadingRateKHR-commandBuffer-parameter"
 
+// vkCmdSetRenderingAttachmentLocationsKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetRenderingAttachmentLocationsKHR-commandBuffer-parameter"
+
+// vkCmdSetRenderingInputAttachmentIndicesKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-commandBuffer-parameter"
+
 bool ObjectLifetimes::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId,
                                                        uint64_t timeout, const ErrorObject& error_obj) const {
     bool skip = false;
@@ -4188,6 +4194,9 @@ bool ObjectLifetimes::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice devi
 
 // vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-physicalDevice-parameter"
+
+// vkCmdSetLineStippleKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetLineStippleKHR-commandBuffer-parameter"
 
 // vkGetPhysicalDeviceCalibrateableTimeDomainsKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
@@ -5701,7 +5710,7 @@ void ObjectLifetimes::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance
 }
 
 // vkCmdSetLineStippleEXT:
-// Checked by chassis: commandBuffer: "VUID-vkCmdSetLineStippleEXT-commandBuffer-parameter"
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetLineStippleKHR-commandBuffer-parameter"
 
 bool ObjectLifetimes::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                        uint32_t queryCount, const ErrorObject& error_obj) const {
@@ -6920,9 +6929,6 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice
     return skip;
 }
 
-// vkCmdSetTessellationDomainOriginEXT:
-// Checked by chassis: commandBuffer: "VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter"
-
 // vkCmdSetDepthClampEnableEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetDepthClampEnableEXT-commandBuffer-parameter"
 
@@ -6952,6 +6958,9 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice
 
 // vkCmdSetColorWriteMaskEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetColorWriteMaskEXT-commandBuffer-parameter"
+
+// vkCmdSetTessellationDomainOriginEXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter"
 
 // vkCmdSetRasterizationStreamEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetRasterizationStreamEXT-commandBuffer-parameter"
@@ -7145,7 +7154,7 @@ bool ObjectLifetimes::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderE
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkDestroyShaderEXT-device-parameter"
-    skip |= ValidateObject(shader, kVulkanObjectTypeShaderEXT, false, "VUID-vkDestroyShaderEXT-shader-parameter",
+    skip |= ValidateObject(shader, kVulkanObjectTypeShaderEXT, true, "VUID-vkDestroyShaderEXT-shader-parameter",
                            "VUID-vkDestroyShaderEXT-shader-parent", error_obj.location.dot(Field::shader));
     skip |= ValidateDestroyObject(shader, kVulkanObjectTypeShaderEXT, pAllocator, "VUID-vkDestroyShaderEXT-pAllocator-08483",
                                   "VUID-vkDestroyShaderEXT-pAllocator-08484", error_obj.location);

@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -378,6 +378,8 @@ extern PFN_vkWaitSemaphoresKHR WaitSemaphoresKHR;
 extern PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
 extern PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
 extern PFN_vkCmdSetFragmentShadingRateKHR CmdSetFragmentShadingRateKHR;
+extern PFN_vkCmdSetRenderingAttachmentLocationsKHR CmdSetRenderingAttachmentLocationsKHR;
+extern PFN_vkCmdSetRenderingInputAttachmentIndicesKHR CmdSetRenderingInputAttachmentIndicesKHR;
 extern PFN_vkWaitForPresentKHR WaitForPresentKHR;
 extern PFN_vkGetBufferDeviceAddressKHR GetBufferDeviceAddressKHR;
 extern PFN_vkGetBufferOpaqueCaptureAddressKHR GetBufferOpaqueCaptureAddressKHR;
@@ -418,6 +420,7 @@ extern PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
 extern PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
 extern PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
 extern PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+extern PFN_vkCmdSetLineStippleKHR CmdSetLineStippleKHR;
 extern PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
 extern PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
 extern PFN_vkCmdBindDescriptorSets2KHR CmdBindDescriptorSets2KHR;
@@ -688,7 +691,6 @@ extern PFN_vkCmdDecompressMemoryIndirectCountNV CmdDecompressMemoryIndirectCount
 extern PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
 extern PFN_vkCmdUpdatePipelineIndirectBufferNV CmdUpdatePipelineIndirectBufferNV;
 extern PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
-extern PFN_vkCmdSetTessellationDomainOriginEXT CmdSetTessellationDomainOriginEXT;
 extern PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;
 extern PFN_vkCmdSetPolygonModeEXT CmdSetPolygonModeEXT;
 extern PFN_vkCmdSetRasterizationSamplesEXT CmdSetRasterizationSamplesEXT;
@@ -699,6 +701,7 @@ extern PFN_vkCmdSetLogicOpEnableEXT CmdSetLogicOpEnableEXT;
 extern PFN_vkCmdSetColorBlendEnableEXT CmdSetColorBlendEnableEXT;
 extern PFN_vkCmdSetColorBlendEquationEXT CmdSetColorBlendEquationEXT;
 extern PFN_vkCmdSetColorWriteMaskEXT CmdSetColorWriteMaskEXT;
+extern PFN_vkCmdSetTessellationDomainOriginEXT CmdSetTessellationDomainOriginEXT;
 extern PFN_vkCmdSetRasterizationStreamEXT CmdSetRasterizationStreamEXT;
 extern PFN_vkCmdSetConservativeRasterizationModeEXT CmdSetConservativeRasterizationModeEXT;
 extern PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT CmdSetExtraPrimitiveOverestimationSizeEXT;
