@@ -979,20 +979,17 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
-
-    // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-    if (!pCreateInfo) {
-        return skip;
-    }
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    // If queryType is VK_QUERY_TYPE_PIPELINE_STATISTICS, pipelineStatistics must be a valid combination of
-    // VkQueryPipelineStatisticFlagBits values
-    if ((pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) && (pCreateInfo->pipelineStatistics != 0) &&
-        ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0)) {
-        skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, create_info_loc.dot(Field::queryType),
-                         "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
-                         "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
-                         "values.");
+    if (pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
+        if (pCreateInfo->pipelineStatistics == 0) {
+            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-09534", device, create_info_loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but pCreateInfo->pipelineStatistics is zero");
+        } else if ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0) {
+            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, create_info_loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
+                             "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
+                             "values.");
+        }
     }
     if (pCreateInfo->queryCount == 0) {
         skip |= LogError("VUID-VkQueryPoolCreateInfo-queryCount-02763", device, create_info_loc.dot(Field::queryCount), "is zero.");
