@@ -1493,6 +1493,37 @@ TEST_F(NegativeDescriptorBuffer, NullHandle) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, NullCombinedImageSampler) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    uint8_t out;
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    dgi.data.pCombinedImageSampler = nullptr;
+    // TODO -Being discussed if allowed or not
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6393#note_452227
+    //
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-pDescriptorInfo-09507");
+    // vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize / 2, &out);
+    // m_errorMonitor->VerifyFound();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    const VkDescriptorImageInfo dii = {sampler.handle(), VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL};
+    dgi.data.pCombinedImageSampler = &dii;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-pDescriptorInfo-09507");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08125");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize / 2, &out);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorBuffer, BufferUsage) {
     TEST_DESCRIPTION("Wrong Usage for buffer createion.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
