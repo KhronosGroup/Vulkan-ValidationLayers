@@ -2777,107 +2777,113 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
         for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
             const auto *fragment_shading_rate_attachment =
                 vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pSubpasses[subpass].pNext);
+            if (!fragment_shading_rate_attachment || !fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
+                continue;
+            }
 
-            if (fragment_shading_rate_attachment && fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
-                const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, subpass);
-                const Location fragment_loc =
-                    subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment);
-                const VkAttachmentReference2 &attachment_reference =
-                    *(fragment_shading_rate_attachment->pFragmentShadingRateAttachment);
-                if (attachment_reference.attachment == attachment_description) {
-                    used_as_fragment_shading_rate_attachment.push_back(subpass);
+            const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, subpass);
+            const Location fragment_loc =
+                subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment);
+            const VkAttachmentReference2 &attachment_reference =
+                *(fragment_shading_rate_attachment->pFragmentShadingRateAttachment);
+            if (attachment_reference.attachment == attachment_description) {
+                used_as_fragment_shading_rate_attachment.push_back(subpass);
+
+                if (pCreateInfo->pAttachments[attachment_reference.attachment].loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-09387", device, fragment_loc.dot(Field::attachment),
+                                     "(%" PRIu32 ") has a loadOp of VK_ATTACHMENT_LOAD_OP_CLEAR", attachment_reference.attachment);
+                }
+            }
+
+            if (attachment_reference.attachment != VK_ATTACHMENT_UNUSED) {
+                if ((pCreateInfo->flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) {
+                    skip |=
+                        LogError("VUID-VkRenderPassCreateInfo2-flags-04521", device, fragment_loc.dot(Field::attachment),
+                                 "is not VK_ATTACHMENT_UNUSED, but render pass includes VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM");
                 }
 
-                if (attachment_reference.attachment != VK_ATTACHMENT_UNUSED) {
-                    if ((pCreateInfo->flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) {
-                        skip |= LogError(
-                            "VUID-VkRenderPassCreateInfo2-flags-04521", device, fragment_loc.dot(Field::attachment),
-                            "is not VK_ATTACHMENT_UNUSED, but render pass includes VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM");
-                    }
+                const VkFormatFeatureFlags2 potential_format_features =
+                    GetPotentialFormatFeatures(pCreateInfo->pAttachments[attachment_reference.attachment].format);
 
-                    const VkFormatFeatureFlags2 potential_format_features =
-                        GetPotentialFormatFeatures(pCreateInfo->pAttachments[attachment_reference.attachment].format);
+                if (!(potential_format_features & VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                    skip |=
+                        LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04586", device,
+                                 error_obj.location.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
+                                 "is %s and used in %s as a fragment shading rate attachment, but the format does not support "
+                                 "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                                 string_VkFormat(pCreateInfo->pAttachments[attachment_reference.attachment].format),
+                                 subpass_loc.Fields().c_str());
+                }
 
-                    if (!(potential_format_features & VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                        skip |= LogError(
-                            "VUID-VkRenderPassCreateInfo2-pAttachments-04586", device,
-                            error_obj.location.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
-                            "is %s and used in %s as a fragment shading rate attachment, but the format does not support "
-                            "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
-                            string_VkFormat(pCreateInfo->pAttachments[attachment_reference.attachment].format),
-                            subpass_loc.Fields().c_str());
-                    }
+                if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&
+                    attachment_reference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
+                    skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524", device,
+                                     fragment_loc.dot(Field::layout), "has a layout of %s.",
+                                     string_VkImageLayout(attachment_reference.layout));
+                }
 
-                    if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&
-                        attachment_reference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-                        skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524", device,
-                                         fragment_loc.dot(Field::layout), "has a layout of %s.",
-                                         string_VkImageLayout(attachment_reference.layout));
-                    }
-
-                    const VkExtent2D texel_size = fragment_shading_rate_attachment->shadingRateAttachmentTexelSize;
-                    const Location texel_loc =
-                        subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
-                    if (!IsPowerOfTwo(texel_size.width)) {
-                        skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525", device,
-                                         texel_loc.dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.", texel_size.width);
-                    }
-                    if (texel_size.width <
-                        phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
-                        skip |= LogError(
-                            "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
-                            texel_loc.dot(Field::width), "(%" PRIu32 ") is lower than the advertised minimum width %" PRIu32 ".",
-                            texel_size.width,
-                            phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
-                    }
-                    if (texel_size.width >
-                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
-                        skip |= LogError(
-                            "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
-                            texel_loc.dot(Field::width), "(%" PRIu32 ") is higher than the advertised maximum width %" PRIu32 ".",
-                            texel_size.width,
-                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
-                    }
-                    if (!IsPowerOfTwo(texel_size.height)) {
-                        skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528", device,
-                                         texel_loc.dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.", texel_size.height);
-                    }
-                    if (texel_size.height <
-                        phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
-                        skip |= LogError(
-                            "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
-                            texel_loc.dot(Field::height), "(%" PRIu32 ") is lower than the advertised minimum height %" PRIu32 ".",
-                            texel_size.height,
-                            phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
-                    }
-                    if (texel_size.height >
-                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
-                        skip |= LogError(
-                            "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
-                            texel_loc.dot(Field::height), "(%" PRIu32 ") is higher than the advertised maximum height %" PRIu32 ".",
-                            texel_size.height,
-                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
-                    }
-                    uint32_t aspect_ratio = texel_size.width / texel_size.height;
-                    uint32_t inverse_aspect_ratio = texel_size.height / texel_size.width;
-                    if (aspect_ratio >
-                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                        skip |= LogError(
-                            "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
-                            "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an aspect ratio %" PRIu32
-                            ", which is higher than the advertised maximum aspect ratio %" PRIu32 ".",
-                            texel_size.width, texel_size.height, aspect_ratio,
-                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
-                    }
-                    if (inverse_aspect_ratio >
-                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                        skip |= LogError(
-                            "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
-                            "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
-                            ", which is higher than the advertised maximum aspect ratio %" PRIu32 ".",
-                            texel_size.width, texel_size.height, inverse_aspect_ratio,
-                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
-                    }
+                const VkExtent2D texel_size = fragment_shading_rate_attachment->shadingRateAttachmentTexelSize;
+                const Location texel_loc =
+                    subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
+                if (!IsPowerOfTwo(texel_size.width)) {
+                    skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525", device,
+                                     texel_loc.dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.", texel_size.width);
+                }
+                if (texel_size.width <
+                    phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
+                    skip |=
+                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
+                                 texel_loc.dot(Field::width),
+                                 "(%" PRIu32 ") is lower than the advertised minimum width %" PRIu32 ".", texel_size.width,
+                                 phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
+                }
+                if (texel_size.width >
+                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
+                    skip |=
+                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
+                                 texel_loc.dot(Field::width),
+                                 "(%" PRIu32 ") is higher than the advertised maximum width %" PRIu32 ".", texel_size.width,
+                                 phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
+                }
+                if (!IsPowerOfTwo(texel_size.height)) {
+                    skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528", device,
+                                     texel_loc.dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.", texel_size.height);
+                }
+                if (texel_size.height <
+                    phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
+                    skip |=
+                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
+                                 texel_loc.dot(Field::height),
+                                 "(%" PRIu32 ") is lower than the advertised minimum height %" PRIu32 ".", texel_size.height,
+                                 phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
+                }
+                if (texel_size.height >
+                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
+                    skip |=
+                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
+                                 texel_loc.dot(Field::height),
+                                 "(%" PRIu32 ") is higher than the advertised maximum height %" PRIu32 ".", texel_size.height,
+                                 phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
+                }
+                uint32_t aspect_ratio = texel_size.width / texel_size.height;
+                uint32_t inverse_aspect_ratio = texel_size.height / texel_size.width;
+                if (aspect_ratio >
+                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+                    skip |= LogError(
+                        "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
+                        "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an aspect ratio %" PRIu32
+                        ", which is higher than the advertised maximum aspect ratio %" PRIu32 ".",
+                        texel_size.width, texel_size.height, aspect_ratio,
+                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
+                }
+                if (inverse_aspect_ratio >
+                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+                    skip |= LogError(
+                        "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
+                        "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
+                        ", which is higher than the advertised maximum aspect ratio %" PRIu32 ".",
+                        texel_size.width, texel_size.height, inverse_aspect_ratio,
+                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
                 }
             }
         }
