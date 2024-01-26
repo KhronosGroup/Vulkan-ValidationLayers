@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -594,24 +594,26 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
         // Check if viewFormatCount is not zero that it is all compatible
         for (uint32_t i = 0; i < viewFormatCount; i++) {
-            const bool class_compatible =
-                vkuFormatCompatibilityClass(format_list_info->pViewFormats[i]) == vkuFormatCompatibilityClass(image_format);
-            if (!class_compatible) {
+            const VkFormat view_format = format_list_info->pViewFormats[i];
+            const Location format_loc = create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i);
+            const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);
+
+            if (view_format == VK_FORMAT_UNDEFINED) {
+                skip |= LogError("VUID-VkImageFormatListCreateInfo-viewFormatCount-09540", device, format_loc,
+                                 "is VK_FORMAT_UNDEFINED.");
+            } else if (!class_compatible) {
                 if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-                    const bool size_compatible =
-                        !vkuFormatIsCompressed(format_list_info->pViewFormats[i]) &&
-                        vkuFormatElementSize(format_list_info->pViewFormats[i]) == vkuFormatElementSize(image_format);
+                    const bool size_compatible = !vkuFormatIsCompressed(view_format) &&
+                                                 vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
                     if (!size_compatible) {
-                        skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device,
-                                         create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
+                        skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
                                          "(%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",
-                                         string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
+                                         string_VkFormat(view_format), string_VkFormat(image_format));
                     }
                 } else {
-                    skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device,
-                                     create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
-                                     "(%s) and VkImageCreateInfo::format (%s) are not compatible.",
-                                     string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
+                    skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
+                                     "(%s) and VkImageCreateInfo::format (%s) are not compatible.", string_VkFormat(view_format),
+                                     string_VkFormat(image_format));
                 }
             }
         }

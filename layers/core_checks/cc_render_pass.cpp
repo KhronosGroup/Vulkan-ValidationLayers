@@ -4384,17 +4384,6 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
             }
         }
     }
-    if (framebuffer_attachments_create_info) {
-        for (uint32_t i = 0; i < framebuffer_attachments_create_info->attachmentImageInfoCount; ++i) {
-            if (framebuffer_attachments_create_info->pAttachmentImageInfos[i].pNext != nullptr) {
-                skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-pNext-pNext", device,
-                                 create_info_loc.pNext(Struct::VkFramebufferAttachmentsCreateInfo, Field::pAttachmentImageInfos, i)
-                                     .dot(Field::pNext),
-                                 "is not NULL.");
-            }
-        }
-    }
-
     // Verify FB dimensions are within physical device limits
     if (pCreateInfo->width > phys_dev_props.limits.maxFramebufferWidth) {
         skip |= LogError("VUID-VkFramebufferCreateInfo-width-00886", device, create_info_loc.dot(Field::width),
@@ -4432,6 +4421,27 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                          "%" PRIu32 " does not match attachmentCount of %" PRIu32 " of %s being used to create Framebuffer.",
                          pCreateInfo->attachmentCount, rpci->attachmentCount, FormatHandle(pCreateInfo->renderPass).c_str());
         return skip;  // nothing else to validate
+    }
+
+    if (framebuffer_attachments_create_info) {
+        for (const auto [i, attachment_image_info] :
+             vvl::enumerate(framebuffer_attachments_create_info->pAttachmentImageInfos,
+                            framebuffer_attachments_create_info->attachmentImageInfoCount)) {
+            const Location attachment_image_info_loc =
+                create_info_loc.pNext(Struct::VkFramebufferAttachmentsCreateInfo, Field::pAttachmentImageInfos, i);
+            if (attachment_image_info->pNext != nullptr) {
+                skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-pNext-pNext", device,
+                                 attachment_image_info_loc.dot(Field::pNext), "is not NULL.");
+            }
+            for (const auto [j, view_format] :
+                 vvl::enumerate(attachment_image_info->pViewFormats, attachment_image_info->viewFormatCount)) {
+                // VK_ANDROID_external_format_resolve can have a valid undefined format
+                if (*view_format == VK_FORMAT_UNDEFINED && rp_state->createInfo.pAttachments[i].format != VK_FORMAT_UNDEFINED) {
+                    skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-viewFormatCount-09536", device,
+                                     attachment_image_info_loc.dot(Field::pViewFormats, j), "is VK_FORMAT_UNDEFINED.");
+                }
+            }
+        }
     }
 
     // attachmentCounts match, so make sure corresponding attachment details line up

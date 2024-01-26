@@ -1126,6 +1126,9 @@ bool StatelessValidation::manual_PreCallValidateGetDescriptorEXT(VkDevice device
     bool skip = false;
 
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
+    const Location data_loc = descriptor_info_loc.dot(Field::data);
+    const VkDescriptorAddressInfoEXT *address_info = nullptr;
+    Field data_field = Field::Empty;
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             if (!pDescriptorInfo->data.pCombinedImageSampler) {
@@ -1143,31 +1146,44 @@ bool StatelessValidation::manual_PreCallValidateGetDescriptorEXT(VkDevice device
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pUniformTexelBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(*pDescriptorInfo->data.pUniformTexelBuffer,
-                                                         descriptor_info_loc.dot(Field::data).dot(Field::pUniformTexelBuffer));
+                address_info = pDescriptorInfo->data.pUniformTexelBuffer;
+                data_field = Field::pUniformTexelBuffer;
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pStorageTexelBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(*pDescriptorInfo->data.pStorageTexelBuffer,
-                                                         descriptor_info_loc.dot(Field::data).dot(Field::pStorageTexelBuffer));
+                address_info = pDescriptorInfo->data.pStorageTexelBuffer;
+                data_field = Field::pStorageTexelBuffer;
             }
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             if (pDescriptorInfo->data.pUniformBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(*pDescriptorInfo->data.pUniformBuffer,
-                                                         descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer));
+                address_info = pDescriptorInfo->data.pUniformBuffer;
+                data_field = Field::pUniformBuffer;
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             if (pDescriptorInfo->data.pStorageBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(*pDescriptorInfo->data.pStorageBuffer,
-                                                         descriptor_info_loc.dot(Field::data).dot(Field::pStorageBuffer));
+                address_info = pDescriptorInfo->data.pStorageBuffer;
+                data_field = Field::pStorageBuffer;
             }
             break;
         default:
             break;
     }
 
+    if (address_info) {
+        const Location address_loc = data_loc.dot(data_field);
+        skip |= ValidateDescriptorAddressInfoEXT(*address_info, address_loc);
+
+        if (address_info->address != 0) {
+            if ((pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+                 pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+                address_info->format == VK_FORMAT_UNDEFINED) {
+                skip |= LogError("VUID-VkDescriptorAddressInfoEXT-None-09508", device, address_loc.dot(Field::format),
+                                 "is VK_FORMAT_UNDEFINED.");
+            }
+        }
+    }
     return skip;
 }

@@ -4121,8 +4121,24 @@ TEST_F(NegativeImage, ImageFormatListEnum) {
     formatList.pViewFormats = formats;
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.pNext = &formatList;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     CreateImageTest(*this, &image_ci, "VUID-VkImageFormatListCreateInfo-pViewFormats-parameter");
+}
+
+TEST_F(NegativeImage, ImageFormatListFormat) {
+    TEST_DESCRIPTION("VkImageFormatListCreateInfo with bad enum");
+    AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const VkFormat formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_UNDEFINED};
+    VkImageFormatListCreateInfo formatList = vku::InitStructHelper();
+    formatList.viewFormatCount = 2;
+    formatList.pViewFormats = formats;
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.pNext = &formatList;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
+    CreateImageTest(*this, &image_ci, "VUID-VkImageFormatListCreateInfo-viewFormatCount-09540");
 }
 
 TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
