@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -23,285 +23,285 @@
 // clang-format off
 
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_ExtensionMismatch =
-    "UNASSIGNED-BestPractices-vkCreateInstance-extension-mismatch";
+    "BestPractices-vkCreateInstance-extension-mismatch";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_ExtensionMismatch =
-    "UNASSIGNED-BestPractices-vkCreateDevice-extension-mismatch";
+    "BestPractices-vkCreateDevice-extension-mismatch";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_DeprecatedExtension =
-    "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension";
+    "BestPractices-vkCreateInstance-deprecated-extension";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_DeprecatedExtension =
-    "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension";
+    "BestPractices-vkCreateDevice-deprecated-extension";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport =
-    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-cadsupport";
+    "BestPractices-vkCreateInstance-specialuse-extension-cadsupport";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_D3DEmulation =
-    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-d3demulation";
+    "BestPractices-vkCreateInstance-specialuse-extension-d3demulation";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_DevTools =
-    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-devtools";
+    "BestPractices-vkCreateInstance-specialuse-extension-devtools";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_Debugging =
-    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging";
+    "BestPractices-vkCreateInstance-specialuse-extension-debugging";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_GLEmulation =
-    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-glemulation";
+    "BestPractices-vkCreateInstance-specialuse-extension-glemulation";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_CADSupport =
-    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-cadsupport";
+    "BestPractices-vkCreateDevice-specialuse-extension-cadsupport";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_D3DEmulation =
-    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-d3demulation";
+    "BestPractices-vkCreateDevice-specialuse-extension-d3demulation";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_DevTools =
-    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-devtools";
+    "BestPractices-vkCreateDevice-specialuse-extension-devtools";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_Debugging =
-    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-debugging";
+    "BestPractices-vkCreateDevice-specialuse-extension-debugging";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation =
-    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-glemulation";
+    "BestPractices-vkCreateDevice-specialuse-extension-glemulation";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_API_Mismatch =
-    "UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch";
-[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MustQueryCount = "UNASSIGNED-BestPractices-DevLimit-MustQueryCount";
-[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_CountMismatch = "UNASSIGNED-BestPractices-DevLimit-CountMismatch";
-[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MissingQueryCount = "UNASSIGNED-BestPractices-DevLimit-MissingQueryCount";
+    "BestPractices-vkCreateDevice-API-version-mismatch";
+[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MustQueryCount = "BestPractices-DevLimit-MustQueryCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_CountMismatch = "BestPractices-DevLimit-CountMismatch";
+[[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MissingQueryCount = "BestPractices-DevLimit-MissingQueryCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_SharingModeExclusive =
-    "UNASSIGNED-BestPractices-vkCreateBuffer-sharing-mode-exclusive";
+    "BestPractices-vkCreateBuffer-sharing-mode-exclusive";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_Attatchment =
-    "UNASSIGNED-BestPractices-vkCreateRenderPass-attatchment";
+    "BestPractices-vkCreateRenderPass-attatchment";
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateMemory_TooManyObjects =
-    "UNASSIGNED-BestPractices-vkAllocateMemory-too-many-objects";
+    "BestPractices-vkAllocateMemory-too-many-objects";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_MultiplePipelines =
-    "UNASSIGNED-BestPractices-vkCreatePipelines-multiple-pipelines-no-cache";
-[[maybe_unused]] static const char *kVUID_BestPractices_PipelineStageFlags = "UNASSIGNED-BestPractices-pipeline-stage-flags";
+    "BestPractices-vkCreatePipelines-multiple-pipelines-no-cache";
+[[maybe_unused]] static const char *kVUID_BestPractices_PipelineStageFlags = "BestPractices-pipeline-stage-flags";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdDraw_InstanceCountZero =
-    "UNASSIGNED-BestPractices-vkCmdDraw-instance-count-zero";
-[[maybe_unused]] static const char *kVUID_BestPractices_CmdDraw_DrawCountZero = "UNASSIGNED-BestPractices-vkCmdDraw-draw-count-zero";
+    "BestPractices-vkCmdDraw-instance-count-zero";
+[[maybe_unused]] static const char *kVUID_BestPractices_CmdDraw_DrawCountZero = "BestPractices-vkCmdDraw-draw-count-zero";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdDispatch_GroupCountZero =
-    "UNASSIGNED-BestPractices-vkCmdDispatch-group-count-zero";
+    "BestPractices-vkCmdDispatch-group-count-zero";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled =
-    "UNASSIGNED-BestPractices-vkCreateDevice-physical-device-features-not-retrieved";
+    "BestPractices-vkCreateDevice-physical-device-features-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_GetSurfaceNotCalled =
-    "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved";
+    "BestPractices-vkCreateSwapchainKHR-surface-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_DisplayPlane_PropertiesNotCalled =
-    "UNASSIGNED-BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved";
-[[maybe_unused]] static const char *kVUID_BestPractices_MemTrack_InvalidState = "UNASSIGNED-BestPractices-MemTrack-InvalidState";
+    "BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved";
+[[maybe_unused]] static const char *kVUID_BestPractices_MemTrack_InvalidState = "BestPractices-MemTrack-InvalidState";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindAccelNV_NoMemReqQuery =
-    "UNASSIGNED-BestPractices-BindAccelerationStructureMemoryNV-requirements-not-retrieved";
+    "BestPractices-BindAccelerationStructureMemoryNV-requirements-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_GetVideoSessionMemReqCountNotRetrieved =
-    "UNASSIGNED-BestPractices-vkGetVideoSessionMemoryRequirementsKHR-count-not-retrieved";
+    "BestPractices-vkGetVideoSessionMemoryRequirementsKHR-count-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindVideoSessionMemReqCountNotRetrieved =
-    "UNASSIGNED-BestPractices-vkBindVideoSessionMemoryKHR-requirements-count-not-retrieved";
+    "BestPractices-vkBindVideoSessionMemoryKHR-requirements-count-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindVideoSessionMemReqNotAllBindingsRetrieved =
-    "UNASSIGNED-BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved";
+    "BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_VtxIndexOutOfBounds =
-    "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds";
+    "BestPractices-DrawState-VtxIndexOutOfBounds";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_ClearCmdBeforeDraw =
-    "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw";
+    "BestPractices-DrawState-ClearCmdBeforeDraw";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateCommandPool_CommandBufferReset =
-    "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset";
+    "BestPractices-vkCreateCommandPool-command-buffer-reset";
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateCommandBuffers_UnusableSecondary =
-    "UNASSIGNED-BestPractices-vkAllocateCommandBuffers-unusable-secondary";
+    "BestPractices-vkAllocateCommandBuffers-unusable-secondary";
 [[maybe_unused]] static const char *kVUID_BestPractices_BeginCommandBuffer_SimultaneousUse =
-    "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use";
+    "BestPractices-vkBeginCommandBuffer-simultaneous-use";
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateMemory_SmallAllocation =
-    "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation";
+    "BestPractices-vkAllocateMemory-small-allocation";
 [[maybe_unused]] static const char *kVUID_BestPractices_SmallDedicatedAllocation =
-    "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation";
+    "BestPractices-vkBindMemory-small-dedicated-allocation";
 [[maybe_unused]] static const char *kVUID_BestPractices_NonLazyTransientImage =
-    "UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image";
+    "BestPractices-vkBindImageMemory-non-lazy-transient-image";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateRenderPass_ImageRequiresMemory =
-    "UNASSIGNED-BestPractices-vkCreateRenderPass-image-requires-memory";
+    "BestPractices-vkCreateRenderPass-image-requires-memory";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateFramebuffer_AttachmentShouldBeTransient =
-    "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-be-transient";
+    "BestPractices-vkCreateFramebuffer-attachment-should-be-transient";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateFramebuffer_AttachmentShouldNotBeTransient =
-    "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient";
+    "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_TooManyInstancedVertexBuffers =
-    "UNASSIGNED-BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers";
+    "BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearAttachments_ClearAfterLoad =
-    "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load";
-[[maybe_unused]] static const char *kVUID_BestPractices_Error_Result = "UNASSIGNED-BestPractices-Error-Result";
-[[maybe_unused]] static const char *kVUID_BestPractices_Failure_Result = "UNASSIGNED-BestPractices-Failure-Result";
-[[maybe_unused]] static const char *kVUID_BestPractices_Verbose_Success_Logging = "UNASSIGNED-BestPractices-Verbose-Success-Logging";
-[[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchain = "UNASSIGNED-BestPractices-SuboptimalSwapchain";
+    "BestPractices-vkCmdClearAttachments-clear-after-load";
+[[maybe_unused]] static const char *kVUID_BestPractices_Error_Result = "BestPractices-Error-Result";
+[[maybe_unused]] static const char *kVUID_BestPractices_Failure_Result = "BestPractices-Failure-Result";
+[[maybe_unused]] static const char *kVUID_BestPractices_Verbose_Success_Logging = "BestPractices-Verbose-Success-Logging";
+[[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchain = "BestPractices-SuboptimalSwapchain";
 [[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchainImageCount =
-    "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count";
+    "BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count";
 [[maybe_unused]] static const char *kVUID_BestPractices_NoVkSwapchainPresentModesCreateInfoEXTProvided =
-    "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided";
+    "BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided";
 [[maybe_unused]] static const char *kVUID_BestPractices_SubpassResolve_NonOptimalFormat =
-    "UNASSIGNED-BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat";
+    "BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat";
 
-[[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_InvalidCount = "UNASSIGNED-BestPractices-SwapchainInvalidCount";
-[[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_PriorCount = "UNASSIGNED-BestPractices-SwapchainPriorCount";
-[[maybe_unused]] static const char *kVUID_BestPractices_DepthBiasNoAttachment = "UNASSIGNED-BestPractices-DepthBiasNoAttachment";
+[[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_InvalidCount = "BestPractices-SwapchainInvalidCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_PriorCount = "BestPractices-SwapchainPriorCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_DepthBiasNoAttachment = "BestPractices-DepthBiasNoAttachment";
 [[maybe_unused]] static const char *kVUID_BestPractices_SpirvDeprecated_WorkgroupSize =
-    "UNASSIGNED-BestPractices-SpirvDeprecated_WorkgroupSize";
-[[maybe_unused]] static const char *kVUID_BestPractices_ImageCreateFlags = "UNASSIGNED-BestPractices-ImageCreateFlags";
+    "BestPractices-SpirvDeprecated_WorkgroupSize";
+[[maybe_unused]] static const char *kVUID_BestPractices_ImageCreateFlags = "BestPractices-ImageCreateFlags";
 [[maybe_unused]] static const char *kVUID_BestPractices_TransitionUndefinedToReadOnly =
-    "UNASSIGNED-BestPractices-TransitionUndefinedToReadOnly";
-[[maybe_unused]] static const char *kVUID_BestPractices_SemaphoreCount = "UNASSIGNED-BestPractices-SemaphoreCount";
-[[maybe_unused]] static const char *kVUID_BestPractices_PushConstants = "UNASSIGNED-BestPractices-PushConstants";
+    "BestPractices-TransitionUndefinedToReadOnly";
+[[maybe_unused]] static const char *kVUID_BestPractices_SemaphoreCount = "BestPractices-SemaphoreCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_PushConstants = "BestPractices-PushConstants";
 [[maybe_unused]] static const char *kVUID_BestPractices_EmptyDescriptorPool =
-    "UNASSIGNED-BestPractices-EmptyDescriptorPool";
-[[maybe_unused]] static const char *kVUID_BestPractices_ClearValueWithoutLoadOpClear = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueWithoutLoadOpClear";
-[[maybe_unused]] static const char *kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueCountHigherThanAttachmentCount";
-[[maybe_unused]] static const char *kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-StoreOpDontCareThenLoadOpLoad";
-[[maybe_unused]] static const char *kVUID_BestPractices_ConcurrentUsageOfExclusiveImage = "UNASSIGNED-BestPractices-ConcurrentUsageOfExclusiveImage";
+    "BestPractices-EmptyDescriptorPool";
+[[maybe_unused]] static const char *kVUID_BestPractices_ClearValueWithoutLoadOpClear = "BestPractices-vkCmdBeginRenderPass-ClearValueWithoutLoadOpClear";
+[[maybe_unused]] static const char *kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount = "BestPractices-vkCmdBeginRenderPass-ClearValueCountHigherThanAttachmentCount";
+[[maybe_unused]] static const char *kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad = "BestPractices-vkCmdBeginRenderPass-StoreOpDontCareThenLoadOpLoad";
+[[maybe_unused]] static const char *kVUID_BestPractices_ConcurrentUsageOfExclusiveImage = "BestPractices-ConcurrentUsageOfExclusiveImage";
 [[maybe_unused]] static const char *kVUID_BestPractices_ImageBarrierAccessLayout =
-    "UNASSIGNED-BestPractices-ImageBarrierAccessLayout";
-[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_SwapchainImagesNotFound = "UNASSIGNED-BestPractices-DrawState-SwapchainImagesNotFound";
-[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_MismatchedImageType = "UNASSIGNED-BestPractices-DrawState-MismatchedImageType";
-[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_InvalidExtents = "UNASSIGNED-BestPractices-DrawState-InvalidExtents";
-[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_InvalidCommandBufferSimultaneousUse = "UNASSIGNED-BestPractices-DrawState-InvalidCommandBufferSimultaneousUse";
-[[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_NoRendering = "UNASSIGNED-BestPractices-Pipeline-NoRendering";
-[[maybe_unused]] static const char *kVUID_BestPractices_QueryPool_Unavailable = "UNASSIGNED-BestPractices-QueryPool-Unavailable";
+    "BestPractices-ImageBarrierAccessLayout";
+[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_SwapchainImagesNotFound = "BestPractices-DrawState-SwapchainImagesNotFound";
+[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_MismatchedImageType = "BestPractices-DrawState-MismatchedImageType";
+[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_InvalidExtents = "BestPractices-DrawState-InvalidExtents";
+[[maybe_unused]] static const char *kVUID_BestPractices_DrawState_InvalidCommandBufferSimultaneousUse = "BestPractices-DrawState-InvalidCommandBufferSimultaneousUse";
+[[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_NoRendering = "BestPractices-Pipeline-NoRendering";
+[[maybe_unused]] static const char *kVUID_BestPractices_QueryPool_Unavailable = "BestPractices-QueryPool-Unavailable";
 [[maybe_unused]] static const char *kVUID_BestPractices_Shader_MissingInputAttachment =
-    "UNASSIGNED-BestPractices-Shader-MissingInputAttachment";
+    "BestPractices-Shader-MissingInputAttachment";
 
 // Arm-specific best practice
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
-    "UNASSIGNED-BestPractices-vkAllocateDescriptorSets-suboptimal-reuse";
+    "BestPractices-vkAllocateDescriptorSets-suboptimal-reuse";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateComputePipelines_ComputeThreadGroupAlignment =
-    "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment";
+    "BestPractices-vkCreateComputePipelines-compute-thread-group-alignment";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateComputePipelines_ComputeWorkGroupSize =
-    "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size";
+    "BestPractices-vkCreateComputePipelines-compute-work-group-size";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality =
-    "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality";
+    "BestPractices-vkCreateComputePipelines-compute-spatial-locality";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_MultisampledBlending =
-    "UNASSIGNED-BestPractices-vkCreatePipelines-multisampled-blending";
+    "BestPractices-vkCreatePipelines-multisampled-blending";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateImage_TooLargeSampleCount =
-    "UNASSIGNED-BestPractices-vkCreateImage-too-large-sample-count";
+    "BestPractices-vkCreateImage-too-large-sample-count";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateImage_NonTransientMSImage =
-    "UNASSIGNED-BestPractices-vkCreateImage-non-transient-ms-image";
+    "BestPractices-vkCreateImage-non-transient-ms-image";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_DifferentWrappingModes =
-    "UNASSIGNED-BestPractices-vkCreateSampler-different-wrapping-modes";
+    "BestPractices-vkCreateSampler-different-wrapping-modes";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_LodClamping =
-    "UNASSIGNED-BestPractices-vkCreateSampler-lod-clamping";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_LodBias = "UNASSIGNED-BestPractices-vkCreateSampler-lod-bias";
+    "BestPractices-vkCreateSampler-lod-clamping";
+[[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_LodBias = "BestPractices-vkCreateSampler-lod-bias";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_BorderClampColor =
-    "UNASSIGNED-BestPractices-vkCreateSampler-border-clamp-color";
+    "BestPractices-vkCreateSampler-border-clamp-color";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_UnnormalizedCoordinates =
-    "UNASSIGNED-BestPractices-vkCreateSampler-unnormalized-coordinates";
+    "BestPractices-vkCreateSampler-unnormalized-coordinates";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateSampler_Anisotropy =
-    "UNASSIGNED-BestPractices-vkCreateSampler-anisotropy";
+    "BestPractices-vkCreateSampler-anisotropy";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdResolveImage_ResolvingImage =
-    "UNASSIGNED-BestPractices-vkCmdResolveImage-resolving-image";
+    "BestPractices-vkCmdResolveImage-resolving-image";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls =
-    "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls";
+    "BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer =
-    "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer";
+    "BestPractices-vkCmdDrawIndexed-sparse-index-buffer";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdDrawIndexed_PostTransformCacheThrashing =
-    "UNASSIGNED-BestPractices-vkCmdDrawIndexed-post-transform-cache-thrashing";
+    "BestPractices-vkCmdDrawIndexed-post-transform-cache-thrashing";
 [[maybe_unused]] static const char *kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit =
-    "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit";
+    "BestPractices-vkBeginCommandBuffer-one-time-submit";
 [[maybe_unused]] static const char *kVUID_BestPractices_BeginRenderPass_ZeroSizeRenderArea =
-    "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-zero-size-render-area";
+    "BestPractices-vkCmdBeginRenderPass-zero-size-render-area";
 [[maybe_unused]] static const char *kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback =
-    "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback";
+    "BestPractices-vkCmdBeginRenderPass-attachment-needs-readback";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateSwapchain_PresentMode =
-    "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo";
+    "BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_DepthBias_Zero =
-    "UNASSIGNED-BestPractices-vkCreatePipelines-depthbias-zero";
+    "BestPractices-vkCreatePipelines-depthbias-zero";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_RobustBufferAccess =
-    "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess";
+    "BestPractices-vkCreateDevice-RobustBufferAccess";
 [[maybe_unused]] static const char *kVUID_BestPractices_EndRenderPass_DepthPrePassUsage =
-    "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage";
+    "BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage";
 [[maybe_unused]] static const char *kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile =
-    "UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile";
+    "BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_RedundantStore =
-    "UNASSIGNED-BestPractices-RenderPass-redundant-store";
+    "BestPractices-RenderPass-redundant-store";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_RedundantClear =
-    "UNASSIGNED-BestPractices-RenderPass-redundant-clear";
+    "BestPractices-RenderPass-redundant-clear";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_InefficientClear =
-    "UNASSIGNED-BestPractices-RenderPass-inefficient-clear";
+    "BestPractices-RenderPass-inefficient-clear";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_BlitImage_LoadOpLoad =
-    "UNASSIGNED-BestPractices-RenderPass-blitimage-loadopload";
+    "BestPractices-RenderPass-blitimage-loadopload";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_CopyImage_LoadOpLoad =
-    "UNASSIGNED-BestPractices-RenderPass-copyimage-loadopload";
+    "BestPractices-RenderPass-copyimage-loadopload";
 [[maybe_unused]] static const char *kVUID_BestPractices_RenderPass_ResolveImage_LoadOpLoad =
-    "UNASSIGNED-BestPractices-RenderPass-resolveimage-loadopload";
+    "BestPractices-RenderPass-resolveimage-loadopload";
 
 
 // AMD-specific best practice
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdBuffer_AvoidTinyCmdBuffers =
-    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers";
+    "BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdBuffer_AvoidSecondaryCmdBuffers =
-    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidSecondaryCmdBuffers";
+    "BestPractices-VkCommandBuffer-AvoidSecondaryCmdBuffers";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdBuffer_AvoidSmallSecondaryCmdBuffers =
-    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidSmallSecondaryCmdBuffers";
+    "BestPractices-VkCommandBuffer-AvoidSmallSecondaryCmdBuffers";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdBuffer_AvoidClearSecondaryCmdBuffers =
-    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidClearSecondaryCmdBuffers";
+    "BestPractices-VkCommandBuffer-AvoidClearSecondaryCmdBuffers";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_AvoidVertexBindEveryDraw =
-    "UNASSIGNED-BestPractices-DrawState-AvoidVertexBindEveryDraw";
+    "BestPractices-DrawState-AvoidVertexBindEveryDraw";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdPool_DisparateSizedCmdBuffers =
-    "UNASSIGNED-BestPractices-CmdPool-DisparateSizedCmdBuffers";
+    "BestPractices-CmdPool-DisparateSizedCmdBuffers";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_TooManyPipelines =
-    "UNASSIGNED-BestPractices-CreatePipelines-TooManyPipelines";
+    "BestPractices-CreatePipelines-TooManyPipelines";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_MultiplePipelineCaches =
-    "UNASSIGNED-BestPractices-vkCreatePipelines-multiple-pipelines-caches";
+    "BestPractices-vkCreatePipelines-multiple-pipelines-caches";
 [[maybe_unused]] static const char *kVUID_BestPractices_vkImage_DontUseMutableRenderTargets =
-    "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets";
+    "BestPractices-vkImage-DontUseMutableRenderTargets";
 [[maybe_unused]] static const char *kVUID_BestPractices_vkImage_AvoidImageToImageCopy =
-    "UNASSIGNED-BestPractices-vkImage-AvoidImageToImageCopy";
+    "BestPractices-vkImage-AvoidImageToImageCopy";
 [[maybe_unused]] static const char *kVUID_BestPractices_vkImage_AvoidConcurrentRenderTargets =
-    "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets";
+    "BestPractices-vkImage-AvoidConcurrentRenderTargets";
 [[maybe_unused]] static const char *kVUID_BestPractices_vkImage_DontUseStorageRenderTargets =
-    "UNASSIGNED-BestPractices-vkImage-DontUseStorageRenderTargets";
-[[maybe_unused]] static const char *kVUID_BestPractices_vkImage_AvoidGeneral = "UNASSIGNED-BestPractices-vkImage-AvoidGeneral";
+    "BestPractices-vkImage-DontUseStorageRenderTargets";
+[[maybe_unused]] static const char *kVUID_BestPractices_vkImage_AvoidGeneral = "BestPractices-vkImage-AvoidGeneral";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_AvoidPrimitiveRestart =
-    "UNASSIGNED-BestPractices-CreatePipelines-AvoidPrimitiveRestart";
+    "BestPractices-CreatePipelines-AvoidPrimitiveRestart";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelines_MinimizeNumDynamicStates =
-    "UNASSIGNED-BestPractices-CreatePipelines-MinimizeNumDynamicStates";
+    "BestPractices-CreatePipelines-MinimizeNumDynamicStates";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelinesLayout_KeepLayoutSmall =
-    "UNASSIGNED-BestPractices-CreatePipelinesLayout-KeepLayoutSmall";
+    "BestPractices-CreatePipelinesLayout-KeepLayoutSmall";
 [[maybe_unused]] static const char *kVUID_BestPractices_UpdateDescriptors_AvoidCopyingDescriptors =
-    "UNASSIGNED-BestPractices-UpdateDescriptors-AvoidCopyingDescriptors";
+    "BestPractices-UpdateDescriptors-AvoidCopyingDescriptors";
 [[maybe_unused]] static const char *kVUID_BestPractices_UpdateDescriptors_PreferNonTemplate =
-    "UNASSIGNED-BestPractices-UpdateDescriptors-PreferNonTemplate";
+    "BestPractices-UpdateDescriptors-PreferNonTemplate";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearAttachment_FastClearValues =
-    "UNASSIGNED-BestPractices-ClearAttachment-FastClearValues";
+    "BestPractices-ClearAttachment-FastClearValues";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearAttachment_ClearImage =
-    "UNASSIGNED-BestPractices-ClearAttachment-ClearImage";
+    "BestPractices-ClearAttachment-ClearImage";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdBuffer_backToBackBarrier =
-    "UNASSIGNED-BestPractices-CmdBuffer-backToBackBarrier";
+    "BestPractices-CmdBuffer-backToBackBarrier";
 [[maybe_unused]] static const char *kVUID_BestPractices_CmdBuffer_highBarrierCount =
-    "UNASSIGNED-BestPractices-CmdBuffer-highBarrierCount";
+    "BestPractices-CmdBuffer-highBarrierCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_PipelineBarrier_readToReadBarrier =
-    "UNASSIGNED-BestPractices-PipelineBarrier-readToReadBarrier";
+    "BestPractices-PipelineBarrier-readToReadBarrier";
 [[maybe_unused]] static const char *kVUID_BestPractices_Submission_ReduceNumberOfSubmissions =
-    "UNASSIGNED-BestPractices-Submission-ReduceNumberOfSubmissions";
-[[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_SortAndBind = "UNASSIGNED-BestPractices-Pipeline-SortAndBind";
+    "BestPractices-Submission-ReduceNumberOfSubmissions";
+[[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_SortAndBind = "BestPractices-Pipeline-SortAndBind";
 [[maybe_unused]] static const char *kVUID_BestPractices_Pipeline_WorkPerPipelineChange =
-    "UNASSIGNED-BestPractices-Pipeline-WorkPerPipelineChange";
+    "BestPractices-Pipeline-WorkPerPipelineChange";
 [[maybe_unused]] static const char *kVUID_BestPractices_SyncObjects_HighNumberOfFences =
-    "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfFences";
+    "BestPractices-SyncObjects-HighNumberOfFences";
 [[maybe_unused]] static const char *kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores =
-    "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfSemaphores";
+    "BestPractices-SyncObjects-HighNumberOfSemaphores";
 [[maybe_unused]] static const char *kVUID_BestPractices_DynamicRendering_NotSupported =
-    "UNASSIGNED-BestPractices-DynamicRendering-NotSupported";
+    "BestPractices-DynamicRendering-NotSupported";
 [[maybe_unused]] static const char *kVUID_BestPractices_LocalWorkgroup_Multiple64 =
-    "UNASSIGNED-BestPractices-LocalWorkgroup-Multiple64";
+    "BestPractices-LocalWorkgroup-Multiple64";
 
 // Imagination Technologies best practices
 [[maybe_unused]] static const char *kVUID_BestPractices_Texture_Format_PVRTC_Outdated =
-    "UNASSIGNED-BestPractices-Texture-Format-PVRTC-Outdated";
+    "BestPractices-Texture-Format-PVRTC-Outdated";
 
 // NVIDIA-specific best practices
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_PageableDeviceLocalMemory =
-    "UNASSIGNED-BestPractices-CreateDevice-PageableDeviceLocalMemory";
+    "BestPractices-CreateDevice-PageableDeviceLocalMemory";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateImage_TilingLinear =
-    "UNASSIGNED-BestPractices-CreateImage-TilingLinear";
+    "BestPractices-CreateImage-TilingLinear";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateImage_Depth32Format =
-    "UNASSIGNED-BestPractices-CreateImage-Depth32Format";
+    "BestPractices-CreateImage-Depth32Format";
 [[maybe_unused]] static const char *kVUID_BestPractices_QueueBindSparse_NotAsync =
-    "UNASSIGNED-BestPractices-QueueBindSparse-NotAsync";
+    "BestPractices-QueueBindSparse-NotAsync";
 [[maybe_unused]] static const char *kVUID_BestPractices_AccelerationStructure_NotAsync =
-    "UNASSIGNED-BestPractices-AccelerationStructure-NotAsync";
+    "BestPractices-AccelerationStructure-NotAsync";
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateMemory_SetPriority =
-    "UNASSIGNED-BestPractices-AllocateMemory-SetPriority";
+    "BestPractices-AllocateMemory-SetPriority";
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateMemory_ReuseAllocations =
-    "UNASSIGNED-BestPractices-AllocateMemory-ReuseAllocations";
+    "BestPractices-AllocateMemory-ReuseAllocations";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindMemory_NoPriority =
-    "UNASSIGNED-BestPractices-BindMemory-NoPriority";
+    "BestPractices-BindMemory-NoPriority";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelineLayout_SeparateSampler =
-    "UNASSIGNED-BestPractices-CreatePipelineLayout-SeparateSampler";
+    "BestPractices-CreatePipelineLayout-SeparateSampler";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreatePipelinesLayout_LargePipelineLayout =
-    "UNASSIGNED-BestPractices-CreatePipelineLayout-LargePipelineLayout";
+    "BestPractices-CreatePipelineLayout-LargePipelineLayout";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindPipeline_SwitchTessGeometryMesh =
-    "UNASSIGNED-BestPractices-BindPipeline-SwitchTessGeometryMesh";
+    "BestPractices-BindPipeline-SwitchTessGeometryMesh";
 [[maybe_unused]] static const char *kVUID_BestPractices_Zcull_LessGreaterRatio =
-    "UNASSIGNED-BestPractices-Zcull-LessGreaterRatio";
+    "BestPractices-Zcull-LessGreaterRatio";
 [[maybe_unused]] static const char *kVUID_BestPractices_ClearColor_NotCompressed =
-    "UNASSIGNED-BestPractices-ClearColor-NotCompressed";
+    "BestPractices-ClearColor-NotCompressed";
 
 // clang-format on
