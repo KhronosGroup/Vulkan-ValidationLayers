@@ -168,7 +168,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         objlist.add(other_queue);
                     }
                     skip |= core->LogError(
-                        "UNASSIGNED-vkQueueSubmit-QueueForwardProgress", objlist, signal_semaphore_loc,
+                        "VUID-vkQueueSubmit-pCommandBuffers-00065", objlist, signal_semaphore_loc,
                         "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
                         core->FormatHandle(semaphore).c_str(), core->FormatHandle(queue).c_str(), initiator.str().c_str());
                 } else {
@@ -1328,7 +1328,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const E
     auto event_state = Get<vvl::Event>(event);
     if (event_state) {
         if (event_state->write_in_use) {
-            skip |= LogError("UNASSIGNED-vkSetEvent-QueueForwardProgress", event, error_obj.location.dot(Field::event),
+            skip |= LogError("VUID-vkSetEvent-event-09543", event, error_obj.location.dot(Field::event),
                              "(%s) that is already in use by a command buffer.", FormatHandle(event).c_str());
         }
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
