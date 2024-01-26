@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1092,4 +1092,40 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeImagelessFramebuffer, AttachmentImageFormat) {
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkImageObj image(m_device);
+    image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView imageView = image.CreateView();
+
+    VkFormat attachment_format = VK_FORMAT_UNDEFINED;
+    VkFramebufferAttachmentImageInfo fb_fdm = vku::InitStructHelper();
+    fb_fdm.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    fb_fdm.width = 64;
+    fb_fdm.height = 64;
+    fb_fdm.layerCount = 1;
+    fb_fdm.viewFormatCount = 1;
+    fb_fdm.pViewFormats = &attachment_format;
+
+    VkFramebufferAttachmentsCreateInfo fb_aci_fdm = vku::InitStructHelper();
+    fb_aci_fdm.attachmentImageInfoCount = 1;
+    fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
+
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_aci_fdm);
+    fb_ci.width = 64;
+    fb_ci.height = 64;
+    fb_ci.layers = 1;
+    fb_ci.renderPass = m_renderPass;
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = &imageView.handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferAttachmentImageInfo-viewFormatCount-09536");
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+    m_errorMonitor->VerifyFound();
 }

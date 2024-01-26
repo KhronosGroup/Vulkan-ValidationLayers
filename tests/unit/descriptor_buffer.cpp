@@ -1650,3 +1650,37 @@ TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {
     vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorBuffer, TexelBufferFormat) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+
+    VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
+    dai.address = buffer.address();
+    dai.range = 4;
+    dai.format = VK_FORMAT_UNDEFINED;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    dgi.data.pUniformTexelBuffer = &dai;
+
+    uint8_t out;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-None-09508");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
+    m_errorMonitor->VerifyFound();
+}
