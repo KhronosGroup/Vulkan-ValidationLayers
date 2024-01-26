@@ -755,6 +755,20 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveGraphicsLibrary, FragmentShaderNoStageCount) {
+    TEST_DESCRIPTION("Don't need a stageCount if only have fragment shader library");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    vkt::PipelineLayout pipeline_layout(*m_device);
+    CreatePipelineHelper frag_shader_lib(*this);
+    frag_shader_lib.InitFragmentLibInfo(nullptr);
+    frag_shader_lib.gp_ci_.stageCount = 0;
+    frag_shader_lib.shader_stages_.clear();
+    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.CreateGraphicsPipeline(false);
+}
+
 TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
     TEST_DESCRIPTION("Make sure OpCapability InputAttachment is not detected at linking time");
     SetTargetApiVersion(VK_API_VERSION_1_3);
