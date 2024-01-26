@@ -101,7 +101,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetPhysicalDeviceImageFormatProperties2',
             'vkCmdBuildAccelerationStructureNV',
             'vkCreateFramebuffer',
-            'vkCmdSetLineStippleEXT',
+            'vkCmdSetLineStippleKHR',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
             'vkCmdSetViewportWScalingNV',

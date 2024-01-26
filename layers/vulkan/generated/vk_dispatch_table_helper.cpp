@@ -470,6 +470,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceFragmentShadingRatesK
 }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetFragmentShadingRateKHR(VkCommandBuffer, const VkExtent2D*,
                                                                    const VkFragmentShadingRateCombinerOpKHR[2]) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer,
+                                                                            const VkRenderingAttachmentLocationInfoKHR*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer,
+                                                                               const VkRenderingInputAttachmentIndexInfoKHR*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubWaitForPresentKHR(VkDevice, VkSwapchainKHR, uint64_t, uint64_t) { return VK_SUCCESS; }
 static VKAPI_ATTR VkDeviceAddress VKAPI_CALL StubGetBufferDeviceAddressKHR(VkDevice, const VkBufferDeviceAddressInfo*) { return 0; }
 static VKAPI_ATTR uint64_t VKAPI_CALL StubGetBufferOpaqueCaptureAddressKHR(VkDevice, const VkBufferDeviceAddressInfo*) { return 0; }
@@ -542,6 +546,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixProp
                                                                                           VkCooperativeMatrixPropertiesKHR*) {
     return VK_SUCCESS;
 }
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetLineStippleKHR(VkCommandBuffer, uint32_t, uint16_t) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice, uint32_t*,
                                                                                        VkTimeDomainKHR*) {
     return VK_SUCCESS;
@@ -1145,7 +1150,6 @@ static VKAPI_ATTR VkDeviceAddress VKAPI_CALL StubGetPipelineIndirectDeviceAddres
                                                                                     const VkPipelineIndirectDeviceAddressInfoNV*) {
     return 0;
 }
-static VKAPI_ATTR void VKAPI_CALL StubCmdSetTessellationDomainOriginEXT(VkCommandBuffer, VkTessellationDomainOrigin) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthClampEnableEXT(VkCommandBuffer, VkBool32) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPolygonModeEXT(VkCommandBuffer, VkPolygonMode) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRasterizationSamplesEXT(VkCommandBuffer, VkSampleCountFlagBits) {}
@@ -1157,6 +1161,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetColorBlendEnableEXT(VkCommandBuffer,
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetColorBlendEquationEXT(VkCommandBuffer, uint32_t, uint32_t,
                                                                   const VkColorBlendEquationEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetColorWriteMaskEXT(VkCommandBuffer, uint32_t, uint32_t, const VkColorComponentFlags*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetTessellationDomainOriginEXT(VkCommandBuffer, VkTessellationDomainOrigin) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRasterizationStreamEXT(VkCommandBuffer, uint32_t) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetConservativeRasterizationModeEXT(VkCommandBuffer, VkConservativeRasterizationModeEXT) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer, float) {}
@@ -1443,6 +1448,8 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkWaitSemaphoresKHR", {"VK_KHR_timeline_semaphore"}},
     {"vkSignalSemaphoreKHR", {"VK_KHR_timeline_semaphore"}},
     {"vkCmdSetFragmentShadingRateKHR", {"VK_KHR_fragment_shading_rate"}},
+    {"vkCmdSetRenderingAttachmentLocationsKHR", {"VK_KHR_dynamic_rendering_local_read"}},
+    {"vkCmdSetRenderingInputAttachmentIndicesKHR", {"VK_KHR_dynamic_rendering_local_read"}},
     {"vkWaitForPresentKHR", {"VK_KHR_present_wait"}},
     {"vkGetBufferDeviceAddressKHR", {"VK_KHR_buffer_device_address"}},
     {"vkGetBufferOpaqueCaptureAddressKHR", {"VK_KHR_buffer_device_address"}},
@@ -1481,6 +1488,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkGetRenderingAreaGranularityKHR", {"VK_KHR_maintenance5"}},
     {"vkGetDeviceImageSubresourceLayoutKHR", {"VK_KHR_maintenance5"}},
     {"vkGetImageSubresourceLayout2KHR", {"VK_KHR_maintenance5"}},
+    {"vkCmdSetLineStippleKHR", {"VK_KHR_line_rasterization"}},
     {"vkGetCalibratedTimestampsKHR", {"VK_KHR_calibrated_timestamps"}},
     {"vkCmdBindDescriptorSets2KHR", {"VK_KHR_maintenance6"}},
     {"vkCmdPushConstants2KHR", {"VK_KHR_maintenance6"}},
@@ -1686,7 +1694,6 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkGetPipelineIndirectMemoryRequirementsNV", {"VK_NV_device_generated_commands_compute"}},
     {"vkCmdUpdatePipelineIndirectBufferNV", {"VK_NV_device_generated_commands_compute"}},
     {"vkGetPipelineIndirectDeviceAddressNV", {"VK_NV_device_generated_commands_compute"}},
-    {"vkCmdSetTessellationDomainOriginEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetDepthClampEnableEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetPolygonModeEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetRasterizationSamplesEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
@@ -1697,6 +1704,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     {"vkCmdSetColorBlendEnableEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetColorBlendEquationEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetColorWriteMaskEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
+    {"vkCmdSetTessellationDomainOriginEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetRasterizationStreamEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetConservativeRasterizationModeEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
     {"vkCmdSetExtraPrimitiveOverestimationSizeEXT", {"VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object"}},
@@ -2480,6 +2488,18 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdSetFragmentShadingRateKHR == nullptr) {
         table->CmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)StubCmdSetFragmentShadingRateKHR;
     }
+    table->CmdSetRenderingAttachmentLocationsKHR =
+        (PFN_vkCmdSetRenderingAttachmentLocationsKHR)gpa(device, "vkCmdSetRenderingAttachmentLocationsKHR");
+    if (table->CmdSetRenderingAttachmentLocationsKHR == nullptr) {
+        table->CmdSetRenderingAttachmentLocationsKHR =
+            (PFN_vkCmdSetRenderingAttachmentLocationsKHR)StubCmdSetRenderingAttachmentLocationsKHR;
+    }
+    table->CmdSetRenderingInputAttachmentIndicesKHR =
+        (PFN_vkCmdSetRenderingInputAttachmentIndicesKHR)gpa(device, "vkCmdSetRenderingInputAttachmentIndicesKHR");
+    if (table->CmdSetRenderingInputAttachmentIndicesKHR == nullptr) {
+        table->CmdSetRenderingInputAttachmentIndicesKHR =
+            (PFN_vkCmdSetRenderingInputAttachmentIndicesKHR)StubCmdSetRenderingInputAttachmentIndicesKHR;
+    }
     table->WaitForPresentKHR = (PFN_vkWaitForPresentKHR)gpa(device, "vkWaitForPresentKHR");
     if (table->WaitForPresentKHR == nullptr) {
         table->WaitForPresentKHR = (PFN_vkWaitForPresentKHR)StubWaitForPresentKHR;
@@ -2652,6 +2672,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gpa(device, "vkGetImageSubresourceLayout2KHR");
     if (table->GetImageSubresourceLayout2KHR == nullptr) {
         table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)StubGetImageSubresourceLayout2KHR;
+    }
+    table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)gpa(device, "vkCmdSetLineStippleKHR");
+    if (table->CmdSetLineStippleKHR == nullptr) {
+        table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)StubCmdSetLineStippleKHR;
     }
     table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)gpa(device, "vkGetCalibratedTimestampsKHR");
     if (table->GetCalibratedTimestampsKHR == nullptr) {
@@ -3584,11 +3608,6 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         table->GetPipelineIndirectDeviceAddressNV =
             (PFN_vkGetPipelineIndirectDeviceAddressNV)StubGetPipelineIndirectDeviceAddressNV;
     }
-    table->CmdSetTessellationDomainOriginEXT =
-        (PFN_vkCmdSetTessellationDomainOriginEXT)gpa(device, "vkCmdSetTessellationDomainOriginEXT");
-    if (table->CmdSetTessellationDomainOriginEXT == nullptr) {
-        table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)StubCmdSetTessellationDomainOriginEXT;
-    }
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gpa(device, "vkCmdSetDepthClampEnableEXT");
     if (table->CmdSetDepthClampEnableEXT == nullptr) {
         table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)StubCmdSetDepthClampEnableEXT;
@@ -3628,6 +3647,11 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->CmdSetColorWriteMaskEXT = (PFN_vkCmdSetColorWriteMaskEXT)gpa(device, "vkCmdSetColorWriteMaskEXT");
     if (table->CmdSetColorWriteMaskEXT == nullptr) {
         table->CmdSetColorWriteMaskEXT = (PFN_vkCmdSetColorWriteMaskEXT)StubCmdSetColorWriteMaskEXT;
+    }
+    table->CmdSetTessellationDomainOriginEXT =
+        (PFN_vkCmdSetTessellationDomainOriginEXT)gpa(device, "vkCmdSetTessellationDomainOriginEXT");
+    if (table->CmdSetTessellationDomainOriginEXT == nullptr) {
+        table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)StubCmdSetTessellationDomainOriginEXT;
     }
     table->CmdSetRasterizationStreamEXT = (PFN_vkCmdSetRasterizationStreamEXT)gpa(device, "vkCmdSetRasterizationStreamEXT");
     if (table->CmdSetRasterizationStreamEXT == nullptr) {

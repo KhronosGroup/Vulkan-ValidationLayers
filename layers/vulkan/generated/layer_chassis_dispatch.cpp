@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4390,6 +4390,20 @@ void DispatchCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const V
     layer_data->device_dispatch_table.CmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
 }
 
+void DispatchCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                   const VkRenderingAttachmentLocationInfoKHR* pLocationInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    layer_data->device_dispatch_table.CmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
+}
+
+void DispatchCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                      const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    layer_data->device_dispatch_table.CmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pLocationInfo);
+}
+
 VkResult DispatchWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.WaitForPresentKHR(device, swapchain, presentId, timeout);
@@ -5068,6 +5082,12 @@ VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevic
         physicalDevice, pPropertyCount, pProperties);
 
     return result;
+}
+
+void DispatchCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    layer_data->device_dispatch_table.CmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
 VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
@@ -8234,12 +8254,6 @@ VkDeviceAddress DispatchGetPipelineIndirectDeviceAddressNV(VkDevice device, cons
     return result;
 }
 
-void DispatchCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-
-    layer_data->device_dispatch_table.CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
-}
-
 void DispatchCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
@@ -8303,6 +8317,12 @@ void DispatchCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t fir
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
     layer_data->device_dispatch_table.CmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
+}
+
+void DispatchCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    layer_data->device_dispatch_table.CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
 }
 
 void DispatchCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream) {

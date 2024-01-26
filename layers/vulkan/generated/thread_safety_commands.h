@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1849,6 +1849,22 @@ void PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, c
                                                 const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                 const RecordObject& record_obj) override;
 
+void PreCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                        const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                        const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                         const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                         const RecordObject& record_obj) override;
+
+void PreCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                           const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                           const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                            const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                            const RecordObject& record_obj) override;
+
 void PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                     const RecordObject& record_obj) override;
 
@@ -2094,6 +2110,12 @@ void PreCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, 
 
 void PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                  VkSubresourceLayout2KHR* pLayout, const RecordObject& record_obj) override;
+
+void PreCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
+                                        const RecordObject& record_obj) override;
 
 void PreCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
@@ -3659,12 +3681,6 @@ void PreCallRecordGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPi
 void PostCallRecordGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                       const RecordObject& record_obj) override;
 
-void PreCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
-                                                    const RecordObject& record_obj) override;
-
-void PostCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
-                                                     const RecordObject& record_obj) override;
-
 void PreCallRecordCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                             const RecordObject& record_obj) override;
 
@@ -3726,6 +3742,12 @@ void PreCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_
 
 void PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
                                            const VkColorComponentFlags* pColorWriteMasks, const RecordObject& record_obj) override;
+
+void PreCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
+                                                    const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
+                                                     const RecordObject& record_obj) override;
 
 void PreCallRecordCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
                                                const RecordObject& record_obj) override;

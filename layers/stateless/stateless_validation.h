@@ -801,7 +801,7 @@ class StatelessValidation : public ValidationObject {
                                                  const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                  const ErrorObject &error_obj) const;
 
-    bool manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+    bool manual_PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                     uint16_t lineStipplePattern, const ErrorObject &error_obj) const;
 
     bool manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

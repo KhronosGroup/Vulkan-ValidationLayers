@@ -3005,7 +3005,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
                 const bool dynamic_line_stipple_enable = pipeline->IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
                 if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
                     const auto raster_line_state =
-                        vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoEXT>(raster_state->pNext);
+                        vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(raster_state->pNext);
 
                     const VkLineRasterizationModeEXT line_rasterization_mode =
                         (dynamic_line_raster_mode) ? cb_state.dynamic_state_value.line_rasterization_mode

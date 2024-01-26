@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -988,6 +988,26 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceFragmentShadingRatePropertiesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_LOCAL_READ_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkRenderingAttachmentLocationInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkRenderingInputAttachmentIndexInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -1073,6 +1093,16 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_ROTATE_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -1132,6 +1162,36 @@ void PnextChainFree(void *chain) {
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT_CONTROLS_2_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderFloatControls2FeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8FeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceLineRasterizationFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceLineRasterizationPropertiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPipelineRasterizationLineStateCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EXPECT_ASSUME_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderExpectAssumeFeaturesKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES_KHR:
             PnextChainFree(header->pNext);
@@ -1738,30 +1798,10 @@ void PnextChainFree(void *chain) {
             delete reinterpret_cast<const VkSurfaceFullScreenExclusiveWin32InfoEXT *>(header);
             break;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT:
-            PnextChainFree(header->pNext);
-            header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceLineRasterizationFeaturesEXT *>(header);
-            break;
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES_EXT:
-            PnextChainFree(header->pNext);
-            header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceLineRasterizationPropertiesEXT *>(header);
-            break;
-        case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT:
-            PnextChainFree(header->pNext);
-            header->pNext = nullptr;
-            delete reinterpret_cast<const VkPipelineRasterizationLineStateCreateInfoEXT *>(header);
-            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *>(header);
-            break;
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT:
-            PnextChainFree(header->pNext);
-            header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8FeaturesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT:
             PnextChainFree(header->pNext);

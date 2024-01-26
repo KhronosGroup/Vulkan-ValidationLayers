@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -570,7 +570,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                                      uint16_t lineStipplePattern,
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;

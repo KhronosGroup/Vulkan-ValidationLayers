@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,8 +66,7 @@ template<> std::vector<VkColorSpaceKHR> ValidationObject::ValidParamValues() con
 template<> std::vector<VkQueueGlobalPriorityKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkFragmentShadingRateCombinerOpKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() const;
-template<> std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const;
-template<> std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const;
+template<> std::vector<VkLineRasterizationModeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkTimeDomainKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkRasterizationOrderAMD> ValidationObject::ValidParamValues() const;
@@ -103,7 +102,6 @@ template<> std::vector<VkProvokingVertexModeEXT> ValidationObject::ValidParamVal
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 template<> std::vector<VkFullScreenExclusiveEXT> ValidationObject::ValidParamValues() const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-template<> std::vector<VkLineRasterizationModeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkIndirectCommandsTokenTypeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDepthBiasRepresentationEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkFragmentShadingRateTypeNV> ValidationObject::ValidParamValues() const;

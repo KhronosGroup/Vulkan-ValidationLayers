@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3592,6 +3592,32 @@ void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer co
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                                      const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                                      const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                                       const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                                       const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo, const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo, const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                           const RecordObject& record_obj) {
     PreCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
@@ -4027,6 +4053,18 @@ void ThreadSafety::PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, 
                                                                VkSubresourceLayout2KHR* pLayout, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(image, record_obj.location);
+}
+
+void ThreadSafety::PreCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                     uint16_t lineStipplePattern, const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                      uint16_t lineStipplePattern, const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
@@ -5729,14 +5767,12 @@ void ThreadSafety::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, c
 
 void ThreadSafety::PreCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                      uint16_t lineStipplePattern, const RecordObject& record_obj) {
-    StartWriteObject(commandBuffer, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
+    PreCallRecordCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
 }
 
 void ThreadSafety::PostCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                       uint16_t lineStipplePattern, const RecordObject& record_obj) {
-    FinishWriteObject(commandBuffer, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
+    PostCallRecordCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
 }
 
 void ThreadSafety::PreCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
@@ -7086,20 +7122,6 @@ void ThreadSafety::PostCallRecordGetPipelineIndirectDeviceAddressNV(VkDevice dev
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
-void ThreadSafety::PreCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
-                                                                  VkTessellationDomainOrigin domainOrigin,
-                                                                  const RecordObject& record_obj) {
-    StartWriteObject(commandBuffer, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
-                                                                   VkTessellationDomainOrigin domainOrigin,
-                                                                   const RecordObject& record_obj) {
-    FinishWriteObject(commandBuffer, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
-}
-
 void ThreadSafety::PreCallRecordCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                           const RecordObject& record_obj) {
     StartWriteObject(commandBuffer, record_obj.location);
@@ -7226,6 +7248,20 @@ void ThreadSafety::PreCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandB
 void ThreadSafety::PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                          uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
                                                          const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
+                                                                  VkTessellationDomainOrigin domainOrigin,
+                                                                  const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
+                                                                   VkTessellationDomainOrigin domainOrigin,
+                                                                   const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, record_obj.location);
     // Host access to commandBuffer must be externally synchronized
 }

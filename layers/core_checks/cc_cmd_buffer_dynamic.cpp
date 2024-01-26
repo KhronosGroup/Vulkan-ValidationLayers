@@ -198,9 +198,9 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
                                               vuid.dynamic_line_width_07833);
-            const auto *line_state = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
+            const auto *line_state = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(rp_state);
             if (line_state && line_state->stippledLineEnable) {
-                skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_EXT, objlist, loc,
+                skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, objlist, loc,
                                                   vuid.dynamic_line_stipple_ext_07849);
             }
         }
@@ -1233,7 +1233,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT] &&
                 cb_state.dynamic_state_value.stippled_line_enable) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_EXT, objlist, loc,
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, objlist, loc,
                                                   vuid.set_line_stipple_08672);
             }
         }

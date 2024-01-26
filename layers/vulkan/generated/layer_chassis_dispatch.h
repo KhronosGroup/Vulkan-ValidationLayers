@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -585,6 +585,10 @@ VkResult DispatchGetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physi
                                                           VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates);
 void DispatchCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                           const VkFragmentShadingRateCombinerOpKHR combinerOps[2]);
+void DispatchCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                   const VkRenderingAttachmentLocationInfoKHR* pLocationInfo);
+void DispatchCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                      const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo);
 VkResult DispatchWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout);
 VkDeviceAddress DispatchGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
 uint64_t DispatchGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
@@ -648,6 +652,7 @@ void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const
                                            VkSubresourceLayout2KHR* pLayout);
 VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                  VkCooperativeMatrixPropertiesKHR* pProperties);
+void DispatchCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern);
 VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
                                                               VkTimeDomainKHR* pTimeDomains);
 VkResult DispatchGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
@@ -1092,7 +1097,6 @@ void DispatchGetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkCo
 void DispatchCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                VkPipeline pipeline);
 VkDeviceAddress DispatchGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo);
-void DispatchCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin);
 void DispatchCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable);
 void DispatchCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode);
 void DispatchCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples);
@@ -1106,6 +1110,7 @@ void DispatchCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t
                                          const VkColorBlendEquationEXT* pColorBlendEquations);
 void DispatchCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
                                      const VkColorComponentFlags* pColorWriteMasks);
+void DispatchCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin);
 void DispatchCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream);
 void DispatchCmdSetConservativeRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                     VkConservativeRasterizationModeEXT conservativeRasterizationMode);

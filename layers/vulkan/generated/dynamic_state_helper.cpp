@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,8 +95,6 @@ VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
             return VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV;
         case CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:
             return VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR;
-        case CB_DYNAMIC_STATE_LINE_STIPPLE_EXT:
-            return VK_DYNAMIC_STATE_LINE_STIPPLE_EXT;
         case CB_DYNAMIC_STATE_VERTEX_INPUT_EXT:
             return VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
         case CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
@@ -105,8 +103,6 @@ VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
             return VK_DYNAMIC_STATE_LOGIC_OP_EXT;
         case CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
             return VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
-        case CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
-            return VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
         case CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
             return VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
         case CB_DYNAMIC_STATE_POLYGON_MODE_EXT:
@@ -127,6 +123,8 @@ VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
             return VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT;
         case CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
             return VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT;
+        case CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
+            return VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
         case CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
             return VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT;
         case CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT:
@@ -169,6 +167,8 @@ VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
             return VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV;
         case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             return VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT;
+        case CB_DYNAMIC_STATE_LINE_STIPPLE_KHR:
+            return VK_DYNAMIC_STATE_LINE_STIPPLE_KHR;
 
         default:
             return VK_DYNAMIC_STATE_MAX_ENUM;
@@ -247,8 +247,6 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
             return CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV;
         case VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:
             return CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR;
-        case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
-            return CB_DYNAMIC_STATE_LINE_STIPPLE_EXT;
         case VK_DYNAMIC_STATE_VERTEX_INPUT_EXT:
             return CB_DYNAMIC_STATE_VERTEX_INPUT_EXT;
         case VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
@@ -257,8 +255,6 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
             return CB_DYNAMIC_STATE_LOGIC_OP_EXT;
         case VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
             return CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
-        case VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
-            return CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
         case VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
             return CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
         case VK_DYNAMIC_STATE_POLYGON_MODE_EXT:
@@ -279,6 +275,8 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
             return CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT;
         case VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
             return CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT;
+        case VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
+            return CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
         case VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
             return CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT;
         case VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT:
@@ -321,6 +319,8 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
             return CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV;
         case VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             return CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT;
+        case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
+            return CB_DYNAMIC_STATE_LINE_STIPPLE_KHR;
 
         default:
             return CB_DYNAMIC_STATE_STATUS_NUM;

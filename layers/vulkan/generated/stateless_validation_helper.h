@@ -854,6 +854,12 @@ bool PreCallValidateGetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice ph
 bool PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                  const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                  const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                          const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                          const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                             const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                       const ErrorObject& error_obj) const override;
 bool PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
@@ -949,6 +955,8 @@ bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                     VkCooperativeMatrixPropertiesKHR* pProperties,
                                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
+                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
                                                                  VkTimeDomainKHR* pTimeDomains,
                                                                  const ErrorObject& error_obj) const override;
@@ -1597,8 +1605,6 @@ bool PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuf
                                                       VkPipeline pipeline, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                        const ErrorObject& error_obj) const override;
-bool PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
-                                                      const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                               const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
@@ -1621,6 +1627,8 @@ bool PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, u
 bool PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
                                             const VkColorComponentFlags* pColorWriteMasks,
                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
+                                                      const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetConservativeRasterizationModeEXT(VkCommandBuffer commandBuffer,

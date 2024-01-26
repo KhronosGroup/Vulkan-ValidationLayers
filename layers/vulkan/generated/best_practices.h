@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1107,6 +1107,7 @@ const vvl::unordered_map<std::string, DeprecationData> deprecated_extensions = {
     {"VK_EXT_separate_stencil_usage", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_validation_features", {kExtDeprecated, "VK_EXT_layer_settings"}},
     {"VK_EXT_host_query_reset", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_index_type_uint8", {kExtPromoted, "VK_KHR_index_type_uint8"}},
     {"VK_EXT_extended_dynamic_state", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_shader_demote_to_helper_invocation", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_texel_buffer_alignment", {kExtPromoted, "VK_VERSION_1_3"}},
@@ -1119,6 +1120,7 @@ const vvl::unordered_map<std::string, DeprecationData> deprecated_extensions = {
     {"VK_VALVE_mutable_descriptor_type", {kExtPromoted, "VK_EXT_mutable_descriptor_type"}},
     {"VK_EXT_extended_dynamic_state2", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_global_priority_query", {kExtPromoted, "VK_KHR_global_priority"}},
+    {"VK_EXT_load_store_op_none", {kExtPromoted, "VK_KHR_load_store_op_none"}},
 };
 const vvl::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_KHR_performance_query", "devtools"},

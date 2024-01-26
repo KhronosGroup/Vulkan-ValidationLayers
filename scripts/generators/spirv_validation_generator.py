@@ -33,6 +33,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             'ClusterCullingShadingHUAWEI',
             'ShaderEnqueueAMDX',
             'TextureBlockMatch2QCOM',
+            'FloatControls2',
+            'QuadControlKHR',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.

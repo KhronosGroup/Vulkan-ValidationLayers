@@ -244,6 +244,12 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityCooperativeMatrixKHR, {0, &DeviceFeatures::cooperativeMatrix, nullptr, ""}},
     // Not found in current SPIR-V Headers
     //    {spv::CapabilityShaderEnqueueAMDX, {0, &DeviceFeatures::shaderEnqueue, nullptr, ""}},
+    {spv::CapabilityGroupNonUniformRotateKHR, {0, &DeviceFeatures::shaderSubgroupRotate, nullptr, ""}},
+    {spv::CapabilityExpectAssumeKHR, {0, &DeviceFeatures::shaderExpectAssume, nullptr, ""}},
+    // Not found in current SPIR-V Headers
+    //    {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
+    // Not found in current SPIR-V Headers
+    //    {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
 };
 // clang-format on
 
@@ -342,6 +348,11 @@ static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvE
     {"SPV_HUAWEI_cluster_culling_shader", {0, nullptr, &DeviceExtensions::vk_huawei_cluster_culling_shader, ""}},
     {"SPV_HUAWEI_subpass_shading", {0, nullptr, &DeviceExtensions::vk_huawei_subpass_shading, ""}},
     {"SPV_NV_ray_tracing_motion_blur", {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing_motion_blur, ""}},
+    {"SPV_KHR_maximal_reconvergence", {0, nullptr, &DeviceExtensions::vk_khr_shader_maximal_reconvergence, ""}},
+    {"SPV_KHR_subgroup_rotate", {0, nullptr, &DeviceExtensions::vk_khr_shader_subgroup_rotate, ""}},
+    {"SPV_KHR_expect_assume", {0, nullptr, &DeviceExtensions::vk_khr_shader_expect_assume, ""}},
+    {"SPV_KHR_float_controls2", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls2, ""}},
+    {"SPV_KHR_quad_control", {0, nullptr, &DeviceExtensions::vk_khr_shader_quad_control, ""}},
 };
 // clang-format on
 
@@ -633,6 +644,10 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "TileImageStencilReadAccessEXT";
         case spv::CapabilityCooperativeMatrixKHR:
             return "CooperativeMatrixKHR";
+        case spv::CapabilityGroupNonUniformRotateKHR:
+            return "GroupNonUniformRotateKHR";
+        case spv::CapabilityExpectAssumeKHR:
+            return "ExpectAssumeKHR";
         default:
             return "Unhandled OpCapability";
     };
@@ -880,6 +895,8 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityTileImageDepthReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess"},
     {spv::CapabilityTileImageStencilReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess"},
     {spv::CapabilityCooperativeMatrixKHR, "VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix"},
+    {spv::CapabilityGroupNonUniformRotateKHR, "VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR::shaderSubgroupRotate"},
+    {spv::CapabilityExpectAssumeKHR, "VkPhysicalDeviceShaderExpectAssumeFeaturesKHR::shaderExpectAssume"},
     };
 
     // VUs before catch unknown capabilities
@@ -967,6 +984,11 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
     {"SPV_HUAWEI_cluster_culling_shader", "VK_HUAWEI_cluster_culling_shader"},
     {"SPV_HUAWEI_subpass_shading", "VK_HUAWEI_subpass_shading"},
     {"SPV_NV_ray_tracing_motion_blur", "VK_NV_ray_tracing_motion_blur"},
+    {"SPV_KHR_maximal_reconvergence", "VK_KHR_shader_maximal_reconvergence"},
+    {"SPV_KHR_subgroup_rotate", "VK_KHR_shader_subgroup_rotate"},
+    {"SPV_KHR_expect_assume", "VK_KHR_shader_expect_assume"},
+    {"SPV_KHR_float_controls2", "VK_KHR_shader_float_controls2"},
+    {"SPV_KHR_quad_control", "VK_KHR_shader_quad_control"},
     };
 
     // VUs before catch unknown extensions
