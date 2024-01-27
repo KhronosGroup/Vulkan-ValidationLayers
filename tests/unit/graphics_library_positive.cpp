@@ -1468,6 +1468,7 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2PatchControlPoints);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
