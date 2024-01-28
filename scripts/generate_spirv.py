@@ -211,6 +211,7 @@ def main():
                         default='vulkan',
                         choices=['vulkan'],
                         help='Specify API name to generate')
+    parser.add_argument('--shader', action='store', type=str, help='Input filename to generate a single shader')
     parser.add_argument('--glslang', action='store', type=str, help='Path to glslangValidator to use')
     parser.add_argument('--spirv-opt', action='store', dest='spirv_opt', type=str, help='Path to spirv-opt to use')
     parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory')
@@ -239,10 +240,18 @@ def main():
     if not os.path.isfile(spirv_opt):
         sys.exit("Cannot find spirv-opt " + spirv_opt)
 
+    if args.shader:
+        if not os.path.isfile(args.shader):
+            sys.exit("Cannot find infilename " + args.shader)
+        generate_shaders = [args.shader]
+
     for shader in generate_shaders:
         words = compile(shader, glslang_validator, spirv_opt, args.targetenv)
         write(words, shader, args.api, args.outdir)
-    write_inst_hash(generate_shaders, args.outdir)
+
+    # Don't want to hash if just generating a single shader for testings
+    if (len(generate_shaders) > 1):
+        write_inst_hash(generate_shaders, args.outdir)
 
 if __name__ == '__main__':
   main()
