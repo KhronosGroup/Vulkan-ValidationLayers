@@ -1707,7 +1707,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_st
                 case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
                 case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
                 case VK_SHADER_STAGE_GEOMETRY_BIT:
-                    if (!enabled_features.fragmentStoresAndAtomics) {
+                    if (!enabled_features.vertexPipelineStoresAndAtomics) {
                         skip |= LogError("VUID-RuntimeSpirv-NonWritable-06341", module_state.handle(), loc,
                                          "vertexPipelineStoresAndAtomics was not enabled");
                     }
