@@ -91,7 +91,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkImageViewCreateInfo-components-parameter",
     "VUID-VkSamplerYcbcrConversionCreateInfo-components-parameter",
     "VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-components-parameter",
-    "VUID-VkBufferCollectionPropertiesFUCHSIA-samplerYcbcrConversionComponents-parameter",
     // VkAttachmentReference
     "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-parameter",
     // VkVideoEncodeH264QpKHR and VkVideoEncodeH264FrameSizeKHR
@@ -181,8 +180,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
     "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-parameter",
     "VUID-VkSubpassDescription-pDepthStencilAttachment-parameter",
-    "VUID-VkDeviceFaultInfoEXT-pAddressInfos-parameter",
-    "VUID-VkDeviceFaultInfoEXT-pVendorInfos-parameter",
     "VUID-VkShaderCreateInfoEXT-pSpecializationInfo-parameter",
     "VUID-VkExportFenceWin32HandleInfoKHR-pAttributes-parameter",
     "VUID-VkExportSemaphoreWin32HandleInfoKHR-pAttributes-parameter",
