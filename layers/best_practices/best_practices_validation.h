@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -108,16 +108,20 @@ static const int kDepthPrePassNumDrawCallsIMG = 10;
 // Maximum sample count on PowerVR before showing a warning
 static const VkSampleCountFlagBits kMaxEfficientSamplesImg = VK_SAMPLE_COUNT_4_BIT;
 
-enum ExtDeprecationReason {
-    kExtPromoted,
-    kExtObsoleted,
-    kExtDeprecated,
+enum class DeprecationReason {
+    Empty = 0,
+    Promoted,
+    Obsoleted,
+    Deprecated,
 };
 
 struct DeprecationData {
-    ExtDeprecationReason reason;
+    DeprecationReason reason;
     std::string target;
 };
+
+DeprecationData GetDeprecatedData(std::string extension);
+std::string GetSpecialUse(std::string extension);
 
 struct SpecialUseVUIDs {
     const char* cadsupport;
@@ -384,10 +388,9 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count);
 
-    bool ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version, const char* vuid) const;
+    bool ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version) const;
 
-    bool ValidateSpecialUseExtensions(const Location& loc, const char* extension_name,
-                                      const SpecialUseVUIDs& special_use_vuids) const;
+    bool ValidateSpecialUseExtensions(const Location& loc, const char* extension_name) const;
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance, const ErrorObject& error_obj) const override;

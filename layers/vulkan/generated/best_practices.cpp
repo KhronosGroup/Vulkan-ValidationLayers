@@ -25,6 +25,166 @@
 #include "chassis.h"
 #include "best_practices/best_practices_validation.h"
 
+DeprecationData GetDeprecatedData(std::string extension_name) {
+    static const DeprecationData empty_deprecated_data{DeprecationReason::Empty, ""};
+    static const vvl::unordered_map<std::string, DeprecationData> deprecated_extensions = {
+        {VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_MULTIVIEW_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_MAINTENANCE_1_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_16BIT_STORAGE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_MAINTENANCE_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_MAINTENANCE_3_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_1"}},
+        {VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_8BIT_STORAGE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_SPIRV_1_4_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_KHR_MAINTENANCE_4_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_EXT_debug_utils"}},
+        {VK_NV_GLSL_SHADER_EXTENSION_NAME, {DeprecationReason::Deprecated, ""}},
+        {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_EXT_debug_utils"}},
+        {VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_dedicated_allocation"}},
+        {VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_draw_indirect_count"}},
+        {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME, {DeprecationReason::Obsoleted, "VK_KHR_maintenance1"}},
+        {VK_AMD_GPU_SHADER_HALF_FLOAT_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_shader_float16_int8"}},
+        {VK_IMG_FORMAT_PVRTC_EXTENSION_NAME, {DeprecationReason::Deprecated, ""}},
+        {VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_external_memory_capabilities"}},
+        {VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_external_memory"}},
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        {VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_external_memory_win32"}},
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        {VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_win32_keyed_mutex"}},
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+        {VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_EXT_layer_settings"}},
+        {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_VERSION_1_2"}},
+        {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_VERSION_1_1"}},
+        {VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+#ifdef VK_USE_PLATFORM_IOS_MVK
+        {VK_MVK_IOS_SURFACE_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_EXT_metal_surface"}},
+#endif  // VK_USE_PLATFORM_IOS_MVK
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+        {VK_MVK_MACOS_SURFACE_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_EXT_metal_surface"}},
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+        {VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_AMD_GPU_SHADER_INT16_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_shader_float16_int8"}},
+        {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_global_priority"}},
+        {VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_calibrated_timestamps"}},
+        {VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_vertex_attribute_divisor"}},
+        {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_fragment_shader_barycentric"}},
+        {VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_KHR_buffer_device_address"}},
+        {VK_EXT_TOOLING_INFO_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, {DeprecationReason::Deprecated, "VK_EXT_layer_settings"}},
+        {VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_2"}},
+        {VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_index_type_uint8"}},
+        {VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_PRIVATE_DATA_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_4444_FORMATS_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME,
+         {DeprecationReason::Promoted, "VK_EXT_rasterization_order_attachment_access"}},
+        {VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_EXT_mutable_descriptor_type"}},
+        {VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_VERSION_1_3"}},
+        {VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_global_priority"}},
+        {VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME, {DeprecationReason::Promoted, "VK_KHR_load_store_op_none"}},
+    };
+
+    auto it = deprecated_extensions.find(extension_name);
+    return (it == deprecated_extensions.end()) ? empty_deprecated_data : it->second;
+}
+
+std::string GetSpecialUse(std::string extension_name) {
+    const vvl::unordered_map<std::string, std::string> special_use_extensions = {
+        {VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, "devtools"},
+        {VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, "devtools"},
+        {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, "debugging"},
+        {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, "debugging"},
+        {VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, "glemulation, d3demulation, devtools"},
+        {VK_AMD_SHADER_INFO_EXTENSION_NAME, "devtools"},
+        {VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME, "debugging"},
+        {VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, "d3demulation"},
+        {VK_IMG_RELAXED_LINE_RASTERIZATION_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, "debugging"},
+        {VK_AMD_BUFFER_MARKER_EXTENSION_NAME, "devtools"},
+        {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, "devtools"},
+        {VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME, "devtools"},
+        {VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, "debugging"},
+        {VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, "cadsupport"},
+        {VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME, "d3demulation"},
+        {VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME, "devtools"},
+        {VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, "glemulation, d3demulation"},
+        {VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, "d3demulation"},
+        {VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME, "debugging, devtools"},
+        {VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME, "glemulation, d3demulation"},
+        {VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME, "d3demulation"},
+        {VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME, "d3demulation"},
+        {VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME, "d3demulation, glemulation"},
+        {VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME, "glemulation"},
+        {VK_EXT_LEGACY_DITHERING_EXTENSION_NAME, "glemulation"},
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        {VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME, "glemulation"},
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+        {VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, "d3demulation"},
+    };
+
+    auto it = special_use_extensions.find(extension_name);
+    return (it == special_use_extensions.end()) ? "" : it->second;
+}
+
 void BestPractices::PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                  VkInstance* pInstance, const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
