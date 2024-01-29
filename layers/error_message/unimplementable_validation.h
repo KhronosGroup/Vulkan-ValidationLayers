@@ -46,6 +46,14 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetPrivateData-device-parameter",
     "VUID-vkSetPrivateData-device-parameter",
 
+    // These ask if pData is a certain size, but no way to validate a pointer to memory is a certain size.
+    // There is already another implicit VU checking if pData is not null.
+    "VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-pData-08073",
+    "VUID-vkGetImageOpaqueCaptureDescriptorDataEXT-pData-08077",
+    "VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-pData-08081",
+    "VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-pData-08085",
+    "VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-pData-08089",
+
     // These would need to be checked by the loader as it uses these to call into the layers/drivers
     "VUID-vkEnumerateInstanceVersion-pApiVersion-parameter",
     "VUID-vkEnumerateDeviceExtensionProperties-pPropertyCount-parameter",
