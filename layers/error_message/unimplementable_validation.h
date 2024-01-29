@@ -53,6 +53,17 @@ const char* unimplementable_validation[] = {
     "VUID-vkEnumerateInstanceLayerProperties-pPropertyCount-parameter",
     "VUID-vkEnumerateInstanceExtensionProperties-pPropertyCount-parameter",
 
+    // Caches are called between application runs so there is no way for a layer to track this information
+    "VUID-VkPipelineCacheCreateInfo-initialDataSize-00768",
+    "VUID-VkPipelineCacheCreateInfo-initialDataSize-00769",
+    "VUID-VkValidationCacheCreateInfoEXT-initialDataSize-01534",
+    "VUID-VkValidationCacheCreateInfoEXT-initialDataSize-01535",
+    // The header data returned from vkGetPipelineCacheData is the driver's responsibility to make correct.
+    // There is CTS for this, and not within the scope of the Validation Layers to check
+    "VUID-VkPipelineCacheHeaderVersionOne-headerSize-04967",
+    "VUID-VkPipelineCacheHeaderVersionOne-headerVersion-04968",
+    "VUID-VkPipelineCacheHeaderVersionOne-headerSize-08990",
+
     // These implicit VUs ask to check for a valid structure that has no sType,
     // there is nothing that can actually be validated
     //
