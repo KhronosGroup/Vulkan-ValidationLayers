@@ -408,7 +408,8 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
 
     const auto &instance_exts_map = InstanceExtensions::get_info_map();
     bool is_instance_ext = false;
-    if (instance_exts_map.count(ext_name) > 0) {
+    vvl::Extension extension = GetExtension(ext_name);
+    if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
         if (!InstanceExtensionSupported(ext_name)) {
             return false;
         } else {
@@ -419,7 +420,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a device or
     // instance extension
     if (is_instance_ext) {
-        const auto &info = InstanceExtensions::get_info(ext_name);
+        const auto &info = InstanceExtensions::get_info(extension);
         for (const auto &req : info.requirements) {
             if (0 == strncmp(req.name, "VK_VERSION", 10)) {
                 continue;
@@ -430,7 +431,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
-        const auto &info = DeviceExtensions::get_info(ext_name);
+        const auto &info = DeviceExtensions::get_info(extension);
         for (const auto &req : info.requirements) {
             if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
@@ -448,7 +449,8 @@ bool VkRenderFramework::IsPromotedInstanceExtension(const char *inst_ext_name) c
     for (const auto &version_it : promotion_info_map) {
         if (m_target_api_version >= version_it.first) {
             const auto promoted_exts = version_it.second.second;
-            if (promoted_exts.find(inst_ext_name) != promoted_exts.end()) {
+            vvl::Extension extension = GetExtension(inst_ext_name);
+            if (promoted_exts.find(extension) != promoted_exts.end()) {
                 return true;
             }
         }
@@ -469,10 +471,15 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
         return true;
     }
 
+    if (0 == strncmp(dev_ext_name, "VK_VERSION", 10)) {
+        return true;
+    }
+
     // If this is an instance extension, just return true under the assumption instance extensions do not depend on any device
     // extensions.
     const auto &instance_exts_map = InstanceExtensions::get_info_map();
-    if (instance_exts_map.count(dev_ext_name) != 0) {
+    vvl::Extension extension = GetExtension(dev_ext_name);
+    if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
         return true;
     }
 
@@ -481,7 +488,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     }
     m_device_extension_names.push_back(dev_ext_name);
 
-    const auto &info = DeviceExtensions::get_info(dev_ext_name);
+    const auto &info = DeviceExtensions::get_info(extension);
     for (const auto &req : info.requirements) {
         if (!AddRequestedDeviceExtensions(req.name)) {
             return false;
@@ -498,7 +505,8 @@ bool VkRenderFramework::IsPromotedDeviceExtension(const char *dev_ext_name) cons
     for (const auto &version_it : promotion_info_map) {
         if (device_version >= version_it.first) {
             const auto promoted_exts = version_it.second.second;
-            if (promoted_exts.find(dev_ext_name) != promoted_exts.end()) {
+            vvl::Extension extension = GetExtension(dev_ext_name);
+            if (promoted_exts.find(extension) != promoted_exts.end()) {
                 return true;
             }
         }

@@ -187,13 +187,14 @@ extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
 static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkInstanceCreateInfo* pCreateInfo, VkInstance instance) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized instance extensions
-        if (!IsInstanceExtension(pCreateInfo->ppEnabledExtensionNames[i])) {
+        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+        if (!IsInstanceExtension(extension)) {
             Location loc(vvl::Func::vkCreateInstance);
             layer_data->LogWarning(kVUIDUndefined, layer_data->instance,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                    "%s is not supported by this layer.  Using this extension may adversely affect validation "
                                    "results and/or produce undefined behavior.",
-                                   pCreateInfo->ppEnabledExtensionNames[i]);
+                                   String(extension));
         }
     }
 }
@@ -202,13 +203,14 @@ static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkIns
 static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized device extensions
-        if (!IsDeviceExtension(pCreateInfo->ppEnabledExtensionNames[i])) {
+        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+        if (!IsDeviceExtension(extension)) {
             Location loc(vvl::Func::vkCreateDevice);
             layer_data->LogWarning(kVUIDUndefined, layer_data->device,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                    "%s is not supported by this layer.  Using this extension may adversely affect validation "
                                    "results and/or produce undefined behavior.",
-                                   pCreateInfo->ppEnabledExtensionNames[i]);
+                                   String(extension));
         }
     }
 }

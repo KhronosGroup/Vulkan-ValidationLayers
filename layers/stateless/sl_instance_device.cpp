@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@
 
 template <typename ExtensionState>
 bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                                                const char *extension_name, const Location &extension_loc) const {
+                                                vvl::Extension extension, const Location &extension_loc) const {
     bool skip = false;
-    if (!extension_name) {
-        return skip;  // Robust to invalid char *
+    if (extension == vvl::Extension::Empty) {
+        return skip;
     }
-    auto info = ExtensionState::get_info(extension_name);
+    auto info = ExtensionState::get_info(extension);
 
     if (!info.state) {
         return skip;  // Unknown extensions cannot be checked so report OK
@@ -43,17 +43,16 @@ bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions
     if (missing.size()) {
         std::string missing_joined_list = string_join(", ", missing);
         skip |= LogError(vuid, instance, extension_loc, "Missing extension%s required by the %s extension %s: %s.",
-                         ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
+                         ((missing.size() > 1) ? "s" : ""), extension_type, String(extension), missing_joined_list.c_str());
     }
     return skip;
 }
 
 template <typename ExtensionState>
-ExtEnabled ExtensionStateByName(const ExtensionState &extensions, const char *extension_name) {
-    if (!extension_name) return kNotEnabled;  // null strings specify nothing
-    auto info = ExtensionState::get_info(extension_name);
-    ExtEnabled state =
-        info.state ? extensions.*(info.state) : kNotEnabled;  // unknown extensions can't be enabled in extension struct
+ExtEnabled ExtensionStateByName(const ExtensionState &extensions, vvl::Extension extension) {
+    auto info = ExtensionState::get_info(extension);
+    // unknown extensions can't be enabled in extension struct
+    ExtEnabled state = info.state ? extensions.*(info.state) : kNotEnabled;
     return state;
 }
 
@@ -91,9 +90,9 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
     local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        skip |=
-            ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
-                                  pCreateInfo->ppEnabledExtensionNames[i], create_info_loc.dot(Field::ppEnabledExtensionNames, i));
+        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
+                                      extension, create_info_loc.dot(Field::ppEnabledExtensionNames, i));
     }
     if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
         !local_instance_extensions.vk_khr_portability_enumeration) {
@@ -416,23 +415,22 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     // If this device supports VK_KHR_portability_subset, it must be enabled
     const std::string portability_extension_name("VK_KHR_portability_subset");
-    const std::string fragmentmask_extension_name("VK_AMD_shader_fragment_mask");
     const auto &dev_extensions = device_extensions_enumerated.at(physicalDevice);
     const bool portability_supported = dev_extensions.count(portability_extension_name) != 0;
     bool portability_requested = false;
     bool fragmentmask_requested = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         skip |=
             ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |=
-            ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
-                                  pCreateInfo->ppEnabledExtensionNames[i], create_info_loc.dot(Field::ppEnabledExtensionNames, i));
-        if (portability_extension_name == pCreateInfo->ppEnabledExtensionNames[i]) {
+        skip |= ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device", extension,
+                                      create_info_loc.dot(Field::ppEnabledExtensionNames, i));
+        if (extension == vvl::Extension::KHR_portability_subset) {
             portability_requested = true;
         }
-        if (fragmentmask_extension_name == pCreateInfo->ppEnabledExtensionNames[i]) {
+        if (extension == vvl::Extension::AMD_shader_fragment_mask) {
             fragmentmask_requested = true;
         }
     }
@@ -444,9 +442,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        const bool maint1 = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
+        const bool maint1 = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::KHR_maintenance1));
         bool negative_viewport =
-            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME));
+            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::AMD_negative_viewport_height));
         if (negative_viewport) {
             // Only need to check for VK_KHR_MAINTENANCE_1_EXTENSION_NAME if api version is 1.0, otherwise it's deprecated due to
             // integration into api version 1.1
@@ -472,10 +470,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        bool khr_bda =
-            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
-        bool ext_bda =
-            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
+        bool khr_bda = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::KHR_buffer_device_address));
+        bool ext_bda = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::EXT_buffer_device_address));
         if (khr_bda && ext_bda) {
             skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328", physicalDevice, error_obj.location,
                              "ppEnabledExtensionNames must not contain both VK_KHR_buffer_device_address and "
@@ -614,7 +610,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             }
         }
         if (vulkan_12_features->bufferDeviceAddress == VK_TRUE) {
-            if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))) {
+            if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::EXT_buffer_device_address))) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pNext-04748", physicalDevice, error_obj.location,
                                  "pNext chain includes VkPhysicalDeviceVulkan12Features with bufferDeviceAddress "
                                  "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");

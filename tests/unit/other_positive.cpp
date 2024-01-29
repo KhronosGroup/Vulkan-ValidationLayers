@@ -516,7 +516,7 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
 
     for (const auto &ext : InstanceExtensions::get_info_map()) {
         // Add all "real" instance extensions
-        if (InstanceExtensionSupported(ext.first.c_str())) {
+        if (InstanceExtensionSupported(String(ext.first))) {
             bool version_required = false;
             for (const auto &req : ext.second.requirements) {
                 std::string name(req.name);
@@ -526,7 +526,7 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
                 }
             }
             if (!version_required) {
-                m_instance_extension_names.emplace_back(ext.first.c_str());
+                m_instance_extension_names.emplace_back(String(ext.first));
             }
         }
     }

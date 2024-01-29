@@ -82,7 +82,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version and getattr(x, type)]
             if len(promoted_ext_list) > 0:
                 out.append(f'{{{version.replace("VERSION", "API_VERSION")},{{"{version}",{{')
-                out.extend(['    %s,\n' % ext.nameString for ext in promoted_ext_list])
+                out.extend(['    %s,\n' % f'vvl::Extension::{ext.name[3:]}' for ext in promoted_ext_list])
                 out.append('}}},\n')
 
         out.append('''
@@ -156,9 +156,12 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             #include <vulkan/vulkan.h>
             #include "containers/custom_containers.h"
             #include "generated/vk_api_version.h"
+            #include "generated/error_location_helper.h"
 
-            bool IsInstanceExtension(const char *item);
-            bool IsDeviceExtension(const char *item);
+            // Extensions (unlike functions, struct, etc) are passed in as strings.
+            // The goal is to turn the string to a enum and pass that around the layers.
+            // Only when we need to print an error do we try and turn it back into a string
+            vvl::Extension GetExtension(std::string extension);
 
             enum ExtEnabled : unsigned char {
                 kNotEnabled,
@@ -170,7 +173,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             // Map of promoted extension information per version (a separate map exists for instance and device extensions).
             // The map is keyed by the version number (e.g. VK_API_VERSION_1_1) and each value is a pair consisting of the
             // version string (e.g. "VK_VERSION_1_1") and the set of name of the promoted extensions.
-            typedef vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<std::string>>> PromotedExtensionInfoMap;
+            typedef vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
 
             /*
             This function is a helper to know if the extension is enabled.
@@ -219,13 +222,10 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 InstanceReqVec requirements;
             };
 
-            typedef vvl::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
+            typedef vvl::unordered_map<vvl::Extension, InstanceInfo> InstanceInfoMap;
             static const InstanceInfoMap &get_info_map() {
                 static const InstanceInfoMap info_map = {
             ''')
-        for version in self.vk.versions.keys():
-            out.append(f'{{"{version}", InstanceInfo(&InstanceExtensions::{fieldName[version]}, {{}})}},\n')
-
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
             out.extend(guard_helper.add_guard(extension.protect))
             reqs = ''
@@ -234,7 +234,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 reqs += '{\n'
                 reqs += ',\n'.join([f'{{&InstanceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
-            out.append(f'{{{extension.nameString}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
+            out.append(f'{{vvl::Extension::{extension.name[3:]}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
         out.extend(guard_helper.add_guard(None))
 
         out.append('''
@@ -242,44 +242,26 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 return info_map;
             }
 
-            static const InstanceInfo &get_info(const char *name) {
+            static const InstanceInfo &get_version_map(const char* version) {
+                static const InstanceInfo empty_info{nullptr, InstanceReqVec()};
+                static const vvl::unordered_map<std::string, InstanceInfo> version_map = {
+            ''')
+        for version in self.vk.versions.keys():
+            out.append(f'{{"{version}", InstanceInfo(&InstanceExtensions::{fieldName[version]}, {{}})}},\n')
+        out.append('''};
+                const auto info = version_map.find(version);
+                return (info != version_map.cend()) ? info->second : empty_info;
+            }
+
+            static const InstanceInfo &get_info(vvl::Extension extension_name) {
                 static const InstanceInfo empty_info{nullptr, InstanceReqVec()};
                 const auto &ext_map = InstanceExtensions::get_info_map();
-                const auto info = ext_map.find(name);
-                if (info != ext_map.cend()) {
-                    return info->second;
-                }
-                return empty_info;
+                const auto info = ext_map.find(extension_name);
+                return (info != ext_map.cend()) ? info->second : empty_info;
             }
 
-            APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
-                // Initialize struct data, robust to invalid pCreateInfo
-                auto api_version = NormalizeApiVersion(requested_api_version);
-                if (!api_version.Valid()) return api_version;
+            APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo);
 
-                const auto promotion_info_map = get_promotion_info_map();
-                for (const auto& version_it : promotion_info_map) {
-                    auto info = get_info(version_it.second.first);
-                    if (api_version >= version_it.first) {
-                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-                        for (const auto& ext_name : version_it.second.second) {
-                            info = get_info(ext_name.c_str());
-                            assert(info.state);
-                            if (info.state) this->*(info.state) = kEnabledByApiLevel;
-                        }
-                    }
-                }
-
-                // CreateInfo takes precedence over promoted
-                if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-                    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-                        if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
-                        auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
-                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-                    }
-                }
-                return api_version;
-            }
             };
             ''')
 
@@ -304,12 +286,10 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 DeviceReqVec requirements;
             };
 
-            typedef vvl::unordered_map<std::string, DeviceInfo> DeviceInfoMap;
+            typedef vvl::unordered_map<vvl::Extension, DeviceInfo> DeviceInfoMap;
             static const DeviceInfoMap &get_info_map() {
                 static const DeviceInfoMap info_map = {
             ''')
-        for version in self.vk.versions.keys():
-            out.append(f'{{"{version}", DeviceInfo(&DeviceExtensions::{fieldName[version]}, {{}})}},\n')
 
         for extension in [x for x in self.vk.extensions.values() if x.device]:
             out.extend(guard_helper.add_guard(extension.protect))
@@ -319,7 +299,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 reqs += '{\n'
                 reqs += ',\n'.join([f'{{&DeviceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
-            out.append(f'{{{extension.nameString}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
+            out.append(f'{{vvl::Extension::{extension.name[3:]}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
         out.extend(guard_helper.add_guard(None))
 
         out.append('''
@@ -328,36 +308,84 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 return info_map;
             }
 
-            static const DeviceInfo &get_info(const char *name) {
+            static const DeviceInfo &get_version_map(const char* version) {
+                static const DeviceInfo empty_info{nullptr, DeviceReqVec()};
+                static const vvl::unordered_map<std::string, DeviceInfo> version_map = {
+            ''')
+        for version in self.vk.versions.keys():
+            out.append(f'{{"{version}", DeviceInfo(&DeviceExtensions::{fieldName[version]}, {{}})}},\n')
+        out.append('''};
+                const auto info = version_map.find(version);
+                return (info != version_map.cend()) ? info->second : empty_info;
+            }
+
+            static const DeviceInfo &get_info(vvl::Extension extension_name) {
                 static const DeviceInfo empty_info{nullptr, DeviceReqVec()};
                 const auto &ext_map = DeviceExtensions::get_info_map();
-                const auto info = ext_map.find(name);
-                if (info != ext_map.cend()) {
-                    return info->second;
-                }
-                return empty_info;
+                const auto info = ext_map.find(extension_name);
+                return (info != ext_map.cend()) ? info->second : empty_info;
             }
 
             DeviceExtensions() = default;
             DeviceExtensions(const InstanceExtensions &instance_ext) : InstanceExtensions(instance_ext) {}
 
             APIVersion InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, APIVersion requested_api_version,
-                                                const VkDeviceCreateInfo *pCreateInfo = nullptr) {
-                // Initialize: this to defaults,  base class fields to input.
-                assert(instance_extensions);
-                *this = DeviceExtensions(*instance_extensions);
+                                                const VkDeviceCreateInfo *pCreateInfo = nullptr);
+            };
 
+            ''')
+
+        out.append('''
+            constexpr bool IsInstanceExtension(vvl::Extension extension) {
+                switch (extension) {
+            ''')
+        out.extend([f'case vvl::Extension::{x.name[3:]}:\n' for x in self.vk.extensions.values() if x.instance])
+        out.append('''    return true;''')
+        out.append('''default: return false;
+            }
+        }\n''')
+
+        out.append('''
+            constexpr bool IsDeviceExtension(vvl::Extension extension) {
+                switch (extension) {
+            ''')
+        out.extend([f'case vvl::Extension::{x.name[3:]}:\n' for x in self.vk.extensions.values() if x.device])
+        out.append('''    return true;''')
+        out.append('''default: return false;
+            }
+        }\n''')
+
+        self.write(''.join(out))
+
+    def generateSource(self):
+        out = []
+        out.append('''
+            #include "vk_extension_helper.h"
+
+            vvl::Extension GetExtension(std::string extension) {
+                static const vvl::unordered_map<std::string, vvl::Extension> extension_map {
+            ''')
+        for extension in self.vk.extensions.values():
+            out.append(f'    {{"{extension.name}", vvl::Extension::{extension.name[3:]}}},\n')
+        out.append('''    };
+                const auto it = extension_map.find(extension);
+                return (it == extension_map.end()) ? vvl::Extension::Empty : it->second;
+            }
+            ''')
+
+        out.append('''
+            APIVersion InstanceExtensions::InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo* pCreateInfo) {
                 // Initialize struct data, robust to invalid pCreateInfo
                 auto api_version = NormalizeApiVersion(requested_api_version);
                 if (!api_version.Valid()) return api_version;
 
                 const auto promotion_info_map = get_promotion_info_map();
                 for (const auto& version_it : promotion_info_map) {
-                    auto info = get_info(version_it.second.first);
+                    auto info = get_version_map(version_it.second.first);
                     if (api_version >= version_it.first) {
                         if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-                        for (const auto& ext_name : version_it.second.second) {
-                            info = get_info(ext_name.c_str());
+                        for (const auto& extension : version_it.second.second) {
+                            info = get_info(extension);
                             assert(info.state);
                             if (info.state) this->*(info.state) = kEnabledByApiLevel;
                         }
@@ -368,21 +396,58 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
                     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                         if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
-                        auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
+                        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+                        auto info = get_info(extension);
+                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                    }
+                }
+                return api_version;
+            }
+
+            APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* instance_extensions, APIVersion requested_api_version,
+                                                const VkDeviceCreateInfo* pCreateInfo) {
+                // Initialize: this to defaults,  base class fields to input.
+                assert(instance_extensions);
+                *this = DeviceExtensions(*instance_extensions);
+
+                // Initialize struct data, robust to invalid pCreateInfo
+                auto api_version = NormalizeApiVersion(requested_api_version);
+                if (!api_version.Valid()) return api_version;
+
+                const auto promotion_info_map = get_promotion_info_map();
+                for (const auto& version_it : promotion_info_map) {
+                    auto info = get_version_map(version_it.second.first);
+                    if (api_version >= version_it.first) {
+                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                        for (const auto& extension : version_it.second.second) {
+                            info = get_info(extension);
+                            assert(info.state);
+                            if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                        }
+                    }
+                }
+
+                // CreateInfo takes precedence over promoted
+                if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
+                    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+                        if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
+                        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+                        auto info = get_info(extension);
                         if (info.state) this->*(info.state) = kEnabledByCreateinfo;
                     }
                 }
 
                 // Workaround for functions being introduced by multiple extensions, until the layer is fixed to handle this correctly
-                // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
+                // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
                 {
                     constexpr std::array shader_object_interactions = {
-                        VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
-                        VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
-                        VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
-                        VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
+                        vvl::Extension::EXT_extended_dynamic_state,
+                        vvl::Extension::EXT_extended_dynamic_state2,
+                        vvl::Extension::EXT_extended_dynamic_state3,
+                        vvl::Extension::EXT_vertex_input_dynamic_state,
                     };
-                    auto info = get_info(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+                    auto info = get_info(vvl::Extension::EXT_shader_object);
                     if (info.state) {
                         if (this->*(info.state) != kNotEnabled) {
                             for (auto interaction_ext : shader_object_interactions) {
@@ -397,42 +462,6 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 }
                 return api_version;
             }
-            };
-
             ''')
 
-        self.write(''.join(out))
-
-    def generateSource(self):
-        guard_helper = PlatformGuardHelper()
-
-        out = []
-        out.append('''
-            #include "vk_extension_helper.h"
-
-            ''')
-
-        out.append('static const vvl::unordered_set<std::string> kInstanceExtensionNames = {\n')
-        for extension in [x for x in self.vk.extensions.values() if x.instance]:
-            out.extend(guard_helper.add_guard(extension.protect))
-            out.append(f'    {extension.nameString},\n')
-        out.extend(guard_helper.add_guard(None))
-        out.append('};\n')
-
-        out.append('static const vvl::unordered_set<std::string> kDeviceExtensionNames = {\n')
-        for extension in [x for x in self.vk.extensions.values() if x.device]:
-            out.extend(guard_helper.add_guard(extension.protect))
-            out.append(f'    {extension.nameString},\n')
-        out.extend(guard_helper.add_guard(None))
-        out.append('};\n')
-
-        out.append('''
-            bool IsInstanceExtension(const char *item) {
-                return (kInstanceExtensionNames.find(item) != kInstanceExtensionNames.end());
-            }
-
-            bool IsDeviceExtension(const char *item) {
-                return (kDeviceExtensionNames.find(item) != kDeviceExtensionNames.end());
-            }
-            ''')
         self.write(''.join(out))

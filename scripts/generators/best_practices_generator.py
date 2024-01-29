@@ -137,9 +137,9 @@ class BestPracticesOutputGenerator(BaseGenerator):
             #include "chassis.h"
             #include "best_practices/best_practices_validation.h"
 
-            DeprecationData GetDeprecatedData(std::string extension_name) {
+            DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
                 static const DeprecationData empty_deprecated_data{DeprecationReason::Empty, ""};
-                static const vvl::unordered_map<std::string, DeprecationData> deprecated_extensions = {
+                static const vvl::unordered_map<vvl::Extension, DeprecationData> deprecated_extensions = {
             ''')
         for extension in self.vk.extensions.values():
             target = None
@@ -156,23 +156,19 @@ class BestPracticesOutputGenerator(BaseGenerator):
             else:
                 continue
 
-            out.extend(guard_helper.add_guard(extension.protect, extra_newline=False))
-            out.append(f'    {{{extension.nameString}, {{{reason}, "{target}"}}}},\n')
-            out.extend(guard_helper.add_guard(None, extra_newline=False))
+            out.append(f'    {{vvl::Extension::{extension.name[3:]}, {{{reason}, "{target}"}}}},\n')
         out.append('''    };
 
                 auto it = deprecated_extensions.find(extension_name);
                 return (it == deprecated_extensions.end()) ? empty_deprecated_data : it->second;
             }
 
-            std::string GetSpecialUse(std::string extension_name) {
-                const vvl::unordered_map<std::string, std::string> special_use_extensions = {
+            std::string GetSpecialUse(vvl::Extension extension_name) {
+                const vvl::unordered_map<vvl::Extension, std::string> special_use_extensions = {
             ''')
         for extension in self.vk.extensions.values():
             if extension.specialUse is not None:
-                out.extend(guard_helper.add_guard(extension.protect, extra_newline=False))
-                out.append(f'    {{{extension.nameString}, "{", ".join(extension.specialUse)}"}},\n')
-                out.extend(guard_helper.add_guard(None, extra_newline=False))
+                out.append(f'    {{vvl::Extension::{extension.name[3:]}, "{", ".join(extension.specialUse)}"}},\n')
         out.append('''    };
 
                 auto it = special_use_extensions.find(extension_name);
