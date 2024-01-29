@@ -6070,3 +6070,197 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->wait();
 }
+
+TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_BinarySemaphore) {
+    TEST_DESCRIPTION(
+        "Two submission batches synchronized with binary semaphore. Layout transition in the second batch does not create proper "
+        "execution dependency and can hazard with accesses in the first batch.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView view = image.CreateView();
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // Submit 0: shader reads image data (read access)
+    const OneOffDescriptorSet::Bindings bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform image2D image;
+        void main() {
+            vec4 data = imageLoad(image, ivec2(1, 1));
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.dsl_bindings_ = bindings;
+    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer cb(m_device, m_commandPool);
+    cb.begin();
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb, 1, 1, 1);
+    cb.end();
+
+    VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+    cbuf_info.commandBuffer = cb;
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = semaphore;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = 1;
+    submit.pCommandBufferInfos = &cbuf_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit, VK_NULL_HANDLE);
+
+    // Submit 1: transition image layout (write access)
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    // This test also checks for regression of the rule that that STAGE_TOP_OF_PIPE
+    // with src access 0 behaves as STAGE_NONE
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    layout_transition.srcAccessMask = 0;
+    layout_transition.dstAccessMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    layout_transition.dstAccessMask = 0;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdPipelineBarrier2(cb2, &dep_info);
+    cb2.end();
+
+    VkCommandBufferSubmitInfo cbuf_info2 = vku::InitStructHelper();
+    cbuf_info2.commandBuffer = cb2;
+    VkSemaphoreSubmitInfo wait_info2 = vku::InitStructHelper();
+    wait_info2.semaphore = semaphore;
+    wait_info2.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit2 = vku::InitStructHelper();
+    submit2.waitSemaphoreInfoCount = 1;
+    submit2.pWaitSemaphoreInfos = &wait_info2;
+    submit2.commandBufferInfoCount = 1;
+    submit2.pCommandBufferInfos = &cbuf_info2;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_TimelineSemaphore) {
+    TEST_DESCRIPTION(
+        "Two submission batches synchronized with timeline semaphore. Layout transition in the second batch does not create proper "
+        "execution dependency and can hazard with accesses in the first batch.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView view = image.CreateView();
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_ci);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+
+    // Submit 0: shader reads image data (read access)
+    const OneOffDescriptorSet::Bindings bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform image2D image;
+        void main() {
+            vec4 data = imageLoad(image, ivec2(1, 1));
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.dsl_bindings_ = bindings;
+    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer cb(m_device, m_commandPool);
+    cb.begin();
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb, 1, 1, 1);
+    cb.end();
+
+    VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+    cbuf_info.commandBuffer = cb;
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = semaphore;
+    signal_info.value = 1;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = 1;
+    submit.pCommandBufferInfos = &cbuf_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit, VK_NULL_HANDLE);
+
+    // Submit 1: transition image layout (write access)
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    // This test also checks for regression of the rule that that STAGE_TOP_OF_PIPE
+    // with src access 0 behaves as STAGE_NONE
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    layout_transition.srcAccessMask = 0;
+    layout_transition.dstAccessMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    layout_transition.dstAccessMask = 0;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdPipelineBarrier2(cb2, &dep_info);
+    cb2.end();
+
+    VkCommandBufferSubmitInfo cbuf_info2 = vku::InitStructHelper();
+    cbuf_info2.commandBuffer = cb2;
+    VkSemaphoreSubmitInfo wait_info2 = vku::InitStructHelper();
+    wait_info2.semaphore = semaphore;
+    wait_info2.value = 1;
+    wait_info2.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit2 = vku::InitStructHelper();
+    submit2.waitSemaphoreInfoCount = 1;
+    submit2.pWaitSemaphoreInfos = &wait_info2;
+    submit2.commandBufferInfoCount = 1;
+    submit2.pCommandBufferInfos = &cbuf_info2;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->wait();
+}
