@@ -343,15 +343,15 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                                                                                const ErrorObject &error_obj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_swapchain))
-        skip |= OutputExtensionError(error_obj.location, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, {vvl::Extension::KHR_swapchain});
     if (!IsExtEnabled(device_extensions.vk_khr_get_surface_capabilities2))
-        skip |= OutputExtensionError(error_obj.location, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, {vvl::Extension::KHR_get_surface_capabilities2});
     if (!IsExtEnabled(device_extensions.vk_khr_surface))
-        skip |= OutputExtensionError(error_obj.location, VK_KHR_SURFACE_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, {vvl::Extension::KHR_surface});
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2))
-        skip |= OutputExtensionError(error_obj.location, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, {vvl::Extension::KHR_get_physical_device_properties2});
     if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
-        skip |= OutputExtensionError(error_obj.location, VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, {vvl::Extension::EXT_full_screen_exclusive});
     if (!pModes) {
         skip |= LogError("VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pModes-parameter", device,
                          error_obj.location.dot(Field::pModes), "is NULL.");

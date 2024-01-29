@@ -49,9 +49,9 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
     return skip;
 }
 
-bool StatelessValidation::OutputExtensionError(const Location &loc, const std::string &extension_name) const {
+bool StatelessValidation::OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const {
     return LogError(kVUID_PVError_ExtensionNotEnabled, instance, loc,
-                    "function required extension %s which has not been enabled.\n", extension_name.c_str());
+                    "function required extension %s which has not been enabled.\n", String(exentsions).c_str());
 }
 
 bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const {

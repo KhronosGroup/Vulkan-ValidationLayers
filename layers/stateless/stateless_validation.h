@@ -477,7 +477,7 @@ class StatelessValidation : public ValidationObject {
 
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                               const char *extension_name, const Location &extension_loc) const;
+                               vvl::Extension extension, const Location &extension_loc) const;
 
     bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
                                       VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
@@ -531,7 +531,7 @@ class StatelessValidation : public ValidationObject {
                                              const Location &loc) const;
     bool ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo, const Location &loc) const;
 
-    bool OutputExtensionError(const Location &loc, const std::string &extension_name) const;
+    bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
 
     void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;

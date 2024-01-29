@@ -21,9 +21,9 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "best_practices/best_practices_error_enums.h"
 
-bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version) const {
+bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
     bool skip = false;
-    const auto dep_info = GetDeprecatedData(extension_name);
+    const auto dep_info = GetDeprecatedData(extension);
     if (dep_info.reason != DeprecationReason::Empty) {
         auto reason_to_string = [](DeprecationReason reason) {
             switch (reason) {
@@ -44,26 +44,26 @@ bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, const char
             ((dep_info.target.compare("VK_VERSION_1_3") == 0) && (version >= VK_API_VERSION_1_3))) {
             skip |=
                 LogWarning(vuid, instance, loc, "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                           extension_name, reason_to_string(dep_info.reason), (dep_info.target).c_str());
+                           String(extension), reason_to_string(dep_info.reason), (dep_info.target).c_str());
         } else if (dep_info.target.find("VK_VERSION") == std::string::npos) {
             if (dep_info.target.length() == 0) {
                 skip |= LogWarning(vuid, instance, loc,
                                    "Attempting to enable deprecated extension %s, but this extension has been deprecated "
                                    "without replacement.",
-                                   extension_name);
+                                   String(extension));
             } else {
                 skip |= LogWarning(vuid, instance, loc,
                                    "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                                   extension_name, reason_to_string(dep_info.reason), (dep_info.target).c_str());
+                                   String(extension), reason_to_string(dep_info.reason), (dep_info.target).c_str());
             }
         }
     }
     return skip;
 }
 
-bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, const char* extension_name) const {
+bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const {
     bool skip = false;
-    const std::string special_uses = GetSpecialUse(extension_name);
+    const std::string special_uses = GetSpecialUse(extension);
 
     if (!special_uses.empty()) {
         const char* const format =
@@ -71,22 +71,22 @@ bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, const char
             "and it is strongly recommended that it be otherwise avoided.";
         const char* vuid = "BestPractices-specialuse-extension";
         if (special_uses.find("cadsupport") != std::string::npos) {
-            skip |=
-                LogWarning(vuid, instance, loc, format, extension_name, "specialized functionality used by CAD/CAM applications");
+            skip |= LogWarning(vuid, instance, loc, format, String(extension),
+                               "specialized functionality used by CAD/CAM applications");
         }
         if (special_uses.find("d3demulation") != std::string::npos) {
-            skip |= LogWarning(vuid, instance, loc, format, extension_name,
+            skip |= LogWarning(vuid, instance, loc, format, String(extension),
                                "D3D emulation layers, and applications ported from D3D, by adding functionality specific to D3D");
         }
         if (special_uses.find("devtools") != std::string::npos) {
-            skip |= LogWarning(vuid, instance, loc, format, extension_name, "developer tools such as capture-replay libraries");
+            skip |= LogWarning(vuid, instance, loc, format, String(extension), "developer tools such as capture-replay libraries");
         }
         if (special_uses.find("debugging") != std::string::npos) {
-            skip |= LogWarning(vuid, instance, loc, format, extension_name, "use by applications when debugging");
+            skip |= LogWarning(vuid, instance, loc, format, String(extension), "use by applications when debugging");
         }
         if (special_uses.find("glemulation") != std::string::npos) {
             skip |= LogWarning(
-                vuid, instance, loc, format, extension_name,
+                vuid, instance, loc, format, String(extension),
                 "OpenGL and/or OpenGL ES emulation layers, and applications ported from those APIs, by adding functionality "
                 "specific to those APIs");
         }
@@ -99,15 +99,15 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        if (IsDeviceExtension(pCreateInfo->ppEnabledExtensionNames[i])) {
+        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+        if (IsDeviceExtension(extension)) {
             skip |= LogWarning(kVUID_BestPractices_CreateInstance_ExtensionMismatch, instance, error_obj.location,
-                               "Attempting to enable Device Extension %s at CreateInstance time.",
-                               pCreateInfo->ppEnabledExtensionNames[i]);
+                               "Attempting to enable Device Extension %s at CreateInstance time.", String(extension));
         }
         uint32_t specified_version =
             (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-        skip |= ValidateDeprecatedExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i], specified_version);
-        skip |= ValidateSpecialUseExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= ValidateDeprecatedExtensions(error_obj.location, extension, specified_version);
+        skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
 
     return skip;
@@ -153,14 +153,15 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
         APIVersion extension_api_version = std::min(api_version, APIVersion(device_api_version));
 
-        if (IsInstanceExtension(extension_name)) {
+        vvl::Extension extension = GetExtension(extension_name);
+        if (IsInstanceExtension(extension)) {
             skip |= LogWarning(kVUID_BestPractices_CreateDevice_ExtensionMismatch, instance, error_obj.location,
-                               "Attempting to enable Instance Extension %s at CreateDevice time.", extension_name);
+                               "Attempting to enable Instance Extension %s at CreateDevice time.", String(extension));
             extension_api_version = api_version;
         }
 
-        skip |= ValidateDeprecatedExtensions(error_obj.location, extension_name, extension_api_version);
-        skip |= ValidateSpecialUseExtensions(error_obj.location, extension_name);
+        skip |= ValidateDeprecatedExtensions(error_obj.location, extension, extension_api_version);
+        skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
 
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);

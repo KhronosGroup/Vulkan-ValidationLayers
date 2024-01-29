@@ -476,7 +476,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 cExpression =  []
                 outExpression =  []
                 for extension in command.extensions:
-                    outExpression.append(f'{extension.name}')
+                    outExpression.append(f'vvl::Extension::{extension.name[3:]}')
                     if extension.instance:
                         cExpression.append(f'instance_extensions.{extension.name.lower()}')
                     else:
@@ -488,7 +488,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
                 if command.name in alias_but_not_core:
                     cExpression += f' && loc.function == vvl::Func::{command.name}'
-                out.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, "{" || ".join(outExpression)}");\n')
+                out.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, {{{", ".join(outExpression)}}});\n')
 
             if command.alias:
                 # For alias that are promoted, just point to new function, ErrorObject will allow us to distinguish the caller

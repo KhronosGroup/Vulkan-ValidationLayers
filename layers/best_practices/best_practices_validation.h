@@ -120,8 +120,8 @@ struct DeprecationData {
     std::string target;
 };
 
-DeprecationData GetDeprecatedData(std::string extension);
-std::string GetSpecialUse(std::string extension);
+DeprecationData GetDeprecatedData(vvl::Extension extension);
+std::string GetSpecialUse(vvl::Extension extension);
 
 struct SpecialUseVUIDs {
     const char* cadsupport;
@@ -388,9 +388,9 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count);
 
-    bool ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version) const;
+    bool ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const;
 
-    bool ValidateSpecialUseExtensions(const Location& loc, const char* extension_name) const;
+    bool ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const;
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance, const ErrorObject& error_obj) const override;

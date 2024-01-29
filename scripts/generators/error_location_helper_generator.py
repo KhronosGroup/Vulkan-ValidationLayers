@@ -87,7 +87,9 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out.append('''
             #pragma once
             #include <string_view>
+            #include <sstream>
             #include <vulkan/vulkan.h>
+            #include "containers/custom_containers.h"
 
             namespace vvl {
             enum class Func {
@@ -114,10 +116,31 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             out.append(f'    {field},\n')
         out.append('};\n')
 
+        out.append('\n')
+        out.append('enum class Extension {\n')
+        out.append('    Empty = 0,\n')
+        for extension in sorted(self.vk.extensions.values(), key=lambda x: x.name):
+            out.append(f'    {extension.name[3:]},\n')
+        out.append('};\n')
+
         out.append('''
+
+            // Sometimes you know the requirement list doesn't contain any version values
+            typedef small_vector<vvl::Extension, 2, size_t> Extensions;
+
+            struct Requirement {
+                vvl::Extension extension = vvl::Extension::Empty;
+                uint32_t version = 0;
+            };
+            typedef small_vector <Requirement, 2, size_t> Requirements;
+
             const char* String(Func func);
             const char* String(Struct structure);
             const char* String(Field field);
+            const char* String(Extension extension);
+            std::string String(const Extensions& extensions);
+            std::string String(const Requirement& requirement);
+            std::string String(const Requirements& requirements);
 
             bool IsFieldPointer(Field field);
             }  // namespace vvl
@@ -129,6 +152,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out.append('''
             #include "error_location_helper.h"
             #include "containers/custom_containers.h"
+            #include "generated/vk_api_version.h"
             #include <assert.h>
             ''')
 
@@ -169,6 +193,16 @@ const char* String(Field field) {
     return table[(int)field].data();
 }
 
+const char* String(Extension extension) {
+    static const std::string_view table[] = {
+    {"INVALID_EMPTY", 15}, // Extension::Empty
+''')
+        for extension in sorted(self.vk.extensions.values(), key=lambda x: x.name):
+            out.append(f'    {{"{extension.name}", {len(extension.name) + 1}}},\n')
+        out.append('''    };
+    return table[(int)extension].data();
+}
+
 bool IsFieldPointer(Field field) {
     switch (field) {
 ''')
@@ -179,7 +213,42 @@ bool IsFieldPointer(Field field) {
         return false;
     }
 }
-}  // namespace vvl
 // clang-format on
 ''')
+
+        out.append('''
+            std::string String(const Extensions& extensions) {
+                std::stringstream out;
+                for (size_t i = 0; i < extensions.size(); i++) {
+                    out << String(extensions[i]);
+                    if (i + 1 != extensions.size()) {
+                        out << " or ";
+                    }
+                }
+                return out.str();
+            }
+
+            std::string String(const Requirement& requirement) {
+                if (requirement.extension == Extension::Empty) {
+                    APIVersion api_version(requirement.version);
+                    return StringAPIVersion(api_version);
+                } else {
+                    return String(requirement.extension);
+                }
+            }
+
+            std::string String(const Requirements& requirements) {
+                std::stringstream out;
+                for (size_t i = 0; i < requirements.size(); i++) {
+                    out << String(requirements[i]);
+                    if (i + 1 != requirements.size()) {
+                        out << " or ";
+                    }
+                }
+                return out.str();
+            }
+
+        }  // namespace vvl
+        ''')
+
         self.write("".join(out))
