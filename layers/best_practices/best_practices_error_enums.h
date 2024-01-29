@@ -26,30 +26,6 @@
     "BestPractices-vkCreateInstance-extension-mismatch";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_ExtensionMismatch =
     "BestPractices-vkCreateDevice-extension-mismatch";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_DeprecatedExtension =
-    "BestPractices-vkCreateInstance-deprecated-extension";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_DeprecatedExtension =
-    "BestPractices-vkCreateDevice-deprecated-extension";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport =
-    "BestPractices-vkCreateInstance-specialuse-extension-cadsupport";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_D3DEmulation =
-    "BestPractices-vkCreateInstance-specialuse-extension-d3demulation";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_DevTools =
-    "BestPractices-vkCreateInstance-specialuse-extension-devtools";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_Debugging =
-    "BestPractices-vkCreateInstance-specialuse-extension-debugging";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateInstance_SpecialUseExtension_GLEmulation =
-    "BestPractices-vkCreateInstance-specialuse-extension-glemulation";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_CADSupport =
-    "BestPractices-vkCreateDevice-specialuse-extension-cadsupport";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_D3DEmulation =
-    "BestPractices-vkCreateDevice-specialuse-extension-d3demulation";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_DevTools =
-    "BestPractices-vkCreateDevice-specialuse-extension-devtools";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_Debugging =
-    "BestPractices-vkCreateDevice-specialuse-extension-debugging";
-[[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation =
-    "BestPractices-vkCreateDevice-specialuse-extension-glemulation";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateDevice_API_Mismatch =
     "BestPractices-vkCreateDevice-API-version-mismatch";
 [[maybe_unused]] static const char *kVUID_BestPractices_DevLimit_MustQueryCount = "BestPractices-DevLimit-MustQueryCount";

@@ -21,51 +21,30 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "best_practices/best_practices_error_enums.h"
 
-const SpecialUseVUIDs kSpecialUseInstanceVUIDs{
-    kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport,
-    kVUID_BestPractices_CreateInstance_SpecialUseExtension_D3DEmulation,
-    kVUID_BestPractices_CreateInstance_SpecialUseExtension_DevTools,
-    kVUID_BestPractices_CreateInstance_SpecialUseExtension_Debugging,
-    kVUID_BestPractices_CreateInstance_SpecialUseExtension_GLEmulation,
-};
-
-const SpecialUseVUIDs kSpecialUseDeviceVUIDs{
-    kVUID_BestPractices_CreateDevice_SpecialUseExtension_CADSupport,
-    kVUID_BestPractices_CreateDevice_SpecialUseExtension_D3DEmulation,
-    kVUID_BestPractices_CreateDevice_SpecialUseExtension_DevTools,
-    kVUID_BestPractices_CreateDevice_SpecialUseExtension_Debugging,
-    kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation,
-};
-
-const char* DepReasonToString(ExtDeprecationReason reason) {
-    switch (reason) {
-        case kExtPromoted:
-            return "promoted to";
-            break;
-        case kExtObsoleted:
-            return "obsoleted by";
-            break;
-        case kExtDeprecated:
-            return "deprecated by";
-            break;
-        default:
-            return "";
-            break;
-    }
-}
-
-bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version,
-                                                 const char* vuid) const {
+bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version) const {
     bool skip = false;
-    auto dep_info_it = deprecated_extensions.find(extension_name);
-    if (dep_info_it != deprecated_extensions.end()) {
-        auto dep_info = dep_info_it->second;
+    const auto dep_info = GetDeprecatedData(extension_name);
+    if (dep_info.reason != DeprecationReason::Empty) {
+        auto reason_to_string = [](DeprecationReason reason) {
+            switch (reason) {
+                case DeprecationReason::Promoted:
+                    return "promoted to";
+                case DeprecationReason::Obsoleted:
+                    return "obsoleted by";
+                case DeprecationReason::Deprecated:
+                    return "deprecated by";
+                default:
+                    return "";
+            }
+        };
+
+        const char* vuid = "BestPractices-deprecated-extension";
         if (((dep_info.target.compare("VK_VERSION_1_1") == 0) && (version >= VK_API_VERSION_1_1)) ||
             ((dep_info.target.compare("VK_VERSION_1_2") == 0) && (version >= VK_API_VERSION_1_2)) ||
             ((dep_info.target.compare("VK_VERSION_1_3") == 0) && (version >= VK_API_VERSION_1_3))) {
             skip |=
                 LogWarning(vuid, instance, loc, "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                           extension_name, DepReasonToString(dep_info.reason), (dep_info.target).c_str());
+                           extension_name, reason_to_string(dep_info.reason), (dep_info.target).c_str());
         } else if (dep_info.target.find("VK_VERSION") == std::string::npos) {
             if (dep_info.target.length() == 0) {
                 skip |= LogWarning(vuid, instance, loc,
@@ -75,43 +54,39 @@ bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, const char
             } else {
                 skip |= LogWarning(vuid, instance, loc,
                                    "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                                   extension_name, DepReasonToString(dep_info.reason), (dep_info.target).c_str());
+                                   extension_name, reason_to_string(dep_info.reason), (dep_info.target).c_str());
             }
         }
     }
     return skip;
 }
 
-bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, const char* extension_name,
-                                                 const SpecialUseVUIDs& special_use_vuids) const {
+bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, const char* extension_name) const {
     bool skip = false;
-    auto dep_info_it = special_use_extensions.find(extension_name);
+    const std::string special_uses = GetSpecialUse(extension_name);
 
-    if (dep_info_it != special_use_extensions.end()) {
+    if (!special_uses.empty()) {
         const char* const format =
             "Attempting to enable extension %s, but this extension is intended to support %s "
             "and it is strongly recommended that it be otherwise avoided.";
-        auto& special_uses = dep_info_it->second;
-
+        const char* vuid = "BestPractices-specialuse-extension";
         if (special_uses.find("cadsupport") != std::string::npos) {
-            skip |= LogWarning(special_use_vuids.cadsupport, instance, loc, format, extension_name,
-                               "specialized functionality used by CAD/CAM applications");
+            skip |=
+                LogWarning(vuid, instance, loc, format, extension_name, "specialized functionality used by CAD/CAM applications");
         }
         if (special_uses.find("d3demulation") != std::string::npos) {
-            skip |= LogWarning(special_use_vuids.d3demulation, instance, loc, format, extension_name,
+            skip |= LogWarning(vuid, instance, loc, format, extension_name,
                                "D3D emulation layers, and applications ported from D3D, by adding functionality specific to D3D");
         }
         if (special_uses.find("devtools") != std::string::npos) {
-            skip |= LogWarning(special_use_vuids.devtools, instance, loc, format, extension_name,
-                               "developer tools such as capture-replay libraries");
+            skip |= LogWarning(vuid, instance, loc, format, extension_name, "developer tools such as capture-replay libraries");
         }
         if (special_uses.find("debugging") != std::string::npos) {
-            skip |= LogWarning(special_use_vuids.debugging, instance, loc, format, extension_name,
-                               "use by applications when debugging");
+            skip |= LogWarning(vuid, instance, loc, format, extension_name, "use by applications when debugging");
         }
         if (special_uses.find("glemulation") != std::string::npos) {
             skip |= LogWarning(
-                special_use_vuids.glemulation, instance, loc, format, extension_name,
+                vuid, instance, loc, format, extension_name,
                 "OpenGL and/or OpenGL ES emulation layers, and applications ported from those APIs, by adding functionality "
                 "specific to those APIs");
         }
@@ -131,9 +106,8 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
         }
         uint32_t specified_version =
             (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-        skip |= ValidateDeprecatedExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i], specified_version,
-                                             kVUID_BestPractices_CreateInstance_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseInstanceVUIDs);
+        skip |= ValidateDeprecatedExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i], specified_version);
+        skip |= ValidateSpecialUseExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i]);
     }
 
     return skip;
@@ -185,9 +159,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
             extension_api_version = api_version;
         }
 
-        skip |= ValidateDeprecatedExtensions(error_obj.location, extension_name, extension_api_version,
-                                             kVUID_BestPractices_CreateDevice_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions(error_obj.location, extension_name, kSpecialUseDeviceVUIDs);
+        skip |= ValidateDeprecatedExtensions(error_obj.location, extension_name, extension_api_version);
+        skip |= ValidateSpecialUseExtensions(error_obj.location, extension_name);
     }
 
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);

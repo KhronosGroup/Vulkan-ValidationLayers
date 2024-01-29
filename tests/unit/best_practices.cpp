@@ -106,10 +106,10 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
     if (IsExtensionsEnabled(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
         // Extra error if VK_EXT_debug_report is used on Android still
-        m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateInstance-deprecated-extension");
+        m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-deprecated-extension");
     }
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateInstance-deprecated-extension");
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateInstance-specialuse-extension-debugging");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-deprecated-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-specialuse-extension");
     VkInstance dummy;
     auto features = features_;
     auto ici = GetInstanceCreateInfo();
@@ -161,9 +161,9 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     // One for VK_KHR_buffer_device_address
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateDevice-deprecated-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-deprecated-extension");
     // One for the dependency extension VK_KHR_device_group
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateDevice-deprecated-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-deprecated-extension");
     vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
     m_errorMonitor->VerifyFound();
 }
@@ -192,7 +192,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateDevice-specialuse-extension-d3demulation");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-specialuse-extension");
     vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
     m_errorMonitor->VerifyFound();
 }
@@ -1797,7 +1797,7 @@ TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
     dev_info.enabledExtensionCount = 1;
     dev_info.ppEnabledExtensionNames = &extension;
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkCreateDevice-deprecated-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-deprecated-extension");
     // api version != device version
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateDevice-API-version-mismatch");
 

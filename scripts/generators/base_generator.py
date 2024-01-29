@@ -347,7 +347,6 @@ class BaseGenerator(OutputGenerator):
         platform = interface.get('platform')
         self.featureExtraProtec = self.vk.platforms[platform] if platform in self.vk.platforms else None
         protect = self.vk.platforms[platform] if platform in self.vk.platforms else None
-
         name = interface.get('name')
 
         if interface.tag == 'extension':
