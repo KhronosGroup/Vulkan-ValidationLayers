@@ -26,6 +26,7 @@
 #include <sstream>
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
+#include "generated/vk_api_version.h"
 
 namespace vvl {
 enum class Func {
@@ -4715,8 +4716,11 @@ enum class Extension {
 typedef small_vector<vvl::Extension, 2, size_t> Extensions;
 
 struct Requirement {
-    vvl::Extension extension = vvl::Extension::Empty;
-    uint32_t version = 0;
+    const vvl::Extension extension;
+    const vvl::Version version;
+
+    Requirement(vvl::Extension extension_) : extension(extension_), version(vvl::Version::Empty) {}
+    Requirement(vvl::Version version_) : extension(vvl::Extension::Empty), version(version_) {}
 };
 typedef small_vector<Requirement, 2, size_t> Requirements;
 

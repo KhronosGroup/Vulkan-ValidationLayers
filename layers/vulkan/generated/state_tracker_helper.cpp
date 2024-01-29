@@ -1531,24 +1531,24 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
     // added to the core spec when they were promoted.  When those extensions are
     // enabled, treat validation rules as if the corresponding feature is enabled.
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        const char *extension = pCreateInfo->ppEnabledExtensionNames[i];
-        if (0 == strncmp(extension, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
+        if (extension == vvl::Extension::EXT_descriptor_indexing) {
             features->descriptorIndexing = true;
         }
-        if (0 == strncmp(extension, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        if (extension == vvl::Extension::EXT_sampler_filter_minmax) {
             features->samplerFilterMinmax = true;
         }
-        if (0 == strncmp(extension, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        if (extension == vvl::Extension::EXT_shader_viewport_index_layer) {
             features->shaderOutputViewportIndex = true;
             features->shaderOutputLayer = true;
         }
-        if (0 == strncmp(extension, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        if (extension == vvl::Extension::KHR_draw_indirect_count) {
             features->drawIndirectCount = true;
         }
-        if (0 == strncmp(extension, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        if (extension == vvl::Extension::KHR_sampler_mirror_clamp_to_edge) {
             features->samplerMirrorClampToEdge = true;
         }
-        if (0 == strncmp(extension, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        if (extension == vvl::Extension::KHR_shader_draw_parameters) {
             features->shaderDrawParameters = true;
         }
     }

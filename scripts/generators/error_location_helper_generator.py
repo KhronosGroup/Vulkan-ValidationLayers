@@ -90,6 +90,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             #include <sstream>
             #include <vulkan/vulkan.h>
             #include "containers/custom_containers.h"
+            #include "generated/vk_api_version.h"
 
             namespace vvl {
             enum class Func {
@@ -129,8 +130,11 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             typedef small_vector<vvl::Extension, 2, size_t> Extensions;
 
             struct Requirement {
-                vvl::Extension extension = vvl::Extension::Empty;
-                uint32_t version = 0;
+                const vvl::Extension extension;
+                const vvl::Version version;
+
+                Requirement(vvl::Extension extension_) : extension(extension_), version(vvl::Version::Empty) {}
+                Requirement(vvl::Version version_) : extension(vvl::Extension::Empty), version(version_) {}
             };
             typedef small_vector <Requirement, 2, size_t> Requirements;
 
@@ -230,7 +234,7 @@ bool IsFieldPointer(Field field) {
 
             std::string String(const Requirement& requirement) {
                 if (requirement.extension == Extension::Empty) {
-                    APIVersion api_version(requirement.version);
+                    APIVersion api_version(static_cast<uint32_t>(requirement.version));
                     return StringAPIVersion(api_version);
                 } else {
                     return String(requirement.extension);

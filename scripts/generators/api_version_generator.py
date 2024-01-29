@@ -1,10 +1,10 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2023 The Khronos Group Inc.
-# Copyright (c) 2015-2023 Valve Corporation
-# Copyright (c) 2015-2023 LunarG, Inc.
-# Copyright (c) 2015-2023 Google Inc.
-# Copyright (c) 2023-2023 RasterGrid Kft.
+# Copyright (c) 2015-2024 The Khronos Group Inc.
+# Copyright (c) 2015-2024 Valve Corporation
+# Copyright (c) 2015-2024 LunarG, Inc.
+# Copyright (c) 2015-2024 Google Inc.
+# Copyright (c) 2023-2024 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,14 @@ from generators.base_generator import BaseGenerator
 # interfaces or their use in the generator script will have downstream effects and thus
 # should be avoided unless absolutely necessary.
 class APISpecific:
-    # Generates source code for APIVersion class and related utilities
+    @staticmethod
+    def genAPIVersionEnum(targetApiName: str) -> str:
+        match targetApiName:
+            case 'vulkan':
+                return '''
+                    _VK_VERSION_1_0 = (int)VK_API_VERSION_1_0,
+                    '''
+
     @staticmethod
     def genAPIVersionSource(targetApiName: str) -> str:
         match targetApiName:
@@ -82,10 +89,10 @@ class ApiVersionOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2023 The Khronos Group Inc.
-            * Copyright (c) 2015-2023 Valve Corporation
-            * Copyright (c) 2015-2023 LunarG, Inc.
-            * Copyright (c) 2015-2023 Google Inc.
+            * Copyright (c) 2015-2024 The Khronos Group Inc.
+            * Copyright (c) 2015-2024 Valve Corporation
+            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2024 Google Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
@@ -107,12 +114,18 @@ class ApiVersionOutputGenerator(BaseGenerator):
             #include <sstream>
             #include <iomanip>
 
-            #define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
-            #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
-            #define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
 
             #define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
-            ''')
+
+            namespace vvl {
+            // Need underscore prefix to not conflict with namespace, but still easy to match generation
+            enum class Version {
+                Empty = 0,''')
+        out.append(APISpecific.genAPIVersionEnum(self.targetApiName))
+        for version in self.vk.versions.values():
+            out.append(f'    _{version.name} = (int){version.nameApi},')
+        out.append('};\n')
+        out.append('}  // namespace vvl\n')
 
         out.append(APISpecific.genAPIVersionSource(self.targetApiName))
 

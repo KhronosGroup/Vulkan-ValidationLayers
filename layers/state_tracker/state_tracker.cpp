@@ -721,8 +721,9 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         props.resize(n_props);
         instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, props.data());
 
+        vvl::unordered_set<vvl::Extension> phys_dev_extensions;
         for (const auto &ext_prop : props) {
-            phys_dev_extensions.insert(ext_prop.extensionName);
+            phys_dev_extensions.insert(GetExtension(ext_prop.extensionName));
         }
 
         // Even if VK_KHR_format_feature_flags2 is available, we need to have
@@ -731,12 +732,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         // Vulkan 1.1 (which made this core).
         has_format_feature2 =
             (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
-            phys_dev_extensions.find(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME) != phys_dev_extensions.end();
+            phys_dev_extensions.find(vvl::Extension::KHR_format_feature_flags2) != phys_dev_extensions.end();
 
         // feature is required if 1.3 or extension is supported
         has_robust_image_access =
             (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
-            phys_dev_extensions.find(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME) != phys_dev_extensions.end();
+            phys_dev_extensions.find(vvl::Extension::EXT_image_robustness) != phys_dev_extensions.end();
     }
 
     const auto &dev_ext = device_extensions;

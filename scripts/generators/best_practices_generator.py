@@ -138,7 +138,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             #include "best_practices/best_practices_validation.h"
 
             DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
-                static const DeprecationData empty_deprecated_data{DeprecationReason::Empty, ""};
+                static const DeprecationData empty_deprecated_data{DeprecationReason::Empty, vvl::Extension::Empty};
                 static const vvl::unordered_map<vvl::Extension, DeprecationData> deprecated_extensions = {
             ''')
         for extension in self.vk.extensions.values():
@@ -156,7 +156,14 @@ class BestPracticesOutputGenerator(BaseGenerator):
             else:
                 continue
 
-            out.append(f'    {{vvl::Extension::{extension.name[3:]}, {{{reason}, "{target}"}}}},\n')
+            if len(target) == 0:
+                target = 'vvl::Extension::Empty'
+            elif 'VERSION' in target:
+                target = f'vvl::Version::_{target}'
+            else:
+                target = f'vvl::Extension::{target[3:]}'
+
+            out.append(f'    {{vvl::Extension::{extension.name[3:]}, {{{reason}, {{{target}}}}}}},\n')
         out.append('''    };
 
                 auto it = deprecated_extensions.find(extension_name);
