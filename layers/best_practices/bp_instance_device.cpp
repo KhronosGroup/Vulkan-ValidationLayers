@@ -39,14 +39,14 @@ bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Exten
         };
 
         const char* vuid = "BestPractices-deprecated-extension";
-        if (((dep_info.target.compare("VK_VERSION_1_1") == 0) && (version >= VK_API_VERSION_1_1)) ||
-            ((dep_info.target.compare("VK_VERSION_1_2") == 0) && (version >= VK_API_VERSION_1_2)) ||
-            ((dep_info.target.compare("VK_VERSION_1_3") == 0) && (version >= VK_API_VERSION_1_3))) {
+        if ((dep_info.target.version == vvl::Version::_VK_VERSION_1_1 && (version >= VK_API_VERSION_1_1)) ||
+            (dep_info.target.version == vvl::Version::_VK_VERSION_1_2 && (version >= VK_API_VERSION_1_2)) ||
+            (dep_info.target.version == vvl::Version::_VK_VERSION_1_3 && (version >= VK_API_VERSION_1_3))) {
             skip |=
                 LogWarning(vuid, instance, loc, "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                           String(extension), reason_to_string(dep_info.reason), (dep_info.target).c_str());
-        } else if (dep_info.target.find("VK_VERSION") == std::string::npos) {
-            if (dep_info.target.length() == 0) {
+                           String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
+        } else if (dep_info.target.version == vvl::Version::Empty) {
+            if (dep_info.target.extension == vvl::Extension::Empty) {
                 skip |= LogWarning(vuid, instance, loc,
                                    "Attempting to enable deprecated extension %s, but this extension has been deprecated "
                                    "without replacement.",
@@ -54,7 +54,7 @@ bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Exten
             } else {
                 skip |= LogWarning(vuid, instance, loc,
                                    "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                                   String(extension), reason_to_string(dep_info.reason), (dep_info.target).c_str());
+                                   String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
             }
         }
     }

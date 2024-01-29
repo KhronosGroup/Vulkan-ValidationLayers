@@ -181,23 +181,22 @@ class StateTrackerHelperOutputGenerator(BaseGenerator):
 
         # Handle Extension Feature Aliases:
         extension_feature_alises = {
-                'VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME': ['shaderDrawParameters'],
-                'VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME': ['drawIndirectCount'],
-                'VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME': ['samplerMirrorClampToEdge'],
-                'VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME': ['descriptorIndexing'],
-                'VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME': ['samplerFilterMinmax'],
-                'VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME': ['shaderOutputViewportIndex', 'shaderOutputLayer'],
+                'VK_KHR_shader_draw_parameters': ['shaderDrawParameters'],
+                'VK_KHR_draw_indirect_count': ['drawIndirectCount'],
+                'VK_KHR_sampler_mirror_clamp_to_edge': ['samplerMirrorClampToEdge'],
+                'VK_EXT_descriptor_indexing': ['descriptorIndexing'],
+                'VK_EXT_sampler_filter_minmax': ['samplerFilterMinmax'],
+                'VK_EXT_shader_viewport_index_layer': ['shaderOutputViewportIndex', 'shaderOutputLayer'],
         }
         out.append('''
                 // Some older extensions were made without features, but equivalent features were
                 // added to the core spec when they were promoted.  When those extensions are
                 // enabled, treat validation rules as if the corresponding feature is enabled.
                 for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-                    const char *extension = pCreateInfo->ppEnabledExtensionNames[i];
+                    vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
             ''')
         for ext, features in sorted(extension_feature_alises.items()):
-            out.append(f'if (0 == strncmp(extension, {ext}, VK_MAX_EXTENSION_NAME_SIZE))')
-            out.append('{\n')
+            out.append(f'if (extension == vvl::Extension::{ext[3:]}) {{\n')
             for feature in features:
                 out.append(f'    features->{feature} = true;\n')
             out.append('}\n')

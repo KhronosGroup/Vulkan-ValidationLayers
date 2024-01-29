@@ -54,12 +54,12 @@ bool StatelessValidation::OutputExtensionError(const Location &loc, const vvl::E
                     "function required extension %s which has not been enabled.\n", String(exentsions).c_str());
 }
 
-bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const {
+bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension) const {
     if (instance_extensions.vk_khr_get_physical_device_properties2) {
         // Struct is legal IF it's supported
         const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
         if (dev_exts_enumerated == device_extensions_enumerated.end()) return true;
-        auto enum_iter = dev_exts_enumerated->second.find(ext_name);
+        auto enum_iter = dev_exts_enumerated->second.find(extension);
         if (enum_iter != dev_exts_enumerated->second.cend()) {
             return true;
         }

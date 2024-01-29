@@ -266,27 +266,26 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
 
         out.append('''
 // clang-format off
-static inline const char* SpvExtensionRequirments(std::string_view extension) {
-    static const vvl::unordered_map<std::string_view, std::string_view> table {
+static inline std::string SpvExtensionRequirments(std::string_view extension) {
+    static const vvl::unordered_map<std::string_view, vvl::Requirements> table {
 ''')
         for spirv in [x for x in self.vk.spirv if x.extension]:
             requirment = ''
             for index, enable in enumerate(spirv.enable):
-                requirment += ' OR ' if (index != 0) else ''
+                requirment += ', ' if (index != 0) else ''
                 if enable.version is not None:
-                    requirment += enable.version
-                elif enable.feature is not None:
-                    requirment += f'{enable.struct}::{enable.feature}'
+                    requirment += f'{{vvl::Version::_{enable.version}}}'
                 elif enable.extension is not None:
-                    requirment += enable.extension
-                elif enable.property is not None:
-                    requirment += f'({enable.property}::{enable.member} == {enable.value})'
-            out.append(f'    {{"{spirv.name}", "{requirment}"}},\n')
+                    requirment += f'{{vvl::Extension::{enable.extension[3:]}}}'
+                elif enable.feature is not None or enable.property is not None:
+                    print("Need to add support for feature/properties in spirv extensions")
+                    sys.exit(1)
+            out.append(f'    {{"{spirv.name}", {{{requirment}}}}},\n')
         out.append('''    };
 
     // VUs before catch unknown extensions
     const auto entry = table.find(extension);
-    return entry->second.data();
+    return String(entry->second);
 }
 // clang-format on
 ''')
@@ -422,7 +421,7 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
                 if (has_support == false) {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08742" : "VUID-VkShaderCreateInfoEXT-pCode-08742";
                     skip |= LogError(vuid, device, loc,
-                        "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).", extension_name.c_str(), SpvExtensionRequirments(extension_name));
+                        "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).", extension_name.c_str(), SpvExtensionRequirments(extension_name).c_str());
                 }
             } //spv::OpExtension
             return skip;

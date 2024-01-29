@@ -111,7 +111,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkMemoryDedicatedRequirements structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: {  // Covers VUID-VkMemoryDedicatedRequirements-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_dedicated_allocation)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dedicated_allocation))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS), but "
@@ -123,7 +123,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkMemoryDedicatedAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO: {  // Covers VUID-VkMemoryDedicatedAllocateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_dedicated_allocation)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dedicated_allocation))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO), but "
@@ -135,7 +135,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkMemoryAllocateFlagsInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO: {  // Covers VUID-VkMemoryAllocateFlagsInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO), but its "
@@ -153,7 +153,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDeviceGroupRenderPassBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO: {  // Covers VUID-VkDeviceGroupRenderPassBeginInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO), "
@@ -181,7 +181,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO: {  // Covers
                                                                           // VUID-VkDeviceGroupCommandBufferBeginInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -193,7 +193,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDeviceGroupSubmitInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO: {  // Covers VUID-VkDeviceGroupSubmitInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO), but its "
@@ -221,7 +221,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDeviceGroupBindSparseInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO: {  // Covers VUID-VkDeviceGroupBindSparseInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO), but "
@@ -233,7 +233,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkBindBufferMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO: {  // Covers VUID-VkBindBufferMemoryDeviceGroupInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -252,7 +252,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkBindImageMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO: {  // Covers VUID-VkBindImageMemoryDeviceGroupInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_device_group)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO), "
@@ -442,7 +442,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES: {  // Covers
                                                                              // VUID-VkPhysicalDevicePointClippingProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_maintenance2)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -455,7 +455,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO: {  // Covers
                                                                                    // VUID-VkRenderPassInputAttachmentAspectCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_maintenance2)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -488,7 +488,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkImageViewUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO: {  // Covers VUID-VkImageViewUsageCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_maintenance2)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO), but "
@@ -508,7 +508,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO: {  // Covers
                                                                                          // VUID-VkPipelineTessellationDomainOriginStateCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_maintenance2)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
                 skip |=
                     LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -529,7 +529,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkRenderPassMultiviewCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO: {  // Covers VUID-VkRenderPassMultiviewCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_multiview)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_multiview))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO), "
@@ -577,7 +577,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES: {  // Covers
                                                                         // VUID-VkPhysicalDeviceMultiviewProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_multiview)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_multiview))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -659,7 +659,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkSamplerYcbcrConversionInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO: {  // Covers VUID-VkSamplerYcbcrConversionInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_sampler_ycbcr_conversion)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO), but "
@@ -676,7 +676,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkBindImagePlaneMemoryInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO: {  // Covers VUID-VkBindImagePlaneMemoryInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_sampler_ycbcr_conversion)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO), but "
@@ -697,7 +697,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO: {  // Covers
                                                                         // VUID-VkImagePlaneMemoryRequirementsInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_sampler_ycbcr_conversion)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -735,7 +735,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: {  // Covers
                                                                                     // VUID-VkSamplerYcbcrConversionImageFormatProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_sampler_ycbcr_conversion)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -788,7 +788,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkExternalMemoryImageCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO: {  // Covers VUID-VkExternalMemoryImageCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_external_memory)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_memory))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO), "
@@ -807,7 +807,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkExternalMemoryBufferCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO: {  // Covers VUID-VkExternalMemoryBufferCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_external_memory)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_memory))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO), "
@@ -826,7 +826,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkExportMemoryAllocateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO: {  // Covers VUID-VkExportMemoryAllocateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_external_memory)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_memory))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO), but its "
@@ -845,7 +845,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkExportFenceCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO: {  // Covers VUID-VkExportFenceCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_external_fence)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_fence))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO), but its "
@@ -864,7 +864,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkExportSemaphoreCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO: {  // Covers VUID-VkExportSemaphoreCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_external_semaphore)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_semaphore))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO), but "
@@ -884,7 +884,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES: {  // Covers
                                                                             // VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_3_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_maintenance3)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance3))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1116,7 +1116,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkImageFormatListCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: {  // Covers VUID-VkImageFormatListCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_image_format_list)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_image_format_list))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO), but "
@@ -1157,7 +1157,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDriverProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES: {  // Covers VUID-VkPhysicalDeviceDriverProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_driver_properties)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_driver_properties))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES), "
@@ -1208,7 +1208,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceFloatControlsProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_shader_float_controls)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_float_controls))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1221,7 +1221,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO: {  // Covers
                                                                                    // VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_descriptor_indexing)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1316,7 +1316,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceDescriptorIndexingProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_descriptor_indexing)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1329,7 +1329,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO: {  // Covers
                                                                                           // VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_descriptor_indexing)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
                 skip |=
                     LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -1351,7 +1351,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT: {  // Covers
                                                                                            // VUID-VkDescriptorSetVariableDescriptorCountLayoutSupport-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_descriptor_indexing)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -1365,7 +1365,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE: {  // Covers
                                                                              // VUID-VkSubpassDescriptionDepthStencilResolve-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_depth_stencil_resolve)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1395,7 +1395,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_depth_stencil_resolve)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1424,7 +1424,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkImageStencilUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO: {  // Covers VUID-VkImageStencilUsageCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_separate_stencil_usage)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO), but "
@@ -1444,7 +1444,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkSamplerReductionModeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO: {  // Covers VUID-VkSamplerReductionModeCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_sampler_filter_minmax)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO), "
@@ -1463,7 +1463,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_sampler_filter_minmax)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1514,7 +1514,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkFramebufferAttachmentsCreateInfo structure members
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO: {  // Covers VUID-VkFramebufferAttachmentsCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_imageless_framebuffer)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO), "
@@ -1561,7 +1561,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkRenderPassAttachmentBeginInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {  // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_imageless_framebuffer)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO), "
@@ -1628,7 +1628,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkAttachmentReferenceStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT: {  // Covers VUID-VkAttachmentReferenceStencilLayout-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_separate_depth_stencil_layouts)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT), "
@@ -1647,7 +1647,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT: {  // Covers
                                                                          // VUID-VkAttachmentDescriptionStencilLayout-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_separate_depth_stencil_layouts)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1704,7 +1704,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceTimelineSemaphoreProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_timeline_semaphore)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1716,7 +1716,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkSemaphoreTypeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO: {  // Covers VUID-VkSemaphoreTypeCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_timeline_semaphore)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO), but its "
@@ -1734,7 +1734,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkTimelineSemaphoreSubmitInfo structure members
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO: {  // Covers VUID-VkTimelineSemaphoreSubmitInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_timeline_semaphore)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO), but "
@@ -1770,7 +1770,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO: {  // Covers
                                                                              // VUID-VkBufferOpaqueCaptureAddressCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_buffer_device_address)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_buffer_device_address))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1783,7 +1783,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO: {  // Covers
                                                                                // VUID-VkMemoryOpaqueCaptureAddressAllocateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_buffer_device_address)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_buffer_device_address))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1858,7 +1858,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO: {  // Covers
                                                                           // VUID-VkPipelineCreationFeedbackCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_pipeline_creation_feedback)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_pipeline_creation_feedback))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -1950,7 +1950,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDevicePrivateDataCreateInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO: {  // Covers VUID-VkDevicePrivateDataCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_private_data)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_private_data))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO), but "
@@ -1980,7 +1980,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkMemoryBarrier2 structure members
         case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2: {  // Covers VUID-VkMemoryBarrier2-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_synchronization2)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_synchronization2))) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -2081,7 +2081,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceSubgroupSizeControlProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_subgroup_size_control)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2094,7 +2094,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO: {  // Covers
                                                                                             // VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_subgroup_size_control)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -2128,7 +2128,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceInlineUniformBlockProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_inline_uniform_block)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2141,7 +2141,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK: {  // Covers
                                                                              // VUID-VkWriteDescriptorSetInlineUniformBlock-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_inline_uniform_block)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2162,7 +2162,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO: {  // Covers
                                                                                     // VUID-VkDescriptorPoolInlineUniformBlockCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_inline_uniform_block)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2192,7 +2192,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPipelineRenderingCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO: {  // Covers VUID-VkPipelineRenderingCreateInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_dynamic_rendering)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO), but "
@@ -2222,7 +2222,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO: {  // Covers
                                                                              // VUID-VkCommandBufferInheritanceRenderingInfo-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_dynamic_rendering)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2276,7 +2276,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceShaderIntegerDotProductProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_shader_integer_dot_product)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_integer_dot_product))) {
                 skip |=
                     LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -2290,7 +2290,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceTexelBufferAlignmentProperties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::EXT_texel_buffer_alignment)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_texel_buffer_alignment))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2302,7 +2302,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkFormatProperties3 structure members
         case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3: {  // Covers VUID-VkFormatProperties3-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_format_feature_flags2)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_format_feature_flags2))) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -2332,7 +2332,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES: {  // Covers
                                                                             // VUID-VkPhysicalDeviceMaintenance4Properties-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_4_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_maintenance4)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance4))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
@@ -2855,7 +2855,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkAttachmentSampleCountInfoAMD structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD: {  // Covers VUID-VkAttachmentSampleCountInfoAMD-sType-sType
 
-            if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
+            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::KHR_dynamic_rendering)) ||
                 (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD), "

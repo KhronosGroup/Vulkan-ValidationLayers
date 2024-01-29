@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,18 @@
 #include <sstream>
 #include <iomanip>
 
-#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
-#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
-#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
-
 #define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
+
+namespace vvl {
+// Need underscore prefix to not conflict with namespace, but still easy to match generation
+enum class Version {
+    Empty = 0,
+    _VK_VERSION_1_0 = (int)VK_API_VERSION_1_0,
+    _VK_VERSION_1_1 = (int)VK_API_VERSION_1_1,
+    _VK_VERSION_1_2 = (int)VK_API_VERSION_1_2,
+    _VK_VERSION_1_3 = (int)VK_API_VERSION_1_3,
+};
+}  // namespace vvl
 
 class APIVersion {
   public:

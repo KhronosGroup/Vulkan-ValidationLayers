@@ -1810,7 +1810,6 @@ class ValidationStateTracker : public ValidationObject {
 
     DeviceFeatures enabled_features = {};
     // Device specific data
-    std::set<std::string> phys_dev_extensions;
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
     VkPhysicalDeviceProperties phys_dev_props = {};
     VkPhysicalDeviceVulkan11Properties phys_dev_props_core11 = {};

@@ -117,7 +117,7 @@ enum class DeprecationReason {
 
 struct DeprecationData {
     DeprecationReason reason;
-    std::string target;
+    vvl::Requirement target;
 };
 
 DeprecationData GetDeprecatedData(vvl::Extension extension);
