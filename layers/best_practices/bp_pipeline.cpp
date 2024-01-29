@@ -310,8 +310,9 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             if (module_state &&
                 module_state->spirv->static_data_.has_builtin_workgroup_size) {  // No module if creating from module identifier
                 skip |= LogWarning(kVUID_BestPractices_SpirvDeprecated_WorkgroupSize, device, create_info_loc,
-                                   "is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
-                                   "extension exposes a new LocalSizeId execution mode that should be used instead.");
+                                   "is using the SPIR-V Workgroup built-in which SPIR-V 1.6 deprecated. When using "
+                                   "VK_KHR_maintenance4 or Vulkan 1.3+, the new SPIR-V LocalSizeId execution mode should be used "
+                                   "instead. This can be done by recompiling your shader and targeting Vulkan 1.3+.");
             }
         }
     }
