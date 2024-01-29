@@ -887,6 +887,17 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                                           : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03684";
         skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
                                                      vuid_binding_table_flag, *pMissShaderBindingTable);
+        if (pMissShaderBindingTable->deviceAddress == 0) {
+            if (const auto *pipe = cb_state.lastBound[lv_bind_point].pipeline_state;
+                pipe && pipe->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) {
+                const char *vuid =
+                    is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03511" : "VUID-vkCmdTraceRaysKHR-flags-03511";
+                skip |=
+                    LogError(vuid, cb_state.Handle(), loc.dot(Field::pMissShaderBindingTable),
+                             "is 0 but last bound ray tracing pipeline (%s) was created with flags (%s).",
+                             FormatHandle(pipe->Handle()).c_str(), string_VkPipelineCreateFlags2KHR(pipe->create_flags).c_str());
+            }
+        }
     }
 
     if (pCallableShaderBindingTable) {
@@ -1618,7 +1629,8 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                              set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                         if (need_validate) {
-                            skip |= ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state, loc, vuid);
+                            skip |= ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
+                                                      loc, vuid);
                         }
                     }
                 }
@@ -1689,8 +1701,8 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                              set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                         if (need_validate) {
-                            skip |=
-                                ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state, loc, vuid);
+                            skip |= ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
+                                                      loc, vuid);
                         }
                     }
                 }
@@ -1740,7 +1752,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
 
     if (pipeline) {
         if ((pipeline->create_info_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
+                                              VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
             for (const auto &query : cb_state.activeQueries) {
                 const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
                 if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
