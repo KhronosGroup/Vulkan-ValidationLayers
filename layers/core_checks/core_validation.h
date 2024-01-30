@@ -479,8 +479,10 @@ class CoreChecks : public ValidationStateTracker {
         return result;
     }
 
-    bool ValidateHostVisibleMemoryIsBoundToBuffer(const vvl::Buffer&, const Location& buffer_loc, const char* vuid) const;
-
+    bool ValidateHostVisibleMemoryIsBoundToAccelStructBuffer(const vvl::AccelerationStructureKHR& accel_struct,
+                                                             const Location& buffer_loc, const char* vuid) const;
+    bool ValidateBufferMemoryIsNotMultiInstance(const vvl::Buffer& buffer, LogObjectList objlist, const Location& buffer_loc,
+                                                const char* vuid, const char* error_msg_beginning = "") const;
     bool ValidateMemoryIsBoundToImage(const LogObjectList& objlist, const vvl::Image& image_state, const Location& loc,
                                       const char* vuid) const;
 
@@ -2211,6 +2213,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                      const ErrorObject& error_obj) const override;
+    bool ValidateVkCopyAccelerationStructureToMemoryInfoKHR(const vvl::AccelerationStructureKHR& src_accel_struct,
+                                                            LogObjectList objlist, const Location& loc) const;
     bool PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                              const ErrorObject& error_obj) const override;
