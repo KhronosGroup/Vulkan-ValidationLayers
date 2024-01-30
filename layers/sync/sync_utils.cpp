@@ -99,8 +99,8 @@ VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mas
 }
 
 static const auto kShaderReadExpandBits =
-    VK_ACCESS_2_UNIFORM_READ_BIT_KHR | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR;
-static const auto kShaderWriteExpandBits = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR;
+    VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+static const auto kShaderWriteExpandBits = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
 
 VkAccessFlags2KHR ExpandAccessFlags(VkAccessFlags2KHR access_mask) {
     VkAccessFlags2KHR expanded = access_mask;
