@@ -118,10 +118,11 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out.append('};\n')
 
         out.append('\n')
+        out.append('// Need underscore prefix to not conflict with namespace, but still easy to match generation\n')
         out.append('enum class Extension {\n')
         out.append('    Empty = 0,\n')
         for extension in sorted(self.vk.extensions.values(), key=lambda x: x.name):
-            out.append(f'    {extension.name[3:]},\n')
+            out.append(f'    _{extension.name},\n')
         out.append('};\n')
 
         out.append('''

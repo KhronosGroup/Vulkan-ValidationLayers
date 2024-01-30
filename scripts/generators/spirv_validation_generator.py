@@ -276,7 +276,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                 if enable.version is not None:
                     requirment += f'{{vvl::Version::_{enable.version}}}'
                 elif enable.extension is not None:
-                    requirment += f'{{vvl::Extension::{enable.extension[3:]}}}'
+                    requirment += f'{{vvl::Extension::_{enable.extension}}}'
                 elif enable.feature is not None or enable.property is not None:
                     print("Need to add support for feature/properties in spirv extensions")
                     sys.exit(1)

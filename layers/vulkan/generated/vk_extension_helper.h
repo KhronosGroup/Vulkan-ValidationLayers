@@ -127,11 +127,11 @@ struct InstanceExtensions {
             {VK_API_VERSION_1_1,
              {"VK_VERSION_1_1",
               {
-                  vvl::Extension::KHR_get_physical_device_properties2,
-                  vvl::Extension::KHR_device_group_creation,
-                  vvl::Extension::KHR_external_memory_capabilities,
-                  vvl::Extension::KHR_external_semaphore_capabilities,
-                  vvl::Extension::KHR_external_fence_capabilities,
+                  vvl::Extension::_VK_KHR_get_physical_device_properties2,
+                  vvl::Extension::_VK_KHR_device_group_creation,
+                  vvl::Extension::_VK_KHR_external_memory_capabilities,
+                  vvl::Extension::_VK_KHR_external_semaphore_capabilities,
+                  vvl::Extension::_VK_KHR_external_fence_capabilities,
               }}},
 
         };
@@ -153,136 +153,140 @@ struct InstanceExtensions {
     typedef vvl::unordered_map<vvl::Extension, InstanceInfo> InstanceInfoMap;
     static const InstanceInfoMap &get_info_map() {
         static const InstanceInfoMap info_map = {
-            {vvl::Extension::KHR_surface, InstanceInfo(&InstanceExtensions::vk_khr_surface, {})},
-            {vvl::Extension::KHR_display, InstanceInfo(&InstanceExtensions::vk_khr_display,
-                                                       {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_surface, InstanceInfo(&InstanceExtensions::vk_khr_surface, {})},
+            {vvl::Extension::_VK_KHR_display,
+             InstanceInfo(&InstanceExtensions::vk_khr_display,
+                          {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-            {vvl::Extension::KHR_xlib_surface,
+            {vvl::Extension::_VK_KHR_xlib_surface,
              InstanceInfo(&InstanceExtensions::vk_khr_xlib_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
-            {vvl::Extension::KHR_xcb_surface,
+            {vvl::Extension::_VK_KHR_xcb_surface,
              InstanceInfo(&InstanceExtensions::vk_khr_xcb_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-            {vvl::Extension::KHR_wayland_surface,
+            {vvl::Extension::_VK_KHR_wayland_surface,
              InstanceInfo(&InstanceExtensions::vk_khr_wayland_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-            {vvl::Extension::KHR_android_surface,
+            {vvl::Extension::_VK_KHR_android_surface,
              InstanceInfo(&InstanceExtensions::vk_khr_android_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_win32_surface,
+            {vvl::Extension::_VK_KHR_win32_surface,
              InstanceInfo(&InstanceExtensions::vk_khr_win32_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_get_physical_device_properties2,
+            {vvl::Extension::_VK_KHR_get_physical_device_properties2,
              InstanceInfo(&InstanceExtensions::vk_khr_get_physical_device_properties2, {})},
-            {vvl::Extension::KHR_device_group_creation, InstanceInfo(&InstanceExtensions::vk_khr_device_group_creation, {})},
-            {vvl::Extension::KHR_external_memory_capabilities,
+            {vvl::Extension::_VK_KHR_device_group_creation, InstanceInfo(&InstanceExtensions::vk_khr_device_group_creation, {})},
+            {vvl::Extension::_VK_KHR_external_memory_capabilities,
              InstanceInfo(&InstanceExtensions::vk_khr_external_memory_capabilities,
                           {{{&InstanceExtensions::vk_khr_get_physical_device_properties2,
                              VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_external_semaphore_capabilities,
+            {vvl::Extension::_VK_KHR_external_semaphore_capabilities,
              InstanceInfo(&InstanceExtensions::vk_khr_external_semaphore_capabilities,
                           {{{&InstanceExtensions::vk_khr_get_physical_device_properties2,
                              VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_external_fence_capabilities,
+            {vvl::Extension::_VK_KHR_external_fence_capabilities,
              InstanceInfo(&InstanceExtensions::vk_khr_external_fence_capabilities,
                           {{{&InstanceExtensions::vk_khr_get_physical_device_properties2,
                              VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_get_surface_capabilities2,
+            {vvl::Extension::_VK_KHR_get_surface_capabilities2,
              InstanceInfo(&InstanceExtensions::vk_khr_get_surface_capabilities2,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_get_display_properties2,
+            {vvl::Extension::_VK_KHR_get_display_properties2,
              InstanceInfo(&InstanceExtensions::vk_khr_get_display_properties2,
                           {{{&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_surface_protected_capabilities,
+            {vvl::Extension::_VK_KHR_surface_protected_capabilities,
              InstanceInfo(
                  &InstanceExtensions::vk_khr_surface_protected_capabilities,
                  {{{&InstanceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                    {&InstanceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_portability_enumeration, InstanceInfo(&InstanceExtensions::vk_khr_portability_enumeration, {})},
-            {vvl::Extension::EXT_debug_report, InstanceInfo(&InstanceExtensions::vk_ext_debug_report, {})},
+            {vvl::Extension::_VK_KHR_portability_enumeration,
+             InstanceInfo(&InstanceExtensions::vk_khr_portability_enumeration, {})},
+            {vvl::Extension::_VK_EXT_debug_report, InstanceInfo(&InstanceExtensions::vk_ext_debug_report, {})},
 #ifdef VK_USE_PLATFORM_GGP
-            {vvl::Extension::GGP_stream_descriptor_surface,
+            {vvl::Extension::_VK_GGP_stream_descriptor_surface,
              InstanceInfo(&InstanceExtensions::vk_ggp_stream_descriptor_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_GGP
-            {vvl::Extension::NV_external_memory_capabilities,
+            {vvl::Extension::_VK_NV_external_memory_capabilities,
              InstanceInfo(&InstanceExtensions::vk_nv_external_memory_capabilities, {})},
-            {vvl::Extension::EXT_validation_flags, InstanceInfo(&InstanceExtensions::vk_ext_validation_flags, {})},
+            {vvl::Extension::_VK_EXT_validation_flags, InstanceInfo(&InstanceExtensions::vk_ext_validation_flags, {})},
 #ifdef VK_USE_PLATFORM_VI_NN
-            {vvl::Extension::NN_vi_surface, InstanceInfo(&InstanceExtensions::vk_nn_vi_surface,
-                                                         {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NN_vi_surface,
+             InstanceInfo(&InstanceExtensions::vk_nn_vi_surface,
+                          {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_VI_NN
-            {vvl::Extension::EXT_direct_mode_display,
+            {vvl::Extension::_VK_EXT_direct_mode_display,
              InstanceInfo(&InstanceExtensions::vk_ext_direct_mode_display,
                           {{{&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-            {vvl::Extension::EXT_acquire_xlib_display,
+            {vvl::Extension::_VK_EXT_acquire_xlib_display,
              InstanceInfo(&InstanceExtensions::vk_ext_acquire_xlib_display,
                           {{{&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-            {vvl::Extension::EXT_display_surface_counter,
+            {vvl::Extension::_VK_EXT_display_surface_counter,
              InstanceInfo(&InstanceExtensions::vk_ext_display_surface_counter,
                           {{{&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_swapchain_colorspace,
+            {vvl::Extension::_VK_EXT_swapchain_colorspace,
              InstanceInfo(&InstanceExtensions::vk_ext_swapchain_colorspace,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_IOS_MVK
-            {vvl::Extension::MVK_ios_surface,
+            {vvl::Extension::_VK_MVK_ios_surface,
              InstanceInfo(&InstanceExtensions::vk_mvk_ios_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
-            {vvl::Extension::MVK_macos_surface,
+            {vvl::Extension::_VK_MVK_macos_surface,
              InstanceInfo(&InstanceExtensions::vk_mvk_macos_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_MACOS_MVK
-            {vvl::Extension::EXT_debug_utils, InstanceInfo(&InstanceExtensions::vk_ext_debug_utils, {})},
+            {vvl::Extension::_VK_EXT_debug_utils, InstanceInfo(&InstanceExtensions::vk_ext_debug_utils, {})},
 #ifdef VK_USE_PLATFORM_FUCHSIA
-            {vvl::Extension::FUCHSIA_imagepipe_surface,
+            {vvl::Extension::_VK_FUCHSIA_imagepipe_surface,
              InstanceInfo(&InstanceExtensions::vk_fuchsia_imagepipe_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
-            {vvl::Extension::EXT_metal_surface,
+            {vvl::Extension::_VK_EXT_metal_surface,
              InstanceInfo(&InstanceExtensions::vk_ext_metal_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_METAL_EXT
-            {vvl::Extension::EXT_validation_features, InstanceInfo(&InstanceExtensions::vk_ext_validation_features, {})},
-            {vvl::Extension::EXT_headless_surface,
+            {vvl::Extension::_VK_EXT_validation_features, InstanceInfo(&InstanceExtensions::vk_ext_validation_features, {})},
+            {vvl::Extension::_VK_EXT_headless_surface,
              InstanceInfo(&InstanceExtensions::vk_ext_headless_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_surface_maintenance1,
+            {vvl::Extension::_VK_EXT_surface_maintenance1,
              InstanceInfo(
                  &InstanceExtensions::vk_ext_surface_maintenance1,
                  {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME},
                    {&InstanceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_acquire_drm_display,
+            {vvl::Extension::_VK_EXT_acquire_drm_display,
              InstanceInfo(&InstanceExtensions::vk_ext_acquire_drm_display,
                           {{{&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-            {vvl::Extension::EXT_directfb_surface,
+            {vvl::Extension::_VK_EXT_directfb_surface,
              InstanceInfo(&InstanceExtensions::vk_ext_directfb_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-            {vvl::Extension::QNX_screen_surface,
+            {vvl::Extension::_VK_QNX_screen_surface,
              InstanceInfo(&InstanceExtensions::vk_qnx_screen_surface,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-            {vvl::Extension::GOOGLE_surfaceless_query,
+            {vvl::Extension::_VK_GOOGLE_surfaceless_query,
              InstanceInfo(&InstanceExtensions::vk_google_surfaceless_query,
                           {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
-            {vvl::Extension::LUNARG_direct_driver_loading, InstanceInfo(&InstanceExtensions::vk_lunarg_direct_driver_loading, {})},
-            {vvl::Extension::EXT_layer_settings, InstanceInfo(&InstanceExtensions::vk_ext_layer_settings, {})},
+            {vvl::Extension::_VK_LUNARG_direct_driver_loading,
+             InstanceInfo(&InstanceExtensions::vk_lunarg_direct_driver_loading, {})},
+            {vvl::Extension::_VK_EXT_layer_settings, InstanceInfo(&InstanceExtensions::vk_ext_layer_settings, {})},
 
         };
         return info_map;
@@ -645,79 +649,79 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_API_VERSION_1_1,
              {"VK_VERSION_1_1",
               {
-                  vvl::Extension::KHR_multiview,
-                  vvl::Extension::KHR_device_group,
-                  vvl::Extension::KHR_shader_draw_parameters,
-                  vvl::Extension::KHR_maintenance1,
-                  vvl::Extension::KHR_external_memory,
-                  vvl::Extension::KHR_external_semaphore,
-                  vvl::Extension::KHR_16bit_storage,
-                  vvl::Extension::KHR_descriptor_update_template,
-                  vvl::Extension::KHR_external_fence,
-                  vvl::Extension::KHR_maintenance2,
-                  vvl::Extension::KHR_variable_pointers,
-                  vvl::Extension::KHR_dedicated_allocation,
-                  vvl::Extension::KHR_storage_buffer_storage_class,
-                  vvl::Extension::KHR_relaxed_block_layout,
-                  vvl::Extension::KHR_get_memory_requirements2,
-                  vvl::Extension::KHR_sampler_ycbcr_conversion,
-                  vvl::Extension::KHR_bind_memory2,
-                  vvl::Extension::KHR_maintenance3,
+                  vvl::Extension::_VK_KHR_multiview,
+                  vvl::Extension::_VK_KHR_device_group,
+                  vvl::Extension::_VK_KHR_shader_draw_parameters,
+                  vvl::Extension::_VK_KHR_maintenance1,
+                  vvl::Extension::_VK_KHR_external_memory,
+                  vvl::Extension::_VK_KHR_external_semaphore,
+                  vvl::Extension::_VK_KHR_16bit_storage,
+                  vvl::Extension::_VK_KHR_descriptor_update_template,
+                  vvl::Extension::_VK_KHR_external_fence,
+                  vvl::Extension::_VK_KHR_maintenance2,
+                  vvl::Extension::_VK_KHR_variable_pointers,
+                  vvl::Extension::_VK_KHR_dedicated_allocation,
+                  vvl::Extension::_VK_KHR_storage_buffer_storage_class,
+                  vvl::Extension::_VK_KHR_relaxed_block_layout,
+                  vvl::Extension::_VK_KHR_get_memory_requirements2,
+                  vvl::Extension::_VK_KHR_sampler_ycbcr_conversion,
+                  vvl::Extension::_VK_KHR_bind_memory2,
+                  vvl::Extension::_VK_KHR_maintenance3,
               }}},
             {VK_API_VERSION_1_2,
              {"VK_VERSION_1_2",
               {
-                  vvl::Extension::KHR_sampler_mirror_clamp_to_edge,
-                  vvl::Extension::KHR_shader_float16_int8,
-                  vvl::Extension::KHR_imageless_framebuffer,
-                  vvl::Extension::KHR_create_renderpass2,
-                  vvl::Extension::KHR_image_format_list,
-                  vvl::Extension::KHR_draw_indirect_count,
-                  vvl::Extension::KHR_shader_subgroup_extended_types,
-                  vvl::Extension::KHR_8bit_storage,
-                  vvl::Extension::KHR_shader_atomic_int64,
-                  vvl::Extension::KHR_driver_properties,
-                  vvl::Extension::KHR_shader_float_controls,
-                  vvl::Extension::KHR_depth_stencil_resolve,
-                  vvl::Extension::KHR_timeline_semaphore,
-                  vvl::Extension::KHR_vulkan_memory_model,
-                  vvl::Extension::KHR_spirv_1_4,
-                  vvl::Extension::KHR_separate_depth_stencil_layouts,
-                  vvl::Extension::KHR_uniform_buffer_standard_layout,
-                  vvl::Extension::KHR_buffer_device_address,
-                  vvl::Extension::EXT_sampler_filter_minmax,
-                  vvl::Extension::EXT_descriptor_indexing,
-                  vvl::Extension::EXT_shader_viewport_index_layer,
-                  vvl::Extension::EXT_scalar_block_layout,
-                  vvl::Extension::EXT_separate_stencil_usage,
-                  vvl::Extension::EXT_host_query_reset,
+                  vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge,
+                  vvl::Extension::_VK_KHR_shader_float16_int8,
+                  vvl::Extension::_VK_KHR_imageless_framebuffer,
+                  vvl::Extension::_VK_KHR_create_renderpass2,
+                  vvl::Extension::_VK_KHR_image_format_list,
+                  vvl::Extension::_VK_KHR_draw_indirect_count,
+                  vvl::Extension::_VK_KHR_shader_subgroup_extended_types,
+                  vvl::Extension::_VK_KHR_8bit_storage,
+                  vvl::Extension::_VK_KHR_shader_atomic_int64,
+                  vvl::Extension::_VK_KHR_driver_properties,
+                  vvl::Extension::_VK_KHR_shader_float_controls,
+                  vvl::Extension::_VK_KHR_depth_stencil_resolve,
+                  vvl::Extension::_VK_KHR_timeline_semaphore,
+                  vvl::Extension::_VK_KHR_vulkan_memory_model,
+                  vvl::Extension::_VK_KHR_spirv_1_4,
+                  vvl::Extension::_VK_KHR_separate_depth_stencil_layouts,
+                  vvl::Extension::_VK_KHR_uniform_buffer_standard_layout,
+                  vvl::Extension::_VK_KHR_buffer_device_address,
+                  vvl::Extension::_VK_EXT_sampler_filter_minmax,
+                  vvl::Extension::_VK_EXT_descriptor_indexing,
+                  vvl::Extension::_VK_EXT_shader_viewport_index_layer,
+                  vvl::Extension::_VK_EXT_scalar_block_layout,
+                  vvl::Extension::_VK_EXT_separate_stencil_usage,
+                  vvl::Extension::_VK_EXT_host_query_reset,
               }}},
             {VK_API_VERSION_1_3,
              {"VK_VERSION_1_3",
               {
-                  vvl::Extension::KHR_dynamic_rendering,
-                  vvl::Extension::KHR_shader_terminate_invocation,
-                  vvl::Extension::KHR_shader_integer_dot_product,
-                  vvl::Extension::KHR_shader_non_semantic_info,
-                  vvl::Extension::KHR_synchronization2,
-                  vvl::Extension::KHR_zero_initialize_workgroup_memory,
-                  vvl::Extension::KHR_copy_commands2,
-                  vvl::Extension::KHR_format_feature_flags2,
-                  vvl::Extension::KHR_maintenance4,
-                  vvl::Extension::EXT_texture_compression_astc_hdr,
-                  vvl::Extension::EXT_inline_uniform_block,
-                  vvl::Extension::EXT_pipeline_creation_feedback,
-                  vvl::Extension::EXT_subgroup_size_control,
-                  vvl::Extension::EXT_tooling_info,
-                  vvl::Extension::EXT_extended_dynamic_state,
-                  vvl::Extension::EXT_shader_demote_to_helper_invocation,
-                  vvl::Extension::EXT_texel_buffer_alignment,
-                  vvl::Extension::EXT_private_data,
-                  vvl::Extension::EXT_pipeline_creation_cache_control,
-                  vvl::Extension::EXT_ycbcr_2plane_444_formats,
-                  vvl::Extension::EXT_image_robustness,
-                  vvl::Extension::EXT_4444_formats,
-                  vvl::Extension::EXT_extended_dynamic_state2,
+                  vvl::Extension::_VK_KHR_dynamic_rendering,
+                  vvl::Extension::_VK_KHR_shader_terminate_invocation,
+                  vvl::Extension::_VK_KHR_shader_integer_dot_product,
+                  vvl::Extension::_VK_KHR_shader_non_semantic_info,
+                  vvl::Extension::_VK_KHR_synchronization2,
+                  vvl::Extension::_VK_KHR_zero_initialize_workgroup_memory,
+                  vvl::Extension::_VK_KHR_copy_commands2,
+                  vvl::Extension::_VK_KHR_format_feature_flags2,
+                  vvl::Extension::_VK_KHR_maintenance4,
+                  vvl::Extension::_VK_EXT_texture_compression_astc_hdr,
+                  vvl::Extension::_VK_EXT_inline_uniform_block,
+                  vvl::Extension::_VK_EXT_pipeline_creation_feedback,
+                  vvl::Extension::_VK_EXT_subgroup_size_control,
+                  vvl::Extension::_VK_EXT_tooling_info,
+                  vvl::Extension::_VK_EXT_extended_dynamic_state,
+                  vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation,
+                  vvl::Extension::_VK_EXT_texel_buffer_alignment,
+                  vvl::Extension::_VK_EXT_private_data,
+                  vvl::Extension::_VK_EXT_pipeline_creation_cache_control,
+                  vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats,
+                  vvl::Extension::_VK_EXT_image_robustness,
+                  vvl::Extension::_VK_EXT_4444_formats,
+                  vvl::Extension::_VK_EXT_extended_dynamic_state2,
               }}},
 
         };
@@ -739,426 +743,436 @@ struct DeviceExtensions : public InstanceExtensions {
     typedef vvl::unordered_map<vvl::Extension, DeviceInfo> DeviceInfoMap;
     static const DeviceInfoMap &get_info_map() {
         static const DeviceInfoMap info_map = {
-            {vvl::Extension::KHR_swapchain, DeviceInfo(&DeviceExtensions::vk_khr_swapchain,
-                                                       {{{&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_display_swapchain,
+            {vvl::Extension::_VK_KHR_swapchain, DeviceInfo(&DeviceExtensions::vk_khr_swapchain,
+                                                           {{{&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_display_swapchain,
              DeviceInfo(&DeviceExtensions::vk_khr_display_swapchain,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_sampler_mirror_clamp_to_edge,
+            {vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge,
              DeviceInfo(&DeviceExtensions::vk_khr_sampler_mirror_clamp_to_edge, {})},
-            {vvl::Extension::KHR_video_queue,
+            {vvl::Extension::_VK_KHR_video_queue,
              DeviceInfo(&DeviceExtensions::vk_khr_video_queue,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_decode_queue,
+            {vvl::Extension::_VK_KHR_video_decode_queue,
              DeviceInfo(&DeviceExtensions::vk_khr_video_decode_queue,
                         {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_encode_h264,
+            {vvl::Extension::_VK_KHR_video_encode_h264,
              DeviceInfo(&DeviceExtensions::vk_khr_video_encode_h264,
                         {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_encode_h265,
+            {vvl::Extension::_VK_KHR_video_encode_h265,
              DeviceInfo(&DeviceExtensions::vk_khr_video_encode_h265,
                         {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_decode_h264,
+            {vvl::Extension::_VK_KHR_video_decode_h264,
              DeviceInfo(&DeviceExtensions::vk_khr_video_decode_h264,
                         {{{&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_dynamic_rendering,
+            {vvl::Extension::_VK_KHR_dynamic_rendering,
              DeviceInfo(&DeviceExtensions::vk_khr_dynamic_rendering,
                         {{{&DeviceExtensions::vk_khr_depth_stencil_resolve, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_multiview,
+            {vvl::Extension::_VK_KHR_multiview,
              DeviceInfo(&DeviceExtensions::vk_khr_multiview, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                 VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_device_group,
+            {vvl::Extension::_VK_KHR_device_group,
              DeviceInfo(&DeviceExtensions::vk_khr_device_group,
                         {{{&DeviceExtensions::vk_khr_device_group_creation, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_draw_parameters, DeviceInfo(&DeviceExtensions::vk_khr_shader_draw_parameters, {})},
-            {vvl::Extension::KHR_maintenance1, DeviceInfo(&DeviceExtensions::vk_khr_maintenance1, {})},
-            {vvl::Extension::KHR_external_memory,
+            {vvl::Extension::_VK_KHR_shader_draw_parameters, DeviceInfo(&DeviceExtensions::vk_khr_shader_draw_parameters, {})},
+            {vvl::Extension::_VK_KHR_maintenance1, DeviceInfo(&DeviceExtensions::vk_khr_maintenance1, {})},
+            {vvl::Extension::_VK_KHR_external_memory,
              DeviceInfo(&DeviceExtensions::vk_khr_external_memory, {{{&DeviceExtensions::vk_khr_external_memory_capabilities,
                                                                       VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_memory_win32,
+            {vvl::Extension::_VK_KHR_external_memory_win32,
              DeviceInfo(&DeviceExtensions::vk_khr_external_memory_win32,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_memory_fd,
+            {vvl::Extension::_VK_KHR_external_memory_fd,
              DeviceInfo(&DeviceExtensions::vk_khr_external_memory_fd,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_win32_keyed_mutex,
+            {vvl::Extension::_VK_KHR_win32_keyed_mutex,
              DeviceInfo(&DeviceExtensions::vk_khr_win32_keyed_mutex,
                         {{{&DeviceExtensions::vk_khr_external_memory_win32, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_semaphore,
+            {vvl::Extension::_VK_KHR_external_semaphore,
              DeviceInfo(&DeviceExtensions::vk_khr_external_semaphore, {{{&DeviceExtensions::vk_khr_external_semaphore_capabilities,
                                                                          VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_semaphore_win32,
+            {vvl::Extension::_VK_KHR_external_semaphore_win32,
              DeviceInfo(&DeviceExtensions::vk_khr_external_semaphore_win32,
                         {{{&DeviceExtensions::vk_khr_external_semaphore, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_semaphore_fd,
+            {vvl::Extension::_VK_KHR_external_semaphore_fd,
              DeviceInfo(&DeviceExtensions::vk_khr_external_semaphore_fd,
                         {{{&DeviceExtensions::vk_khr_external_semaphore, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_push_descriptor,
+            {vvl::Extension::_VK_KHR_push_descriptor,
              DeviceInfo(&DeviceExtensions::vk_khr_push_descriptor, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_float16_int8, DeviceInfo(&DeviceExtensions::vk_khr_shader_float16_int8,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_16bit_storage,
+            {vvl::Extension::_VK_KHR_shader_float16_int8, DeviceInfo(&DeviceExtensions::vk_khr_shader_float16_int8,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_16bit_storage,
              DeviceInfo(&DeviceExtensions::vk_khr_16bit_storage, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                                                                    {&DeviceExtensions::vk_khr_storage_buffer_storage_class,
                                                                     VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_incremental_present,
+            {vvl::Extension::_VK_KHR_incremental_present,
              DeviceInfo(&DeviceExtensions::vk_khr_incremental_present,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_descriptor_update_template, DeviceInfo(&DeviceExtensions::vk_khr_descriptor_update_template, {})},
-            {vvl::Extension::KHR_imageless_framebuffer,
+            {vvl::Extension::_VK_KHR_descriptor_update_template,
+             DeviceInfo(&DeviceExtensions::vk_khr_descriptor_update_template, {})},
+            {vvl::Extension::_VK_KHR_imageless_framebuffer,
              DeviceInfo(&DeviceExtensions::vk_khr_imageless_framebuffer,
                         {{{&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_create_renderpass2,
+            {vvl::Extension::_VK_KHR_create_renderpass2,
              DeviceInfo(&DeviceExtensions::vk_khr_create_renderpass2,
                         {{{&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shared_presentable_image,
+            {vvl::Extension::_VK_KHR_shared_presentable_image,
              DeviceInfo(&DeviceExtensions::vk_khr_shared_presentable_image,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_external_fence,
+            {vvl::Extension::_VK_KHR_external_fence,
              DeviceInfo(&DeviceExtensions::vk_khr_external_fence, {{{&DeviceExtensions::vk_khr_external_fence_capabilities,
                                                                      VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_fence_win32,
+            {vvl::Extension::_VK_KHR_external_fence_win32,
              DeviceInfo(&DeviceExtensions::vk_khr_external_fence_win32,
                         {{{&DeviceExtensions::vk_khr_external_fence, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::KHR_external_fence_fd,
+            {vvl::Extension::_VK_KHR_external_fence_fd,
              DeviceInfo(&DeviceExtensions::vk_khr_external_fence_fd,
                         {{{&DeviceExtensions::vk_khr_external_fence, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_performance_query,
+            {vvl::Extension::_VK_KHR_performance_query,
              DeviceInfo(&DeviceExtensions::vk_khr_performance_query, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_maintenance2, DeviceInfo(&DeviceExtensions::vk_khr_maintenance2, {})},
-            {vvl::Extension::KHR_variable_pointers,
+            {vvl::Extension::_VK_KHR_maintenance2, DeviceInfo(&DeviceExtensions::vk_khr_maintenance2, {})},
+            {vvl::Extension::_VK_KHR_variable_pointers,
              DeviceInfo(&DeviceExtensions::vk_khr_variable_pointers, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                                                                        {&DeviceExtensions::vk_khr_storage_buffer_storage_class,
                                                                         VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_dedicated_allocation,
+            {vvl::Extension::_VK_KHR_dedicated_allocation,
              DeviceInfo(&DeviceExtensions::vk_khr_dedicated_allocation,
                         {{{&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_storage_buffer_storage_class,
+            {vvl::Extension::_VK_KHR_storage_buffer_storage_class,
              DeviceInfo(&DeviceExtensions::vk_khr_storage_buffer_storage_class, {})},
-            {vvl::Extension::KHR_relaxed_block_layout, DeviceInfo(&DeviceExtensions::vk_khr_relaxed_block_layout, {})},
-            {vvl::Extension::KHR_get_memory_requirements2, DeviceInfo(&DeviceExtensions::vk_khr_get_memory_requirements2, {})},
-            {vvl::Extension::KHR_image_format_list, DeviceInfo(&DeviceExtensions::vk_khr_image_format_list, {})},
-            {vvl::Extension::KHR_sampler_ycbcr_conversion,
+            {vvl::Extension::_VK_KHR_relaxed_block_layout, DeviceInfo(&DeviceExtensions::vk_khr_relaxed_block_layout, {})},
+            {vvl::Extension::_VK_KHR_get_memory_requirements2, DeviceInfo(&DeviceExtensions::vk_khr_get_memory_requirements2, {})},
+            {vvl::Extension::_VK_KHR_image_format_list, DeviceInfo(&DeviceExtensions::vk_khr_image_format_list, {})},
+            {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion,
              DeviceInfo(&DeviceExtensions::vk_khr_sampler_ycbcr_conversion,
                         {{{&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_bind_memory2, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_bind_memory2, DeviceInfo(&DeviceExtensions::vk_khr_bind_memory2, {})},
+            {vvl::Extension::_VK_KHR_bind_memory2, DeviceInfo(&DeviceExtensions::vk_khr_bind_memory2, {})},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-            {vvl::Extension::KHR_portability_subset, DeviceInfo(&DeviceExtensions::vk_khr_portability_subset,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_portability_subset, DeviceInfo(&DeviceExtensions::vk_khr_portability_subset,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-            {vvl::Extension::KHR_maintenance3,
+            {vvl::Extension::_VK_KHR_maintenance3,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance3, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_draw_indirect_count, DeviceInfo(&DeviceExtensions::vk_khr_draw_indirect_count, {})},
-            {vvl::Extension::KHR_shader_subgroup_extended_types,
+            {vvl::Extension::_VK_KHR_draw_indirect_count, DeviceInfo(&DeviceExtensions::vk_khr_draw_indirect_count, {})},
+            {vvl::Extension::_VK_KHR_shader_subgroup_extended_types,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::KHR_8bit_storage,
+            {vvl::Extension::_VK_KHR_8bit_storage,
              DeviceInfo(&DeviceExtensions::vk_khr_8bit_storage, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                                                                   {&DeviceExtensions::vk_khr_storage_buffer_storage_class,
                                                                    VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_atomic_int64, DeviceInfo(&DeviceExtensions::vk_khr_shader_atomic_int64,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_clock,
+            {vvl::Extension::_VK_KHR_shader_atomic_int64, DeviceInfo(&DeviceExtensions::vk_khr_shader_atomic_int64,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_shader_clock,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_clock, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_decode_h265,
+            {vvl::Extension::_VK_KHR_video_decode_h265,
              DeviceInfo(&DeviceExtensions::vk_khr_video_decode_h265,
                         {{{&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_global_priority,
+            {vvl::Extension::_VK_KHR_global_priority,
              DeviceInfo(&DeviceExtensions::vk_khr_global_priority, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_driver_properties,
+            {vvl::Extension::_VK_KHR_driver_properties,
              DeviceInfo(&DeviceExtensions::vk_khr_driver_properties, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_float_controls, DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_depth_stencil_resolve,
+            {vvl::Extension::_VK_KHR_shader_float_controls,
+             DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_depth_stencil_resolve,
              DeviceInfo(&DeviceExtensions::vk_khr_depth_stencil_resolve,
                         {{{&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_swapchain_mutable_format,
+            {vvl::Extension::_VK_KHR_swapchain_mutable_format,
              DeviceInfo(&DeviceExtensions::vk_khr_swapchain_mutable_format,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_timeline_semaphore, DeviceInfo(&DeviceExtensions::vk_khr_timeline_semaphore,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_vulkan_memory_model, DeviceInfo(&DeviceExtensions::vk_khr_vulkan_memory_model,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_terminate_invocation,
+            {vvl::Extension::_VK_KHR_timeline_semaphore, DeviceInfo(&DeviceExtensions::vk_khr_timeline_semaphore,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_vulkan_memory_model, DeviceInfo(&DeviceExtensions::vk_khr_vulkan_memory_model,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_shader_terminate_invocation,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_terminate_invocation,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_fragment_shading_rate,
+            {vvl::Extension::_VK_KHR_fragment_shading_rate,
              DeviceInfo(&DeviceExtensions::vk_khr_fragment_shading_rate,
                         {{{&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_dynamic_rendering_local_read,
+            {vvl::Extension::_VK_KHR_dynamic_rendering_local_read,
              DeviceInfo(&DeviceExtensions::vk_khr_dynamic_rendering_local_read,
                         {{{&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_quad_control,
+            {vvl::Extension::_VK_KHR_shader_quad_control,
              DeviceInfo(
                  &DeviceExtensions::vk_khr_shader_quad_control,
                  {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                    {&DeviceExtensions::vk_khr_vulkan_memory_model, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME},
                    {&DeviceExtensions::vk_khr_shader_maximal_reconvergence, VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_spirv_1_4,
+            {vvl::Extension::_VK_KHR_spirv_1_4,
              DeviceInfo(&DeviceExtensions::vk_khr_spirv_1_4,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                           {&DeviceExtensions::vk_khr_shader_float_controls, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_separate_depth_stencil_layouts,
+            {vvl::Extension::_VK_KHR_separate_depth_stencil_layouts,
              DeviceInfo(&DeviceExtensions::vk_khr_separate_depth_stencil_layouts,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_present_wait,
+            {vvl::Extension::_VK_KHR_present_wait,
              DeviceInfo(&DeviceExtensions::vk_khr_present_wait,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_present_id, VK_KHR_PRESENT_ID_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_uniform_buffer_standard_layout,
+            {vvl::Extension::_VK_KHR_uniform_buffer_standard_layout,
              DeviceInfo(&DeviceExtensions::vk_khr_uniform_buffer_standard_layout,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_buffer_device_address,
+            {vvl::Extension::_VK_KHR_buffer_device_address,
              DeviceInfo(&DeviceExtensions::vk_khr_buffer_device_address,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_device_group, VK_KHR_DEVICE_GROUP_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_deferred_host_operations, DeviceInfo(&DeviceExtensions::vk_khr_deferred_host_operations, {})},
-            {vvl::Extension::KHR_pipeline_executable_properties,
+            {vvl::Extension::_VK_KHR_deferred_host_operations, DeviceInfo(&DeviceExtensions::vk_khr_deferred_host_operations, {})},
+            {vvl::Extension::_VK_KHR_pipeline_executable_properties,
              DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_map_memory2, DeviceInfo(&DeviceExtensions::vk_khr_map_memory2, {})},
-            {vvl::Extension::KHR_shader_integer_dot_product,
+            {vvl::Extension::_VK_KHR_map_memory2, DeviceInfo(&DeviceExtensions::vk_khr_map_memory2, {})},
+            {vvl::Extension::_VK_KHR_shader_integer_dot_product,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_integer_dot_product,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_pipeline_library, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_library, {})},
-            {vvl::Extension::KHR_shader_non_semantic_info, DeviceInfo(&DeviceExtensions::vk_khr_shader_non_semantic_info, {})},
-            {vvl::Extension::KHR_present_id, DeviceInfo(&DeviceExtensions::vk_khr_present_id,
-                                                        {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
-                                                          {&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_encode_queue,
+            {vvl::Extension::_VK_KHR_pipeline_library, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_library, {})},
+            {vvl::Extension::_VK_KHR_shader_non_semantic_info, DeviceInfo(&DeviceExtensions::vk_khr_shader_non_semantic_info, {})},
+            {vvl::Extension::_VK_KHR_present_id,
+             DeviceInfo(&DeviceExtensions::vk_khr_present_id,
+                        {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
+                          {&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_video_encode_queue,
              DeviceInfo(&DeviceExtensions::vk_khr_video_encode_queue,
                         {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_synchronization2,
+            {vvl::Extension::_VK_KHR_synchronization2,
              DeviceInfo(&DeviceExtensions::vk_khr_synchronization2, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_fragment_shader_barycentric,
+            {vvl::Extension::_VK_KHR_fragment_shader_barycentric,
              DeviceInfo(&DeviceExtensions::vk_khr_fragment_shader_barycentric,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_subgroup_uniform_control_flow,
+            {vvl::Extension::_VK_KHR_shader_subgroup_uniform_control_flow,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_uniform_control_flow,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::KHR_zero_initialize_workgroup_memory,
+            {vvl::Extension::_VK_KHR_zero_initialize_workgroup_memory,
              DeviceInfo(&DeviceExtensions::vk_khr_zero_initialize_workgroup_memory,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_workgroup_memory_explicit_layout,
+            {vvl::Extension::_VK_KHR_workgroup_memory_explicit_layout,
              DeviceInfo(&DeviceExtensions::vk_khr_workgroup_memory_explicit_layout,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_copy_commands2,
+            {vvl::Extension::_VK_KHR_copy_commands2,
              DeviceInfo(&DeviceExtensions::vk_khr_copy_commands2, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_format_feature_flags2, DeviceInfo(&DeviceExtensions::vk_khr_format_feature_flags2,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_ray_tracing_maintenance1,
+            {vvl::Extension::_VK_KHR_format_feature_flags2,
+             DeviceInfo(&DeviceExtensions::vk_khr_format_feature_flags2,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_ray_tracing_maintenance1,
              DeviceInfo(&DeviceExtensions::vk_khr_ray_tracing_maintenance1,
                         {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_maintenance4,
+            {vvl::Extension::_VK_KHR_maintenance4,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance4, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::KHR_shader_subgroup_rotate, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_rotate, {})},
-            {vvl::Extension::KHR_shader_maximal_reconvergence,
+            {vvl::Extension::_VK_KHR_shader_subgroup_rotate, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_rotate, {})},
+            {vvl::Extension::_VK_KHR_shader_maximal_reconvergence,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_maximal_reconvergence,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::KHR_maintenance5,
+            {vvl::Extension::_VK_KHR_maintenance5,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance5,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_ray_tracing_position_fetch,
+            {vvl::Extension::_VK_KHR_ray_tracing_position_fetch,
              DeviceInfo(&DeviceExtensions::vk_khr_ray_tracing_position_fetch,
                         {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_cooperative_matrix, DeviceInfo(&DeviceExtensions::vk_khr_cooperative_matrix,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_video_maintenance1,
+            {vvl::Extension::_VK_KHR_cooperative_matrix, DeviceInfo(&DeviceExtensions::vk_khr_cooperative_matrix,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_video_maintenance1,
              DeviceInfo(&DeviceExtensions::vk_khr_video_maintenance1,
                         {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_vertex_attribute_divisor,
+            {vvl::Extension::_VK_KHR_vertex_attribute_divisor,
              DeviceInfo(&DeviceExtensions::vk_khr_vertex_attribute_divisor,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_load_store_op_none, DeviceInfo(&DeviceExtensions::vk_khr_load_store_op_none, {})},
-            {vvl::Extension::KHR_shader_float_controls2,
+            {vvl::Extension::_VK_KHR_load_store_op_none, DeviceInfo(&DeviceExtensions::vk_khr_load_store_op_none, {})},
+            {vvl::Extension::_VK_KHR_shader_float_controls2,
              DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls2,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                           {&DeviceExtensions::vk_khr_shader_float_controls, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_index_type_uint8,
+            {vvl::Extension::_VK_KHR_index_type_uint8,
              DeviceInfo(&DeviceExtensions::vk_khr_index_type_uint8, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_line_rasterization, DeviceInfo(&DeviceExtensions::vk_khr_line_rasterization,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_calibrated_timestamps, DeviceInfo(&DeviceExtensions::vk_khr_calibrated_timestamps,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_shader_expect_assume, DeviceInfo(&DeviceExtensions::vk_khr_shader_expect_assume,
-                                                                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_maintenance6,
+            {vvl::Extension::_VK_KHR_line_rasterization, DeviceInfo(&DeviceExtensions::vk_khr_line_rasterization,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_calibrated_timestamps,
+             DeviceInfo(&DeviceExtensions::vk_khr_calibrated_timestamps,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_shader_expect_assume,
+             DeviceInfo(&DeviceExtensions::vk_khr_shader_expect_assume,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_maintenance6,
              DeviceInfo(&DeviceExtensions::vk_khr_maintenance6, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::NV_glsl_shader, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
-            {vvl::Extension::EXT_depth_range_unrestricted, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
-            {vvl::Extension::IMG_filter_cubic, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})},
-            {vvl::Extension::AMD_rasterization_order, DeviceInfo(&DeviceExtensions::vk_amd_rasterization_order, {})},
-            {vvl::Extension::AMD_shader_trinary_minmax, DeviceInfo(&DeviceExtensions::vk_amd_shader_trinary_minmax, {})},
-            {vvl::Extension::AMD_shader_explicit_vertex_parameter,
+            {vvl::Extension::_VK_NV_glsl_shader, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
+            {vvl::Extension::_VK_EXT_depth_range_unrestricted, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
+            {vvl::Extension::_VK_IMG_filter_cubic, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})},
+            {vvl::Extension::_VK_AMD_rasterization_order, DeviceInfo(&DeviceExtensions::vk_amd_rasterization_order, {})},
+            {vvl::Extension::_VK_AMD_shader_trinary_minmax, DeviceInfo(&DeviceExtensions::vk_amd_shader_trinary_minmax, {})},
+            {vvl::Extension::_VK_AMD_shader_explicit_vertex_parameter,
              DeviceInfo(&DeviceExtensions::vk_amd_shader_explicit_vertex_parameter, {})},
-            {vvl::Extension::EXT_debug_marker,
+            {vvl::Extension::_VK_EXT_debug_marker,
              DeviceInfo(&DeviceExtensions::vk_ext_debug_marker,
                         {{{&DeviceExtensions::vk_ext_debug_report, VK_EXT_DEBUG_REPORT_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_gcn_shader, DeviceInfo(&DeviceExtensions::vk_amd_gcn_shader, {})},
-            {vvl::Extension::NV_dedicated_allocation, DeviceInfo(&DeviceExtensions::vk_nv_dedicated_allocation, {})},
-            {vvl::Extension::EXT_transform_feedback, DeviceInfo(&DeviceExtensions::vk_ext_transform_feedback,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NVX_binary_import, DeviceInfo(&DeviceExtensions::vk_nvx_binary_import, {})},
-            {vvl::Extension::NVX_image_view_handle, DeviceInfo(&DeviceExtensions::vk_nvx_image_view_handle, {})},
-            {vvl::Extension::AMD_draw_indirect_count, DeviceInfo(&DeviceExtensions::vk_amd_draw_indirect_count, {})},
-            {vvl::Extension::AMD_negative_viewport_height, DeviceInfo(&DeviceExtensions::vk_amd_negative_viewport_height, {})},
-            {vvl::Extension::AMD_gpu_shader_half_float, DeviceInfo(&DeviceExtensions::vk_amd_gpu_shader_half_float, {})},
-            {vvl::Extension::AMD_shader_ballot, DeviceInfo(&DeviceExtensions::vk_amd_shader_ballot, {})},
-            {vvl::Extension::AMD_texture_gather_bias_lod, DeviceInfo(&DeviceExtensions::vk_amd_texture_gather_bias_lod,
+            {vvl::Extension::_VK_AMD_gcn_shader, DeviceInfo(&DeviceExtensions::vk_amd_gcn_shader, {})},
+            {vvl::Extension::_VK_NV_dedicated_allocation, DeviceInfo(&DeviceExtensions::vk_nv_dedicated_allocation, {})},
+            {vvl::Extension::_VK_EXT_transform_feedback, DeviceInfo(&DeviceExtensions::vk_ext_transform_feedback,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NVX_binary_import, DeviceInfo(&DeviceExtensions::vk_nvx_binary_import, {})},
+            {vvl::Extension::_VK_NVX_image_view_handle, DeviceInfo(&DeviceExtensions::vk_nvx_image_view_handle, {})},
+            {vvl::Extension::_VK_AMD_draw_indirect_count, DeviceInfo(&DeviceExtensions::vk_amd_draw_indirect_count, {})},
+            {vvl::Extension::_VK_AMD_negative_viewport_height, DeviceInfo(&DeviceExtensions::vk_amd_negative_viewport_height, {})},
+            {vvl::Extension::_VK_AMD_gpu_shader_half_float, DeviceInfo(&DeviceExtensions::vk_amd_gpu_shader_half_float, {})},
+            {vvl::Extension::_VK_AMD_shader_ballot, DeviceInfo(&DeviceExtensions::vk_amd_shader_ballot, {})},
+            {vvl::Extension::_VK_AMD_texture_gather_bias_lod,
+             DeviceInfo(&DeviceExtensions::vk_amd_texture_gather_bias_lod,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_AMD_shader_info, DeviceInfo(&DeviceExtensions::vk_amd_shader_info, {})},
+            {vvl::Extension::_VK_AMD_shader_image_load_store_lod,
+             DeviceInfo(&DeviceExtensions::vk_amd_shader_image_load_store_lod, {})},
+            {vvl::Extension::_VK_NV_corner_sampled_image, DeviceInfo(&DeviceExtensions::vk_nv_corner_sampled_image,
                                                                      {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_shader_info, DeviceInfo(&DeviceExtensions::vk_amd_shader_info, {})},
-            {vvl::Extension::AMD_shader_image_load_store_lod,
-             DeviceInfo(&DeviceExtensions::vk_amd_shader_image_load_store_lod, {})},
-            {vvl::Extension::NV_corner_sampled_image, DeviceInfo(&DeviceExtensions::vk_nv_corner_sampled_image,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::IMG_format_pvrtc, DeviceInfo(&DeviceExtensions::vk_img_format_pvrtc, {})},
-            {vvl::Extension::NV_external_memory,
+            {vvl::Extension::_VK_IMG_format_pvrtc, DeviceInfo(&DeviceExtensions::vk_img_format_pvrtc, {})},
+            {vvl::Extension::_VK_NV_external_memory,
              DeviceInfo(&DeviceExtensions::vk_nv_external_memory, {{{&DeviceExtensions::vk_nv_external_memory_capabilities,
                                                                      VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::NV_external_memory_win32,
+            {vvl::Extension::_VK_NV_external_memory_win32,
              DeviceInfo(&DeviceExtensions::vk_nv_external_memory_win32,
                         {{{&DeviceExtensions::vk_nv_external_memory, VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_win32_keyed_mutex,
+            {vvl::Extension::_VK_NV_win32_keyed_mutex,
              DeviceInfo(&DeviceExtensions::vk_nv_win32_keyed_mutex,
                         {{{&DeviceExtensions::vk_nv_external_memory_win32, VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::EXT_shader_subgroup_ballot, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_ballot, {})},
-            {vvl::Extension::EXT_shader_subgroup_vote, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_vote, {})},
-            {vvl::Extension::EXT_texture_compression_astc_hdr,
+            {vvl::Extension::_VK_EXT_shader_subgroup_ballot, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_ballot, {})},
+            {vvl::Extension::_VK_EXT_shader_subgroup_vote, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_vote, {})},
+            {vvl::Extension::_VK_EXT_texture_compression_astc_hdr,
              DeviceInfo(&DeviceExtensions::vk_ext_texture_compression_astc_hdr,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_astc_decode_mode,
+            {vvl::Extension::_VK_EXT_astc_decode_mode,
              DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_pipeline_robustness, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_robustness,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_conditional_rendering, DeviceInfo(&DeviceExtensions::vk_ext_conditional_rendering,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_clip_space_w_scaling, DeviceInfo(&DeviceExtensions::vk_nv_clip_space_w_scaling, {})},
-            {vvl::Extension::EXT_display_control,
+            {vvl::Extension::_VK_EXT_pipeline_robustness, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_robustness,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_conditional_rendering,
+             DeviceInfo(&DeviceExtensions::vk_ext_conditional_rendering,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_clip_space_w_scaling, DeviceInfo(&DeviceExtensions::vk_nv_clip_space_w_scaling, {})},
+            {vvl::Extension::_VK_EXT_display_control,
              DeviceInfo(&DeviceExtensions::vk_ext_display_control,
                         {{{&DeviceExtensions::vk_ext_display_surface_counter, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {vvl::Extension::GOOGLE_display_timing,
+            {vvl::Extension::_VK_GOOGLE_display_timing,
              DeviceInfo(&DeviceExtensions::vk_google_display_timing,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_sample_mask_override_coverage,
+            {vvl::Extension::_VK_NV_sample_mask_override_coverage,
              DeviceInfo(&DeviceExtensions::vk_nv_sample_mask_override_coverage, {})},
-            {vvl::Extension::NV_geometry_shader_passthrough, DeviceInfo(&DeviceExtensions::vk_nv_geometry_shader_passthrough, {})},
-            {vvl::Extension::NV_viewport_array2, DeviceInfo(&DeviceExtensions::vk_nv_viewport_array2, {})},
-            {vvl::Extension::NVX_multiview_per_view_attributes,
+            {vvl::Extension::_VK_NV_geometry_shader_passthrough,
+             DeviceInfo(&DeviceExtensions::vk_nv_geometry_shader_passthrough, {})},
+            {vvl::Extension::_VK_NV_viewport_array2, DeviceInfo(&DeviceExtensions::vk_nv_viewport_array2, {})},
+            {vvl::Extension::_VK_NVX_multiview_per_view_attributes,
              DeviceInfo(&DeviceExtensions::vk_nvx_multiview_per_view_attributes,
                         {{{&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_viewport_swizzle, DeviceInfo(&DeviceExtensions::vk_nv_viewport_swizzle, {})},
-            {vvl::Extension::EXT_discard_rectangles, DeviceInfo(&DeviceExtensions::vk_ext_discard_rectangles,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_conservative_rasterization,
+            {vvl::Extension::_VK_NV_viewport_swizzle, DeviceInfo(&DeviceExtensions::vk_nv_viewport_swizzle, {})},
+            {vvl::Extension::_VK_EXT_discard_rectangles, DeviceInfo(&DeviceExtensions::vk_ext_discard_rectangles,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_conservative_rasterization,
              DeviceInfo(&DeviceExtensions::vk_ext_conservative_rasterization,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_depth_clip_enable,
+            {vvl::Extension::_VK_EXT_depth_clip_enable,
              DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_enable, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_hdr_metadata,
+            {vvl::Extension::_VK_EXT_hdr_metadata,
              DeviceInfo(&DeviceExtensions::vk_ext_hdr_metadata,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {vvl::Extension::IMG_relaxed_line_rasterization,
+            {vvl::Extension::_VK_IMG_relaxed_line_rasterization,
              DeviceInfo(&DeviceExtensions::vk_img_relaxed_line_rasterization,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_external_memory_dma_buf,
+            {vvl::Extension::_VK_EXT_external_memory_dma_buf,
              DeviceInfo(&DeviceExtensions::vk_ext_external_memory_dma_buf,
                         {{{&DeviceExtensions::vk_khr_external_memory_fd, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_queue_family_foreign,
+            {vvl::Extension::_VK_EXT_queue_family_foreign,
              DeviceInfo(&DeviceExtensions::vk_ext_queue_family_foreign,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-            {vvl::Extension::ANDROID_external_memory_android_hardware_buffer,
+            {vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer,
              DeviceInfo(&DeviceExtensions::vk_android_external_memory_android_hardware_buffer,
                         {{{&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-            {vvl::Extension::EXT_sampler_filter_minmax, DeviceInfo(&DeviceExtensions::vk_ext_sampler_filter_minmax,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_gpu_shader_int16, DeviceInfo(&DeviceExtensions::vk_amd_gpu_shader_int16, {})},
+            {vvl::Extension::_VK_EXT_sampler_filter_minmax,
+             DeviceInfo(&DeviceExtensions::vk_ext_sampler_filter_minmax,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_AMD_gpu_shader_int16, DeviceInfo(&DeviceExtensions::vk_amd_gpu_shader_int16, {})},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-            {vvl::Extension::AMDX_shader_enqueue,
+            {vvl::Extension::_VK_AMDX_shader_enqueue,
              DeviceInfo(&DeviceExtensions::vk_amdx_shader_enqueue,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -1166,177 +1180,188 @@ struct DeviceExtensions : public InstanceExtensions {
                           {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME}}})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-            {vvl::Extension::AMD_mixed_attachment_samples, DeviceInfo(&DeviceExtensions::vk_amd_mixed_attachment_samples, {})},
-            {vvl::Extension::AMD_shader_fragment_mask, DeviceInfo(&DeviceExtensions::vk_amd_shader_fragment_mask, {})},
-            {vvl::Extension::EXT_inline_uniform_block,
+            {vvl::Extension::_VK_AMD_mixed_attachment_samples, DeviceInfo(&DeviceExtensions::vk_amd_mixed_attachment_samples, {})},
+            {vvl::Extension::_VK_AMD_shader_fragment_mask, DeviceInfo(&DeviceExtensions::vk_amd_shader_fragment_mask, {})},
+            {vvl::Extension::_VK_EXT_inline_uniform_block,
              DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_stencil_export, DeviceInfo(&DeviceExtensions::vk_ext_shader_stencil_export, {})},
-            {vvl::Extension::EXT_sample_locations,
+            {vvl::Extension::_VK_EXT_shader_stencil_export, DeviceInfo(&DeviceExtensions::vk_ext_shader_stencil_export, {})},
+            {vvl::Extension::_VK_EXT_sample_locations,
              DeviceInfo(&DeviceExtensions::vk_ext_sample_locations, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_blend_operation_advanced,
+            {vvl::Extension::_VK_EXT_blend_operation_advanced,
              DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_fragment_coverage_to_color, DeviceInfo(&DeviceExtensions::vk_nv_fragment_coverage_to_color, {})},
-            {vvl::Extension::NV_framebuffer_mixed_samples, DeviceInfo(&DeviceExtensions::vk_nv_framebuffer_mixed_samples, {})},
-            {vvl::Extension::NV_fill_rectangle, DeviceInfo(&DeviceExtensions::vk_nv_fill_rectangle, {})},
-            {vvl::Extension::NV_shader_sm_builtins, DeviceInfo(&DeviceExtensions::vk_nv_shader_sm_builtins,
-                                                               {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::EXT_post_depth_coverage, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})},
-            {vvl::Extension::EXT_image_drm_format_modifier,
+            {vvl::Extension::_VK_NV_fragment_coverage_to_color,
+             DeviceInfo(&DeviceExtensions::vk_nv_fragment_coverage_to_color, {})},
+            {vvl::Extension::_VK_NV_framebuffer_mixed_samples, DeviceInfo(&DeviceExtensions::vk_nv_framebuffer_mixed_samples, {})},
+            {vvl::Extension::_VK_NV_fill_rectangle, DeviceInfo(&DeviceExtensions::vk_nv_fill_rectangle, {})},
+            {vvl::Extension::_VK_NV_shader_sm_builtins,
+             DeviceInfo(&DeviceExtensions::vk_nv_shader_sm_builtins,
+                        {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {vvl::Extension::_VK_EXT_post_depth_coverage, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})},
+            {vvl::Extension::_VK_EXT_image_drm_format_modifier,
              DeviceInfo(&DeviceExtensions::vk_ext_image_drm_format_modifier,
                         {{{&DeviceExtensions::vk_khr_bind_memory2, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_validation_cache, DeviceInfo(&DeviceExtensions::vk_ext_validation_cache, {})},
-            {vvl::Extension::EXT_descriptor_indexing,
+            {vvl::Extension::_VK_EXT_validation_cache, DeviceInfo(&DeviceExtensions::vk_ext_validation_cache, {})},
+            {vvl::Extension::_VK_EXT_descriptor_indexing,
              DeviceInfo(&DeviceExtensions::vk_ext_descriptor_indexing,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_viewport_index_layer,
+            {vvl::Extension::_VK_EXT_shader_viewport_index_layer,
              DeviceInfo(&DeviceExtensions::vk_ext_shader_viewport_index_layer, {})},
-            {vvl::Extension::NV_shading_rate_image,
+            {vvl::Extension::_VK_NV_shading_rate_image,
              DeviceInfo(&DeviceExtensions::vk_nv_shading_rate_image, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_ray_tracing,
+            {vvl::Extension::_VK_NV_ray_tracing,
              DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_representative_fragment_test,
+            {vvl::Extension::_VK_NV_representative_fragment_test,
              DeviceInfo(&DeviceExtensions::vk_nv_representative_fragment_test,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_filter_cubic, DeviceInfo(&DeviceExtensions::vk_ext_filter_cubic, {})},
-            {vvl::Extension::QCOM_render_pass_shader_resolve,
+            {vvl::Extension::_VK_EXT_filter_cubic, DeviceInfo(&DeviceExtensions::vk_ext_filter_cubic, {})},
+            {vvl::Extension::_VK_QCOM_render_pass_shader_resolve,
              DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_shader_resolve, {})},
-            {vvl::Extension::EXT_global_priority, DeviceInfo(&DeviceExtensions::vk_ext_global_priority, {})},
-            {vvl::Extension::EXT_external_memory_host,
+            {vvl::Extension::_VK_EXT_global_priority, DeviceInfo(&DeviceExtensions::vk_ext_global_priority, {})},
+            {vvl::Extension::_VK_EXT_external_memory_host,
              DeviceInfo(&DeviceExtensions::vk_ext_external_memory_host,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_buffer_marker, DeviceInfo(&DeviceExtensions::vk_amd_buffer_marker, {})},
-            {vvl::Extension::AMD_pipeline_compiler_control, DeviceInfo(&DeviceExtensions::vk_amd_pipeline_compiler_control, {})},
-            {vvl::Extension::EXT_calibrated_timestamps, DeviceInfo(&DeviceExtensions::vk_ext_calibrated_timestamps,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_shader_core_properties, DeviceInfo(&DeviceExtensions::vk_amd_shader_core_properties,
-                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_memory_overallocation_behavior,
+            {vvl::Extension::_VK_AMD_buffer_marker, DeviceInfo(&DeviceExtensions::vk_amd_buffer_marker, {})},
+            {vvl::Extension::_VK_AMD_pipeline_compiler_control,
+             DeviceInfo(&DeviceExtensions::vk_amd_pipeline_compiler_control, {})},
+            {vvl::Extension::_VK_EXT_calibrated_timestamps,
+             DeviceInfo(&DeviceExtensions::vk_ext_calibrated_timestamps,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_AMD_shader_core_properties,
+             DeviceInfo(&DeviceExtensions::vk_amd_shader_core_properties,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_AMD_memory_overallocation_behavior,
              DeviceInfo(&DeviceExtensions::vk_amd_memory_overallocation_behavior, {})},
-            {vvl::Extension::EXT_vertex_attribute_divisor,
+            {vvl::Extension::_VK_EXT_vertex_attribute_divisor,
              DeviceInfo(&DeviceExtensions::vk_ext_vertex_attribute_divisor,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_GGP
-            {vvl::Extension::GGP_frame_token, DeviceInfo(&DeviceExtensions::vk_ggp_frame_token,
-                                                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
-                                                           {&DeviceExtensions::vk_ggp_stream_descriptor_surface,
-                                                            VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_GGP_frame_token,
+             DeviceInfo(
+                 &DeviceExtensions::vk_ggp_frame_token,
+                 {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
+                   {&DeviceExtensions::vk_ggp_stream_descriptor_surface, VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_GGP
-            {vvl::Extension::EXT_pipeline_creation_feedback, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
-            {vvl::Extension::NV_shader_subgroup_partitioned,
+            {vvl::Extension::_VK_EXT_pipeline_creation_feedback,
+             DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
+            {vvl::Extension::_VK_NV_shader_subgroup_partitioned,
              DeviceInfo(&DeviceExtensions::vk_nv_shader_subgroup_partitioned,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::NV_compute_shader_derivatives,
+            {vvl::Extension::_VK_NV_compute_shader_derivatives,
              DeviceInfo(&DeviceExtensions::vk_nv_compute_shader_derivatives,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_mesh_shader,
+            {vvl::Extension::_VK_NV_mesh_shader,
              DeviceInfo(&DeviceExtensions::vk_nv_mesh_shader, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                  VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_fragment_shader_barycentric,
+            {vvl::Extension::_VK_NV_fragment_shader_barycentric,
              DeviceInfo(&DeviceExtensions::vk_nv_fragment_shader_barycentric,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_shader_image_footprint, DeviceInfo(&DeviceExtensions::vk_nv_shader_image_footprint,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_scissor_exclusive,
+            {vvl::Extension::_VK_NV_shader_image_footprint,
+             DeviceInfo(&DeviceExtensions::vk_nv_shader_image_footprint,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_scissor_exclusive,
              DeviceInfo(&DeviceExtensions::vk_nv_scissor_exclusive, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_device_diagnostic_checkpoints,
+            {vvl::Extension::_VK_NV_device_diagnostic_checkpoints,
              DeviceInfo(&DeviceExtensions::vk_nv_device_diagnostic_checkpoints,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::INTEL_shader_integer_functions2,
+            {vvl::Extension::_VK_INTEL_shader_integer_functions2,
              DeviceInfo(&DeviceExtensions::vk_intel_shader_integer_functions2,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::INTEL_performance_query, DeviceInfo(&DeviceExtensions::vk_intel_performance_query, {})},
-            {vvl::Extension::EXT_pci_bus_info,
+            {vvl::Extension::_VK_INTEL_performance_query, DeviceInfo(&DeviceExtensions::vk_intel_performance_query, {})},
+            {vvl::Extension::_VK_EXT_pci_bus_info,
              DeviceInfo(&DeviceExtensions::vk_ext_pci_bus_info, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_display_native_hdr,
+            {vvl::Extension::_VK_AMD_display_native_hdr,
              DeviceInfo(&DeviceExtensions::vk_amd_display_native_hdr,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_fragment_density_map, DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map,
-                                                                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_scalar_block_layout, DeviceInfo(&DeviceExtensions::vk_ext_scalar_block_layout,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::GOOGLE_hlsl_functionality1, DeviceInfo(&DeviceExtensions::vk_google_hlsl_functionality1, {})},
-            {vvl::Extension::GOOGLE_decorate_string, DeviceInfo(&DeviceExtensions::vk_google_decorate_string, {})},
-            {vvl::Extension::EXT_subgroup_size_control,
+            {vvl::Extension::_VK_EXT_fragment_density_map,
+             DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_scalar_block_layout, DeviceInfo(&DeviceExtensions::vk_ext_scalar_block_layout,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_GOOGLE_hlsl_functionality1, DeviceInfo(&DeviceExtensions::vk_google_hlsl_functionality1, {})},
+            {vvl::Extension::_VK_GOOGLE_decorate_string, DeviceInfo(&DeviceExtensions::vk_google_decorate_string, {})},
+            {vvl::Extension::_VK_EXT_subgroup_size_control,
              DeviceInfo(&DeviceExtensions::vk_ext_subgroup_size_control,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::AMD_shader_core_properties2,
+            {vvl::Extension::_VK_AMD_shader_core_properties2,
              DeviceInfo(&DeviceExtensions::vk_amd_shader_core_properties2,
                         {{{&DeviceExtensions::vk_amd_shader_core_properties, VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_device_coherent_memory, DeviceInfo(&DeviceExtensions::vk_amd_device_coherent_memory,
-                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_image_atomic_int64,
+            {vvl::Extension::_VK_AMD_device_coherent_memory,
+             DeviceInfo(&DeviceExtensions::vk_amd_device_coherent_memory,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_shader_image_atomic_int64,
              DeviceInfo(&DeviceExtensions::vk_ext_shader_image_atomic_int64,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_memory_budget,
+            {vvl::Extension::_VK_EXT_memory_budget,
              DeviceInfo(&DeviceExtensions::vk_ext_memory_budget, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_memory_priority,
+            {vvl::Extension::_VK_EXT_memory_priority,
              DeviceInfo(&DeviceExtensions::vk_ext_memory_priority, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_dedicated_allocation_image_aliasing,
+            {vvl::Extension::_VK_NV_dedicated_allocation_image_aliasing,
              DeviceInfo(&DeviceExtensions::vk_nv_dedicated_allocation_image_aliasing,
                         {{{&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_buffer_device_address, DeviceInfo(&DeviceExtensions::vk_ext_buffer_device_address,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_tooling_info, DeviceInfo(&DeviceExtensions::vk_ext_tooling_info, {})},
-            {vvl::Extension::EXT_separate_stencil_usage, DeviceInfo(&DeviceExtensions::vk_ext_separate_stencil_usage, {})},
-            {vvl::Extension::NV_cooperative_matrix,
+            {vvl::Extension::_VK_EXT_buffer_device_address,
+             DeviceInfo(&DeviceExtensions::vk_ext_buffer_device_address,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_tooling_info, DeviceInfo(&DeviceExtensions::vk_ext_tooling_info, {})},
+            {vvl::Extension::_VK_EXT_separate_stencil_usage, DeviceInfo(&DeviceExtensions::vk_ext_separate_stencil_usage, {})},
+            {vvl::Extension::_VK_NV_cooperative_matrix,
              DeviceInfo(&DeviceExtensions::vk_nv_cooperative_matrix, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_coverage_reduction_mode,
+            {vvl::Extension::_VK_NV_coverage_reduction_mode,
              DeviceInfo(&DeviceExtensions::vk_nv_coverage_reduction_mode,
                         {{{&DeviceExtensions::vk_nv_framebuffer_mixed_samples, VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_fragment_shader_interlock,
+            {vvl::Extension::_VK_EXT_fragment_shader_interlock,
              DeviceInfo(&DeviceExtensions::vk_ext_fragment_shader_interlock,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_ycbcr_image_arrays,
+            {vvl::Extension::_VK_EXT_ycbcr_image_arrays,
              DeviceInfo(&DeviceExtensions::vk_ext_ycbcr_image_arrays,
                         {{{&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_provoking_vertex,
+            {vvl::Extension::_VK_EXT_provoking_vertex,
              DeviceInfo(&DeviceExtensions::vk_ext_provoking_vertex, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::EXT_full_screen_exclusive,
+            {vvl::Extension::_VK_EXT_full_screen_exclusive,
              DeviceInfo(&DeviceExtensions::vk_ext_full_screen_exclusive,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -1344,438 +1369,451 @@ struct DeviceExtensions : public InstanceExtensions {
                           {&DeviceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::EXT_line_rasterization, DeviceInfo(&DeviceExtensions::vk_ext_line_rasterization,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_atomic_float, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_host_query_reset,
-             DeviceInfo(&DeviceExtensions::vk_ext_host_query_reset, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_index_type_uint8,
-             DeviceInfo(&DeviceExtensions::vk_ext_index_type_uint8, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_extended_dynamic_state, DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state,
+            {vvl::Extension::_VK_EXT_line_rasterization, DeviceInfo(&DeviceExtensions::vk_ext_line_rasterization,
                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_host_image_copy,
+            {vvl::Extension::_VK_EXT_shader_atomic_float, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_host_query_reset,
+             DeviceInfo(&DeviceExtensions::vk_ext_host_query_reset, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_index_type_uint8,
+             DeviceInfo(&DeviceExtensions::vk_ext_index_type_uint8, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_extended_dynamic_state,
+             DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_host_image_copy,
              DeviceInfo(&DeviceExtensions::vk_ext_host_image_copy,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_atomic_float2,
+            {vvl::Extension::_VK_EXT_shader_atomic_float2,
              DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float2,
                         {{{&DeviceExtensions::vk_ext_shader_atomic_float, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_swapchain_maintenance1,
+            {vvl::Extension::_VK_EXT_swapchain_maintenance1,
              DeviceInfo(&DeviceExtensions::vk_ext_swapchain_maintenance1,
                         {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_surface_maintenance1, VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_demote_to_helper_invocation,
+            {vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation,
              DeviceInfo(&DeviceExtensions::vk_ext_shader_demote_to_helper_invocation,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_device_generated_commands,
+            {vvl::Extension::_VK_NV_device_generated_commands,
              DeviceInfo(&DeviceExtensions::vk_nv_device_generated_commands,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_inherited_viewport_scissor,
+            {vvl::Extension::_VK_NV_inherited_viewport_scissor,
              DeviceInfo(&DeviceExtensions::vk_nv_inherited_viewport_scissor,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_texel_buffer_alignment, DeviceInfo(&DeviceExtensions::vk_ext_texel_buffer_alignment,
+            {vvl::Extension::_VK_EXT_texel_buffer_alignment,
+             DeviceInfo(&DeviceExtensions::vk_ext_texel_buffer_alignment,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_QCOM_render_pass_transform, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {})},
+            {vvl::Extension::_VK_EXT_depth_bias_control, DeviceInfo(&DeviceExtensions::vk_ext_depth_bias_control,
                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_render_pass_transform, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {})},
-            {vvl::Extension::EXT_depth_bias_control, DeviceInfo(&DeviceExtensions::vk_ext_depth_bias_control,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_device_memory_report, DeviceInfo(&DeviceExtensions::vk_ext_device_memory_report,
-                                                                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_robustness2,
+            {vvl::Extension::_VK_EXT_device_memory_report,
+             DeviceInfo(&DeviceExtensions::vk_ext_device_memory_report,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_robustness2,
              DeviceInfo(&DeviceExtensions::vk_ext_robustness2, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_custom_border_color, DeviceInfo(&DeviceExtensions::vk_ext_custom_border_color,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::GOOGLE_user_type, DeviceInfo(&DeviceExtensions::vk_google_user_type, {})},
-            {vvl::Extension::NV_present_barrier,
+            {vvl::Extension::_VK_EXT_custom_border_color, DeviceInfo(&DeviceExtensions::vk_ext_custom_border_color,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_GOOGLE_user_type, DeviceInfo(&DeviceExtensions::vk_google_user_type, {})},
+            {vvl::Extension::_VK_NV_present_barrier,
              DeviceInfo(&DeviceExtensions::vk_nv_present_barrier,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_private_data,
+            {vvl::Extension::_VK_EXT_private_data,
              DeviceInfo(&DeviceExtensions::vk_ext_private_data, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_pipeline_creation_cache_control,
+            {vvl::Extension::_VK_EXT_pipeline_creation_cache_control,
              DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_cache_control,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_device_diagnostics_config,
+            {vvl::Extension::_VK_NV_device_diagnostics_config,
              DeviceInfo(&DeviceExtensions::vk_nv_device_diagnostics_config,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_render_pass_store_ops, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
-            {vvl::Extension::NV_cuda_kernel_launch, DeviceInfo(&DeviceExtensions::vk_nv_cuda_kernel_launch, {})},
-            {vvl::Extension::NV_low_latency, DeviceInfo(&DeviceExtensions::vk_nv_low_latency, {})},
+            {vvl::Extension::_VK_QCOM_render_pass_store_ops, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
+            {vvl::Extension::_VK_NV_cuda_kernel_launch, DeviceInfo(&DeviceExtensions::vk_nv_cuda_kernel_launch, {})},
+            {vvl::Extension::_VK_NV_low_latency, DeviceInfo(&DeviceExtensions::vk_nv_low_latency, {})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
-            {vvl::Extension::EXT_metal_objects, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
+            {vvl::Extension::_VK_EXT_metal_objects, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
 #endif  // VK_USE_PLATFORM_METAL_EXT
-            {vvl::Extension::EXT_descriptor_buffer,
+            {vvl::Extension::_VK_EXT_descriptor_buffer,
              DeviceInfo(&DeviceExtensions::vk_ext_descriptor_buffer,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_descriptor_indexing, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_graphics_pipeline_library,
+            {vvl::Extension::_VK_EXT_graphics_pipeline_library,
              DeviceInfo(&DeviceExtensions::vk_ext_graphics_pipeline_library,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME}}})},
-            {vvl::Extension::AMD_shader_early_and_late_fragment_tests,
+            {vvl::Extension::_VK_AMD_shader_early_and_late_fragment_tests,
              DeviceInfo(&DeviceExtensions::vk_amd_shader_early_and_late_fragment_tests,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_fragment_shading_rate_enums,
+            {vvl::Extension::_VK_NV_fragment_shading_rate_enums,
              DeviceInfo(&DeviceExtensions::vk_nv_fragment_shading_rate_enums,
                         {{{&DeviceExtensions::vk_khr_fragment_shading_rate, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_ray_tracing_motion_blur,
+            {vvl::Extension::_VK_NV_ray_tracing_motion_blur,
              DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing_motion_blur,
                         {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_ycbcr_2plane_444_formats,
+            {vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats,
              DeviceInfo(&DeviceExtensions::vk_ext_ycbcr_2plane_444_formats,
                         {{{&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_fragment_density_map2,
+            {vvl::Extension::_VK_EXT_fragment_density_map2,
              DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map2,
                         {{{&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_rotated_copy_commands,
+            {vvl::Extension::_VK_QCOM_rotated_copy_commands,
              DeviceInfo(&DeviceExtensions::vk_qcom_rotated_copy_commands,
                         {{{&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_image_robustness,
+            {vvl::Extension::_VK_EXT_image_robustness,
              DeviceInfo(&DeviceExtensions::vk_ext_image_robustness, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_image_compression_control,
+            {vvl::Extension::_VK_EXT_image_compression_control,
              DeviceInfo(&DeviceExtensions::vk_ext_image_compression_control,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_attachment_feedback_loop_layout,
+            {vvl::Extension::_VK_EXT_attachment_feedback_loop_layout,
              DeviceInfo(&DeviceExtensions::vk_ext_attachment_feedback_loop_layout,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_4444_formats,
+            {vvl::Extension::_VK_EXT_4444_formats,
              DeviceInfo(&DeviceExtensions::vk_ext_4444_formats, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_device_fault,
+            {vvl::Extension::_VK_EXT_device_fault,
              DeviceInfo(&DeviceExtensions::vk_ext_device_fault, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::ARM_rasterization_order_attachment_access,
+            {vvl::Extension::_VK_ARM_rasterization_order_attachment_access,
              DeviceInfo(&DeviceExtensions::vk_arm_rasterization_order_attachment_access,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_rgba10x6_formats,
+            {vvl::Extension::_VK_EXT_rgba10x6_formats,
              DeviceInfo(&DeviceExtensions::vk_ext_rgba10x6_formats,
                         {{{&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::NV_acquire_winrt_display,
+            {vvl::Extension::_VK_NV_acquire_winrt_display,
              DeviceInfo(&DeviceExtensions::vk_nv_acquire_winrt_display,
                         {{{&DeviceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-            {vvl::Extension::VALVE_mutable_descriptor_type,
+            {vvl::Extension::_VK_VALVE_mutable_descriptor_type,
              DeviceInfo(&DeviceExtensions::vk_valve_mutable_descriptor_type,
                         {{{&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_vertex_input_dynamic_state,
+            {vvl::Extension::_VK_EXT_vertex_input_dynamic_state,
              DeviceInfo(&DeviceExtensions::vk_ext_vertex_input_dynamic_state,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_physical_device_drm, DeviceInfo(&DeviceExtensions::vk_ext_physical_device_drm,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_device_address_binding_report,
+            {vvl::Extension::_VK_EXT_physical_device_drm, DeviceInfo(&DeviceExtensions::vk_ext_physical_device_drm,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_device_address_binding_report,
              DeviceInfo(&DeviceExtensions::vk_ext_device_address_binding_report,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_debug_utils, VK_EXT_DEBUG_UTILS_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_depth_clip_control, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_control,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_primitive_topology_list_restart,
+            {vvl::Extension::_VK_EXT_depth_clip_control, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_control,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_primitive_topology_list_restart,
              DeviceInfo(&DeviceExtensions::vk_ext_primitive_topology_list_restart,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_FUCHSIA
-            {vvl::Extension::FUCHSIA_external_memory,
+            {vvl::Extension::_VK_FUCHSIA_external_memory,
              DeviceInfo(
                  &DeviceExtensions::vk_fuchsia_external_memory,
                  {{{&DeviceExtensions::vk_khr_external_memory_capabilities, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME},
                    {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
-            {vvl::Extension::FUCHSIA_external_semaphore,
+            {vvl::Extension::_VK_FUCHSIA_external_semaphore,
              DeviceInfo(&DeviceExtensions::vk_fuchsia_external_semaphore,
                         {{{&DeviceExtensions::vk_khr_external_semaphore_capabilities,
                            VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_external_semaphore, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}})},
-            {vvl::Extension::FUCHSIA_buffer_collection,
+            {vvl::Extension::_VK_FUCHSIA_buffer_collection,
              DeviceInfo(&DeviceExtensions::vk_fuchsia_buffer_collection,
                         {{{&DeviceExtensions::vk_fuchsia_external_memory, VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_FUCHSIA
-            {vvl::Extension::HUAWEI_subpass_shading,
+            {vvl::Extension::_VK_HUAWEI_subpass_shading,
              DeviceInfo(&DeviceExtensions::vk_huawei_subpass_shading,
                         {{{&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::HUAWEI_invocation_mask,
+            {vvl::Extension::_VK_HUAWEI_invocation_mask,
              DeviceInfo(&DeviceExtensions::vk_huawei_invocation_mask,
                         {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_external_memory_rdma,
+            {vvl::Extension::_VK_NV_external_memory_rdma,
              DeviceInfo(&DeviceExtensions::vk_nv_external_memory_rdma,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_pipeline_properties, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_properties,
-                                                                 {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_frame_boundary, DeviceInfo(&DeviceExtensions::vk_ext_frame_boundary, {})},
-            {vvl::Extension::EXT_multisampled_render_to_single_sampled,
+            {vvl::Extension::_VK_EXT_pipeline_properties, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_properties,
+                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_frame_boundary, DeviceInfo(&DeviceExtensions::vk_ext_frame_boundary, {})},
+            {vvl::Extension::_VK_EXT_multisampled_render_to_single_sampled,
              DeviceInfo(&DeviceExtensions::vk_ext_multisampled_render_to_single_sampled,
                         {{{&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_depth_stencil_resolve, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_extended_dynamic_state2, DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state2,
-                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_color_write_enable, DeviceInfo(&DeviceExtensions::vk_ext_color_write_enable,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_primitives_generated_query,
+            {vvl::Extension::_VK_EXT_extended_dynamic_state2,
+             DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state2,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_color_write_enable, DeviceInfo(&DeviceExtensions::vk_ext_color_write_enable,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_primitives_generated_query,
              DeviceInfo(&DeviceExtensions::vk_ext_primitives_generated_query,
                         {{{&DeviceExtensions::vk_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_global_priority_query,
+            {vvl::Extension::_VK_EXT_global_priority_query,
              DeviceInfo(&DeviceExtensions::vk_ext_global_priority_query,
                         {{{&DeviceExtensions::vk_ext_global_priority, VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_image_view_min_lod, DeviceInfo(&DeviceExtensions::vk_ext_image_view_min_lod,
-                                                                {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_multi_draw,
+            {vvl::Extension::_VK_EXT_image_view_min_lod, DeviceInfo(&DeviceExtensions::vk_ext_image_view_min_lod,
+                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_multi_draw,
              DeviceInfo(&DeviceExtensions::vk_ext_multi_draw, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                  VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_image_2d_view_of_3d,
+            {vvl::Extension::_VK_EXT_image_2d_view_of_3d,
              DeviceInfo(&DeviceExtensions::vk_ext_image_2d_view_of_3d,
                         {{{&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_tile_image, DeviceInfo(&DeviceExtensions::vk_ext_shader_tile_image,
-                                                               {{{&DeviceExtensions::vk_feature_version_1_3, "VK_VERSION_1_3"}}})},
-            {vvl::Extension::EXT_opacity_micromap,
+            {vvl::Extension::_VK_EXT_shader_tile_image,
+             DeviceInfo(&DeviceExtensions::vk_ext_shader_tile_image,
+                        {{{&DeviceExtensions::vk_feature_version_1_3, "VK_VERSION_1_3"}}})},
+            {vvl::Extension::_VK_EXT_opacity_micromap,
              DeviceInfo(&DeviceExtensions::vk_ext_opacity_micromap,
                         {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-            {vvl::Extension::NV_displacement_micromap,
+            {vvl::Extension::_VK_NV_displacement_micromap,
              DeviceInfo(&DeviceExtensions::vk_nv_displacement_micromap,
                         {{{&DeviceExtensions::vk_ext_opacity_micromap, VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME}}})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-            {vvl::Extension::EXT_load_store_op_none, DeviceInfo(&DeviceExtensions::vk_ext_load_store_op_none, {})},
-            {vvl::Extension::HUAWEI_cluster_culling_shader,
+            {vvl::Extension::_VK_EXT_load_store_op_none, DeviceInfo(&DeviceExtensions::vk_ext_load_store_op_none, {})},
+            {vvl::Extension::_VK_HUAWEI_cluster_culling_shader,
              DeviceInfo(&DeviceExtensions::vk_huawei_cluster_culling_shader,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_border_color_swizzle,
+            {vvl::Extension::_VK_EXT_border_color_swizzle,
              DeviceInfo(&DeviceExtensions::vk_ext_border_color_swizzle,
                         {{{&DeviceExtensions::vk_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_pageable_device_local_memory,
+            {vvl::Extension::_VK_EXT_pageable_device_local_memory,
              DeviceInfo(&DeviceExtensions::vk_ext_pageable_device_local_memory,
                         {{{&DeviceExtensions::vk_ext_memory_priority, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME}}})},
-            {vvl::Extension::ARM_shader_core_properties,
+            {vvl::Extension::_VK_ARM_shader_core_properties,
              DeviceInfo(&DeviceExtensions::vk_arm_shader_core_properties,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::ARM_scheduling_controls,
+            {vvl::Extension::_VK_ARM_scheduling_controls,
              DeviceInfo(&DeviceExtensions::vk_arm_scheduling_controls,
                         {{{&DeviceExtensions::vk_arm_shader_core_builtins, VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_image_sliced_view_of_3d,
+            {vvl::Extension::_VK_EXT_image_sliced_view_of_3d,
              DeviceInfo(&DeviceExtensions::vk_ext_image_sliced_view_of_3d,
                         {{{&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::VALVE_descriptor_set_host_mapping,
+            {vvl::Extension::_VK_VALVE_descriptor_set_host_mapping,
              DeviceInfo(&DeviceExtensions::vk_valve_descriptor_set_host_mapping,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_depth_clamp_zero_one, DeviceInfo(&DeviceExtensions::vk_ext_depth_clamp_zero_one,
-                                                                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_non_seamless_cube_map, DeviceInfo(&DeviceExtensions::vk_ext_non_seamless_cube_map,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::ARM_render_pass_striped,
+            {vvl::Extension::_VK_EXT_depth_clamp_zero_one,
+             DeviceInfo(&DeviceExtensions::vk_ext_depth_clamp_zero_one,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_non_seamless_cube_map,
+             DeviceInfo(&DeviceExtensions::vk_ext_non_seamless_cube_map,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_ARM_render_pass_striped,
              DeviceInfo(&DeviceExtensions::vk_arm_render_pass_striped,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_fragment_density_map_offset,
+            {vvl::Extension::_VK_QCOM_fragment_density_map_offset,
              DeviceInfo(&DeviceExtensions::vk_qcom_fragment_density_map_offset,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_copy_memory_indirect,
+            {vvl::Extension::_VK_NV_copy_memory_indirect,
              DeviceInfo(&DeviceExtensions::vk_nv_copy_memory_indirect,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_memory_decompression,
+            {vvl::Extension::_VK_NV_memory_decompression,
              DeviceInfo(&DeviceExtensions::vk_nv_memory_decompression,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_device_generated_commands_compute,
+            {vvl::Extension::_VK_NV_device_generated_commands_compute,
              DeviceInfo(&DeviceExtensions::vk_nv_device_generated_commands_compute,
                         {{{&DeviceExtensions::vk_nv_device_generated_commands, VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_linear_color_attachment, DeviceInfo(&DeviceExtensions::vk_nv_linear_color_attachment,
-                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_image_compression_control_swapchain,
+            {vvl::Extension::_VK_NV_linear_color_attachment,
+             DeviceInfo(&DeviceExtensions::vk_nv_linear_color_attachment,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_image_compression_control_swapchain,
              DeviceInfo(
                  &DeviceExtensions::vk_ext_image_compression_control_swapchain,
                  {{{&DeviceExtensions::vk_ext_image_compression_control, VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_image_processing,
+            {vvl::Extension::_VK_QCOM_image_processing,
              DeviceInfo(&DeviceExtensions::vk_qcom_image_processing,
                         {{{&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_nested_command_buffer, DeviceInfo(&DeviceExtensions::vk_ext_nested_command_buffer,
-                                                                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_external_memory_acquire_unmodified,
+            {vvl::Extension::_VK_EXT_nested_command_buffer,
+             DeviceInfo(&DeviceExtensions::vk_ext_nested_command_buffer,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_external_memory_acquire_unmodified,
              DeviceInfo(&DeviceExtensions::vk_ext_external_memory_acquire_unmodified,
                         {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_extended_dynamic_state3, DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state3,
-                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_subpass_merge_feedback, DeviceInfo(&DeviceExtensions::vk_ext_subpass_merge_feedback,
-                                                                    {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_shader_module_identifier, DeviceInfo(&DeviceExtensions::vk_ext_shader_module_identifier,
-                                                                      {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                                                                        {&DeviceExtensions::vk_ext_pipeline_creation_cache_control,
-                                                                         VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_rasterization_order_attachment_access,
+            {vvl::Extension::_VK_EXT_extended_dynamic_state3,
+             DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state3,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_subpass_merge_feedback,
+             DeviceInfo(&DeviceExtensions::vk_ext_subpass_merge_feedback,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_shader_module_identifier,
+             DeviceInfo(&DeviceExtensions::vk_ext_shader_module_identifier,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                          {&DeviceExtensions::vk_ext_pipeline_creation_cache_control,
+                           VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_rasterization_order_attachment_access,
              DeviceInfo(&DeviceExtensions::vk_ext_rasterization_order_attachment_access,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_optical_flow,
+            {vvl::Extension::_VK_NV_optical_flow,
              DeviceInfo(&DeviceExtensions::vk_nv_optical_flow,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_legacy_dithering,
+            {vvl::Extension::_VK_EXT_legacy_dithering,
              DeviceInfo(&DeviceExtensions::vk_ext_legacy_dithering, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_pipeline_protected_access,
+            {vvl::Extension::_VK_EXT_pipeline_protected_access,
              DeviceInfo(&DeviceExtensions::vk_ext_pipeline_protected_access,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-            {vvl::Extension::ANDROID_external_format_resolve,
+            {vvl::Extension::_VK_ANDROID_external_format_resolve,
              DeviceInfo(&DeviceExtensions::vk_android_external_format_resolve,
                         {{{&DeviceExtensions::vk_android_external_memory_android_hardware_buffer,
                            VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-            {vvl::Extension::EXT_shader_object,
+            {vvl::Extension::_VK_EXT_shader_object,
              DeviceInfo(&DeviceExtensions::vk_ext_shader_object,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_tile_properties,
+            {vvl::Extension::_VK_QCOM_tile_properties,
              DeviceInfo(&DeviceExtensions::vk_qcom_tile_properties, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::SEC_amigo_profiling,
+            {vvl::Extension::_VK_SEC_amigo_profiling,
              DeviceInfo(&DeviceExtensions::vk_sec_amigo_profiling, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_multiview_per_view_viewports,
+            {vvl::Extension::_VK_QCOM_multiview_per_view_viewports,
              DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_viewports,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_ray_tracing_invocation_reorder,
+            {vvl::Extension::_VK_NV_ray_tracing_invocation_reorder,
              DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing_invocation_reorder,
                         {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_extended_sparse_address_space,
+            {vvl::Extension::_VK_NV_extended_sparse_address_space,
              DeviceInfo(&DeviceExtensions::vk_nv_extended_sparse_address_space, {})},
-            {vvl::Extension::EXT_mutable_descriptor_type,
+            {vvl::Extension::_VK_EXT_mutable_descriptor_type,
              DeviceInfo(&DeviceExtensions::vk_ext_mutable_descriptor_type,
                         {{{&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
-            {vvl::Extension::ARM_shader_core_builtins, DeviceInfo(&DeviceExtensions::vk_arm_shader_core_builtins,
-                                                                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_pipeline_library_group_handles,
+            {vvl::Extension::_VK_ARM_shader_core_builtins,
+             DeviceInfo(&DeviceExtensions::vk_arm_shader_core_builtins,
+                        {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_pipeline_library_group_handles,
              DeviceInfo(&DeviceExtensions::vk_ext_pipeline_library_group_handles,
                         {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_dynamic_rendering_unused_attachments,
+            {vvl::Extension::_VK_EXT_dynamic_rendering_unused_attachments,
              DeviceInfo(&DeviceExtensions::vk_ext_dynamic_rendering_unused_attachments,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_low_latency2,
+            {vvl::Extension::_VK_NV_low_latency2,
              DeviceInfo(&DeviceExtensions::vk_nv_low_latency2,
                         {{{&DeviceExtensions::vk_feature_version_1_2, "VK_VERSION_1_2"},
                           {&DeviceExtensions::vk_khr_timeline_semaphore, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_multiview_per_view_render_areas,
+            {vvl::Extension::_VK_QCOM_multiview_per_view_render_areas,
              DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_render_areas, {})},
-            {vvl::Extension::NV_per_stage_descriptor_set,
+            {vvl::Extension::_VK_NV_per_stage_descriptor_set,
              DeviceInfo(&DeviceExtensions::vk_nv_per_stage_descriptor_set,
                         {{{&DeviceExtensions::vk_khr_maintenance6, VK_KHR_MAINTENANCE_6_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_image_processing2,
+            {vvl::Extension::_VK_QCOM_image_processing2,
              DeviceInfo(&DeviceExtensions::vk_qcom_image_processing2,
                         {{{&DeviceExtensions::vk_qcom_image_processing, VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_filter_cubic_weights,
+            {vvl::Extension::_VK_QCOM_filter_cubic_weights,
              DeviceInfo(&DeviceExtensions::vk_qcom_filter_cubic_weights,
                         {{{&DeviceExtensions::vk_ext_filter_cubic, VK_EXT_FILTER_CUBIC_EXTENSION_NAME}}})},
-            {vvl::Extension::QCOM_ycbcr_degamma, DeviceInfo(&DeviceExtensions::vk_qcom_ycbcr_degamma, {})},
-            {vvl::Extension::QCOM_filter_cubic_clamp,
+            {vvl::Extension::_VK_QCOM_ycbcr_degamma, DeviceInfo(&DeviceExtensions::vk_qcom_ycbcr_degamma, {})},
+            {vvl::Extension::_VK_QCOM_filter_cubic_clamp,
              DeviceInfo(&DeviceExtensions::vk_qcom_filter_cubic_clamp,
                         {{{&DeviceExtensions::vk_ext_filter_cubic, VK_EXT_FILTER_CUBIC_EXTENSION_NAME},
                           {&DeviceExtensions::vk_feature_version_1_2, "VK_VERSION_1_2"},
                           {&DeviceExtensions::vk_ext_sampler_filter_minmax, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_attachment_feedback_loop_dynamic_state,
+            {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state,
              DeviceInfo(&DeviceExtensions::vk_ext_attachment_feedback_loop_dynamic_state,
                         {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_attachment_feedback_loop_layout,
                            VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-            {vvl::Extension::QNX_external_memory_screen_buffer,
+            {vvl::Extension::_VK_QNX_external_memory_screen_buffer,
              DeviceInfo(&DeviceExtensions::vk_qnx_external_memory_screen_buffer,
                         {{{&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME},
                           {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-            {vvl::Extension::MSFT_layered_driver,
+            {vvl::Extension::_VK_MSFT_layered_driver,
              DeviceInfo(&DeviceExtensions::vk_msft_layered_driver, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {vvl::Extension::NV_descriptor_pool_overallocation,
+            {vvl::Extension::_VK_NV_descriptor_pool_overallocation,
              DeviceInfo(&DeviceExtensions::vk_nv_descriptor_pool_overallocation,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
-            {vvl::Extension::KHR_acceleration_structure,
+            {vvl::Extension::_VK_KHR_acceleration_structure,
              DeviceInfo(&DeviceExtensions::vk_khr_acceleration_structure,
                         {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                           {&DeviceExtensions::vk_ext_descriptor_indexing, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_deferred_host_operations, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_ray_tracing_pipeline,
+            {vvl::Extension::_VK_KHR_ray_tracing_pipeline,
              DeviceInfo(&DeviceExtensions::vk_khr_ray_tracing_pipeline,
                         {{{&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
-            {vvl::Extension::KHR_ray_query,
+            {vvl::Extension::_VK_KHR_ray_query,
              DeviceInfo(&DeviceExtensions::vk_khr_ray_query,
                         {{{&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME},
                           {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
-            {vvl::Extension::EXT_mesh_shader,
+            {vvl::Extension::_VK_EXT_mesh_shader,
              DeviceInfo(&DeviceExtensions::vk_ext_mesh_shader,
                         {{{&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME}}})},
 
@@ -1811,45 +1849,45 @@ struct DeviceExtensions : public InstanceExtensions {
 
 constexpr bool IsInstanceExtension(vvl::Extension extension) {
     switch (extension) {
-        case vvl::Extension::KHR_surface:
-        case vvl::Extension::KHR_display:
-        case vvl::Extension::KHR_xlib_surface:
-        case vvl::Extension::KHR_xcb_surface:
-        case vvl::Extension::KHR_wayland_surface:
-        case vvl::Extension::KHR_android_surface:
-        case vvl::Extension::KHR_win32_surface:
-        case vvl::Extension::KHR_get_physical_device_properties2:
-        case vvl::Extension::KHR_device_group_creation:
-        case vvl::Extension::KHR_external_memory_capabilities:
-        case vvl::Extension::KHR_external_semaphore_capabilities:
-        case vvl::Extension::KHR_external_fence_capabilities:
-        case vvl::Extension::KHR_get_surface_capabilities2:
-        case vvl::Extension::KHR_get_display_properties2:
-        case vvl::Extension::KHR_surface_protected_capabilities:
-        case vvl::Extension::KHR_portability_enumeration:
-        case vvl::Extension::EXT_debug_report:
-        case vvl::Extension::GGP_stream_descriptor_surface:
-        case vvl::Extension::NV_external_memory_capabilities:
-        case vvl::Extension::EXT_validation_flags:
-        case vvl::Extension::NN_vi_surface:
-        case vvl::Extension::EXT_direct_mode_display:
-        case vvl::Extension::EXT_acquire_xlib_display:
-        case vvl::Extension::EXT_display_surface_counter:
-        case vvl::Extension::EXT_swapchain_colorspace:
-        case vvl::Extension::MVK_ios_surface:
-        case vvl::Extension::MVK_macos_surface:
-        case vvl::Extension::EXT_debug_utils:
-        case vvl::Extension::FUCHSIA_imagepipe_surface:
-        case vvl::Extension::EXT_metal_surface:
-        case vvl::Extension::EXT_validation_features:
-        case vvl::Extension::EXT_headless_surface:
-        case vvl::Extension::EXT_surface_maintenance1:
-        case vvl::Extension::EXT_acquire_drm_display:
-        case vvl::Extension::EXT_directfb_surface:
-        case vvl::Extension::QNX_screen_surface:
-        case vvl::Extension::GOOGLE_surfaceless_query:
-        case vvl::Extension::LUNARG_direct_driver_loading:
-        case vvl::Extension::EXT_layer_settings:
+        case vvl::Extension::_VK_KHR_surface:
+        case vvl::Extension::_VK_KHR_display:
+        case vvl::Extension::_VK_KHR_xlib_surface:
+        case vvl::Extension::_VK_KHR_xcb_surface:
+        case vvl::Extension::_VK_KHR_wayland_surface:
+        case vvl::Extension::_VK_KHR_android_surface:
+        case vvl::Extension::_VK_KHR_win32_surface:
+        case vvl::Extension::_VK_KHR_get_physical_device_properties2:
+        case vvl::Extension::_VK_KHR_device_group_creation:
+        case vvl::Extension::_VK_KHR_external_memory_capabilities:
+        case vvl::Extension::_VK_KHR_external_semaphore_capabilities:
+        case vvl::Extension::_VK_KHR_external_fence_capabilities:
+        case vvl::Extension::_VK_KHR_get_surface_capabilities2:
+        case vvl::Extension::_VK_KHR_get_display_properties2:
+        case vvl::Extension::_VK_KHR_surface_protected_capabilities:
+        case vvl::Extension::_VK_KHR_portability_enumeration:
+        case vvl::Extension::_VK_EXT_debug_report:
+        case vvl::Extension::_VK_GGP_stream_descriptor_surface:
+        case vvl::Extension::_VK_NV_external_memory_capabilities:
+        case vvl::Extension::_VK_EXT_validation_flags:
+        case vvl::Extension::_VK_NN_vi_surface:
+        case vvl::Extension::_VK_EXT_direct_mode_display:
+        case vvl::Extension::_VK_EXT_acquire_xlib_display:
+        case vvl::Extension::_VK_EXT_display_surface_counter:
+        case vvl::Extension::_VK_EXT_swapchain_colorspace:
+        case vvl::Extension::_VK_MVK_ios_surface:
+        case vvl::Extension::_VK_MVK_macos_surface:
+        case vvl::Extension::_VK_EXT_debug_utils:
+        case vvl::Extension::_VK_FUCHSIA_imagepipe_surface:
+        case vvl::Extension::_VK_EXT_metal_surface:
+        case vvl::Extension::_VK_EXT_validation_features:
+        case vvl::Extension::_VK_EXT_headless_surface:
+        case vvl::Extension::_VK_EXT_surface_maintenance1:
+        case vvl::Extension::_VK_EXT_acquire_drm_display:
+        case vvl::Extension::_VK_EXT_directfb_surface:
+        case vvl::Extension::_VK_QNX_screen_surface:
+        case vvl::Extension::_VK_GOOGLE_surfaceless_query:
+        case vvl::Extension::_VK_LUNARG_direct_driver_loading:
+        case vvl::Extension::_VK_EXT_layer_settings:
             return true;
         default:
             return false;
@@ -1858,332 +1896,332 @@ constexpr bool IsInstanceExtension(vvl::Extension extension) {
 
 constexpr bool IsDeviceExtension(vvl::Extension extension) {
     switch (extension) {
-        case vvl::Extension::KHR_swapchain:
-        case vvl::Extension::KHR_display_swapchain:
-        case vvl::Extension::KHR_sampler_mirror_clamp_to_edge:
-        case vvl::Extension::KHR_video_queue:
-        case vvl::Extension::KHR_video_decode_queue:
-        case vvl::Extension::KHR_video_encode_h264:
-        case vvl::Extension::KHR_video_encode_h265:
-        case vvl::Extension::KHR_video_decode_h264:
-        case vvl::Extension::KHR_dynamic_rendering:
-        case vvl::Extension::KHR_multiview:
-        case vvl::Extension::KHR_device_group:
-        case vvl::Extension::KHR_shader_draw_parameters:
-        case vvl::Extension::KHR_maintenance1:
-        case vvl::Extension::KHR_external_memory:
-        case vvl::Extension::KHR_external_memory_win32:
-        case vvl::Extension::KHR_external_memory_fd:
-        case vvl::Extension::KHR_win32_keyed_mutex:
-        case vvl::Extension::KHR_external_semaphore:
-        case vvl::Extension::KHR_external_semaphore_win32:
-        case vvl::Extension::KHR_external_semaphore_fd:
-        case vvl::Extension::KHR_push_descriptor:
-        case vvl::Extension::KHR_shader_float16_int8:
-        case vvl::Extension::KHR_16bit_storage:
-        case vvl::Extension::KHR_incremental_present:
-        case vvl::Extension::KHR_descriptor_update_template:
-        case vvl::Extension::KHR_imageless_framebuffer:
-        case vvl::Extension::KHR_create_renderpass2:
-        case vvl::Extension::KHR_shared_presentable_image:
-        case vvl::Extension::KHR_external_fence:
-        case vvl::Extension::KHR_external_fence_win32:
-        case vvl::Extension::KHR_external_fence_fd:
-        case vvl::Extension::KHR_performance_query:
-        case vvl::Extension::KHR_maintenance2:
-        case vvl::Extension::KHR_variable_pointers:
-        case vvl::Extension::KHR_dedicated_allocation:
-        case vvl::Extension::KHR_storage_buffer_storage_class:
-        case vvl::Extension::KHR_relaxed_block_layout:
-        case vvl::Extension::KHR_get_memory_requirements2:
-        case vvl::Extension::KHR_image_format_list:
-        case vvl::Extension::KHR_sampler_ycbcr_conversion:
-        case vvl::Extension::KHR_bind_memory2:
-        case vvl::Extension::KHR_portability_subset:
-        case vvl::Extension::KHR_maintenance3:
-        case vvl::Extension::KHR_draw_indirect_count:
-        case vvl::Extension::KHR_shader_subgroup_extended_types:
-        case vvl::Extension::KHR_8bit_storage:
-        case vvl::Extension::KHR_shader_atomic_int64:
-        case vvl::Extension::KHR_shader_clock:
-        case vvl::Extension::KHR_video_decode_h265:
-        case vvl::Extension::KHR_global_priority:
-        case vvl::Extension::KHR_driver_properties:
-        case vvl::Extension::KHR_shader_float_controls:
-        case vvl::Extension::KHR_depth_stencil_resolve:
-        case vvl::Extension::KHR_swapchain_mutable_format:
-        case vvl::Extension::KHR_timeline_semaphore:
-        case vvl::Extension::KHR_vulkan_memory_model:
-        case vvl::Extension::KHR_shader_terminate_invocation:
-        case vvl::Extension::KHR_fragment_shading_rate:
-        case vvl::Extension::KHR_dynamic_rendering_local_read:
-        case vvl::Extension::KHR_shader_quad_control:
-        case vvl::Extension::KHR_spirv_1_4:
-        case vvl::Extension::KHR_separate_depth_stencil_layouts:
-        case vvl::Extension::KHR_present_wait:
-        case vvl::Extension::KHR_uniform_buffer_standard_layout:
-        case vvl::Extension::KHR_buffer_device_address:
-        case vvl::Extension::KHR_deferred_host_operations:
-        case vvl::Extension::KHR_pipeline_executable_properties:
-        case vvl::Extension::KHR_map_memory2:
-        case vvl::Extension::KHR_shader_integer_dot_product:
-        case vvl::Extension::KHR_pipeline_library:
-        case vvl::Extension::KHR_shader_non_semantic_info:
-        case vvl::Extension::KHR_present_id:
-        case vvl::Extension::KHR_video_encode_queue:
-        case vvl::Extension::KHR_synchronization2:
-        case vvl::Extension::KHR_fragment_shader_barycentric:
-        case vvl::Extension::KHR_shader_subgroup_uniform_control_flow:
-        case vvl::Extension::KHR_zero_initialize_workgroup_memory:
-        case vvl::Extension::KHR_workgroup_memory_explicit_layout:
-        case vvl::Extension::KHR_copy_commands2:
-        case vvl::Extension::KHR_format_feature_flags2:
-        case vvl::Extension::KHR_ray_tracing_maintenance1:
-        case vvl::Extension::KHR_maintenance4:
-        case vvl::Extension::KHR_shader_subgroup_rotate:
-        case vvl::Extension::KHR_shader_maximal_reconvergence:
-        case vvl::Extension::KHR_maintenance5:
-        case vvl::Extension::KHR_ray_tracing_position_fetch:
-        case vvl::Extension::KHR_cooperative_matrix:
-        case vvl::Extension::KHR_video_maintenance1:
-        case vvl::Extension::KHR_vertex_attribute_divisor:
-        case vvl::Extension::KHR_load_store_op_none:
-        case vvl::Extension::KHR_shader_float_controls2:
-        case vvl::Extension::KHR_index_type_uint8:
-        case vvl::Extension::KHR_line_rasterization:
-        case vvl::Extension::KHR_calibrated_timestamps:
-        case vvl::Extension::KHR_shader_expect_assume:
-        case vvl::Extension::KHR_maintenance6:
-        case vvl::Extension::NV_glsl_shader:
-        case vvl::Extension::EXT_depth_range_unrestricted:
-        case vvl::Extension::IMG_filter_cubic:
-        case vvl::Extension::AMD_rasterization_order:
-        case vvl::Extension::AMD_shader_trinary_minmax:
-        case vvl::Extension::AMD_shader_explicit_vertex_parameter:
-        case vvl::Extension::EXT_debug_marker:
-        case vvl::Extension::AMD_gcn_shader:
-        case vvl::Extension::NV_dedicated_allocation:
-        case vvl::Extension::EXT_transform_feedback:
-        case vvl::Extension::NVX_binary_import:
-        case vvl::Extension::NVX_image_view_handle:
-        case vvl::Extension::AMD_draw_indirect_count:
-        case vvl::Extension::AMD_negative_viewport_height:
-        case vvl::Extension::AMD_gpu_shader_half_float:
-        case vvl::Extension::AMD_shader_ballot:
-        case vvl::Extension::AMD_texture_gather_bias_lod:
-        case vvl::Extension::AMD_shader_info:
-        case vvl::Extension::AMD_shader_image_load_store_lod:
-        case vvl::Extension::NV_corner_sampled_image:
-        case vvl::Extension::IMG_format_pvrtc:
-        case vvl::Extension::NV_external_memory:
-        case vvl::Extension::NV_external_memory_win32:
-        case vvl::Extension::NV_win32_keyed_mutex:
-        case vvl::Extension::EXT_shader_subgroup_ballot:
-        case vvl::Extension::EXT_shader_subgroup_vote:
-        case vvl::Extension::EXT_texture_compression_astc_hdr:
-        case vvl::Extension::EXT_astc_decode_mode:
-        case vvl::Extension::EXT_pipeline_robustness:
-        case vvl::Extension::EXT_conditional_rendering:
-        case vvl::Extension::NV_clip_space_w_scaling:
-        case vvl::Extension::EXT_display_control:
-        case vvl::Extension::GOOGLE_display_timing:
-        case vvl::Extension::NV_sample_mask_override_coverage:
-        case vvl::Extension::NV_geometry_shader_passthrough:
-        case vvl::Extension::NV_viewport_array2:
-        case vvl::Extension::NVX_multiview_per_view_attributes:
-        case vvl::Extension::NV_viewport_swizzle:
-        case vvl::Extension::EXT_discard_rectangles:
-        case vvl::Extension::EXT_conservative_rasterization:
-        case vvl::Extension::EXT_depth_clip_enable:
-        case vvl::Extension::EXT_hdr_metadata:
-        case vvl::Extension::IMG_relaxed_line_rasterization:
-        case vvl::Extension::EXT_external_memory_dma_buf:
-        case vvl::Extension::EXT_queue_family_foreign:
-        case vvl::Extension::ANDROID_external_memory_android_hardware_buffer:
-        case vvl::Extension::EXT_sampler_filter_minmax:
-        case vvl::Extension::AMD_gpu_shader_int16:
-        case vvl::Extension::AMDX_shader_enqueue:
-        case vvl::Extension::AMD_mixed_attachment_samples:
-        case vvl::Extension::AMD_shader_fragment_mask:
-        case vvl::Extension::EXT_inline_uniform_block:
-        case vvl::Extension::EXT_shader_stencil_export:
-        case vvl::Extension::EXT_sample_locations:
-        case vvl::Extension::EXT_blend_operation_advanced:
-        case vvl::Extension::NV_fragment_coverage_to_color:
-        case vvl::Extension::NV_framebuffer_mixed_samples:
-        case vvl::Extension::NV_fill_rectangle:
-        case vvl::Extension::NV_shader_sm_builtins:
-        case vvl::Extension::EXT_post_depth_coverage:
-        case vvl::Extension::EXT_image_drm_format_modifier:
-        case vvl::Extension::EXT_validation_cache:
-        case vvl::Extension::EXT_descriptor_indexing:
-        case vvl::Extension::EXT_shader_viewport_index_layer:
-        case vvl::Extension::NV_shading_rate_image:
-        case vvl::Extension::NV_ray_tracing:
-        case vvl::Extension::NV_representative_fragment_test:
-        case vvl::Extension::EXT_filter_cubic:
-        case vvl::Extension::QCOM_render_pass_shader_resolve:
-        case vvl::Extension::EXT_global_priority:
-        case vvl::Extension::EXT_external_memory_host:
-        case vvl::Extension::AMD_buffer_marker:
-        case vvl::Extension::AMD_pipeline_compiler_control:
-        case vvl::Extension::EXT_calibrated_timestamps:
-        case vvl::Extension::AMD_shader_core_properties:
-        case vvl::Extension::AMD_memory_overallocation_behavior:
-        case vvl::Extension::EXT_vertex_attribute_divisor:
-        case vvl::Extension::GGP_frame_token:
-        case vvl::Extension::EXT_pipeline_creation_feedback:
-        case vvl::Extension::NV_shader_subgroup_partitioned:
-        case vvl::Extension::NV_compute_shader_derivatives:
-        case vvl::Extension::NV_mesh_shader:
-        case vvl::Extension::NV_fragment_shader_barycentric:
-        case vvl::Extension::NV_shader_image_footprint:
-        case vvl::Extension::NV_scissor_exclusive:
-        case vvl::Extension::NV_device_diagnostic_checkpoints:
-        case vvl::Extension::INTEL_shader_integer_functions2:
-        case vvl::Extension::INTEL_performance_query:
-        case vvl::Extension::EXT_pci_bus_info:
-        case vvl::Extension::AMD_display_native_hdr:
-        case vvl::Extension::EXT_fragment_density_map:
-        case vvl::Extension::EXT_scalar_block_layout:
-        case vvl::Extension::GOOGLE_hlsl_functionality1:
-        case vvl::Extension::GOOGLE_decorate_string:
-        case vvl::Extension::EXT_subgroup_size_control:
-        case vvl::Extension::AMD_shader_core_properties2:
-        case vvl::Extension::AMD_device_coherent_memory:
-        case vvl::Extension::EXT_shader_image_atomic_int64:
-        case vvl::Extension::EXT_memory_budget:
-        case vvl::Extension::EXT_memory_priority:
-        case vvl::Extension::NV_dedicated_allocation_image_aliasing:
-        case vvl::Extension::EXT_buffer_device_address:
-        case vvl::Extension::EXT_tooling_info:
-        case vvl::Extension::EXT_separate_stencil_usage:
-        case vvl::Extension::NV_cooperative_matrix:
-        case vvl::Extension::NV_coverage_reduction_mode:
-        case vvl::Extension::EXT_fragment_shader_interlock:
-        case vvl::Extension::EXT_ycbcr_image_arrays:
-        case vvl::Extension::EXT_provoking_vertex:
-        case vvl::Extension::EXT_full_screen_exclusive:
-        case vvl::Extension::EXT_line_rasterization:
-        case vvl::Extension::EXT_shader_atomic_float:
-        case vvl::Extension::EXT_host_query_reset:
-        case vvl::Extension::EXT_index_type_uint8:
-        case vvl::Extension::EXT_extended_dynamic_state:
-        case vvl::Extension::EXT_host_image_copy:
-        case vvl::Extension::EXT_shader_atomic_float2:
-        case vvl::Extension::EXT_swapchain_maintenance1:
-        case vvl::Extension::EXT_shader_demote_to_helper_invocation:
-        case vvl::Extension::NV_device_generated_commands:
-        case vvl::Extension::NV_inherited_viewport_scissor:
-        case vvl::Extension::EXT_texel_buffer_alignment:
-        case vvl::Extension::QCOM_render_pass_transform:
-        case vvl::Extension::EXT_depth_bias_control:
-        case vvl::Extension::EXT_device_memory_report:
-        case vvl::Extension::EXT_robustness2:
-        case vvl::Extension::EXT_custom_border_color:
-        case vvl::Extension::GOOGLE_user_type:
-        case vvl::Extension::NV_present_barrier:
-        case vvl::Extension::EXT_private_data:
-        case vvl::Extension::EXT_pipeline_creation_cache_control:
-        case vvl::Extension::NV_device_diagnostics_config:
-        case vvl::Extension::QCOM_render_pass_store_ops:
-        case vvl::Extension::NV_cuda_kernel_launch:
-        case vvl::Extension::NV_low_latency:
-        case vvl::Extension::EXT_metal_objects:
-        case vvl::Extension::EXT_descriptor_buffer:
-        case vvl::Extension::EXT_graphics_pipeline_library:
-        case vvl::Extension::AMD_shader_early_and_late_fragment_tests:
-        case vvl::Extension::NV_fragment_shading_rate_enums:
-        case vvl::Extension::NV_ray_tracing_motion_blur:
-        case vvl::Extension::EXT_ycbcr_2plane_444_formats:
-        case vvl::Extension::EXT_fragment_density_map2:
-        case vvl::Extension::QCOM_rotated_copy_commands:
-        case vvl::Extension::EXT_image_robustness:
-        case vvl::Extension::EXT_image_compression_control:
-        case vvl::Extension::EXT_attachment_feedback_loop_layout:
-        case vvl::Extension::EXT_4444_formats:
-        case vvl::Extension::EXT_device_fault:
-        case vvl::Extension::ARM_rasterization_order_attachment_access:
-        case vvl::Extension::EXT_rgba10x6_formats:
-        case vvl::Extension::NV_acquire_winrt_display:
-        case vvl::Extension::VALVE_mutable_descriptor_type:
-        case vvl::Extension::EXT_vertex_input_dynamic_state:
-        case vvl::Extension::EXT_physical_device_drm:
-        case vvl::Extension::EXT_device_address_binding_report:
-        case vvl::Extension::EXT_depth_clip_control:
-        case vvl::Extension::EXT_primitive_topology_list_restart:
-        case vvl::Extension::FUCHSIA_external_memory:
-        case vvl::Extension::FUCHSIA_external_semaphore:
-        case vvl::Extension::FUCHSIA_buffer_collection:
-        case vvl::Extension::HUAWEI_subpass_shading:
-        case vvl::Extension::HUAWEI_invocation_mask:
-        case vvl::Extension::NV_external_memory_rdma:
-        case vvl::Extension::EXT_pipeline_properties:
-        case vvl::Extension::EXT_frame_boundary:
-        case vvl::Extension::EXT_multisampled_render_to_single_sampled:
-        case vvl::Extension::EXT_extended_dynamic_state2:
-        case vvl::Extension::EXT_color_write_enable:
-        case vvl::Extension::EXT_primitives_generated_query:
-        case vvl::Extension::EXT_global_priority_query:
-        case vvl::Extension::EXT_image_view_min_lod:
-        case vvl::Extension::EXT_multi_draw:
-        case vvl::Extension::EXT_image_2d_view_of_3d:
-        case vvl::Extension::EXT_shader_tile_image:
-        case vvl::Extension::EXT_opacity_micromap:
-        case vvl::Extension::NV_displacement_micromap:
-        case vvl::Extension::EXT_load_store_op_none:
-        case vvl::Extension::HUAWEI_cluster_culling_shader:
-        case vvl::Extension::EXT_border_color_swizzle:
-        case vvl::Extension::EXT_pageable_device_local_memory:
-        case vvl::Extension::ARM_shader_core_properties:
-        case vvl::Extension::ARM_scheduling_controls:
-        case vvl::Extension::EXT_image_sliced_view_of_3d:
-        case vvl::Extension::VALVE_descriptor_set_host_mapping:
-        case vvl::Extension::EXT_depth_clamp_zero_one:
-        case vvl::Extension::EXT_non_seamless_cube_map:
-        case vvl::Extension::ARM_render_pass_striped:
-        case vvl::Extension::QCOM_fragment_density_map_offset:
-        case vvl::Extension::NV_copy_memory_indirect:
-        case vvl::Extension::NV_memory_decompression:
-        case vvl::Extension::NV_device_generated_commands_compute:
-        case vvl::Extension::NV_linear_color_attachment:
-        case vvl::Extension::EXT_image_compression_control_swapchain:
-        case vvl::Extension::QCOM_image_processing:
-        case vvl::Extension::EXT_nested_command_buffer:
-        case vvl::Extension::EXT_external_memory_acquire_unmodified:
-        case vvl::Extension::EXT_extended_dynamic_state3:
-        case vvl::Extension::EXT_subpass_merge_feedback:
-        case vvl::Extension::EXT_shader_module_identifier:
-        case vvl::Extension::EXT_rasterization_order_attachment_access:
-        case vvl::Extension::NV_optical_flow:
-        case vvl::Extension::EXT_legacy_dithering:
-        case vvl::Extension::EXT_pipeline_protected_access:
-        case vvl::Extension::ANDROID_external_format_resolve:
-        case vvl::Extension::EXT_shader_object:
-        case vvl::Extension::QCOM_tile_properties:
-        case vvl::Extension::SEC_amigo_profiling:
-        case vvl::Extension::QCOM_multiview_per_view_viewports:
-        case vvl::Extension::NV_ray_tracing_invocation_reorder:
-        case vvl::Extension::NV_extended_sparse_address_space:
-        case vvl::Extension::EXT_mutable_descriptor_type:
-        case vvl::Extension::ARM_shader_core_builtins:
-        case vvl::Extension::EXT_pipeline_library_group_handles:
-        case vvl::Extension::EXT_dynamic_rendering_unused_attachments:
-        case vvl::Extension::NV_low_latency2:
-        case vvl::Extension::QCOM_multiview_per_view_render_areas:
-        case vvl::Extension::NV_per_stage_descriptor_set:
-        case vvl::Extension::QCOM_image_processing2:
-        case vvl::Extension::QCOM_filter_cubic_weights:
-        case vvl::Extension::QCOM_ycbcr_degamma:
-        case vvl::Extension::QCOM_filter_cubic_clamp:
-        case vvl::Extension::EXT_attachment_feedback_loop_dynamic_state:
-        case vvl::Extension::QNX_external_memory_screen_buffer:
-        case vvl::Extension::MSFT_layered_driver:
-        case vvl::Extension::NV_descriptor_pool_overallocation:
-        case vvl::Extension::KHR_acceleration_structure:
-        case vvl::Extension::KHR_ray_tracing_pipeline:
-        case vvl::Extension::KHR_ray_query:
-        case vvl::Extension::EXT_mesh_shader:
+        case vvl::Extension::_VK_KHR_swapchain:
+        case vvl::Extension::_VK_KHR_display_swapchain:
+        case vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge:
+        case vvl::Extension::_VK_KHR_video_queue:
+        case vvl::Extension::_VK_KHR_video_decode_queue:
+        case vvl::Extension::_VK_KHR_video_encode_h264:
+        case vvl::Extension::_VK_KHR_video_encode_h265:
+        case vvl::Extension::_VK_KHR_video_decode_h264:
+        case vvl::Extension::_VK_KHR_dynamic_rendering:
+        case vvl::Extension::_VK_KHR_multiview:
+        case vvl::Extension::_VK_KHR_device_group:
+        case vvl::Extension::_VK_KHR_shader_draw_parameters:
+        case vvl::Extension::_VK_KHR_maintenance1:
+        case vvl::Extension::_VK_KHR_external_memory:
+        case vvl::Extension::_VK_KHR_external_memory_win32:
+        case vvl::Extension::_VK_KHR_external_memory_fd:
+        case vvl::Extension::_VK_KHR_win32_keyed_mutex:
+        case vvl::Extension::_VK_KHR_external_semaphore:
+        case vvl::Extension::_VK_KHR_external_semaphore_win32:
+        case vvl::Extension::_VK_KHR_external_semaphore_fd:
+        case vvl::Extension::_VK_KHR_push_descriptor:
+        case vvl::Extension::_VK_KHR_shader_float16_int8:
+        case vvl::Extension::_VK_KHR_16bit_storage:
+        case vvl::Extension::_VK_KHR_incremental_present:
+        case vvl::Extension::_VK_KHR_descriptor_update_template:
+        case vvl::Extension::_VK_KHR_imageless_framebuffer:
+        case vvl::Extension::_VK_KHR_create_renderpass2:
+        case vvl::Extension::_VK_KHR_shared_presentable_image:
+        case vvl::Extension::_VK_KHR_external_fence:
+        case vvl::Extension::_VK_KHR_external_fence_win32:
+        case vvl::Extension::_VK_KHR_external_fence_fd:
+        case vvl::Extension::_VK_KHR_performance_query:
+        case vvl::Extension::_VK_KHR_maintenance2:
+        case vvl::Extension::_VK_KHR_variable_pointers:
+        case vvl::Extension::_VK_KHR_dedicated_allocation:
+        case vvl::Extension::_VK_KHR_storage_buffer_storage_class:
+        case vvl::Extension::_VK_KHR_relaxed_block_layout:
+        case vvl::Extension::_VK_KHR_get_memory_requirements2:
+        case vvl::Extension::_VK_KHR_image_format_list:
+        case vvl::Extension::_VK_KHR_sampler_ycbcr_conversion:
+        case vvl::Extension::_VK_KHR_bind_memory2:
+        case vvl::Extension::_VK_KHR_portability_subset:
+        case vvl::Extension::_VK_KHR_maintenance3:
+        case vvl::Extension::_VK_KHR_draw_indirect_count:
+        case vvl::Extension::_VK_KHR_shader_subgroup_extended_types:
+        case vvl::Extension::_VK_KHR_8bit_storage:
+        case vvl::Extension::_VK_KHR_shader_atomic_int64:
+        case vvl::Extension::_VK_KHR_shader_clock:
+        case vvl::Extension::_VK_KHR_video_decode_h265:
+        case vvl::Extension::_VK_KHR_global_priority:
+        case vvl::Extension::_VK_KHR_driver_properties:
+        case vvl::Extension::_VK_KHR_shader_float_controls:
+        case vvl::Extension::_VK_KHR_depth_stencil_resolve:
+        case vvl::Extension::_VK_KHR_swapchain_mutable_format:
+        case vvl::Extension::_VK_KHR_timeline_semaphore:
+        case vvl::Extension::_VK_KHR_vulkan_memory_model:
+        case vvl::Extension::_VK_KHR_shader_terminate_invocation:
+        case vvl::Extension::_VK_KHR_fragment_shading_rate:
+        case vvl::Extension::_VK_KHR_dynamic_rendering_local_read:
+        case vvl::Extension::_VK_KHR_shader_quad_control:
+        case vvl::Extension::_VK_KHR_spirv_1_4:
+        case vvl::Extension::_VK_KHR_separate_depth_stencil_layouts:
+        case vvl::Extension::_VK_KHR_present_wait:
+        case vvl::Extension::_VK_KHR_uniform_buffer_standard_layout:
+        case vvl::Extension::_VK_KHR_buffer_device_address:
+        case vvl::Extension::_VK_KHR_deferred_host_operations:
+        case vvl::Extension::_VK_KHR_pipeline_executable_properties:
+        case vvl::Extension::_VK_KHR_map_memory2:
+        case vvl::Extension::_VK_KHR_shader_integer_dot_product:
+        case vvl::Extension::_VK_KHR_pipeline_library:
+        case vvl::Extension::_VK_KHR_shader_non_semantic_info:
+        case vvl::Extension::_VK_KHR_present_id:
+        case vvl::Extension::_VK_KHR_video_encode_queue:
+        case vvl::Extension::_VK_KHR_synchronization2:
+        case vvl::Extension::_VK_KHR_fragment_shader_barycentric:
+        case vvl::Extension::_VK_KHR_shader_subgroup_uniform_control_flow:
+        case vvl::Extension::_VK_KHR_zero_initialize_workgroup_memory:
+        case vvl::Extension::_VK_KHR_workgroup_memory_explicit_layout:
+        case vvl::Extension::_VK_KHR_copy_commands2:
+        case vvl::Extension::_VK_KHR_format_feature_flags2:
+        case vvl::Extension::_VK_KHR_ray_tracing_maintenance1:
+        case vvl::Extension::_VK_KHR_maintenance4:
+        case vvl::Extension::_VK_KHR_shader_subgroup_rotate:
+        case vvl::Extension::_VK_KHR_shader_maximal_reconvergence:
+        case vvl::Extension::_VK_KHR_maintenance5:
+        case vvl::Extension::_VK_KHR_ray_tracing_position_fetch:
+        case vvl::Extension::_VK_KHR_cooperative_matrix:
+        case vvl::Extension::_VK_KHR_video_maintenance1:
+        case vvl::Extension::_VK_KHR_vertex_attribute_divisor:
+        case vvl::Extension::_VK_KHR_load_store_op_none:
+        case vvl::Extension::_VK_KHR_shader_float_controls2:
+        case vvl::Extension::_VK_KHR_index_type_uint8:
+        case vvl::Extension::_VK_KHR_line_rasterization:
+        case vvl::Extension::_VK_KHR_calibrated_timestamps:
+        case vvl::Extension::_VK_KHR_shader_expect_assume:
+        case vvl::Extension::_VK_KHR_maintenance6:
+        case vvl::Extension::_VK_NV_glsl_shader:
+        case vvl::Extension::_VK_EXT_depth_range_unrestricted:
+        case vvl::Extension::_VK_IMG_filter_cubic:
+        case vvl::Extension::_VK_AMD_rasterization_order:
+        case vvl::Extension::_VK_AMD_shader_trinary_minmax:
+        case vvl::Extension::_VK_AMD_shader_explicit_vertex_parameter:
+        case vvl::Extension::_VK_EXT_debug_marker:
+        case vvl::Extension::_VK_AMD_gcn_shader:
+        case vvl::Extension::_VK_NV_dedicated_allocation:
+        case vvl::Extension::_VK_EXT_transform_feedback:
+        case vvl::Extension::_VK_NVX_binary_import:
+        case vvl::Extension::_VK_NVX_image_view_handle:
+        case vvl::Extension::_VK_AMD_draw_indirect_count:
+        case vvl::Extension::_VK_AMD_negative_viewport_height:
+        case vvl::Extension::_VK_AMD_gpu_shader_half_float:
+        case vvl::Extension::_VK_AMD_shader_ballot:
+        case vvl::Extension::_VK_AMD_texture_gather_bias_lod:
+        case vvl::Extension::_VK_AMD_shader_info:
+        case vvl::Extension::_VK_AMD_shader_image_load_store_lod:
+        case vvl::Extension::_VK_NV_corner_sampled_image:
+        case vvl::Extension::_VK_IMG_format_pvrtc:
+        case vvl::Extension::_VK_NV_external_memory:
+        case vvl::Extension::_VK_NV_external_memory_win32:
+        case vvl::Extension::_VK_NV_win32_keyed_mutex:
+        case vvl::Extension::_VK_EXT_shader_subgroup_ballot:
+        case vvl::Extension::_VK_EXT_shader_subgroup_vote:
+        case vvl::Extension::_VK_EXT_texture_compression_astc_hdr:
+        case vvl::Extension::_VK_EXT_astc_decode_mode:
+        case vvl::Extension::_VK_EXT_pipeline_robustness:
+        case vvl::Extension::_VK_EXT_conditional_rendering:
+        case vvl::Extension::_VK_NV_clip_space_w_scaling:
+        case vvl::Extension::_VK_EXT_display_control:
+        case vvl::Extension::_VK_GOOGLE_display_timing:
+        case vvl::Extension::_VK_NV_sample_mask_override_coverage:
+        case vvl::Extension::_VK_NV_geometry_shader_passthrough:
+        case vvl::Extension::_VK_NV_viewport_array2:
+        case vvl::Extension::_VK_NVX_multiview_per_view_attributes:
+        case vvl::Extension::_VK_NV_viewport_swizzle:
+        case vvl::Extension::_VK_EXT_discard_rectangles:
+        case vvl::Extension::_VK_EXT_conservative_rasterization:
+        case vvl::Extension::_VK_EXT_depth_clip_enable:
+        case vvl::Extension::_VK_EXT_hdr_metadata:
+        case vvl::Extension::_VK_IMG_relaxed_line_rasterization:
+        case vvl::Extension::_VK_EXT_external_memory_dma_buf:
+        case vvl::Extension::_VK_EXT_queue_family_foreign:
+        case vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer:
+        case vvl::Extension::_VK_EXT_sampler_filter_minmax:
+        case vvl::Extension::_VK_AMD_gpu_shader_int16:
+        case vvl::Extension::_VK_AMDX_shader_enqueue:
+        case vvl::Extension::_VK_AMD_mixed_attachment_samples:
+        case vvl::Extension::_VK_AMD_shader_fragment_mask:
+        case vvl::Extension::_VK_EXT_inline_uniform_block:
+        case vvl::Extension::_VK_EXT_shader_stencil_export:
+        case vvl::Extension::_VK_EXT_sample_locations:
+        case vvl::Extension::_VK_EXT_blend_operation_advanced:
+        case vvl::Extension::_VK_NV_fragment_coverage_to_color:
+        case vvl::Extension::_VK_NV_framebuffer_mixed_samples:
+        case vvl::Extension::_VK_NV_fill_rectangle:
+        case vvl::Extension::_VK_NV_shader_sm_builtins:
+        case vvl::Extension::_VK_EXT_post_depth_coverage:
+        case vvl::Extension::_VK_EXT_image_drm_format_modifier:
+        case vvl::Extension::_VK_EXT_validation_cache:
+        case vvl::Extension::_VK_EXT_descriptor_indexing:
+        case vvl::Extension::_VK_EXT_shader_viewport_index_layer:
+        case vvl::Extension::_VK_NV_shading_rate_image:
+        case vvl::Extension::_VK_NV_ray_tracing:
+        case vvl::Extension::_VK_NV_representative_fragment_test:
+        case vvl::Extension::_VK_EXT_filter_cubic:
+        case vvl::Extension::_VK_QCOM_render_pass_shader_resolve:
+        case vvl::Extension::_VK_EXT_global_priority:
+        case vvl::Extension::_VK_EXT_external_memory_host:
+        case vvl::Extension::_VK_AMD_buffer_marker:
+        case vvl::Extension::_VK_AMD_pipeline_compiler_control:
+        case vvl::Extension::_VK_EXT_calibrated_timestamps:
+        case vvl::Extension::_VK_AMD_shader_core_properties:
+        case vvl::Extension::_VK_AMD_memory_overallocation_behavior:
+        case vvl::Extension::_VK_EXT_vertex_attribute_divisor:
+        case vvl::Extension::_VK_GGP_frame_token:
+        case vvl::Extension::_VK_EXT_pipeline_creation_feedback:
+        case vvl::Extension::_VK_NV_shader_subgroup_partitioned:
+        case vvl::Extension::_VK_NV_compute_shader_derivatives:
+        case vvl::Extension::_VK_NV_mesh_shader:
+        case vvl::Extension::_VK_NV_fragment_shader_barycentric:
+        case vvl::Extension::_VK_NV_shader_image_footprint:
+        case vvl::Extension::_VK_NV_scissor_exclusive:
+        case vvl::Extension::_VK_NV_device_diagnostic_checkpoints:
+        case vvl::Extension::_VK_INTEL_shader_integer_functions2:
+        case vvl::Extension::_VK_INTEL_performance_query:
+        case vvl::Extension::_VK_EXT_pci_bus_info:
+        case vvl::Extension::_VK_AMD_display_native_hdr:
+        case vvl::Extension::_VK_EXT_fragment_density_map:
+        case vvl::Extension::_VK_EXT_scalar_block_layout:
+        case vvl::Extension::_VK_GOOGLE_hlsl_functionality1:
+        case vvl::Extension::_VK_GOOGLE_decorate_string:
+        case vvl::Extension::_VK_EXT_subgroup_size_control:
+        case vvl::Extension::_VK_AMD_shader_core_properties2:
+        case vvl::Extension::_VK_AMD_device_coherent_memory:
+        case vvl::Extension::_VK_EXT_shader_image_atomic_int64:
+        case vvl::Extension::_VK_EXT_memory_budget:
+        case vvl::Extension::_VK_EXT_memory_priority:
+        case vvl::Extension::_VK_NV_dedicated_allocation_image_aliasing:
+        case vvl::Extension::_VK_EXT_buffer_device_address:
+        case vvl::Extension::_VK_EXT_tooling_info:
+        case vvl::Extension::_VK_EXT_separate_stencil_usage:
+        case vvl::Extension::_VK_NV_cooperative_matrix:
+        case vvl::Extension::_VK_NV_coverage_reduction_mode:
+        case vvl::Extension::_VK_EXT_fragment_shader_interlock:
+        case vvl::Extension::_VK_EXT_ycbcr_image_arrays:
+        case vvl::Extension::_VK_EXT_provoking_vertex:
+        case vvl::Extension::_VK_EXT_full_screen_exclusive:
+        case vvl::Extension::_VK_EXT_line_rasterization:
+        case vvl::Extension::_VK_EXT_shader_atomic_float:
+        case vvl::Extension::_VK_EXT_host_query_reset:
+        case vvl::Extension::_VK_EXT_index_type_uint8:
+        case vvl::Extension::_VK_EXT_extended_dynamic_state:
+        case vvl::Extension::_VK_EXT_host_image_copy:
+        case vvl::Extension::_VK_EXT_shader_atomic_float2:
+        case vvl::Extension::_VK_EXT_swapchain_maintenance1:
+        case vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation:
+        case vvl::Extension::_VK_NV_device_generated_commands:
+        case vvl::Extension::_VK_NV_inherited_viewport_scissor:
+        case vvl::Extension::_VK_EXT_texel_buffer_alignment:
+        case vvl::Extension::_VK_QCOM_render_pass_transform:
+        case vvl::Extension::_VK_EXT_depth_bias_control:
+        case vvl::Extension::_VK_EXT_device_memory_report:
+        case vvl::Extension::_VK_EXT_robustness2:
+        case vvl::Extension::_VK_EXT_custom_border_color:
+        case vvl::Extension::_VK_GOOGLE_user_type:
+        case vvl::Extension::_VK_NV_present_barrier:
+        case vvl::Extension::_VK_EXT_private_data:
+        case vvl::Extension::_VK_EXT_pipeline_creation_cache_control:
+        case vvl::Extension::_VK_NV_device_diagnostics_config:
+        case vvl::Extension::_VK_QCOM_render_pass_store_ops:
+        case vvl::Extension::_VK_NV_cuda_kernel_launch:
+        case vvl::Extension::_VK_NV_low_latency:
+        case vvl::Extension::_VK_EXT_metal_objects:
+        case vvl::Extension::_VK_EXT_descriptor_buffer:
+        case vvl::Extension::_VK_EXT_graphics_pipeline_library:
+        case vvl::Extension::_VK_AMD_shader_early_and_late_fragment_tests:
+        case vvl::Extension::_VK_NV_fragment_shading_rate_enums:
+        case vvl::Extension::_VK_NV_ray_tracing_motion_blur:
+        case vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats:
+        case vvl::Extension::_VK_EXT_fragment_density_map2:
+        case vvl::Extension::_VK_QCOM_rotated_copy_commands:
+        case vvl::Extension::_VK_EXT_image_robustness:
+        case vvl::Extension::_VK_EXT_image_compression_control:
+        case vvl::Extension::_VK_EXT_attachment_feedback_loop_layout:
+        case vvl::Extension::_VK_EXT_4444_formats:
+        case vvl::Extension::_VK_EXT_device_fault:
+        case vvl::Extension::_VK_ARM_rasterization_order_attachment_access:
+        case vvl::Extension::_VK_EXT_rgba10x6_formats:
+        case vvl::Extension::_VK_NV_acquire_winrt_display:
+        case vvl::Extension::_VK_VALVE_mutable_descriptor_type:
+        case vvl::Extension::_VK_EXT_vertex_input_dynamic_state:
+        case vvl::Extension::_VK_EXT_physical_device_drm:
+        case vvl::Extension::_VK_EXT_device_address_binding_report:
+        case vvl::Extension::_VK_EXT_depth_clip_control:
+        case vvl::Extension::_VK_EXT_primitive_topology_list_restart:
+        case vvl::Extension::_VK_FUCHSIA_external_memory:
+        case vvl::Extension::_VK_FUCHSIA_external_semaphore:
+        case vvl::Extension::_VK_FUCHSIA_buffer_collection:
+        case vvl::Extension::_VK_HUAWEI_subpass_shading:
+        case vvl::Extension::_VK_HUAWEI_invocation_mask:
+        case vvl::Extension::_VK_NV_external_memory_rdma:
+        case vvl::Extension::_VK_EXT_pipeline_properties:
+        case vvl::Extension::_VK_EXT_frame_boundary:
+        case vvl::Extension::_VK_EXT_multisampled_render_to_single_sampled:
+        case vvl::Extension::_VK_EXT_extended_dynamic_state2:
+        case vvl::Extension::_VK_EXT_color_write_enable:
+        case vvl::Extension::_VK_EXT_primitives_generated_query:
+        case vvl::Extension::_VK_EXT_global_priority_query:
+        case vvl::Extension::_VK_EXT_image_view_min_lod:
+        case vvl::Extension::_VK_EXT_multi_draw:
+        case vvl::Extension::_VK_EXT_image_2d_view_of_3d:
+        case vvl::Extension::_VK_EXT_shader_tile_image:
+        case vvl::Extension::_VK_EXT_opacity_micromap:
+        case vvl::Extension::_VK_NV_displacement_micromap:
+        case vvl::Extension::_VK_EXT_load_store_op_none:
+        case vvl::Extension::_VK_HUAWEI_cluster_culling_shader:
+        case vvl::Extension::_VK_EXT_border_color_swizzle:
+        case vvl::Extension::_VK_EXT_pageable_device_local_memory:
+        case vvl::Extension::_VK_ARM_shader_core_properties:
+        case vvl::Extension::_VK_ARM_scheduling_controls:
+        case vvl::Extension::_VK_EXT_image_sliced_view_of_3d:
+        case vvl::Extension::_VK_VALVE_descriptor_set_host_mapping:
+        case vvl::Extension::_VK_EXT_depth_clamp_zero_one:
+        case vvl::Extension::_VK_EXT_non_seamless_cube_map:
+        case vvl::Extension::_VK_ARM_render_pass_striped:
+        case vvl::Extension::_VK_QCOM_fragment_density_map_offset:
+        case vvl::Extension::_VK_NV_copy_memory_indirect:
+        case vvl::Extension::_VK_NV_memory_decompression:
+        case vvl::Extension::_VK_NV_device_generated_commands_compute:
+        case vvl::Extension::_VK_NV_linear_color_attachment:
+        case vvl::Extension::_VK_EXT_image_compression_control_swapchain:
+        case vvl::Extension::_VK_QCOM_image_processing:
+        case vvl::Extension::_VK_EXT_nested_command_buffer:
+        case vvl::Extension::_VK_EXT_external_memory_acquire_unmodified:
+        case vvl::Extension::_VK_EXT_extended_dynamic_state3:
+        case vvl::Extension::_VK_EXT_subpass_merge_feedback:
+        case vvl::Extension::_VK_EXT_shader_module_identifier:
+        case vvl::Extension::_VK_EXT_rasterization_order_attachment_access:
+        case vvl::Extension::_VK_NV_optical_flow:
+        case vvl::Extension::_VK_EXT_legacy_dithering:
+        case vvl::Extension::_VK_EXT_pipeline_protected_access:
+        case vvl::Extension::_VK_ANDROID_external_format_resolve:
+        case vvl::Extension::_VK_EXT_shader_object:
+        case vvl::Extension::_VK_QCOM_tile_properties:
+        case vvl::Extension::_VK_SEC_amigo_profiling:
+        case vvl::Extension::_VK_QCOM_multiview_per_view_viewports:
+        case vvl::Extension::_VK_NV_ray_tracing_invocation_reorder:
+        case vvl::Extension::_VK_NV_extended_sparse_address_space:
+        case vvl::Extension::_VK_EXT_mutable_descriptor_type:
+        case vvl::Extension::_VK_ARM_shader_core_builtins:
+        case vvl::Extension::_VK_EXT_pipeline_library_group_handles:
+        case vvl::Extension::_VK_EXT_dynamic_rendering_unused_attachments:
+        case vvl::Extension::_VK_NV_low_latency2:
+        case vvl::Extension::_VK_QCOM_multiview_per_view_render_areas:
+        case vvl::Extension::_VK_NV_per_stage_descriptor_set:
+        case vvl::Extension::_VK_QCOM_image_processing2:
+        case vvl::Extension::_VK_QCOM_filter_cubic_weights:
+        case vvl::Extension::_VK_QCOM_ycbcr_degamma:
+        case vvl::Extension::_VK_QCOM_filter_cubic_clamp:
+        case vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state:
+        case vvl::Extension::_VK_QNX_external_memory_screen_buffer:
+        case vvl::Extension::_VK_MSFT_layered_driver:
+        case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
+        case vvl::Extension::_VK_KHR_acceleration_structure:
+        case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
+        case vvl::Extension::_VK_KHR_ray_query:
+        case vvl::Extension::_VK_EXT_mesh_shader:
             return true;
         default:
             return false;

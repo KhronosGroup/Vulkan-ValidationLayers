@@ -82,7 +82,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version and getattr(x, type)]
             if len(promoted_ext_list) > 0:
                 out.append(f'{{{version.replace("VERSION", "API_VERSION")},{{"{version}",{{')
-                out.extend(['    %s,\n' % f'vvl::Extension::{ext.name[3:]}' for ext in promoted_ext_list])
+                out.extend(['    %s,\n' % f'vvl::Extension::_{ext.name}' for ext in promoted_ext_list])
                 out.append('}}},\n')
 
         out.append('''
@@ -234,7 +234,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 reqs += '{\n'
                 reqs += ',\n'.join([f'{{&InstanceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
-            out.append(f'{{vvl::Extension::{extension.name[3:]}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
+            out.append(f'{{vvl::Extension::_{extension.name}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
         out.extend(guard_helper.add_guard(None))
 
         out.append('''
@@ -299,7 +299,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 reqs += '{\n'
                 reqs += ',\n'.join([f'{{&DeviceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
-            out.append(f'{{vvl::Extension::{extension.name[3:]}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
+            out.append(f'{{vvl::Extension::_{extension.name}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
         out.extend(guard_helper.add_guard(None))
 
         out.append('''
@@ -339,7 +339,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             constexpr bool IsInstanceExtension(vvl::Extension extension) {
                 switch (extension) {
             ''')
-        out.extend([f'case vvl::Extension::{x.name[3:]}:\n' for x in self.vk.extensions.values() if x.instance])
+        out.extend([f'case vvl::Extension::_{x.name}:\n' for x in self.vk.extensions.values() if x.instance])
         out.append('''    return true;''')
         out.append('''default: return false;
             }
@@ -349,7 +349,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             constexpr bool IsDeviceExtension(vvl::Extension extension) {
                 switch (extension) {
             ''')
-        out.extend([f'case vvl::Extension::{x.name[3:]}:\n' for x in self.vk.extensions.values() if x.device])
+        out.extend([f'case vvl::Extension::_{x.name}:\n' for x in self.vk.extensions.values() if x.device])
         out.append('''    return true;''')
         out.append('''default: return false;
             }
@@ -366,7 +366,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 static const vvl::unordered_map<std::string, vvl::Extension> extension_map {
             ''')
         for extension in self.vk.extensions.values():
-            out.append(f'    {{"{extension.name}", vvl::Extension::{extension.name[3:]}}},\n')
+            out.append(f'    {{"{extension.name}", vvl::Extension::_{extension.name}}},\n')
         out.append('''    };
                 const auto it = extension_map.find(extension);
                 return (it == extension_map.end()) ? vvl::Extension::Empty : it->second;
@@ -442,12 +442,12 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
                 {
                     constexpr std::array shader_object_interactions = {
-                        vvl::Extension::EXT_extended_dynamic_state,
-                        vvl::Extension::EXT_extended_dynamic_state2,
-                        vvl::Extension::EXT_extended_dynamic_state3,
-                        vvl::Extension::EXT_vertex_input_dynamic_state,
+                        vvl::Extension::_VK_EXT_extended_dynamic_state,
+                        vvl::Extension::_VK_EXT_extended_dynamic_state2,
+                        vvl::Extension::_VK_EXT_extended_dynamic_state3,
+                        vvl::Extension::_VK_EXT_vertex_input_dynamic_state,
                     };
-                    auto info = get_info(vvl::Extension::EXT_shader_object);
+                    auto info = get_info(vvl::Extension::_VK_EXT_shader_object);
                     if (info.state) {
                         if (this->*(info.state) != kNotEnabled) {
                             for (auto interaction_ext : shader_object_interactions) {

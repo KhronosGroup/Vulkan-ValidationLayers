@@ -1532,23 +1532,23 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
     // enabled, treat validation rules as if the corresponding feature is enabled.
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-        if (extension == vvl::Extension::EXT_descriptor_indexing) {
+        if (extension == vvl::Extension::_VK_EXT_descriptor_indexing) {
             features->descriptorIndexing = true;
         }
-        if (extension == vvl::Extension::EXT_sampler_filter_minmax) {
+        if (extension == vvl::Extension::_VK_EXT_sampler_filter_minmax) {
             features->samplerFilterMinmax = true;
         }
-        if (extension == vvl::Extension::EXT_shader_viewport_index_layer) {
+        if (extension == vvl::Extension::_VK_EXT_shader_viewport_index_layer) {
             features->shaderOutputViewportIndex = true;
             features->shaderOutputLayer = true;
         }
-        if (extension == vvl::Extension::KHR_draw_indirect_count) {
+        if (extension == vvl::Extension::_VK_KHR_draw_indirect_count) {
             features->drawIndirectCount = true;
         }
-        if (extension == vvl::Extension::KHR_sampler_mirror_clamp_to_edge) {
+        if (extension == vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge) {
             features->samplerMirrorClampToEdge = true;
         }
-        if (extension == vvl::Extension::KHR_shader_draw_parameters) {
+        if (extension == vvl::Extension::_VK_KHR_shader_draw_parameters) {
             features->shaderDrawParameters = true;
         }
     }
