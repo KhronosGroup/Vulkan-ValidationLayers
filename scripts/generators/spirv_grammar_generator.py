@@ -206,22 +206,14 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
                             operands = self.opcodes[opcode]['operands']
                             if kind in self.kindId:
-                                if opname in ['OpLoopMerge', 'OpSelectionMerge', 'OpBranch']:
-                                    operands.append('Label')
-                                elif opname == 'OpBranchConditional' and 'Condition' not in operand['name']:
-                                    operands.append('Label')
-                                else:
-                                    operands.append('Id')
+                                operands.append('Id')
                             elif kind in self.kindLiteral:
                                 if kind == 'LiteralString':
                                     operands.append('LiteralString')
                                 else:
                                     operands.append('Literal')
                             elif kind in self.kindComposite:
-                                if opname == 'OpSwitch':
-                                    operands.append('Label')
-                                else:
-                                    operands.append('Composite')
+                                operands.append('Composite')
                             elif kind in self.kindValueEnum:
                                 operands.append('ValueEnum')
                             elif kind in self.kindBitEnum:
@@ -261,6 +253,19 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         self.imageAccessOperand[imageRef].append(opname)
                     elif sampledImageRef != 0:
                         self.imageAccessOperand[sampledImageRef].append(opname)
+
+                # We want to manually mark "Label" if an ID is used for Control Flow
+                # It is easier to manage the few cases here then complex the operand logic above
+                if opname == 'OpLoopMerge':
+                    self.opcodes[opcode]['operands'] = ['Label', 'Label', 'BitEnum']
+                if opname == 'OpSelectionMerge':
+                    self.opcodes[opcode]['operands'] = ['Label', 'BitEnum']
+                if opname == 'OpBranch':
+                    self.opcodes[opcode]['operands'] = ['Label']
+                if opname == 'OpBranchConditional':
+                    self.opcodes[opcode]['operands'] = ['Id', 'Label', 'Label', 'Literal']
+                if opname == 'OpSwitch':
+                    self.opcodes[opcode]['operands'] = ['Id', 'Label', 'Label']
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
