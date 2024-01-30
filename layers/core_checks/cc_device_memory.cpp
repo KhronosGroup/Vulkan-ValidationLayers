@@ -93,21 +93,37 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, cons
 }
 
 // Check to see if host-visible memory was bound to this buffer
-bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const vvl::Buffer &buffer_state, const Location &buffer_loc,
-                                                          const char *vuid) const {
+bool CoreChecks::ValidateHostVisibleMemoryIsBoundToAccelStructBuffer(const vvl::AccelerationStructureKHR &accel_struct,
+                                                                     const Location &buffer_loc, const char *vuid) const {
     bool result = false;
-    result |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_loc, vuid);
+    result |= ValidateMemoryIsBoundToBuffer(device, *accel_struct.buffer_state, buffer_loc, vuid);
     if (!result) {
-        const auto mem_state = buffer_state.MemState();
+        const auto mem_state = accel_struct.buffer_state->MemState();
         if (mem_state) {
             if ((phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags &
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-                result |= LogError(vuid, buffer_state.Handle(), buffer_loc, "(%s) used with memory that is not host visible.",
-                                   FormatHandle(buffer_state).c_str());
+                const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), mem_state->Handle());
+                result |=
+                    LogError(vuid, objlist, buffer_loc, "has been created with a buffer whose bound memory is not host visible.");
             }
         }
     }
     return result;
+}
+
+bool CoreChecks::ValidateBufferMemoryIsNotMultiInstance(const vvl::Buffer &buffer, LogObjectList objlist,
+                                                        const Location &buffer_loc, const char *vuid,
+                                                        const char *error_msg_beginning) const {
+    bool skip = false;
+    if (const vvl::DeviceMemory *buffer_mem = buffer.MemState()) {
+        if (buffer_mem->multi_instance) {
+            objlist.add(buffer.Handle());
+            objlist.add(buffer_mem->Handle());
+            skip |= LogError(vuid, objlist, buffer_loc, "%s is bound to memory (%s) that was allocated with multiple instances.",
+                             error_msg_beginning, FormatHandle(buffer_mem->Handle()).c_str());
+        }
+    }
+    return skip;
 }
 
 // Valid usage checks for a call to SetMemBinding().
