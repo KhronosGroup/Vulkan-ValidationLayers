@@ -116,7 +116,7 @@ void Instruction::ReplaceOperandId(uint32_t old_word, uint32_t new_word) {
         // If the last operands are a wildcard use the last kind for the remaining words
         OperandKind kind = (type_index < operand_info_.types.size()) ? operand_info_.types[type_index] : operand_info_.types.back();
         // insructions like OpPhi will be Composite which are just groups of Ids
-        // We are not trying to replace/mess with with Control Flow, so all Label are ignored on purpose
+        // We are not trying to replace/mess with with Control Flow, so all OperandKind::Label are ignored on purpose
         if (kind == OperandKind::Id || kind == OperandKind::Composite) {
             words_[i] = new_word;
             UpdateDebugInfo();

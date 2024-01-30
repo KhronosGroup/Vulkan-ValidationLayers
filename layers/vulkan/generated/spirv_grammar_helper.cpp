@@ -2074,7 +2074,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpLabel, {{}}},
         {spv::OpBranch, {{OperandKind::Label}}},
         {spv::OpBranchConditional, {{OperandKind::Id, OperandKind::Label, OperandKind::Label, OperandKind::Literal}}},
-        {spv::OpSwitch, {{OperandKind::Id, OperandKind::Id, OperandKind::Label}}},
+        {spv::OpSwitch, {{OperandKind::Id, OperandKind::Label, OperandKind::Label}}},
         {spv::OpKill, {{}}},
         {spv::OpReturn, {{}}},
         {spv::OpReturnValue, {{OperandKind::Id}}},
