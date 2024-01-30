@@ -1422,11 +1422,11 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
         return skip;
     }
     const auto &rp_state = pipeline.RenderPassState();
-    if (((color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) != 0) &&
+    if (((color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT) != 0) &&
         (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06482", device, color_loc.dot(Field::flags),
                          "includes "
-                         "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM, but "
+                         "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT, but "
                          "renderpass is not VK_NULL_HANDLE.");
     }
 
@@ -2121,8 +2121,8 @@ bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline &
     if (null_rp) {
         if (ds_state) {
             if ((ds_state->flags &
-                 (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
-                  VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM)) != 0) {
+                 (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT |
+                  VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT)) != 0) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06483", device, ds_loc.dot(Field::flags),
                                  "is %s but renderPass is VK_NULL_HANDLE.",
                                  string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
