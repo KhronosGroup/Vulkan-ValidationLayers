@@ -2343,3 +2343,29 @@ TEST_F(NegativeMemory, SetDeviceMemoryPriority) {
 
     vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), 1.0f);
 }
+
+TEST_F(NegativeMemory, BadMemoryBindMemory2) {
+    TEST_DESCRIPTION("Bind bogus memory for VkBindImageMemoryInfo::memory ");
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::create_info();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image image;
+    image.init_no_mem(*m_device, image_ci);
+
+    VkDeviceMemory bad_memory = CastToHandle<VkDeviceMemory, uintptr_t>(0xbaadbeef);
+    VkBindImageMemoryInfo image_bind_info = vku::InitStructHelper();
+    image_bind_info.image = image.handle();
+    image_bind_info.memory = bad_memory;
+    image_bind_info.memoryOffset = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01632");
+    vk::BindImageMemory2KHR(m_device->device(), 1, &image_bind_info);
+    m_errorMonitor->VerifyFound();
+}

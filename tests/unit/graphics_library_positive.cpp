@@ -151,6 +151,7 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -233,6 +234,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout_null.handle();
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -420,6 +422,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -509,6 +512,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -591,6 +595,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -666,6 +671,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -741,6 +747,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -841,6 +848,7 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -1132,6 +1140,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
 
         VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
+        exe_pipe_ci.renderPass = renderPass();
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         ASSERT_TRUE(exe_pipe.initialized());
     }
@@ -1162,6 +1171,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -1318,6 +1328,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&link_info);
     pipe_ci.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe_ci.layout = pipe.gp_ci_.layout;
+    pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, pipe_ci);
 }
 
@@ -1457,6 +1468,7 @@ TEST_F(PositiveGraphicsLibrary, PipelineLibraryNoRendering) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -1540,6 +1552,7 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
+    exe_pipe_ci.renderPass = renderPass();
 
     exe_pipe_ci.stageCount = 2;
     exe_pipe_ci.pStages = stages;
@@ -1584,6 +1597,8 @@ TEST_F(PositiveGraphicsLibrary, PushConstant) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    lib_ci.layout = pre_raster_lib.gp_ci_.layout;
+    lib_ci.renderPass = renderPass();
     vkt::Pipeline lib(*m_device, lib_ci);
 }
 
@@ -1622,6 +1637,8 @@ TEST_F(PositiveGraphicsLibrary, PushConstantOneLibrary) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    lib_ci.layout = pre_raster_lib.gp_ci_.layout;
+    lib_ci.renderPass = renderPass();
     vkt::Pipeline lib(*m_device, lib_ci);
 }
 
@@ -1696,4 +1713,19 @@ TEST_F(PositiveGraphicsLibrary, MultisampleStateFragShaderNull) {
     frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
     frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     frag_shader_lib.CreateGraphicsPipeline(false);
+}
+
+TEST_F(PositiveGraphicsLibrary, BadRenderPassVertexInput) {
+    TEST_DESCRIPTION("Create a vertex input graphics library with a bogus VkRenderPass");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitVertexInputLibInfo();
+    pipe.InitState();
+    // Vertex Input doesn't need the renderpass so it should be ignored
+    VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
+    pipe.gp_ci_.renderPass = bad_rp;
+    pipe.CreateGraphicsPipeline(false);
 }

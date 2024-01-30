@@ -97,7 +97,9 @@ TEST_F(NegativeParent, BindBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeParent, BindImage) {
+// Some of these commonparent VUs are for "non-ignored parameters", various spot related in spec
+// Spec issue - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6227
+TEST_F(NegativeParent, DISABLED_BindImage) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);

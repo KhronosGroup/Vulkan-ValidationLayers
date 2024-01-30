@@ -2515,18 +2515,12 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
 
 TEST_F(NegativePipeline, NullRenderPass) {
     TEST_DESCRIPTION("Test for a creating a pipeline with a null renderpass but VK_KHR_dynamic_rendering is not enabled");
-
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

@@ -1063,10 +1063,6 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                     }
                 }
             }
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, true, kVUIDUndefined,
-                                   "VUID-VkGraphicsPipelineCreateInfo-commonparent", index0_loc.dot(Field::layout));
-            skip |= ValidateObject(pCreateInfos[index0].renderPass, kVulkanObjectTypeRenderPass, true, kVUIDUndefined,
-                                   "VUID-VkGraphicsPipelineCreateInfo-commonparent", index0_loc.dot(Field::renderPass));
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
                 skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
                                        "VUID-VkGraphicsPipelineCreateInfo-flags-07984",
@@ -1147,6 +1143,7 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkP
                                        "VUID-VkComputePipelineCreateInfo-commonparent", error_obj.location);
             if (auto pNext = vku::FindStructInPNextChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkSubpassShadingPipelineCreateInfoHUAWEI);
+                // There should be an explicit VU (if not that is a spec bug)
                 skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false, kVUIDUndefined, kVUIDUndefined,
                                        pNext_loc.dot(Field::renderPass));
             }
@@ -1895,8 +1892,6 @@ bool ObjectLifetimes::PreCallValidateBindImageMemory2(VkDevice device, uint32_t 
             skip |= ValidateObject(pBindInfos[index0].image, kVulkanObjectTypeImage, false,
                                    "VUID-VkBindImageMemoryInfo-image-parameter", "VUID-VkBindImageMemoryInfo-commonparent",
                                    index0_loc.dot(Field::image));
-            skip |= ValidateObject(pBindInfos[index0].memory, kVulkanObjectTypeDeviceMemory, true, kVUIDUndefined,
-                                   "VUID-VkBindImageMemoryInfo-commonparent", index0_loc.dot(Field::memory));
             if (auto pNext = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkBindImageMemorySwapchainInfoKHR);
                 skip |= ValidateObject(pNext->swapchain, kVulkanObjectTypeSwapchainKHR, false,
@@ -4429,7 +4424,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffe
 
     if ((counterBufferCount > 0) && (pCounterBuffers)) {
         for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
-            skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true, kVUIDUndefined,
+            skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true,
+                                   "VUID-vkCmdBeginTransformFeedbackEXT-counterBufferCount-02607",
                                    "VUID-vkCmdBeginTransformFeedbackEXT-commonparent",
                                    error_obj.location.dot(Field::pCounterBuffers, index0));
         }
@@ -4448,7 +4444,8 @@ bool ObjectLifetimes::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer 
 
     if ((counterBufferCount > 0) && (pCounterBuffers)) {
         for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
-            skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true, kVUIDUndefined,
+            skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true,
+                                   "VUID-vkCmdEndTransformFeedbackEXT-counterBufferCount-02608",
                                    "VUID-vkCmdEndTransformFeedbackEXT-commonparent",
                                    error_obj.location.dot(Field::pCounterBuffers, index0));
         }
@@ -5674,6 +5671,7 @@ bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice 
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: kVUIDUndefined
+    // There should be an explicit VU (if not that is a spec bug)
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, kVUIDUndefined, kVUIDUndefined,
                            error_obj.location.dot(Field::swapchain));
 
@@ -6610,6 +6608,7 @@ bool ObjectLifetimes::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer comman
     if (pInfos) {
         for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pInfos, index0);
+            // There should be an explicit VU (if not that is a spec bug)
             skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
                                    index0_loc.dot(Field::dstMicromap));
         }
@@ -6629,6 +6628,7 @@ bool ObjectLifetimes::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferr
     if (pInfos) {
         for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pInfos, index0);
+            // There should be an explicit VU (if not that is a spec bug)
             skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
                                    index0_loc.dot(Field::dstMicromap));
         }
@@ -6786,6 +6786,7 @@ bool ObjectLifetimes::PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, V
     // Checked by chassis: device: "VUID-vkGetMicromapBuildSizesEXT-device-parameter"
     if (pBuildInfo) {
         [[maybe_unused]] const Location pBuildInfo_loc = error_obj.location.dot(Field::pBuildInfo);
+        // There should be an explicit VU (if not that is a spec bug)
         skip |= ValidateObject(pBuildInfo->dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
                                pBuildInfo_loc.dot(Field::dstMicromap));
     }
@@ -6893,6 +6894,7 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkD
                                    error_obj.location);
         if (auto pNext = vku::FindStructInPNextChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkSubpassShadingPipelineCreateInfoHUAWEI);
+            // There should be an explicit VU (if not that is a spec bug)
             skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false, kVUIDUndefined, kVUIDUndefined,
                                    pNext_loc.dot(Field::renderPass));
         }
@@ -7544,12 +7546,6 @@ bool ObjectLifetimes::PreCallValidateGetAccelerationStructureBuildSizesKHR(
     // Checked by chassis: device: "VUID-vkGetAccelerationStructureBuildSizesKHR-device-parameter"
     if (pBuildInfo) {
         [[maybe_unused]] const Location pBuildInfo_loc = error_obj.location.dot(Field::pBuildInfo);
-        skip |= ValidateObject(pBuildInfo->srcAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true,
-                               kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent",
-                               pBuildInfo_loc.dot(Field::srcAccelerationStructure));
-        skip |= ValidateObject(pBuildInfo->dstAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true,
-                               kVUIDUndefined, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent",
-                               pBuildInfo_loc.dot(Field::dstAccelerationStructure));
     }
 
     return skip;

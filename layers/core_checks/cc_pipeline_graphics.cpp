@@ -48,11 +48,6 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
     const auto &rp_state = pipeline.RenderPassState();
-    if (!rp_state && pipeline.IsRenderPassStateRequired() && !enabled_features.dynamicRendering) {
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576", device, create_info_loc,
-                         "requires a valid renderPass, but one was not provided");
-    }
-
     const auto subpass = pipeline.Subpass();
     if (rp_state && !rp_state->UsesDynamicRendering()) {
         // Ensure the subpass index is valid. If not, then ValidateGraphicsPipelineShaderState
@@ -75,6 +70,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
         }
     }
 
+    skip |= ValidateGraphicsPipelineRenderPass(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineLibrary(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline, create_info_loc);
@@ -471,6 +467,31 @@ static bool ComparePipelineFragmentShadingRateStateCreateInfo(VkPipelineFragment
            (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
 }
 
+bool CoreChecks::ValidateGraphicsPipelineRenderPass(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+    bool skip = false;
+    // If the vertex input is by itself renderpass/layout are ignored, but if linking with any other state, need to test for them
+    if (pipeline.IsRenderPassStateRequired()) {
+        if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            if (!enabled_features.dynamicRendering) {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576", device,
+                             create_info_loc.dot(Field::renderPass), "is NULL, but the dynamicRendering feature was not enabled");
+            }
+        } else if (!pipeline.RenderPassState()) {
+            const auto gpl_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.PNext());
+            const bool has_flags =
+                gpl_info && (gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0;
+            const char *vuid =
+                has_flags ? "VUID-VkGraphicsPipelineCreateInfo-flags-06643" : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603";
+            skip |= LogError(vuid, device, create_info_loc.dot(Field::renderPass), "is not a valid render pass.");
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
@@ -480,19 +501,6 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06894", device, create_info_loc,
                          "does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
-    }
-
-    // If extension is not enabled, ignore the rest of checks
-    if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        if (!pipeline.PipelineLayoutState()) {
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
-                         "is not a valid pipeline layout, but %s is not enabled.", VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        } else if (!pipeline.RenderPassState()) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06603", device, create_info_loc.dot(Field::renderPass),
-                             "is not a valid render pass, but %s is not enabled.", VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        }
-        return skip;
     }
 
     const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
@@ -645,12 +653,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
     }
 
-    if (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags) {
-        if (!pipeline_layout_state) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
-                             "is a graphics library created with %s state, but does not have a valid layout specified.",
-                             string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
-        }
+    if ((pipeline.pre_raster_state || pipeline.fragment_shader_state) && !pipeline_layout_state) {
+        const char *vuid = (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags)
+                               ? "VUID-VkGraphicsPipelineCreateInfo-flags-06642"
+                               : "VUID-VkGraphicsPipelineCreateInfo-layout-06602";
+        skip |= LogError(vuid, device, create_info_loc.dot(Field::layout), "is not a valid VkPipelineLayout.");
     }
 
     if (pipeline_layout_state && pre_raster_info.init == GPLInitType::gpl_flags) {

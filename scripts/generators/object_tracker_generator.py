@@ -545,6 +545,13 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
 
     def getParamVUID(self, member: Member, parentName: str) -> str:
+        # Exceptions
+        if (member.name == 'pCounterBuffers'):
+            if parentName == 'vkCmdBeginTransformFeedbackEXT':
+                return '"VUID-vkCmdBeginTransformFeedbackEXT-counterBufferCount-02607"'
+            if parentName == 'vkCmdEndTransformFeedbackEXT':
+                return '"VUID-vkCmdEndTransformFeedbackEXT-counterBufferCount-02608"'
+
         # Replace with alias if one
         alias = self.vk.commands[parentName].alias if parentName in self.vk.commands else None
         parent = alias if alias else parentName
@@ -726,6 +733,12 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     pre_call_validate += f'// Checked by chassis: {member.name}: {param_vuid}\n'
                     if chassis_parent_vuid != 'kVUIDUndefined':
                         pre_call_validate += f'// Checked by chassis: {member.name}: {chassis_parent_vuid}\n'
+                elif param_vuid == 'kVUIDUndefined':
+                    # These cases are 'commonparent' VUs for "non-ignored parameters"
+                    if parent_vuid == 'kVUIDUndefined':
+                        location = f'{errorLoc}.dot(Field::{member.name})'
+                        pre_call_validate += '// There should be an explicit VU (if not that is a spec bug)\n'
+                        pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
                 else:
                     location = f'{errorLoc}.dot(Field::{member.name})'
                     if self.vk.commands[topCommand].device and self.vk.handles[member.type].instance:
