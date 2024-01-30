@@ -2730,6 +2730,20 @@ TEST_F(NegativeDynamicRendering, CreatePipelineWithoutFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRendering, BadRenderPass) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
+    pipe.gp_ci_.renderPass = bad_rp;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
     TEST_DESCRIPTION("Begin dynamic rendering with render area greater than extent of attachments");
 
@@ -3291,6 +3305,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     library_create_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&library_create_info);
+    pipe_ci.layout = lib1.gp_ci_.layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
     vkt::Pipeline pipe(*m_device, pipe_ci);
     m_errorMonitor->VerifyFound();

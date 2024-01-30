@@ -1239,10 +1239,6 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    // This test checks that no BP messages are incorrectly triggered, but triggers core errors
-    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
-    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
-
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
