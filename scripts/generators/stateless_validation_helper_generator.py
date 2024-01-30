@@ -412,7 +412,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 extension = self.vk.extensions[ext_name]
                 extension_check = ''
                 if extension.device:
-                    extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::{extension.name[3:]})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
+                    extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
                 else:
                     extension_check = f'if (!instance_extensions.{extension.name.lower()}) {{'
                 pnext_check += f'''
@@ -476,7 +476,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 cExpression =  []
                 outExpression =  []
                 for extension in command.extensions:
-                    outExpression.append(f'vvl::Extension::{extension.name[3:]}')
+                    outExpression.append(f'vvl::Extension::_{extension.name}')
                     if extension.instance:
                         cExpression.append(f'instance_extensions.{extension.name.lower()}')
                     else:

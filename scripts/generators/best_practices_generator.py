@@ -161,9 +161,9 @@ class BestPracticesOutputGenerator(BaseGenerator):
             elif 'VERSION' in target:
                 target = f'vvl::Version::_{target}'
             else:
-                target = f'vvl::Extension::{target[3:]}'
+                target = f'vvl::Extension::_{target}'
 
-            out.append(f'    {{vvl::Extension::{extension.name[3:]}, {{{reason}, {{{target}}}}}}},\n')
+            out.append(f'    {{vvl::Extension::_{extension.name}, {{{reason}, {{{target}}}}}}},\n')
         out.append('''    };
 
                 auto it = deprecated_extensions.find(extension_name);
@@ -175,7 +175,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             ''')
         for extension in self.vk.extensions.values():
             if extension.specialUse is not None:
-                out.append(f'    {{vvl::Extension::{extension.name[3:]}, "{", ".join(extension.specialUse)}"}},\n')
+                out.append(f'    {{vvl::Extension::_{extension.name}, "{", ".join(extension.specialUse)}"}},\n')
         out.append('''    };
 
                 auto it = special_use_extensions.find(extension_name);

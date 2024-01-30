@@ -732,12 +732,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         // Vulkan 1.1 (which made this core).
         has_format_feature2 =
             (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
-            phys_dev_extensions.find(vvl::Extension::KHR_format_feature_flags2) != phys_dev_extensions.end();
+            phys_dev_extensions.find(vvl::Extension::_VK_KHR_format_feature_flags2) != phys_dev_extensions.end();
 
         // feature is required if 1.3 or extension is supported
         has_robust_image_access =
             (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
-            phys_dev_extensions.find(vvl::Extension::EXT_image_robustness) != phys_dev_extensions.end();
+            phys_dev_extensions.find(vvl::Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
     }
 
     const auto &dev_ext = device_extensions;

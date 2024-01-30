@@ -196,7 +196,7 @@ class StateTrackerHelperOutputGenerator(BaseGenerator):
                     vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
             ''')
         for ext, features in sorted(extension_feature_alises.items()):
-            out.append(f'if (extension == vvl::Extension::{ext[3:]}) {{\n')
+            out.append(f'if (extension == vvl::Extension::_{ext}) {{\n')
             for feature in features:
                 out.append(f'    features->{feature} = true;\n')
             out.append('}\n')

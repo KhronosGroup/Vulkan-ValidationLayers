@@ -117,7 +117,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
 
         out.append('const vvl::unordered_map<std::string, small_vector<vvl::Extension, 2, size_t>> api_extension_map {\n')
         for command in [x for x in self.vk.commands.values() if x.extensions and x.device]:
-            extensions = ', '.join(f'vvl::Extension::{x.name[3:]}' for x in command.extensions)
+            extensions = ', '.join(f'vvl::Extension::_{x.name}' for x in command.extensions)
             out.append(f'    {{ "{command.name}", {{ {extensions} }} }},\n')
         out.append('};\n')
 
