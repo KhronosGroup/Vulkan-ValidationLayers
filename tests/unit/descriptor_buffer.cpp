@@ -1508,12 +1508,9 @@ TEST_F(NegativeDescriptorBuffer, NullCombinedImageSampler) {
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
     dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     dgi.data.pCombinedImageSampler = nullptr;
-    // TODO -Being discussed if allowed or not
-    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6393#note_452227
-    //
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-pDescriptorInfo-09507");
-    // vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize / 2, &out);
-    // m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-pCombinedImageSampler-parameter");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize / 2, &out);
+    m_errorMonitor->VerifyFound();
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     const VkDescriptorImageInfo dii = {sampler.handle(), VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL};
