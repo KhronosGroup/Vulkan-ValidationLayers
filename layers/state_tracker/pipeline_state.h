@@ -56,12 +56,23 @@ struct StageCreateInfo {
 namespace vvl {
 class PipelineCache : public StateObject {
   public:
+    const safe_VkPipelineCacheCreateInfo create_info;
+
     PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
         : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
 
     VkPipelineCache VkHandle() const { return handle_.Cast<VkPipelineCache>(); }
 
-    const safe_VkPipelineCacheCreateInfo create_info;
+    virtual std::shared_ptr<const vvl::ShaderModule> GetStageModule(const vvl::Pipeline &pipe_state, size_t stage_index) const {
+        // This interface enables derived versions of the pipeline cache state object to return
+        // the shader module information from pipeline cache data, if available.
+        // This is currently used by Vulkan SC to retrieve SPIR-V module debug information when
+        // available, but may also be used by vendor-specific validation layers.
+        // The default behavior (having no parsed pipeline cache data) is to not return anything.
+        (void)pipe_state;
+        (void)stage_index;
+        return nullptr;
+    }
 };
 
 class Pipeline : public StateObject {
@@ -130,6 +141,9 @@ class Pipeline : public StateObject {
     const CreateInfo create_info;
 
   public:
+    // Pipeline cache state
+    const std::shared_ptr<const vvl::PipelineCache> pipeline_cache;
+
     // Create Info values saved for fast access later
     const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
     const VkPipelineLibraryCreateInfoKHR *library_create_info = nullptr;
@@ -180,18 +194,21 @@ class Pipeline : public StateObject {
 
     // Executable or legacy pipeline
     Pipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-             std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-             CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
     Pipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             CreateShaderModuleStates *csm_states = nullptr);
 
     Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             CreateShaderModuleStates *csm_states = nullptr);
 
     Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             CreateShaderModuleStates *csm_states = nullptr);
 
     VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 

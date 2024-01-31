@@ -44,9 +44,15 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
     for (const auto &stage : AllVkShaderStageFlags) {
         bool stage_found = false;
         // shader stages need to be recorded in pipeline order
-        for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+
+        for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
+            const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
             if (stage_ci.stage == stage) {
                 auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
+                if (!module_state && pipe_state.pipeline_cache) {
+                    // Attempt to look up the pipeline cache for shader module data
+                    module_state = pipe_state.pipeline_cache->GetStageModule(pipe_state, stage_index);
+                }
                 if (!module_state) {
                     // See if the module is referenced in a library sub state
                     module_state = pipe_state.GetSubStateShader(stage_ci.stage);
@@ -614,11 +620,12 @@ std::shared_ptr<const vvl::ShaderModule> Pipeline::GetSubStateShader(VkShaderSta
 }
 
 Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const vvl::RenderPass> &&rpstate, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-                   CreateShaderModuleStates *csm_states)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
+                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(*pCreateInfo, rpstate, state_data),
+      pipeline_cache(std::move(pipe_cache)),
       rendering_create_info(vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(PNext())),
       library_create_info(vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(PNext())),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
@@ -669,9 +676,11 @@ Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkGraphicsPip
 }
 
 Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   CreateShaderModuleStates *csm_states)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
+      pipeline_cache(std::move(pipe_cache)),
       pipeline_type(VK_PIPELINE_BIND_POINT_COMPUTE),
       create_flags(GetPipelineCreateFlags(PNext(), create_info.compute.flags)),
       shader_stages_ci(&create_info.compute.stage, 1),
@@ -691,9 +700,11 @@ Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkComputePipe
 }
 
 Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   CreateShaderModuleStates *csm_states)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
+      pipeline_cache(std::move(pipe_cache)),
       pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
       create_flags(GetPipelineCreateFlags(PNext(), create_info.raytracing.flags)),
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
@@ -716,9 +727,11 @@ Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkRayTracingP
 }
 
 Pipeline::Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   CreateShaderModuleStates *csm_states)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
+      pipeline_cache(std::move(pipe_cache)),
       pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV),
       create_flags(GetPipelineCreateFlags(PNext(), create_info.raytracing.flags)),
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),

@@ -351,8 +351,8 @@ class DescriptorPool : public vvl::DescriptorPool {
 class Pipeline : public vvl::Pipeline {
   public:
     Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
-             std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout,
-             CreateShaderModuleStates* csm_states);
+             std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
+             std::shared_ptr<const vvl::PipelineLayout>&& layout, CreateShaderModuleStates* csm_states);
 
     const std::vector<AttachmentInfo> access_framebuffer_attachments;
 };
@@ -1034,6 +1034,7 @@ class BestPractices : public ValidationStateTracker {
     }
 
     std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
+                                                               std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                CreateShaderModuleStates* csm_states) const final;

@@ -875,8 +875,8 @@ class enumeration {
     iterator end() { return data_ + count_; }
     const_iterator end() const { return data_ + count_; }
 
-    T &operator[](int i) { return data_[i]; }
-    const T &operator[](int i) const { return data_[i]; }
+    T &operator[](size_t i) { return data_[i]; }
+    const T &operator[](size_t i) const { return data_[i]; }
 
     T &front() { return *data_; }
     const T &front() const { return *data_; }
