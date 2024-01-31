@@ -218,7 +218,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsK
                                                                                    VkSurfaceFormatKHR *pSurfaceFormats,
                                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    if (surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+    if (surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         skip |=
             LogError("VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06524", physicalDevice,
                      error_obj.location.dot(Field::surface), "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
@@ -232,7 +232,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
                                                                                         VkPresentModeKHR *pPresentModes,
                                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
-    if (surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+    if (surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         skip |=
             LogError("VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06524", physicalDevice,
                      error_obj.location.dot(Field::surface), "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
@@ -244,7 +244,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
     VkSurfaceCapabilities2KHR *pSurfaceCapabilities, const ErrorObject &error_obj) const {
     bool skip = false;
-    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06521", physicalDevice,
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
@@ -303,7 +303,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pSurfaceFormatCount,
     VkSurfaceFormat2KHR *pSurfaceFormats, const ErrorObject &error_obj) const {
     bool skip = false;
-    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06521", physicalDevice,
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
@@ -316,7 +316,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pPresentModeCount,
     VkPresentModeKHR *pPresentModes, const ErrorObject &error_obj) const {
     bool skip = false;
-    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+    if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521", physicalDevice,
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
@@ -370,7 +370,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
 
-        if (pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
+        if (pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             skip |= LogError("VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521", device,
                              error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                              "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");

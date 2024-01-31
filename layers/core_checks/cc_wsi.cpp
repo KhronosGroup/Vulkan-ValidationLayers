@@ -298,7 +298,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
                                          const vvl::Swapchain *old_swapchain_state, const Location &create_info_loc) const {
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
-    if (!instance_extensions.vk_khr_android_surface) {
+    if (!IsExtEnabled(instance_extensions.vk_khr_android_surface)) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
         const bool is_supported = AnyOf<vvl::Queue>([this, surface_state](const vvl::Queue &queue_state) {
             return surface_state->GetQueueSupport(physical_device, queue_state.queueFamilyIndex);
@@ -911,7 +911,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
 
             // All physical devices and queue families are required to be able to present to any native window on Android
-            if (!instance_extensions.vk_khr_android_surface) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_android_surface)) {
                 auto surface_state = Get<vvl::Surface>(swapchain_data->createInfo.surface);
                 if (!surface_state->GetQueueSupport(physical_device, queue_state->queueFamilyIndex)) {
                     skip |= LogError("VUID-vkQueuePresentKHR-pSwapchains-01292", pPresentInfo->pSwapchains[i], swapchain_loc,

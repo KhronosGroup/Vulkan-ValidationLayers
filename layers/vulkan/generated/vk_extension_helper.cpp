@@ -398,19 +398,141 @@ vvl::Extension GetExtension(std::string extension) {
     return (it == extension_map.end()) ? vvl::Extension::Empty : it->second;
 }
 
+const PromotedExtensionInfoMap& GetInstancePromotionInfoMap() {
+    static const PromotedExtensionInfoMap promoted_map = {
+        {VK_API_VERSION_1_1,
+         {"VK_VERSION_1_1",
+          {
+              vvl::Extension::_VK_KHR_get_physical_device_properties2,
+              vvl::Extension::_VK_KHR_device_group_creation,
+              vvl::Extension::_VK_KHR_external_memory_capabilities,
+              vvl::Extension::_VK_KHR_external_semaphore_capabilities,
+              vvl::Extension::_VK_KHR_external_fence_capabilities,
+          }}},
+
+    };
+    return promoted_map;
+}
+
+const PromotedExtensionInfoMap& GetDevicePromotionInfoMap() {
+    static const PromotedExtensionInfoMap promoted_map = {
+        {VK_API_VERSION_1_1,
+         {"VK_VERSION_1_1",
+          {
+              vvl::Extension::_VK_KHR_multiview,
+              vvl::Extension::_VK_KHR_device_group,
+              vvl::Extension::_VK_KHR_shader_draw_parameters,
+              vvl::Extension::_VK_KHR_maintenance1,
+              vvl::Extension::_VK_KHR_external_memory,
+              vvl::Extension::_VK_KHR_external_semaphore,
+              vvl::Extension::_VK_KHR_16bit_storage,
+              vvl::Extension::_VK_KHR_descriptor_update_template,
+              vvl::Extension::_VK_KHR_external_fence,
+              vvl::Extension::_VK_KHR_maintenance2,
+              vvl::Extension::_VK_KHR_variable_pointers,
+              vvl::Extension::_VK_KHR_dedicated_allocation,
+              vvl::Extension::_VK_KHR_storage_buffer_storage_class,
+              vvl::Extension::_VK_KHR_relaxed_block_layout,
+              vvl::Extension::_VK_KHR_get_memory_requirements2,
+              vvl::Extension::_VK_KHR_sampler_ycbcr_conversion,
+              vvl::Extension::_VK_KHR_bind_memory2,
+              vvl::Extension::_VK_KHR_maintenance3,
+          }}},
+        {VK_API_VERSION_1_2,
+         {"VK_VERSION_1_2",
+          {
+              vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge,
+              vvl::Extension::_VK_KHR_shader_float16_int8,
+              vvl::Extension::_VK_KHR_imageless_framebuffer,
+              vvl::Extension::_VK_KHR_create_renderpass2,
+              vvl::Extension::_VK_KHR_image_format_list,
+              vvl::Extension::_VK_KHR_draw_indirect_count,
+              vvl::Extension::_VK_KHR_shader_subgroup_extended_types,
+              vvl::Extension::_VK_KHR_8bit_storage,
+              vvl::Extension::_VK_KHR_shader_atomic_int64,
+              vvl::Extension::_VK_KHR_driver_properties,
+              vvl::Extension::_VK_KHR_shader_float_controls,
+              vvl::Extension::_VK_KHR_depth_stencil_resolve,
+              vvl::Extension::_VK_KHR_timeline_semaphore,
+              vvl::Extension::_VK_KHR_vulkan_memory_model,
+              vvl::Extension::_VK_KHR_spirv_1_4,
+              vvl::Extension::_VK_KHR_separate_depth_stencil_layouts,
+              vvl::Extension::_VK_KHR_uniform_buffer_standard_layout,
+              vvl::Extension::_VK_KHR_buffer_device_address,
+              vvl::Extension::_VK_EXT_sampler_filter_minmax,
+              vvl::Extension::_VK_EXT_descriptor_indexing,
+              vvl::Extension::_VK_EXT_shader_viewport_index_layer,
+              vvl::Extension::_VK_EXT_scalar_block_layout,
+              vvl::Extension::_VK_EXT_separate_stencil_usage,
+              vvl::Extension::_VK_EXT_host_query_reset,
+          }}},
+        {VK_API_VERSION_1_3,
+         {"VK_VERSION_1_3",
+          {
+              vvl::Extension::_VK_KHR_dynamic_rendering,
+              vvl::Extension::_VK_KHR_shader_terminate_invocation,
+              vvl::Extension::_VK_KHR_shader_integer_dot_product,
+              vvl::Extension::_VK_KHR_shader_non_semantic_info,
+              vvl::Extension::_VK_KHR_synchronization2,
+              vvl::Extension::_VK_KHR_zero_initialize_workgroup_memory,
+              vvl::Extension::_VK_KHR_copy_commands2,
+              vvl::Extension::_VK_KHR_format_feature_flags2,
+              vvl::Extension::_VK_KHR_maintenance4,
+              vvl::Extension::_VK_EXT_texture_compression_astc_hdr,
+              vvl::Extension::_VK_EXT_inline_uniform_block,
+              vvl::Extension::_VK_EXT_pipeline_creation_feedback,
+              vvl::Extension::_VK_EXT_subgroup_size_control,
+              vvl::Extension::_VK_EXT_tooling_info,
+              vvl::Extension::_VK_EXT_extended_dynamic_state,
+              vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation,
+              vvl::Extension::_VK_EXT_texel_buffer_alignment,
+              vvl::Extension::_VK_EXT_private_data,
+              vvl::Extension::_VK_EXT_pipeline_creation_cache_control,
+              vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats,
+              vvl::Extension::_VK_EXT_image_robustness,
+              vvl::Extension::_VK_EXT_4444_formats,
+              vvl::Extension::_VK_EXT_extended_dynamic_state2,
+          }}},
+
+    };
+    return promoted_map;
+}
+
+const InstanceExtensions::Info& GetInstanceVersionMap(const char* version) {
+    static const InstanceExtensions::Info empty_info{nullptr, InstanceExtensions::RequirementVec()};
+    static const vvl::unordered_map<std::string, InstanceExtensions::Info> version_map = {
+        {"VK_VERSION_1_1", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_1, {})},
+        {"VK_VERSION_1_2", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_2, {})},
+        {"VK_VERSION_1_3", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_3, {})},
+    };
+    const auto info = version_map.find(version);
+    return (info != version_map.cend()) ? info->second : empty_info;
+}
+
+const DeviceExtensions::Info& GetDeviceVersionMap(const char* version) {
+    static const DeviceExtensions::Info empty_info{nullptr, DeviceExtensions::RequirementVec()};
+    static const vvl::unordered_map<std::string, DeviceExtensions::Info> version_map = {
+        {"VK_VERSION_1_1", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_1, {})},
+        {"VK_VERSION_1_2", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_2, {})},
+        {"VK_VERSION_1_3", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_3, {})},
+    };
+    const auto info = version_map.find(version);
+    return (info != version_map.cend()) ? info->second : empty_info;
+}
+
 APIVersion InstanceExtensions::InitFromInstanceCreateInfo(APIVersion requested_api_version,
                                                           const VkInstanceCreateInfo* pCreateInfo) {
     // Initialize struct data, robust to invalid pCreateInfo
     auto api_version = NormalizeApiVersion(requested_api_version);
     if (!api_version.Valid()) return api_version;
 
-    const auto promotion_info_map = get_promotion_info_map();
+    const auto promotion_info_map = GetInstancePromotionInfoMap();
     for (const auto& version_it : promotion_info_map) {
-        auto info = get_version_map(version_it.second.first);
+        auto info = GetInstanceVersionMap(version_it.second.first);
         if (api_version >= version_it.first) {
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (const auto& extension : version_it.second.second) {
-                info = get_info(extension);
+                info = GetInfo(extension);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
             }
@@ -422,7 +544,7 @@ APIVersion InstanceExtensions::InitFromInstanceCreateInfo(APIVersion requested_a
         for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
             vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-            auto info = get_info(extension);
+            auto info = GetInfo(extension);
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
         }
     }
@@ -439,13 +561,13 @@ APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* 
     auto api_version = NormalizeApiVersion(requested_api_version);
     if (!api_version.Valid()) return api_version;
 
-    const auto promotion_info_map = get_promotion_info_map();
+    const auto promotion_info_map = GetDevicePromotionInfoMap();
     for (const auto& version_it : promotion_info_map) {
-        auto info = get_version_map(version_it.second.first);
+        auto info = GetDeviceVersionMap(version_it.second.first);
         if (api_version >= version_it.first) {
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (const auto& extension : version_it.second.second) {
-                info = get_info(extension);
+                info = GetInfo(extension);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
             }
@@ -457,7 +579,7 @@ APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* 
         for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
             vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-            auto info = get_info(extension);
+            auto info = GetInfo(extension);
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
         }
     }
@@ -472,11 +594,11 @@ APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* 
             vvl::Extension::_VK_EXT_extended_dynamic_state3,
             vvl::Extension::_VK_EXT_vertex_input_dynamic_state,
         };
-        auto info = get_info(vvl::Extension::_VK_EXT_shader_object);
+        auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
         if (info.state) {
             if (this->*(info.state) != kNotEnabled) {
                 for (auto interaction_ext : shader_object_interactions) {
-                    info = get_info(interaction_ext);
+                    info = GetInfo(interaction_ext);
                     assert(info.state);
                     if (this->*(info.state) != kEnabledByCreateinfo) {
                         this->*(info.state) = kEnabledByInteraction;
