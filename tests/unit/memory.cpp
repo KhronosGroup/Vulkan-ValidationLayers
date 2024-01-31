@@ -2241,8 +2241,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     buffer_alloc_info.memoryTypeIndex = 0;
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
 
-    VkDeviceMemory buffer_memory;
-    vk::AllocateMemory(m_device->device(), &buffer_alloc_info, nullptr, &buffer_memory);
+    vkt::DeviceMemory buffer_memory(*m_device, buffer_alloc_info);
 
     std::vector<uint32_t> device_indices(create_device_pnext.physicalDeviceCount);
 
@@ -2252,7 +2251,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper(&bind_buffer_memory_device_group);
     bind_buffer_info.buffer = buffer.handle();
-    bind_buffer_info.memory = buffer_memory;
+    bind_buffer_info.memory = buffer_memory.handle();
     bind_buffer_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606");
@@ -2288,8 +2287,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     image_alloc_info.memoryTypeIndex = 0;
     image_alloc_info.allocationSize = image_mem_reqs.size;
 
-    VkDeviceMemory image_memory;
-    vk::AllocateMemory(m_device->device(), &image_alloc_info, nullptr, &image_memory);
+    vkt::DeviceMemory image_memory(*m_device, image_alloc_info);
 
     VkBindImageMemoryDeviceGroupInfo bind_image_memory_device_group = vku::InitStructHelper();
     bind_image_memory_device_group.deviceIndexCount = 1;
@@ -2297,7 +2295,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper(&bind_image_memory_device_group);
     bind_image_info.image = image.handle();
-    bind_image_info.memory = image_memory;
+    bind_image_info.memory = image_memory.handle();
     bind_image_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634");

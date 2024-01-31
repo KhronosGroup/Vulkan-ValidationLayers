@@ -419,11 +419,11 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
                 for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
                     if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
-                        // skip |= LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", pd_state->Handle(),
-                        //                  error_obj.location,
-                        //                  "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
-                        //                  "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
-                        //                  i, j);
+                        skip |= LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", pd_state->Handle(),
+                                         error_obj.location,
+                                         "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
+                                         "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
+                                         i, j);
                     }
                 }
             }
