@@ -2271,7 +2271,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     if (stage_create_info.pipeline) {
         if (stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
             stage_create_info.pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE &&
-            module_state.HasCapability(spv::CapabilityInputAttachment)) {
+            module_state.HasCapability(spv::CapabilityInputAttachment) && !enabled_features.dynamicRenderingLocalRead) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061", device, loc,
                              "is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
                              "shader includes InputAttachment capability.");
