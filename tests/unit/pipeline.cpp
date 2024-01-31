@@ -1522,7 +1522,7 @@ TEST_F(NegativePipeline, LineRasterization) {
 
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02769"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1533,8 +1533,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02769",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02772"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1545,8 +1545,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02768",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02771"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1557,8 +1557,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-lineRasterizationMode-02770",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02773"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1569,7 +1569,7 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoKHR-stippledLineEnable-02774"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1580,7 +1580,7 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineStippleEXT-lineStippleFactor-02776");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineStippleKHR-lineStippleFactor-02776");
     vk::CmdSetLineStippleEXT(m_commandBuffer->handle(), 0, 0);
     m_errorMonitor->VerifyFound();
     vk::CmdSetLineStippleEXT(m_commandBuffer->handle(), 1, 1);
