@@ -28,6 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('--exe', action='store', type=str, help='path to instrumentation executable')
     parser.add_argument('--spirv-val', action='store', dest='spirv_val', type=str, help='Path to spirv-val to use')
     parser.add_argument('--shaders', action='store', required=True, type=str, help='path to directory with shaders')
+    parser.add_argument('-v', '--verbose', action='store_true', help='print each shader')
     args = parser.parse_args()
 
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -57,6 +58,8 @@ if __name__ == '__main__':
         for file in files:
             spirv_file = os.path.join(currentpath, file)
             command = f'{exe_path} {spirv_file} -o {temp_file} --all-passes'
+            if args.verbose:
+                print(command)
             subprocess.call(command.split())
             exit_code = subprocess.call([spirv_val_path, temp_file])
             if exit_code != 0:

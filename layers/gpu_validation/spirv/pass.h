@@ -36,6 +36,7 @@ class Pass {
     // Returns the ID for OpCompositeConstruct it creates
     uint32_t GetStageInfo(Function& function, spv::ExecutionModel execution_model);
 
+    bool HasCapability(spv::Capability capability);
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration);
     const Instruction* GetMemeberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration);
 

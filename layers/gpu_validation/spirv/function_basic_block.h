@@ -81,6 +81,11 @@ struct Function {
     vvl::unordered_map<uint32_t, const Instruction*> inst_map_;
     const Instruction* FindInstruction(uint32_t id) const;
 
+    // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject the
+    // instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally instructions should
+    // be added as you go forward only.
+    void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id);
+
     uint32_t stage_info_id_ = 0;
 };
 

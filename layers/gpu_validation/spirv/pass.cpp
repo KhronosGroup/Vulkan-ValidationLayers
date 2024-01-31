@@ -176,6 +176,15 @@ uint32_t Pass::GetStageInfo(Function& function, spv::ExecutionModel execution_mo
     return function.stage_info_id_;
 }
 
+bool Pass::HasCapability(spv::Capability capability) {
+    for (const auto& inst : module_.capabilities_) {
+        if (inst->Word(1) == capability) {
+            return true;
+        }
+    }
+    return false;
+}
+
 const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) {
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
@@ -295,6 +304,22 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
             // We need to put any intermittent instructions here so Phi is first in the merge block
             invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
         } else {
+            if ((phi_type.spv_type_ == SpvType::kInt || phi_type.spv_type_ == SpvType::kFloat) && phi_type.inst_.Word(2) < 32) {
+                // You can't make a constant of a 8-int, 16-int, 16-float without having the capability
+                // The only way this situation occurs if they use something like
+                //     OpCapability StorageBuffer8BitAccess
+                // but there is not explicit Int8
+                // It should be more than safe to inject it for them
+                spv::Capability capability = (phi_type.spv_type_ == SpvType::kFloat) ? spv::CapabilityFloat16
+                                             : (phi_type.inst_.Word(2) == 16)        ? spv::CapabilityInt16
+                                                                                     : spv::CapabilityInt8;
+                if (!HasCapability(capability)) {
+                    auto new_inst = std::make_unique<Instruction>(2, spv::OpCapability);
+                    new_inst->Fill({(uint32_t)capability});
+                    module_.capabilities_.emplace_back(std::move(new_inst));
+                }
+            }
+
             null_id = module_.type_manager_.GetConstantNull(phi_type).Id();
         }
 
