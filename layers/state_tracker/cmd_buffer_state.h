@@ -242,8 +242,8 @@ class CommandBuffer : public RefcountedStateObject {
         uint32_t rasterization_stream;
         // VK_DYNAMIC_STATE_SAMPLE_MASK_EXT
         VkSampleCountFlagBits samples_mask_samples;
-        // VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT
-        VkLineRasterizationModeEXT line_rasterization_mode;
+        // VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_KHR
+        VkLineRasterizationModeKHR line_rasterization_mode;
         // VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT
         bool stippled_line_enable;
         // VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV

@@ -74,10 +74,10 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
         VkAttachmentDescription attachment = {};
         attachment.format = format;
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
+        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
         attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
         attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         return attachment;

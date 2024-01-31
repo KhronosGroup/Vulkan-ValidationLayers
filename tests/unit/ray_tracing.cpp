@@ -1648,7 +1648,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Invalid index type
     if (index_type_uint8) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-        blas.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_UINT8_EXT);
+        blas.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_UINT8_KHR);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");

@@ -1219,7 +1219,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             }
 
             const auto *line_state =
-                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
+                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(create_info.pRasterizationState->pNext);
             const bool dynamic_line_raster_mode = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
             const bool dynamic_line_stipple_enable = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
             if (line_state) {
@@ -1234,8 +1234,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
                 if (!dynamic_line_raster_mode) {
                     if (create_info.pMultisampleState &&
-                        (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT ||
-                         line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT)) {
+                        (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR ||
+                         line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR)) {
                         if (create_info.pMultisampleState->alphaToCoverageEnable) {
                             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766", device,
                                              rasterization_loc.pNext(Struct::VkPipelineRasterizationLineStateCreateInfoKHR,
@@ -1262,62 +1262,62 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     }
 
                     const auto *line_features =
-                        vku::FindStructInPNextChain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(device_createinfo_pnext);
-                    if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                        vku::FindStructInPNextChain<VkPhysicalDeviceLineRasterizationFeaturesKHR>(device_createinfo_pnext);
+                    if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR &&
                         (!line_features || !line_features->rectangularLines)) {
                         skip |= LogError(
                             "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768", device,
                             rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                     Field::lineRasterizationMode),
-                            "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT but the rectangularLines feature was not enabled.");
+                            "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR but the rectangularLines feature was not enabled.");
                     }
-                    if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                    if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR &&
                         (!line_features || !line_features->bresenhamLines)) {
                         skip |=
                             LogError("VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769", device,
                                      rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                              Field::lineRasterizationMode),
-                                     "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT but the bresenhamLines feature was not enabled.");
+                                     "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR but the bresenhamLines feature was not enabled.");
                     }
-                    if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                    if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR &&
                         (!line_features || !line_features->smoothLines)) {
                         skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770", device,
                                          rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                  Field::lineRasterizationMode),
-                                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature was not "
+                                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR but the smoothLines feature was not "
                                          "enabled.");
                     }
                     if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
-                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR &&
                             (!line_features || !line_features->stippledRectangularLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
-                                             "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT and stippledLineEnable was VK_TRUE, "
+                                             "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR and stippledLineEnable was VK_TRUE, "
                                              "but the stippledRectangularLines feature was not enabled.");
                         }
-                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR &&
                             (!line_features || !line_features->stippledBresenhamLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
-                                             "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT and stippledLineEnable was VK_TRUE, but "
+                                             "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR and stippledLineEnable was VK_TRUE, but "
                                              "the stippledBresenhamLines feature was not enabled.");
                         }
-                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR &&
                             (!line_features || !line_features->stippledSmoothLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
-                                             "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT and stippledLineEnable was "
+                                             "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR and stippledLineEnable was "
                                              "VK_TRUE, but the stippledSmoothLines feature was not enabled.");
                         }
-                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR &&
                             (!line_features || !line_features->stippledRectangularLines || !device_limits.strictLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeaturesKHR,
                                                                      Field::lineRasterizationMode),
-                                             "is VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT and stippledLineEnable was VK_TRUE, but "
+                                             "is VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR and stippledLineEnable was VK_TRUE, but "
                                              "the stippledRectangularLines feature was not enabled.");
                         }
                     }

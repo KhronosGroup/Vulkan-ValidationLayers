@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class CreatePipelineHelper {
     vkt::PipelineLayout pipeline_layout_;
     VkPipelineDynamicStateCreateInfo dyn_state_ci_ = {};
     VkPipelineRasterizationStateCreateInfo rs_state_ci_ = {};
-    VkPipelineRasterizationLineStateCreateInfoEXT line_state_ci_ = {};
+    VkPipelineRasterizationLineStateCreateInfoKHR line_state_ci_ = {};
     std::vector<VkPipelineColorBlendAttachmentState> cb_attachments_ = {};
     VkPipelineColorBlendStateCreateInfo cb_ci_ = {};
     VkPipelineDepthStencilStateCreateInfo ds_ci_ = {};

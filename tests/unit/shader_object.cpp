@@ -2583,7 +2583,7 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineStippleEnableEXT) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     vk::CmdSetPolygonModeEXT(m_commandBuffer->handle(), VK_POLYGON_MODE_LINE);
-    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
+    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR);
     BindVertFragShader(vertShader, fragShader);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
@@ -2609,7 +2609,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT)
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
+    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR);
     BindVertFragShader(vertShader, fragShader);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
@@ -5793,7 +5793,7 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates({VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT});
     BindVertFragShader(vertShader, fragShader);
-    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
+    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR);
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stages[1], &geomShader.handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();

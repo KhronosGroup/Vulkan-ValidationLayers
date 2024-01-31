@@ -3063,7 +3063,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
                     const auto raster_line_state =
                         vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(raster_state->pNext);
 
-                    const VkLineRasterizationModeEXT line_rasterization_mode =
+                    const VkLineRasterizationModeKHR line_rasterization_mode =
                         (dynamic_line_raster_mode) ? cb_state.dynamic_state_value.line_rasterization_mode
                                                    : raster_line_state->lineRasterizationMode;
                     const bool stippled_line_enable = (dynamic_line_stipple_enable)
@@ -3071,40 +3071,40 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
                                                           : raster_line_state->stippledLineEnable;
 
                     if (stippled_line_enable) {
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR &&
                             (!enabled_features.stippledRectangularLines)) {
                             const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                             skip |= LogError(vuid.stippled_rectangular_lines_07495, objlist, loc,
-                                             "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
+                                             "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR (set %s) with "
                                              "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
                                              dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                              dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                         }
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR &&
                             (!enabled_features.stippledBresenhamLines)) {
                             const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                             skip |= LogError(vuid.stippled_bresenham_lines_07496, objlist, loc,
-                                             "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
+                                             "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR (set %s) with "
                                              "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
                                              dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                              dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                         }
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR &&
                             (!enabled_features.stippledSmoothLines)) {
                             const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                             skip |=
                                 LogError(vuid.stippled_smooth_lines_07497, objlist, loc,
-                                         "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
+                                         "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR (set %s) with "
                                          "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
                                          dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                          dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                         }
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR &&
                             (!enabled_features.stippledRectangularLines || !phys_dev_props.limits.strictLines)) {
                             const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                             skip |= LogError(
                                 vuid.stippled_default_strict_07498, objlist, loc,
-                                "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
+                                "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR (set %s) with "
                                 "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
                                 dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                 dynamic_line_stipple_enable ? "dynamically" : "in pipeline",

@@ -1526,7 +1526,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
                 helper.pipe_ms_state_ci_.alphaToCoverageEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1538,7 +1538,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1550,7 +1550,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1562,7 +1562,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1573,7 +1573,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
