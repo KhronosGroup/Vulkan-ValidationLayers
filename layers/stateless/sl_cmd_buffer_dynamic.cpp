@@ -576,7 +576,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleKHR(VkCommandBu
     bool skip = false;
 
     if (lineStippleFactor < 1 || lineStippleFactor > 256) {
-        skip |= LogError("VUID-vkCmdSetLineStippleEXT-lineStippleFactor-02776", commandBuffer,
+        skip |= LogError("VUID-vkCmdSetLineStippleKHR-lineStippleFactor-02776", commandBuffer,
                          error_obj.location.dot(Field::lineStippleFactor), "%" PRIu32 " is not in [1,256].", lineStippleFactor);
     }
 
