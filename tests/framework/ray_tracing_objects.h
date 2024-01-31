@@ -90,7 +90,8 @@ class GeometryKHR {
     GeometryKHR& AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas);
     GeometryKHR& SetInstancesDeviceAddress(VkDeviceAddress address);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i);
-
+	GeometryKHR& SetInstanceHostAddress(void* address);
+    
     GeometryKHR& Build();
 
     const auto& GetVkObj() const { return vk_obj_; }
@@ -169,7 +170,9 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as);
     BuildGeometryInfoKHR& SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as);
     BuildGeometryInfoKHR& SetScratchBuffer(std::shared_ptr<vkt::Buffer> scratch_buffer);
+    BuildGeometryInfoKHR& SetHostScratchBuffer(std::unique_ptr<uint8_t[]>&& host_scratch);
     BuildGeometryInfoKHR& SetDeviceScratchOffset(VkDeviceAddress offset);
+    BuildGeometryInfoKHR& SetEnableScratchBuild(bool build_scratch);
     BuildGeometryInfoKHR& SetBottomLevelAS(std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as);
     // Should be 0 or 1
     BuildGeometryInfoKHR& SetInfoCount(uint32_t info_count);
@@ -218,6 +221,7 @@ class BuildGeometryInfoKHR {
     VkAccelerationStructureBuildTypeKHR build_type_;
     std::vector<GeometryKHR> geometries_;
     std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
+    bool build_scratch_ = true;
     VkDeviceAddress device_scratch_offset_ = 0;
     std::shared_ptr<vkt::Buffer> device_scratch_;
     std::unique_ptr<uint8_t[]> host_scratch_;
