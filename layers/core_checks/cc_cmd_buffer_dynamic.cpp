@@ -1224,7 +1224,9 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, objlist, loc,
                                               vuid.set_stencil_reference_08625);
         }
-        if (IsExtEnabled(device_extensions.vk_ext_line_rasterization) && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
+        const bool line_rasterization_extension =
+            IsExtEnabled(device_extensions.vk_ext_line_rasterization) || IsExtEnabled(device_extensions.vk_khr_line_rasterization);
+        if (line_rasterization_extension && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
             if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   objlist, loc, vuid.set_line_rasterization_mode_08666);
@@ -1239,7 +1241,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
         if (vertex_shader_bound) {
             if (isLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
-                if (IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
+                if (line_rasterization_extension) {
                     skip |=
                         ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   objlist, loc, vuid.set_line_rasterization_mode_08667);
@@ -1252,7 +1254,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
 
         if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
-            if (IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
+            if (line_rasterization_extension) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   objlist, loc, vuid.set_line_rasterization_mode_08668);
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
