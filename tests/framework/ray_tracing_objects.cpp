@@ -586,7 +586,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
 
     pGeometries.reserve(geometries_.size());
-    for (const auto [i, geometry] : vvl::enumerate(geometries_.data(), geometries_.size())) {
+    for (const auto [i, geometry] : vvl::enumerate(geometries_)) {
         pGeometries[i] = &geometry->GetVkObj();
         ranges_info[i] = geometry->GetFullBuildRange();
     }
@@ -686,7 +686,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
 
 std::vector<VkAccelerationStructureBuildRangeInfoKHR> BuildGeometryInfoKHR::GetDefaultBuildRangeInfos() {
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
-    for (const auto [i, geometry] : vvl::enumerate(geometries_.data(), geometries_.size())) {
+    for (const auto [i, geometry] : vvl::enumerate(geometries_)) {
         range_infos[i] = geometry->GetFullBuildRange();
     }
 
@@ -1197,7 +1197,7 @@ void Pipeline::BuildPipeline() {
         raygen_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group_cis_.emplace_back(raygen_group_ci);
     }
-    for (const auto [miss_shader_i, miss_shader] : vvl::enumerate(miss_shaders_.data(), miss_shaders_.size())) {
+    for (const auto [miss_shader_i, miss_shader] : vvl::enumerate(miss_shaders_)) {
         VkPipelineShaderStageCreateInfo raygen_stage_ci = vku::InitStructHelper();
         raygen_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
         raygen_stage_ci.module = *miss_shader->get();

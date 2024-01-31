@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 The Khronos Group Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -419,7 +419,7 @@ TEST(CustomContainer, Enumerate) {
     small_vector<int, 2, size_t> sv = {1, 2, 3, 4};
     std::array ref_elements = {1, 2, 3, 4};
     size_t indices_i = 0;
-    for (auto [i, x] : vvl::enumerate(sv.data(), sv.size())) {
+    for (auto [i, x] : vvl::enumerate(sv)) {
         ASSERT_TRUE(i == indices_i);
         ASSERT_TRUE(*x == ref_elements[indices_i]);
         ++indices_i;

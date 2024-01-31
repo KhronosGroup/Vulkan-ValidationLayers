@@ -954,6 +954,14 @@ enumeration<T, IndexedIterator<T>> enumerate(T *begin, T *end) {
     return enumeration<T, IndexedIterator<T>>(begin, end);
 }
 
+template <typename Container>
+enumeration<typename Container::value_type, IndexedIterator<typename Container::value_type, typename Container::size_type>>
+enumerate(Container &container) {
+    return enumeration<typename Container::value_type,
+                       IndexedIterator<typename Container::value_type, typename Container::size_type>>(container.data(),
+                                                                                                       container.size());
+}
+
 template <typename BaseType>
 using base_type =
     typename std::remove_reference<typename std::remove_const<typename std::remove_pointer<BaseType>::type>::type>::type;
