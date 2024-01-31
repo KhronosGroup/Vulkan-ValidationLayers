@@ -1293,8 +1293,8 @@ const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageEr
     static const std::map<ShaderTileImageError, std::vector<Entry>> kShaderTileImageErrors{
         {ShaderTileImageError::kShaderTileImageFeatureError,
          {
-             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-shaderTileImageColorReadAccess-08718"},
-             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-shaderTileImageColorReadAccess-08718"},
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09553"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09553"},
          }},
         {ShaderTileImageError::kShaderTileImageBarrierError,
          {

@@ -2451,7 +2451,7 @@ bool CoreChecks::ValidateShaderTimeImageCommon(const LogObjectList &objlist, con
     const bool features_enabled = enabled_features.shaderTileImageColorReadAccess ||
                                   enabled_features.shaderTileImageDepthReadAccess ||
                                   enabled_features.shaderTileImageStencilReadAccess;
-    if (!features_enabled) {
+    if (!features_enabled && !enabled_features.dynamicRenderingLocalRead) {
         const auto &feature_error_vuid =
             sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageFeatureError);
         skip |= LogError(feature_error_vuid, objlist, outer_loc,
