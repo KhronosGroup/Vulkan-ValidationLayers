@@ -85,6 +85,18 @@ const Instruction* Function::FindInstruction(uint32_t id) const {
     return (it == inst_map_.end()) ? nullptr : it->second;
 }
 
+void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id) {
+    for (auto& block : blocks_) {
+        for (auto inst_it = block->instructions_.begin(); inst_it != block->instructions_.end(); ++inst_it) {
+            if ((*inst_it)->ResultId() == id) {
+                inst_it++;  // insert after
+                block->CreateInstruction(opcode, words, &inst_it);
+                return;
+            }
+        }
+    }
+}
+
 // Will not touch control flow logic
 void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
     // Shouldn't have to replace anything outside the IDs in function blocks.

@@ -231,10 +231,15 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
     if (image_inst_) {
         // Get Texel buffer offset
         const uint32_t opcode = target_instruction_->Opcode();
-        const uint32_t inst_length = target_instruction_->Length();
-        // TODO - Add support if there are image operands
-        if ((opcode == spv::OpImageRead && inst_length == 5) || (opcode == spv::OpImageFetch && inst_length == 5) ||
-            (opcode == spv::OpImageWrite && inst_length == 4)) {
+        if (opcode == spv::OpImageRead || opcode == spv::OpImageFetch || opcode == spv::OpImageWrite) {
+            const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
+            if (target_instruction_->Length() > image_operand_position) {
+                const uint32_t image_operand_word = target_instruction_->Word(image_operand_position);
+                if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
+                    // TODO - Add support if there are image operands (like offset)
+                }
+            }
+
             const Type* image_type = module_.type_manager_.FindTypeById(image_inst_->TypeId());
             const uint32_t dim = image_type->inst_.Operand(1);
             if (dim == spv::DimBuffer) {
@@ -250,19 +255,24 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block) {
             // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
             // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
             uint32_t image_id = target_instruction_->Operand(0);
-            const uint32_t copy_id = module_.TakeNextId();
-            const uint32_t type_id = block.function_.FindInstruction(image_id)->TypeId();
-            const_cast<Instruction*>(target_instruction_)->ReplaceOperandId(image_id, copy_id);
+            const Instruction* sampled_image_inst = block.function_.FindInstruction(image_id);
+            // TODO - Add tests to understand what else can be here other then OpSampledImage
+            if (sampled_image_inst->Opcode() == spv::OpSampledImage) {
+                const uint32_t type_id = sampled_image_inst->TypeId();
+                const uint32_t copy_id = module_.TakeNextId();
+                const_cast<Instruction*>(target_instruction_)->ReplaceOperandId(image_id, copy_id);
 
-            // incase the OpSampledImage is shared, copy the previous OpCopyObject
-            auto copied = copy_object_map_.find(image_id);
-            if (copied != copy_object_map_.end()) {
-                image_id = copied->second;
-            } else {
-                copy_object_map_.emplace(image_id, copy_id);
+                // incase the OpSampledImage is shared, copy the previous OpCopyObject
+                auto copied = copy_object_map_.find(image_id);
+                if (copied != copy_object_map_.end()) {
+                    image_id = copied->second;
+                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id});
+                } else {
+                    copy_object_map_.emplace(image_id, copy_id);
+                    // slower, but need to guarantee it is placed after a OpSampledImage
+                    block.function_.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, image_id);
+                }
             }
-
-            block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id});
         }
     } else {
         // For now, only do bounds check for non-aggregate types

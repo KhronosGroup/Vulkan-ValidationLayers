@@ -109,16 +109,30 @@ void Instruction::ReplaceOperandId(uint32_t old_word, uint32_t new_word) {
     const uint32_t length = Length();
     uint32_t type_index = 0;
     // Use length as some operands can be optional at the end
-    for (uint32_t i = operand_index_; i < length; i++, type_index++) {
-        if (words_[i] != old_word) {
+    for (uint32_t word_index = operand_index_; word_index < length; word_index++, type_index++) {
+        if (words_[word_index] != old_word) {
             continue;
         }
-        // If the last operands are a wildcard use the last kind for the remaining words
-        OperandKind kind = (type_index < operand_info_.types.size()) ? operand_info_.types[type_index] : operand_info_.types.back();
+
+        OperandKind kind = OperandKind::Invalid;
+        if (type_index < operand_info_.types.size()) {
+            kind = operand_info_.types[type_index];
+        } else {
+            // If the last operands are a wildcard use the last kind for the remaining words
+            kind = operand_info_.types.back();
+            if (kind == OperandKind::BitEnum) {
+                // ImageOperands may be found, their optional parameters will always have an Id
+                const uint32_t image_operand_position = OpcodeImageOperandsPosition(Opcode());
+                if (image_operand_position != 0 && word_index > image_operand_position) {
+                    kind = OperandKind::Id;
+                }
+            }
+        }
+
         // insructions like OpPhi will be Composite which are just groups of Ids
         // We are not trying to replace/mess with with Control Flow, so all OperandKind::Label are ignored on purpose
         if (kind == OperandKind::Id || kind == OperandKind::Composite) {
-            words_[i] = new_word;
+            words_[word_index] = new_word;
             UpdateDebugInfo();
         }
     }

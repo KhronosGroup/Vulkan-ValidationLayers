@@ -1265,6 +1265,7 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
 }
 
 enum class OperandKind {
+    Invalid = 0,
     Id,
     Label,  // Id but for Control Flow
     Literal,

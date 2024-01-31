@@ -1807,7 +1807,7 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
         return false;
     }
 
-    uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
+    const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
     // Image operands can be optional
     if (image_operand_position == 0 || insn.Length() <= image_operand_position) {
         return false;
