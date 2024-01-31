@@ -105,24 +105,24 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out.append('enum class Struct {\n')
         out.append('    Empty = 0,\n')
         # Want alpha-sort for ease of look at list while debugging
-        for struct in sorted(self.vk.structs.values()):
-            out.append(f'    {struct.name},\n')
+        for index, struct in enumerate(sorted(self.vk.structs.values()), start=1):
+            out.append(f'    {struct.name} = {index},\n')
         out.append('};\n')
 
         out.append('\n')
         out.append('enum class Field {\n')
         out.append('    Empty = 0,\n')
         # Already alpha-sorted
-        for field in self.fields:
-            out.append(f'    {field},\n')
+        for index, field in enumerate(self.fields, start=1):
+            out.append(f'    {field} = {index},\n')
         out.append('};\n')
 
         out.append('\n')
         out.append('// Need underscore prefix to not conflict with namespace, but still easy to match generation\n')
         out.append('enum class Extension {\n')
         out.append('    Empty = 0,\n')
-        for extension in sorted(self.vk.extensions.values(), key=lambda x: x.name):
-            out.append(f'    _{extension.name},\n')
+        for index, extension in enumerate(sorted(self.vk.extensions.values(), key=lambda x: x.name), start=1):
+            out.append(f'    _{extension.name} = {index},\n')
         out.append('};\n')
 
         out.append('''
