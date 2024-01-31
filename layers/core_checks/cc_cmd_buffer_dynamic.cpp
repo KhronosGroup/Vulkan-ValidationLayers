@@ -2335,21 +2335,21 @@ bool CoreChecks::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer c
     skip |= ValidateExtendedDynamicState(
         *cb_state, error_obj.location, enabled_features.extendedDynamicState3LineRasterizationMode || enabled_features.shaderObject,
         "VUID-vkCmdSetLineRasterizationModeEXT-None-09423", "extendedDynamicState3LineRasterizationMode or shaderObject");
-    if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT && !enabled_features.rectangularLines) {
+    if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR && !enabled_features.rectangularLines) {
         skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418", commandBuffer,
                          error_obj.location.dot(Field::lineRasterizationMode),
-                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT "
+                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR "
                          "but the rectangularLines feature was not enabled.");
-    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT && !enabled_features.bresenhamLines) {
+    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR && !enabled_features.bresenhamLines) {
         skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419", commandBuffer,
                          error_obj.location.dot(Field::lineRasterizationMode),
-                         "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT "
+                         "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR "
                          "but the bresenhamLines feature was not enabled.");
-    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT && !enabled_features.smoothLines) {
+    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR && !enabled_features.smoothLines) {
         skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420", commandBuffer,
                          error_obj.location.dot(Field::lineRasterizationMode),
                          "is "
-                         "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature was not enabled.");
+                         "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR but the smoothLines feature was not enabled.");
     }
     return skip;
 }

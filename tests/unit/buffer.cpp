@@ -615,7 +615,7 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
 
     // Test for missing pNext struct for index buffer UINT8 type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-indexType-08787");
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 1, VK_INDEX_TYPE_UINT8_EXT);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 1, VK_INDEX_TYPE_UINT8_KHR);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -648,7 +648,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
 
     // Test for missing pNext struct for index buffer UINT8 type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer2KHR-indexType-08787");
-    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT8_EXT);
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT8_KHR);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();

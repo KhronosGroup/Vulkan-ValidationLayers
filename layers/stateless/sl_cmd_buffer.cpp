@@ -38,9 +38,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
     }
 
     const auto *index_type_uint8_features = vku::FindStructInPNextChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
-    if (indexType == VK_INDEX_TYPE_UINT8_EXT && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
+    if (indexType == VK_INDEX_TYPE_UINT8_KHR && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
         skip |= LogError("VUID-vkCmdBindIndexBuffer-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
-                         "is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature was not enabled.");
+                         "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
     }
 
     return skip;
@@ -54,12 +54,12 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommand
     if (indexType == VK_INDEX_TYPE_NONE_KHR) {
         skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08786", commandBuffer, error_obj.location.dot(Field::indexType),
                          "is VK_INDEX_TYPE_NONE_KHR.");
-    } else if (indexType == VK_INDEX_TYPE_UINT8_EXT) {
+    } else if (indexType == VK_INDEX_TYPE_UINT8_KHR) {
         const auto *index_type_uint8_features = vku::FindStructInPNextChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
         if (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8) {
             skip |=
                 LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
-                         "is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature was not enabled.");
+                         "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
         }
     }
 

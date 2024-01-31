@@ -491,10 +491,10 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
         VkAttachmentDescription attachment = {};
         attachment.format = format;
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
+        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
         attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
         attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         return attachment;
@@ -551,14 +551,14 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = helper.rt_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
     color_attachment.clearValue.color = m_clear_color;
 
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageView = helper.ds_view;
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
     depth_attachment.clearValue.color = m_clear_color;
 
@@ -2499,10 +2499,10 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
 
     vkt::RenderPass rp_no_load_store;
     if (load_store_op_none) {
-        attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-        attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
-        attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-        attachmentDescriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
+        attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
+        attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
+        attachmentDescriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
         rp_no_load_store.init(*m_device, renderPassInfo);
         m_renderPassBeginInfo.renderPass = rp_no_load_store.handle();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

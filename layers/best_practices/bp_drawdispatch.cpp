@@ -255,7 +255,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
         for (const uint8_t* scan_ptr = scan_begin; scan_ptr < scan_end; scan_ptr += scan_stride) {
             uint32_t scan_index;
             uint32_t primitive_restart_value;
-            if (ib_type == VK_INDEX_TYPE_UINT8_EXT) {
+            if (ib_type == VK_INDEX_TYPE_UINT8_KHR) {
                 scan_index = *reinterpret_cast<const uint8_t*>(scan_ptr);
                 primitive_restart_value = 0xFF;
             } else if (ib_type == VK_INDEX_TYPE_UINT16) {
@@ -308,7 +308,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
         // Knowing the size from the last scan allows us to record index usage with bitsets
         for (const uint8_t* scan_ptr = scan_begin; scan_ptr < scan_end; scan_ptr += scan_stride) {
             uint32_t scan_index;
-            if (ib_type == VK_INDEX_TYPE_UINT8_EXT) {
+            if (ib_type == VK_INDEX_TYPE_UINT8_KHR) {
                 scan_index = *reinterpret_cast<const uint8_t*>(scan_ptr);
             } else if (ib_type == VK_INDEX_TYPE_UINT16) {
                 scan_index = *reinterpret_cast<const uint16_t*>(scan_ptr);

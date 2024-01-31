@@ -347,7 +347,7 @@ static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
             return 2;
         case VK_INDEX_TYPE_UINT32:
             return 4;
-        case VK_INDEX_TYPE_UINT8_EXT:
+        case VK_INDEX_TYPE_UINT8_KHR:
             return 1;
         case VK_INDEX_TYPE_NONE_KHR:  // alias VK_INDEX_TYPE_NONE_NV
             return 0;

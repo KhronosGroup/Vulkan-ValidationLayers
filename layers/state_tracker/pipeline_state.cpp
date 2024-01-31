@@ -206,7 +206,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
                 case VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE:
                 case VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
                 case VK_DYNAMIC_STATE_POLYGON_MODE_EXT:
-                case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
+                case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
                 case VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
                 case VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
                 case VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
