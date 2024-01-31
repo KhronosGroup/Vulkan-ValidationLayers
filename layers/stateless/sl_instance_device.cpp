@@ -25,7 +25,7 @@ bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions
     if (extension == vvl::Extension::Empty) {
         return skip;
     }
-    auto info = ExtensionState::get_info(extension);
+    auto info = ExtensionState::GetInfo(extension);
 
     if (!info.state) {
         return skip;  // Unknown extensions cannot be checked so report OK
@@ -50,7 +50,7 @@ bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions
 
 template <typename ExtensionState>
 ExtEnabled ExtensionStateByName(const ExtensionState &extensions, vvl::Extension extension) {
-    auto info = ExtensionState::get_info(extension);
+    auto info = ExtensionState::GetInfo(extension);
     // unknown extensions can't be enabled in extension struct
     ExtEnabled state = info.state ? extensions.*(info.state) : kNotEnabled;
     return state;

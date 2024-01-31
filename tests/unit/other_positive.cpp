@@ -514,7 +514,7 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     //       So, this test will only catch an erroneous extension _if_ run on HW/a driver that crashes in this use
     //       case.
 
-    for (const auto &ext : InstanceExtensions::get_info_map()) {
+    for (const auto &ext : InstanceExtensions::GetInfoMap()) {
         // Add all "real" instance extensions
         if (InstanceExtensionSupported(String(ext.first))) {
             bool version_required = false;

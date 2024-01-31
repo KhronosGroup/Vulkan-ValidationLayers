@@ -1789,7 +1789,7 @@ const vvl::unordered_map<std::string, small_vector<vvl::Extension, 2, size_t>> a
 bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info) {
     auto promoted_api = api_promoted_map.find(api_name);
     if (promoted_api != api_promoted_map.end()) {
-        auto info = device_extension_info->get_version_map(promoted_api->second.c_str());
+        auto info = GetDeviceVersionMap(promoted_api->second.c_str());
         assert(info.state);
         return (device_extension_info->*(info.state) == kEnabledByCreateinfo);
     }
@@ -1799,7 +1799,7 @@ bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtension
     if (has_ext != api_extension_map.end()) {
         // Was the extension for this API enabled in the CreateDevice call?
         for (const auto& extension : has_ext->second) {
-            auto info = device_extension_info->get_info(extension);
+            auto info = device_extension_info->GetInfo(extension);
             if (info.state) {
                 if (device_extension_info->*(info.state) == kEnabledByCreateinfo ||
                     device_extension_info->*(info.state) == kEnabledByInteraction) {
@@ -1811,7 +1811,7 @@ bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtension
         // Was the extension for this API enabled in the CreateInstance call?
         auto instance_extension_info = static_cast<const InstanceExtensions*>(device_extension_info);
         for (const auto& extension : has_ext->second) {
-            auto info = instance_extension_info->get_info(extension);
+            auto info = instance_extension_info->GetInfo(extension);
             if (info.state) {
                 if (instance_extension_info->*(info.state) == kEnabledByCreateinfo ||
                     instance_extension_info->*(info.state) == kEnabledByInteraction) {

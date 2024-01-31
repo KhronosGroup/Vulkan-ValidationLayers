@@ -284,7 +284,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDeviceGroupDeviceCreateInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO: {  // Covers VUID-VkDeviceGroupDeviceCreateInfo-sType-sType
 
-            if (!instance_extensions.vk_khr_device_group_creation) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_device_group_creation)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO), but "
                                  "its parent extension "
@@ -302,7 +302,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFeatures2 structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2: {  // Covers VUID-VkPhysicalDeviceFeatures2-sType-sType
 
-            if (!instance_extensions.vk_khr_get_physical_device_properties2) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2), but its "
                                  "parent extension "
@@ -748,7 +748,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO: {  // Covers
                                                                               // VUID-VkPhysicalDeviceExternalImageFormatInfo-sType-sType
 
-            if (!instance_extensions.vk_khr_external_memory_capabilities) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_external_memory_capabilities)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType "
                                  "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO), but its parent extension "
@@ -766,7 +766,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkExternalImageFormatProperties structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: {  // Covers VUID-VkExternalImageFormatProperties-sType-sType
 
-            if (!instance_extensions.vk_khr_external_memory_capabilities) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_external_memory_capabilities)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES), "
                                  "but its parent extension "
@@ -777,7 +777,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceIDProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: {  // Covers VUID-VkPhysicalDeviceIDProperties-sType-sType
 
-            if (!instance_extensions.vk_khr_external_fence_capabilities) {
+            if (!IsExtEnabled(instance_extensions.vk_khr_external_fence_capabilities)) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES), but "
                                  "its parent extension "
@@ -15903,7 +15903,7 @@ bool StatelessValidation::PreCallValidateDestroySurfaceKHR(VkInstance instance, 
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
@@ -15938,7 +15938,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPh
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= ValidateRequiredPointer(loc.dot(Field::pSupported), pSupported,
                                     "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-pSupported-parameter");
@@ -15951,7 +15951,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR
                                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurfaceCapabilities), pSurfaceCapabilities,
                                     "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-pSurfaceCapabilities-parameter");
@@ -15968,7 +15968,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPh
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= ValidatePointerArray(loc.dot(Field::pSurfaceFormatCount), loc.dot(Field::pSurfaceFormats), pSurfaceFormatCount,
                                  &pSurfaceFormats, true, false, false,
                                  "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormatCount-parameter", kVUIDUndefined,
@@ -15991,7 +15991,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR
                                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |=
         ValidatePointerArray(loc.dot(Field::pPresentModeCount), loc.dot(Field::pPresentModes), pPresentModeCount, &pPresentModes,
                              true, false, false, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModeCount-parameter",
@@ -16273,7 +16273,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(V
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
                                  false, false, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pPropertyCount-parameter",
                                  kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pProperties-parameter");
@@ -16292,7 +16292,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
                                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
                                  false, false, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pPropertyCount-parameter",
                                  kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pProperties-parameter");
@@ -16310,7 +16310,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkP
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidatePointerArray(loc.dot(Field::pDisplayCount), loc.dot(Field::pDisplays), pDisplayCount, &pDisplays, true, false,
                                  false, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplayCount-parameter", kVUIDUndefined,
                                  "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplays-parameter");
@@ -16323,7 +16323,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalD
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true,
                                  false, false, "VUID-vkGetDisplayModePropertiesKHR-pPropertyCount-parameter", kVUIDUndefined,
@@ -16343,7 +16343,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice p
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR", pCreateInfo,
                                VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR, true,
@@ -16395,7 +16395,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysic
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidateRequiredHandle(loc.dot(Field::mode), mode);
     skip |= ValidateRequiredPointer(loc.dot(Field::pCapabilities), pCapabilities,
                                     "VUID-vkGetDisplayPlaneCapabilitiesKHR-pCapabilities-parameter");
@@ -16412,7 +16412,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance
                                                                       VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR", pCreateInfo,
                                VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR, true,
                                "VUID-vkCreateDisplayPlaneSurfaceKHR-pCreateInfo-parameter",
@@ -16584,7 +16584,8 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(VkInstance instanc
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_xlib_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_xlib_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR", pCreateInfo,
                                VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR, true,
                                "VUID-vkCreateXlibSurfaceKHR-pCreateInfo-parameter", "VUID-VkXlibSurfaceCreateInfoKHR-sType-sType");
@@ -16632,7 +16633,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceXlibPresentationSuppor
                                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_xlib_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_xlib_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
     skip |= ValidateRequiredPointer(loc.dot(Field::dpy), dpy, "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-dpy-parameter");
     return skip;
 }
@@ -16644,7 +16646,8 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(VkInstance instance
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_xcb_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_xcb_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR", pCreateInfo,
                                VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR, true,
                                "VUID-vkCreateXcbSurfaceKHR-pCreateInfo-parameter", "VUID-VkXcbSurfaceCreateInfoKHR-sType-sType");
@@ -16693,7 +16696,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceXcbPresentationSupport
                                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_xcb_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_xcb_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
     skip |= ValidateRequiredPointer(loc.dot(Field::connection), connection,
                                     "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-connection-parameter");
     return skip;
@@ -16707,7 +16711,8 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(VkInstance inst
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_wayland_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_wayland_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_wayland_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_wayland_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR", pCreateInfo,
                                VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR, true,
                                "VUID-vkCreateWaylandSurfaceKHR-pCreateInfo-parameter",
@@ -16756,7 +16761,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceWaylandPresentationSup
                                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_wayland_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_wayland_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_wayland_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_wayland_surface});
     skip |= ValidateRequiredPointer(loc.dot(Field::display), display,
                                     "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-display-parameter");
     return skip;
@@ -16770,7 +16776,8 @@ bool StatelessValidation::PreCallValidateCreateAndroidSurfaceKHR(VkInstance inst
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_android_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_android_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_android_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_android_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR", pCreateInfo,
                                VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR, true,
                                "VUID-vkCreateAndroidSurfaceKHR-pCreateInfo-parameter",
@@ -16820,7 +16827,8 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(VkInstance instan
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_win32_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_win32_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
     skip |=
         ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR", pCreateInfo,
                            VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR, true,
@@ -16868,7 +16876,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceWin32PresentationSuppo
                                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_win32_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
+    if (!IsExtEnabled(instance_extensions.vk_khr_win32_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
     // No xml-driven validation
     return skip;
 }
@@ -17591,7 +17600,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2KHR(VkPhysica
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, error_obj);
     return skip;
@@ -17602,7 +17611,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceProperties2(physicalDevice, pProperties, error_obj);
     return skip;
@@ -17613,7 +17622,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(V
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, error_obj);
     return skip;
@@ -17624,7 +17633,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     VkImageFormatProperties2* pImageFormatProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |=
         PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, error_obj);
@@ -17636,7 +17645,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                    pQueueFamilyProperties, error_obj);
@@ -17648,7 +17657,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(V
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, error_obj);
     return skip;
@@ -17659,7 +17668,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     VkSparseImageFormatProperties2* pProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_physical_device_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties,
                                                                          error_obj);
@@ -17716,7 +17725,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_device_group_creation)
+    if (!IsExtEnabled(instance_extensions.vk_khr_device_group_creation))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group_creation});
     skip |= PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                          error_obj);
@@ -17728,7 +17737,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     VkExternalBufferProperties* pExternalBufferProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_external_memory_capabilities)
+    if (!IsExtEnabled(instance_extensions.vk_khr_external_memory_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_memory_capabilities});
     skip |= PreCallValidateGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties,
                                                                      error_obj);
@@ -17844,7 +17853,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_external_semaphore_capabilities)
+    if (!IsExtEnabled(instance_extensions.vk_khr_external_semaphore_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_semaphore_capabilities});
     skip |= PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                         pExternalSemaphoreProperties, error_obj);
@@ -18127,7 +18136,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
     VkExternalFenceProperties* pExternalFenceProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_external_fence_capabilities)
+    if (!IsExtEnabled(instance_extensions.vk_khr_external_fence_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_fence_capabilities});
     skip |= PreCallValidateGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties,
                                                                     error_obj);
@@ -18338,7 +18347,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KH
     VkSurfaceCapabilities2KHR* pSurfaceCapabilities, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_surface_capabilities2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_surface_capabilities2});
     skip |= ValidateStructType(loc.dot(Field::pSurfaceInfo), "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR", pSurfaceInfo,
                                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
@@ -18389,7 +18398,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkP
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_surface_capabilities2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_surface_capabilities2});
     skip |= ValidateStructType(loc.dot(Field::pSurfaceInfo), "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR", pSurfaceInfo,
                                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
@@ -18434,7 +18443,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
                                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_display_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= ValidateStructTypeArray(
         loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR", pPropertyCount,
@@ -18458,7 +18467,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
                                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_display_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= ValidateStructTypeArray(
         loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), "VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR",
@@ -18482,7 +18491,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(VkPhysical
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_display_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= ValidateStructTypeArray(
@@ -18507,7 +18516,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysi
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_khr_get_display_properties2)
+    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= ValidateStructType(loc.dot(Field::pDisplayPlaneInfo), "VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR", pDisplayPlaneInfo,
                                VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR, true,
@@ -20024,7 +20033,8 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(VkInstance
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_report) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_report))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT", pCreateInfo,
                                VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, true,
                                "VUID-vkCreateDebugReportCallbackEXT-pCreateInfo-parameter",
@@ -20076,7 +20086,8 @@ bool StatelessValidation::PreCallValidateDestroyDebugReportCallbackEXT(VkInstanc
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_report) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_report))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
@@ -20111,7 +20122,8 @@ bool StatelessValidation::PreCallValidateDebugReportMessageEXT(VkInstance instan
                                                                const char* pMessage, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_report) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_report))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     skip |= ValidateFlags(loc.dot(Field::flags), "VkDebugReportFlagBitsEXT", AllVkDebugReportFlagBitsEXT, flags, kRequiredFlags,
                           "VUID-vkDebugReportMessageEXT-flags-parameter", "VUID-vkDebugReportMessageEXT-flags-requiredbitmask");
     skip |= ValidateRangedEnum(loc.dot(Field::objectType), "VkDebugReportObjectTypeEXT", objectType,
@@ -20600,7 +20612,7 @@ bool StatelessValidation::PreCallValidateCreateStreamDescriptorSurfaceGGP(VkInst
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ggp_stream_descriptor_surface)
+    if (!IsExtEnabled(instance_extensions.vk_ggp_stream_descriptor_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_GGP_stream_descriptor_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP",
                                pCreateInfo, VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP, true,
@@ -20651,7 +20663,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalImageFormatPro
     VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_nv_external_memory_capabilities)
+    if (!IsExtEnabled(instance_extensions.vk_nv_external_memory_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_memory_capabilities});
     skip |= ValidateRangedEnum(loc.dot(Field::format), "VkFormat", format,
                                "VUID-vkGetPhysicalDeviceExternalImageFormatPropertiesNV-format-parameter");
@@ -20701,7 +20713,7 @@ bool StatelessValidation::PreCallValidateCreateViSurfaceNN(VkInstance instance, 
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_nn_vi_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NN_vi_surface});
+    if (!IsExtEnabled(instance_extensions.vk_nn_vi_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NN_vi_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN", pCreateInfo,
                                VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN, true, "VUID-vkCreateViSurfaceNN-pCreateInfo-parameter",
                                "VUID-VkViSurfaceCreateInfoNN-sType-sType");
@@ -20807,7 +20819,7 @@ bool StatelessValidation::PreCallValidateReleaseDisplayEXT(VkPhysicalDevice phys
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_direct_mode_display)
+    if (!IsExtEnabled(instance_extensions.vk_ext_direct_mode_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_direct_mode_display});
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     return skip;
@@ -20818,7 +20830,7 @@ bool StatelessValidation::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice 
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_acquire_xlib_display)
+    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_xlib_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_xlib_display});
     skip |= ValidateRequiredPointer(loc.dot(Field::dpy), dpy, "VUID-vkAcquireXlibDisplayEXT-dpy-parameter");
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
@@ -20829,7 +20841,7 @@ bool StatelessValidation::PreCallValidateGetRandROutputDisplayEXT(VkPhysicalDevi
                                                                   VkDisplayKHR* pDisplay, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_acquire_xlib_display)
+    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_xlib_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_xlib_display});
     skip |= ValidateRequiredPointer(loc.dot(Field::dpy), dpy, "VUID-vkGetRandROutputDisplayEXT-dpy-parameter");
     skip |= ValidateRequiredPointer(loc.dot(Field::pDisplay), pDisplay, "VUID-vkGetRandROutputDisplayEXT-pDisplay-parameter");
@@ -20843,7 +20855,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EX
                                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_display_surface_counter)
+    if (!IsExtEnabled(instance_extensions.vk_ext_display_surface_counter))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_display_surface_counter});
     skip |= ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= ValidateStructType(loc.dot(Field::pSurfaceCapabilities), "VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT",
@@ -21114,7 +21126,8 @@ bool StatelessValidation::PreCallValidateCreateIOSSurfaceMVK(VkInstance instance
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_mvk_ios_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_ios_surface});
+    if (!IsExtEnabled(instance_extensions.vk_mvk_ios_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_ios_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK", pCreateInfo,
                                VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK, true,
                                "VUID-vkCreateIOSSurfaceMVK-pCreateInfo-parameter", "VUID-VkIOSSurfaceCreateInfoMVK-sType-sType");
@@ -21162,7 +21175,8 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(VkInstance instan
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_mvk_macos_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_macos_surface});
+    if (!IsExtEnabled(instance_extensions.vk_mvk_macos_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_macos_surface});
     skip |=
         ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK", pCreateInfo,
                            VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK, true,
@@ -21209,7 +21223,8 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice dev
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateStructType(loc.dot(Field::pNameInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT", pNameInfo,
                                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, true,
                                "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-parameter",
@@ -21230,7 +21245,8 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice devi
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |=
         ValidateStructType(loc.dot(Field::pTagInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT", pTagInfo,
                            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT, true,
@@ -21255,7 +21271,8 @@ bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue qu
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateStructType(loc.dot(Field::pLabelInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo,
                                VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                "VUID-vkQueueBeginDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -21273,7 +21290,8 @@ bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue qu
 bool StatelessValidation::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queue, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     // No xml-driven validation
     return skip;
 }
@@ -21282,7 +21300,8 @@ bool StatelessValidation::PreCallValidateQueueInsertDebugUtilsLabelEXT(VkQueue q
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateStructType(
         loc.dot(Field::pLabelInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
         true, "VUID-vkQueueInsertDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -21302,7 +21321,8 @@ bool StatelessValidation::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuf
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateStructType(loc.dot(Field::pLabelInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo,
                                VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                "VUID-vkCmdBeginDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -21321,7 +21341,8 @@ bool StatelessValidation::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffe
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     // No xml-driven validation
     return skip;
 }
@@ -21331,7 +21352,8 @@ bool StatelessValidation::PreCallValidateCmdInsertDebugUtilsLabelEXT(VkCommandBu
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateStructType(loc.dot(Field::pLabelInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo,
                                VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                "VUID-vkCmdInsertDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -21353,7 +21375,8 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT", pCreateInfo,
                                VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, true,
                                "VUID-vkCreateDebugUtilsMessengerEXT-pCreateInfo-parameter",
@@ -21415,7 +21438,8 @@ bool StatelessValidation::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstanc
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= ValidateRequiredPointer(pAllocator_loc.dot(Field::pfnAllocation),
@@ -21451,7 +21475,8 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance i
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= ValidateFlags(loc.dot(Field::messageSeverity), "VkDebugUtilsMessageSeverityFlagBitsEXT",
                           AllVkDebugUtilsMessageSeverityFlagBitsEXT, messageSeverity, kRequiredSingleBit,
                           "VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter",
@@ -22964,7 +22989,7 @@ bool StatelessValidation::PreCallValidateCreateImagePipeSurfaceFUCHSIA(VkInstanc
                                                                        VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_fuchsia_imagepipe_surface)
+    if (!IsExtEnabled(instance_extensions.vk_fuchsia_imagepipe_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_imagepipe_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA", pCreateInfo,
                                VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA, true,
@@ -23014,7 +23039,8 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(VkInstance instan
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_metal_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_metal_surface});
+    if (!IsExtEnabled(instance_extensions.vk_ext_metal_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_metal_surface});
     skip |=
         ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT", pCreateInfo,
                            VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT, true,
@@ -23179,7 +23205,8 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(VkInstance ins
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_headless_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_headless_surface});
+    if (!IsExtEnabled(instance_extensions.vk_ext_headless_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_headless_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT", pCreateInfo,
                                VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT, true,
                                "VUID-vkCreateHeadlessSurfaceEXT-pCreateInfo-parameter",
@@ -23935,7 +23962,7 @@ bool StatelessValidation::PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice p
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_acquire_drm_display)
+    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_drm_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_drm_display});
     skip |= ValidateRequiredHandle(loc.dot(Field::display), display);
     return skip;
@@ -23945,7 +23972,7 @@ bool StatelessValidation::PreCallValidateGetDrmDisplayEXT(VkPhysicalDevice physi
                                                           VkDisplayKHR* display, const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_acquire_drm_display)
+    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_drm_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_drm_display});
     skip |= ValidateRequiredPointer(loc.dot(Field::display), display, "VUID-vkGetDrmDisplayEXT-display-parameter");
     return skip;
@@ -24496,7 +24523,8 @@ bool StatelessValidation::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance ins
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_directfb_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_directfb_surface});
+    if (!IsExtEnabled(instance_extensions.vk_ext_directfb_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_directfb_surface});
     skip |= ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT", pCreateInfo,
                                VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT, true,
                                "VUID-vkCreateDirectFBSurfaceEXT-pCreateInfo-parameter",
@@ -24543,7 +24571,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDirectFBPresentationSu
                                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_ext_directfb_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_directfb_surface});
+    if (!IsExtEnabled(instance_extensions.vk_ext_directfb_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_directfb_surface});
     skip |=
         ValidateRequiredPointer(loc.dot(Field::dfb), dfb, "VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-dfb-parameter");
     return skip;
@@ -25168,7 +25197,8 @@ bool StatelessValidation::PreCallValidateCreateScreenSurfaceQNX(VkInstance insta
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_qnx_screen_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_screen_surface});
+    if (!IsExtEnabled(instance_extensions.vk_qnx_screen_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_screen_surface});
     skip |=
         ValidateStructType(loc.dot(Field::pCreateInfo), "VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX", pCreateInfo,
                            VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX, true,
@@ -25216,7 +25246,8 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceScreenPresentationSupp
                                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!instance_extensions.vk_qnx_screen_surface) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_screen_surface});
+    if (!IsExtEnabled(instance_extensions.vk_qnx_screen_surface))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_screen_surface});
     skip |= ValidateRequiredPointer(loc.dot(Field::window), window,
                                     "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-window-parameter");
     return skip;

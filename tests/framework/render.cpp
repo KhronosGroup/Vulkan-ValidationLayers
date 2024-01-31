@@ -406,7 +406,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         return true;
     }
 
-    const auto &instance_exts_map = InstanceExtensions::get_info_map();
+    const auto &instance_exts_map = InstanceExtensions::GetInfoMap();
     bool is_instance_ext = false;
     vvl::Extension extension = GetExtension(ext_name);
     if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
@@ -420,7 +420,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a device or
     // instance extension
     if (is_instance_ext) {
-        const auto &info = InstanceExtensions::get_info(extension);
+        const auto &info = InstanceExtensions::GetInfo(extension);
         for (const auto &req : info.requirements) {
             if (0 == strncmp(req.name, "VK_VERSION", 10)) {
                 continue;
@@ -431,7 +431,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
-        const auto &info = DeviceExtensions::get_info(extension);
+        const auto &info = DeviceExtensions::GetInfo(extension);
         for (const auto &req : info.requirements) {
             if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
@@ -445,7 +445,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
 bool VkRenderFramework::IsPromotedInstanceExtension(const char *inst_ext_name) const {
     if (!m_target_api_version.Valid()) return false;
 
-    const auto promotion_info_map = InstanceExtensions::get_promotion_info_map();
+    const auto promotion_info_map = GetInstancePromotionInfoMap();
     for (const auto &version_it : promotion_info_map) {
         if (m_target_api_version >= version_it.first) {
             const auto promoted_exts = version_it.second.second;
@@ -477,7 +477,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
 
     // If this is an instance extension, just return true under the assumption instance extensions do not depend on any device
     // extensions.
-    const auto &instance_exts_map = InstanceExtensions::get_info_map();
+    const auto &instance_exts_map = InstanceExtensions::GetInfoMap();
     vvl::Extension extension = GetExtension(dev_ext_name);
     if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
         return true;
@@ -488,7 +488,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     }
     m_device_extension_names.push_back(dev_ext_name);
 
-    const auto &info = DeviceExtensions::get_info(extension);
+    const auto &info = DeviceExtensions::GetInfo(extension);
     for (const auto &req : info.requirements) {
         if (!AddRequestedDeviceExtensions(req.name)) {
             return false;
@@ -501,7 +501,7 @@ bool VkRenderFramework::IsPromotedDeviceExtension(const char *dev_ext_name) cons
     auto device_version = std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));
     if (!device_version.Valid()) return false;
 
-    const auto promotion_info_map = DeviceExtensions::get_promotion_info_map();
+    const auto promotion_info_map = GetDevicePromotionInfoMap();
     for (const auto &version_it : promotion_info_map) {
         if (device_version >= version_it.first) {
             const auto promoted_exts = version_it.second.second;

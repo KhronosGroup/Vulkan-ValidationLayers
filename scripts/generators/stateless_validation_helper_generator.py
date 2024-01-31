@@ -414,7 +414,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 if extension.device:
                     extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
                 else:
-                    extension_check = f'if (!instance_extensions.{extension.name.lower()}) {{'
+                    extension_check = f'if (!IsExtEnabled(instance_extensions.{extension.name.lower()})) {{'
                 pnext_check += f'''
                         {extension_check}
                             skip |= LogError(
@@ -478,7 +478,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 for extension in command.extensions:
                     outExpression.append(f'vvl::Extension::_{extension.name}')
                     if extension.instance:
-                        cExpression.append(f'instance_extensions.{extension.name.lower()}')
+                        cExpression.append(f'IsExtEnabled(instance_extensions.{extension.name.lower()})')
                     else:
                         cExpression.append(f'IsExtEnabled(device_extensions.{extension.name.lower()})')
 
