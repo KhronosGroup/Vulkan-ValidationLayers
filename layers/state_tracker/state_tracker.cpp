@@ -1856,9 +1856,11 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, 
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::RenderPass> &&render_pass,
-    std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states) const {
-    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(render_pass), std::move(layout), csm_states);
+    const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    std::shared_ptr<const vvl::RenderPass> &&render_pass, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+    CreateShaderModuleStates *csm_states) const {
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
+                                           csm_states);
 }
 
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1870,6 +1872,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
+    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         const auto &create_info = pCreateInfos[i];
         auto layout_state = Get<vvl::PipelineLayout>(create_info.layout);
@@ -1892,7 +1895,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
         }
         auto csm_states = (cgpl_state->shader_states.size() > i) ? &cgpl_state->shader_states[i] : nullptr;
         cgpl_state->pipe_state.push_back(
-            CreateGraphicsPipelineState(&create_info, std::move(render_pass), std::move(layout_state), csm_states));
+            CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass), std::move(layout_state), csm_states));
     }
     return skip;
 }
@@ -1913,8 +1916,9 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineState(
-    const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(layout));
+    const VkComputePipelineCreateInfo *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
 }
 
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1924,10 +1928,11 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     ccpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     ccpl_state->pipe_state.reserve(count);
+    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         ccpl_state->pipe_state.push_back(
-            CreateComputePipelineState(&pCreateInfos[i], Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
+            CreateComputePipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1949,8 +1954,9 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
-    const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(layout));
+    const VkRayTracingPipelineCreateInfoNV *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
@@ -1958,10 +1964,11 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj, void *crtpl_state_data) const {
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
     crtpl_state->pipe_state.reserve(count);
+    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
+            CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -1981,8 +1988,9 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
-    const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
-    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(layout));
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    std::shared_ptr<const vvl::PipelineLayout> &&layout) const {
+    return std::make_shared<vvl::Pipeline>(this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
 }
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -1993,10 +2001,11 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
                                                                          void *crtpl_state_data) const {
     auto crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     crtpl_state->pipe_state.reserve(count);
+    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         crtpl_state->pipe_state.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
+            CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
