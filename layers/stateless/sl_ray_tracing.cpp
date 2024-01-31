@@ -1513,9 +1513,59 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
         skip |= ValidateRangedEnum(info_loc.dot(Field::mode), vvl::Enum::VkBuildAccelerationStructureModeKHR, info->mode,
                                    "VUID-vkBuildAccelerationStructuresKHR-mode-04628");
 
-        if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR && info->srcAccelerationStructure == VK_NULL_HANDLE) {
-            skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-04630", device, info_loc.dot(Field::mode),
-                             "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
+        if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
+            if (info->scratchData.hostAddress == nullptr) {
+                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03725", device,
+                                 info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
+            }
+        } else if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
+            if (info->scratchData.hostAddress == nullptr) {
+                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03726", device,
+                                 info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
+            }
+
+            if (info->srcAccelerationStructure == VK_NULL_HANDLE) {
+                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-04630", device, info_loc.dot(Field::mode),
+                                 "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but %s is VK_NULL_HANDLE.",
+                                 info_loc.dot(Field::srcAccelerationStructure).Fields().c_str());
+            }
+        }
+
+        for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
+            const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(*info, geom_i);
+            switch (geom.geometryType) {
+                case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
+                    if (geom.geometry.triangles.vertexData.hostAddress == nullptr) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03771", device,
+                                         info_loc.dot(Field::triangles).dot(Field::vertexData).dot(Field::hostAddress), "is NULL.");
+                    }
+                    if (geom.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                        if (geom.geometry.triangles.indexData.hostAddress == nullptr) {
+                            skip |=
+                                LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03772", device,
+                                         info_loc.dot(Field::triangles).dot(Field::indexData).dot(Field::hostAddress), "is NULL.");
+                        }
+                    }
+                    break;
+                }
+                case VK_GEOMETRY_TYPE_AABBS_KHR: {
+                    if (geom.geometry.aabbs.data.hostAddress == nullptr) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03774", device,
+                                         info_loc.dot(Field::aabbs).dot(Field::data).dot(Field::hostAddress), "is NULL.");
+                    }
+                    break;
+                }
+                case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
+                    if (geom.geometry.instances.data.hostAddress == nullptr) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03778", device,
+                                         info_loc.dot(Field::instances).dot(Field::data).dot(Field::hostAddress), "is NULL.");
+                    }
+                    break;
+                }
+
+                default:
+                    break;
+            }
         }
 
         for (uint32_t info_k = 0; info_k < infoCount; ++info_k) {
