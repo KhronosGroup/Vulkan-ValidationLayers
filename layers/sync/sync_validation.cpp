@@ -464,7 +464,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
                                            dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                                            bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                            pImageMemoryBarriers);
-    skip = pipeline_barrier.Validate(*cb_access_context);
+    skip |= pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
 
@@ -499,7 +499,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBu
 
     SyncOpPipelineBarrier pipeline_barrier(error_obj.location.function, *this, cb_access_context->GetQueueFlags(),
                                            *pDependencyInfo);
-    skip = pipeline_barrier.Validate(*cb_access_context);
+    skip |= pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
 
@@ -554,7 +554,7 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
         SyncOpBeginRenderPass sync_op(error_obj.location.function, *this, pRenderPassBegin, pSubpassBeginInfo);
-        skip = sync_op.Validate(cb_state->access_context);
+        skip |= sync_op.Validate(cb_state->access_context);
     }
     return skip;
 }
@@ -770,7 +770,7 @@ bool SyncValidator::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
     cmd_state->AddRenderingInfo(*this, *pRenderingInfo);
 
     // We need to set skip, because the TlsGuard destructor is looking at the skip value for RAII cleanup.
-    skip = cmd_state->cb_state->access_context.ValidateBeginRendering(error_obj, *cmd_state);
+    skip |= cmd_state->cb_state->access_context.ValidateBeginRendering(error_obj, *cmd_state);
     return skip;
 }
 
@@ -800,7 +800,7 @@ bool SyncValidator::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer
     assert(cb_state);
     if (!cb_state) return skip;
 
-    skip = cb_state->access_context.ValidateEndRendering(error_obj);
+    skip |= cb_state->access_context.ValidateEndRendering(error_obj);
     return skip;
 }
 

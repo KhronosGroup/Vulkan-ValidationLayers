@@ -755,7 +755,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
 
     ClearAttachmentInfo clear_info = GetClearAttachmentInfo(clear_attachment, rect);
     if (clear_info.IsValid()) {
-        skip = ValidateClearAttachment(loc, clear_info);
+        skip |= ValidateClearAttachment(loc, clear_info);
     }
 
     return skip;

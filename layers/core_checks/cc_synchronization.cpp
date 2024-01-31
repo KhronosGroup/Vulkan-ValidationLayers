@@ -119,7 +119,7 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_
     }
     switch (semaphore_state->type) {
         case VK_SEMAPHORE_TYPE_BINARY:
-            skip = ValidateBinaryWait(wait_semaphore_loc, queue, *semaphore_state);
+            skip |= ValidateBinaryWait(wait_semaphore_loc, queue, *semaphore_state);
             break;
         case VK_SEMAPHORE_TYPE_TIMELINE: {
             uint64_t bad_value = 0;

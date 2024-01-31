@@ -517,8 +517,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    VkSubpassContents contents, const ErrorObject &error_obj) const {
-    bool skip = ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
-    return skip;
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -530,8 +529,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                     const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                     const ErrorObject &error_obj) const {
-    bool skip = ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
-    return skip;
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
 }
 
 void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -785,8 +783,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
-    bool skip = ValidateCmdEndRenderPass(commandBuffer, VK_NULL_HANDLE, error_obj);
-    return skip;
+    return ValidateCmdEndRenderPass(commandBuffer, VK_NULL_HANDLE, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -796,8 +793,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                   const ErrorObject &error_obj) const {
-    bool skip = ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, error_obj);
-    return skip;
+    return ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, error_obj);
 }
 
 void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {

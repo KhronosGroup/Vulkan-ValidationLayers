@@ -1856,8 +1856,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     const LogObjectList dst_objlist(commandBuffer, dstImage);
     const LogObjectList all_objlist(commandBuffer, srcImage, dstImage);
 
-    skip = ValidateImageCopyData(commandBuffer, regionCount, pRegions, *src_image_state, *dst_image_state, false, loc);
-    skip = ValidateCopyImageCommon(commandBuffer, *src_image_state, *dst_image_state, regionCount, pRegions, loc);
+    skip |= ValidateImageCopyData(commandBuffer, regionCount, pRegions, *src_image_state, *dst_image_state, false, loc);
+    skip |= ValidateCopyImageCommon(commandBuffer, *src_image_state, *dst_image_state, regionCount, pRegions, loc);
 
     bool has_stencil_aspect = false;
     bool has_non_stencil_aspect = false;

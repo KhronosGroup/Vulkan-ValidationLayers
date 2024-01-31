@@ -664,12 +664,12 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
     auto buffer_state = Get<vvl::Buffer>(buffer);
     if (!buffer_state) {
-        return false;
+        return skip;
     }
     const bool bind_buffer_mem_2 = loc.function != Func::vkBindBufferMemory;
 
     // Track objects tied to memory
-    skip = ValidateSetMemBinding(memory, *buffer_state, loc);
+    skip |= ValidateSetMemBinding(memory, *buffer_state, loc);
 
     // Validate memory requirements alignment
     if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
@@ -1901,8 +1901,9 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
 
 bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const &image_state, VkImageSubresource const &subresource,
                                                                const Location &bind_loc, const Location &subresource_loc) const {
-    bool skip = ValidateImageAspectMask(image_state.VkHandle(), image_state.createInfo.format, subresource.aspectMask,
-                                        image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBind-subresource-01106");
+    bool skip = false;
+    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.createInfo.format, subresource.aspectMask,
+                                    image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBind-subresource-01106");
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
         skip |=

@@ -86,9 +86,9 @@ bool StatelessValidation::ValidateGeometryNV(const VkGeometryNV &geometry, VkAcc
                                              const Location &loc) const {
     bool skip = false;
     if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV) {
-        skip = ValidateGeometryTrianglesNV(geometry.geometry.triangles, object_handle, loc);
+        skip |= ValidateGeometryTrianglesNV(geometry.geometry.triangles, object_handle, loc);
     } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_NV) {
-        skip = ValidateGeometryAABBNV(geometry.geometry.aabbs, object_handle, loc);
+        skip |= ValidateGeometryAABBNV(geometry.geometry.aabbs, object_handle, loc);
     }
     return skip;
 }

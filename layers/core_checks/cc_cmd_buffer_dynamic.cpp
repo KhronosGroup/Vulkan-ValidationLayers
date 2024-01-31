@@ -435,7 +435,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::Pipeline& pipeline = *last_bound_state.pipeline_state;
-    skip = ValidateGraphicsDynamicStateSetStatus(last_bound_state, loc);
+    skip |= ValidateGraphicsDynamicStateSetStatus(last_bound_state, loc);
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
 
@@ -1891,9 +1891,9 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer comma
                                                            const VkViewport* pViewports, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    skip = ValidateExtendedDynamicState(*cb_state, error_obj.location,
-                                        enabled_features.extendedDynamicState || enabled_features.shaderObject,
-                                        "VUID-vkCmdSetViewportWithCount-None-08971", "extendedDynamicState or shaderObject");
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location,
+                                         enabled_features.extendedDynamicState || enabled_features.shaderObject,
+                                         "VUID-vkCmdSetViewportWithCount-None-08971", "extendedDynamicState or shaderObject");
     skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetViewportWithCount-commandBuffer-04819", error_obj.location);
 
     return skip;
@@ -1903,7 +1903,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandB
                                                         const VkViewport* pViewports, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    skip = ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
     skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetViewportWithCount-commandBuffer-04819", error_obj.location);
 
     return skip;
@@ -1913,9 +1913,9 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer comman
                                                           const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    skip = ValidateExtendedDynamicState(*cb_state, error_obj.location,
-                                        enabled_features.extendedDynamicState || enabled_features.shaderObject,
-                                        "VUID-vkCmdSetScissorWithCount-None-08971", "extendedDynamicState or shaderObject");
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location,
+                                         enabled_features.extendedDynamicState || enabled_features.shaderObject,
+                                         "VUID-vkCmdSetScissorWithCount-None-08971", "extendedDynamicState or shaderObject");
     skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetScissorWithCount-commandBuffer-04820", error_obj.location);
 
     return skip;
@@ -1925,7 +1925,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
                                                        const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    skip = ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
     skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetScissorWithCount-commandBuffer-04820", error_obj.location);
 
     return skip;
@@ -2648,9 +2648,9 @@ bool CoreChecks::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandB
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip = ValidateExtendedDynamicState(*cb_state, error_obj.location, enabled_features.attachmentFeedbackLoopDynamicState,
-                                        "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopDynamicState-08862",
-                                        "attachmentFeedbackLoopDynamicState");
+    skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, enabled_features.attachmentFeedbackLoopDynamicState,
+                                         "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopDynamicState-08862",
+                                         "attachmentFeedbackLoopDynamicState");
 
     if (aspectMask != VK_IMAGE_ASPECT_NONE && !enabled_features.attachmentFeedbackLoopLayout) {
         skip |= LogError("VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopLayout-08864", commandBuffer,

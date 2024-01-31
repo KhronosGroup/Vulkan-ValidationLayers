@@ -137,11 +137,11 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     {
         auto fence_state = Get<vvl::Fence>(fence);
         const LogObjectList objlist(queue, fence);
-        skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063",
-                                      objlist, error_obj.location);
+        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063",
+                                       objlist, error_obj.location);
     }
     if (skip) {
-        return true;
+        return skip;
     }
 
     auto queue_state = Get<vvl::Queue>(queue);
@@ -264,11 +264,11 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     {
         auto fence_state = Get<vvl::Fence>(fence);
         const LogObjectList objlist(queue, fence);
-        skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
-                                      objlist, error_obj.location);
+        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
+                                       objlist, error_obj.location);
     }
     if (skip) {
-        return true;
+        return skip;
     }
 
     if (!enabled_features.synchronization2) {
@@ -602,11 +602,11 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     {
         auto fence_state = Get<vvl::Fence>(fence);
         const LogObjectList objlist(queue, fence);
-        skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114", "VUID-vkQueueBindSparse-fence-01113",
-                                      objlist, error_obj.location);
+        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114",
+                                       "VUID-vkQueueBindSparse-fence-01113", objlist, error_obj.location);
     }
     if (skip) {
-        return true;
+        return skip;
     }
 
     auto queue_data = Get<vvl::Queue>(queue);

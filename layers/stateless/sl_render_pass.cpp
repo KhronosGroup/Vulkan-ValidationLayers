@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -455,15 +455,13 @@ bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                    VkSubpassContents, const ErrorObject &error_obj) const {
-    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
-    return skip;
+    return ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                     const VkSubpassBeginInfo *,
                                                                     const ErrorObject &error_obj) const {
-    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
-    return skip;
+    return ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
 }
 
 static bool UniqueRenderingInfoImageViews(const VkRenderingInfo *pRenderingInfo, VkImageView imageView) {
