@@ -1,4 +1,4 @@
-<!-- Copyright 2021-2023 LunarG, Inc. -->
+<!-- Copyright 2021-2024 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -441,7 +441,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     // BUG: This helper method also called GetRead<>(), which will deadlock
-    skip = ValidateExtendedDynamicState(commandBuffer, CMD_SETSCISSORWITHCOUNT, ...);
+    skip |= ValidateExtendedDynamicState(commandBuffer, CMD_SETSCISSORWITHCOUNT, ...);
     skip |= ForbidInheritedViewportScissor(cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820", error_obj.location);
 
     return skip;
@@ -452,7 +452,7 @@ This code will deadlock if the code is compiled using C++11, which uses std::mut
 The recommended fix for this case is to not make helper methods that call GetRead<>, instead pass in a reference to the state object:
 
 ```
-      skip = ValidateExtendedDynamicState(*cb_state, CMD_SETSCISSORWITHCOUNT, ...);
+      skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETSCISSORWITHCOUNT, ...);
 ```
 
 Note that not all legacy code, such as `ForbidInheritedViewportScissor()` has been completely cleaned up yet. That method takes both the vulkan handle and a state object pointer as arguments, which is safe but redundant.

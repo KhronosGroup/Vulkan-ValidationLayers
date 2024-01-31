@@ -1175,7 +1175,8 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag r
     // Any store/resolve operations happen before the EndRenderPass tag so we can ignore them
     // Only the layout transitions happen at the replay tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
-    bool skip = replay.DetectFirstUseHazard(first_use_range);
+    bool skip = false;
+    skip |= replay.DetectFirstUseHazard(first_use_range);
 
     // We can cleanup here as the recorded tag represents the final layout transition (which is the last operation or the RP
     replay.EndRenderPassReplayCleanup();
@@ -1230,7 +1231,7 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range
             const SyncValidator &sync_state = exec_context_.GetSyncState();
             const auto handle = exec_context_.Handle();
             const VkCommandBuffer recorded_handle = recorded_context_.GetCBState().VkHandle();
-            skip = sync_state.LogError(
+            skip |= sync_state.LogError(
                 string_SyncHazardVUID(hazard.Hazard()), handle, error_obj_.location,
                 "Hazard %s for entry %" PRIu32 ", %s, %s access info %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                 index_, sync_state.FormatHandle(recorded_handle).c_str(), exec_context_.ExecutionTypeString(),

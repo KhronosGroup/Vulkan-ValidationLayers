@@ -1281,12 +1281,10 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                                                              const vvl::CommandBuffer *prim_cb,
                                                                              const vvl::Framebuffer *) {
                     assert(rectCount == clear_rect_copy->size());
-                    bool skip = false;
-                    skip = ValidateClearAttachmentExtent(
+                    return ValidateClearAttachmentExtent(
                         secondary, prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
                         prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
                         clear_rect_copy->data(), record_obj.location);
-                    return skip;
                 };
                 cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
             }
@@ -1321,8 +1319,8 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                     bool skip = false;
 
                     if (fb && prim_cb->IsPrimary()) {
-                        skip = ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
-                                                             clear_rect_copy->data(), record_obj.location);
+                        skip |= ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
+                                                              clear_rect_copy->data(), record_obj.location);
                     }
                     return skip;
                 };
@@ -2481,7 +2479,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
-        skip = ValidateGetImageSubresourceLayout(*image_state, *pSubresource, error_obj.location.dot(Field::pSubresource));
+        skip |= ValidateGetImageSubresourceLayout(*image_state, *pSubresource, error_obj.location.dot(Field::pSubresource));
         if ((image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
             (image_state->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
             skip |= LogError("VUID-vkGetImageSubresourceLayout-image-07790", image, error_obj.location,
@@ -2498,8 +2496,8 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, V
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
-        skip = ValidateGetImageSubresourceLayout(*image_state, pSubresource->imageSubresource,
-                                                 error_obj.location.dot(Field::pSubresource).dot(Field::imageSubresource));
+        skip |= ValidateGetImageSubresourceLayout(*image_state, pSubresource->imageSubresource,
+                                                  error_obj.location.dot(Field::pSubresource).dot(Field::imageSubresource));
     }
     return skip;
 }

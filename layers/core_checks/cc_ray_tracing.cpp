@@ -143,9 +143,9 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
 
     auto as_state = Get<vvl::AccelerationStructureNV>(accelerationStructure);
     if (as_state != nullptr) {
-        skip = VerifyBoundMemoryIsValid(as_state->MemState(), LogObjectList(accelerationStructure), as_state->Handle(),
-                                        error_obj.location.dot(Field::accelerationStructure),
-                                        "VUID-vkGetAccelerationStructureHandleNV-accelerationStructure-02787");
+        skip |= VerifyBoundMemoryIsValid(as_state->MemState(), LogObjectList(accelerationStructure), as_state->Handle(),
+                                         error_obj.location.dot(Field::accelerationStructure),
+                                         "VUID-vkGetAccelerationStructureHandleNV-accelerationStructure-02787");
     }
 
     return skip;
@@ -1890,9 +1890,9 @@ bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, const Loc
 bool CoreChecks::ValidateGeometryNV(const VkGeometryNV &geometry, const Location &loc) const {
     bool skip = false;
     if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV) {
-        skip = ValidateGeometryTrianglesNV(geometry.geometry.triangles, loc);
+        skip |= ValidateGeometryTrianglesNV(geometry.geometry.triangles, loc);
     } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_NV) {
-        skip = ValidateGeometryAABBNV(geometry.geometry.aabbs, loc);
+        skip |= ValidateGeometryAABBNV(geometry.geometry.aabbs, loc);
     }
     return skip;
 }
