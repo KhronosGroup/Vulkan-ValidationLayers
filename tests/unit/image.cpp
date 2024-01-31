@@ -4369,7 +4369,6 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCountWithDeviceGroup) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
 
-    VkDeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
     vk::GetImageMemoryRequirements(m_device->device(), image.handle(), &mem_reqs);
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper(nullptr);
@@ -4382,7 +4381,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCountWithDeviceGroup) {
         }
     }
 
-    vk::AllocateMemory(device(), &mem_alloc, NULL, &image_mem);
+    vkt::DeviceMemory image_mem(*m_device, mem_alloc);
 
     VkRect2D splitInstanceBindregion = {{0, 0}, {16, 16}};
     VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = vku::InitStructHelper();
@@ -4392,7 +4391,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCountWithDeviceGroup) {
     VkBindImageMemoryInfo bindInfo = vku::InitStructHelper();
     bindInfo.pNext = &bind_devicegroup_info;
     bindInfo.image = image.handle();
-    bindInfo.memory = image_mem;
+    bindInfo.memory = image_mem.handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-splitInstanceBindRegionCount-01636");
     vk::BindImageMemory2KHR(device(), 1, &bindInfo);
@@ -4559,8 +4558,7 @@ TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
         GTEST_SKIP() << "Failed to set memory type.";
     }
 
-    vkt::DeviceMemory memory;
-    memory.init(*m_device, mem_alloc);
+    vkt::DeviceMemory memory(*m_device, mem_alloc);
 
     uint32_t deviceIndex = 0;
 
