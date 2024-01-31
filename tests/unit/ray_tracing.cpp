@@ -3513,3 +3513,71 @@ TEST_F(NegativeRayTracing, HostInstanceInvalid) {
     tlas.BuildHost();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRayTracing, HostAccelerationStructureBuildNullPointers) {
+    TEST_DESCRIPTION("Test host side accelerationStructureReference");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+        blas.SetEnableScratchBuild(false);
+        blas.SetHostScratchBuffer(nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03725");
+        blas.BuildHost();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+        blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+        blas.SetEnableScratchBuild(false);
+        blas.SetHostScratchBuffer(nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-vkBuildAccelerationStructuresKHR-pInfos-04630");  // Null src accel struct
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03726");
+        blas.BuildHost();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+        blas.GetGeometries()[0].SetTrianglesHostVertexBuffer(nullptr, 1);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03771");
+        blas.BuildHost();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+        blas.GetGeometries()[0].SetTrianglesHostIndexBuffer(nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03772");
+        blas.BuildHost();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device, vkt::as::GeometryKHR::Type::AABB);
+        blas.GetGeometries()[0].SetAABBsHostBuffer(nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03774");
+        blas.BuildHost();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+            vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device));
+        blas->BuildHost();
+
+        vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(*m_device, blas);
+        tlas.GetGeometries()[0].SetInstanceHostAddress(nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03778");
+        tlas.BuildHost();
+        m_errorMonitor->VerifyFound();
+    }
+}
