@@ -1550,6 +1550,9 @@ class CoreChecks : public ValidationStateTracker {
                                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                          size_t dataSize, void* pData, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                 const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
+                                                                 const ErrorObject& error_obj) const override;
     // Validate buffers accessed using a device address
     bool ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
                                      const VkAccelerationStructureBuildGeometryInfoKHR& info,
