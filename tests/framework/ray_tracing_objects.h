@@ -127,6 +127,7 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     AccelerationStructureKHR& SetBufferUsageFlags(VkBufferUsageFlags usage_flags);
 
     VkDeviceAddress GetBufferDeviceAddress() const;
+    VkDeviceAddress GetAccelerationStructureDeviceAddress() const;
 
     // Null check is done in BuildGeometryInfoKHR::Build(). Object is build iff it is not null.
     void SetNull(bool is_null) { is_null_ = is_null; }
@@ -135,7 +136,7 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     bool IsBuilt() const { return initialized(); }
     void Destroy();
 
-    const auto& GetBuffer() const { return device_buffer_; }
+    auto& GetBuffer() { return device_buffer_; }
 
   private:
     const vkt::Device* device_;
