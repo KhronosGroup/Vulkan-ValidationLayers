@@ -1201,6 +1201,10 @@ void InitExtensionFromCore(const char* extension_name) {
             }
         },
         {
+            "VK_EXT_line_rasterization", []() {
+            }
+        },
+        {
             "VK_EXT_host_query_reset", []() {
                 ResetQueryPoolEXT = ResetQueryPool;
             }

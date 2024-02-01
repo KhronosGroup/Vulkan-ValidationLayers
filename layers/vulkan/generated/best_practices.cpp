@@ -120,6 +120,7 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_tooling_info, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_separate_stencil_usage, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_EXT_validation_features, {DeprecationReason::Deprecated, {vvl::Extension::_VK_EXT_layer_settings}}},
+        {vvl::Extension::_VK_EXT_line_rasterization, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_line_rasterization}}},
         {vvl::Extension::_VK_EXT_host_query_reset, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_EXT_index_type_uint8, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_index_type_uint8}}},
         {vvl::Extension::_VK_EXT_extended_dynamic_state, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},

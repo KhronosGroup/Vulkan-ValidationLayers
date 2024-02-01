@@ -3354,7 +3354,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
                 auto layout = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
                 if (count_allocate_info->pDescriptorCounts[i] > layout->GetDescriptorCountFromBinding(layout->GetMaxBinding())) {
-                    skip |= LogError("VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pSetLayouts-03046", device,
+                    skip |= LogError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-09380", device,
                                      allocate_info_loc.pNext(Struct::VkDescriptorSetVariableDescriptorCountAllocateInfo,
                                                              Field::pDescriptorCounts, i),
                                      "is %" PRIu32 ", but pAllocateInfo->pSetLayouts[%" PRIu32
