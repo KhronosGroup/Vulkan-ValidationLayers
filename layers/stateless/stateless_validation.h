@@ -389,22 +389,25 @@ class StatelessValidation : public ValidationObject {
      * @note This function does not expect to process enumerations defining bitmask flag bits.
      *
      * @param loc Name of API call being validated.
-     * @param enumName Name of the enumeration being validated.
+     * @param name Name of the enumeration being validated.
      * @param valid_values The list of valid values for the enumeration.
      * @param value Enumeration value to validate.
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRangedEnum(const Location &loc, const char *enumName, T value, const char *vuid) const {
+    bool ValidateRangedEnum(const Location &loc, vvl::Enum name, T value, const char *vuid) const {
         bool skip = false;
-        const auto valid_values = ValidParamValues<T>();
+        ValidValue result = IsValidEnumValue(value);
 
-        if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
+        if (result == ValidValue::NotFound) {
             skip |= LogError(vuid, device, loc,
                              "(%" PRIu32
-                             ") does not fall within the begin..end range of the core %s enumeration tokens and is "
+                             ") does not fall within the begin..end range of the %s enumeration tokens and is "
                              "not an extension added token.",
-                             value, enumName);
+                             value, String(name));
+        } else if (result == ValidValue::NoExtension) {
+            auto extensions = GetEnumExtensions(value);
+            skip |= LogError(vuid, device, loc, "(%" PRIu32 ") requires the extensions %s.", value, String(extensions).c_str());
         }
 
         return skip;
@@ -422,7 +425,7 @@ class StatelessValidation : public ValidationObject {
      *
      * @param count_loc Name of count parameter.
      * @param array_loc Name of array parameter.
-     * @param enumName Name of the enumeration being validated.
+     * @param name Name of the enumeration being validated.
      * @param count Number of enumeration values in the array.
      * @param array Array of enumeration values to validate.
      * @param countRequired The 'count' parameter may not be 0 when true.
@@ -432,23 +435,27 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRangedEnumArray(const Location &count_loc, const Location &array_loc, const char *enumName, uint32_t count,
+    bool ValidateRangedEnumArray(const Location &count_loc, const Location &array_loc, vvl::Enum name, uint32_t count,
                                  const T *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
                                  const char *array_required_vuid) const {
         bool skip = false;
-        const auto valid_values = ValidParamValues<T>();
 
         if ((count == 0) || (array == nullptr)) {
             skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
                                   array_required_vuid);
         } else {
             for (uint32_t i = 0; i < count; ++i) {
-                if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
+                ValidValue result = IsValidEnumValue(array[i]);
+                if (result == ValidValue::NotFound) {
                     skip |= LogError(array_required_vuid, device, array_loc.dot(i),
                                      "(%" PRIu32
-                                     ") does not fall within the begin..end range of the core %s "
-                                     "enumeration tokens and is not an extension added token",
-                                     array[i], enumName);
+                                     ") does not fall within the begin..end range of the %s enumeration tokens and is "
+                                     "not an extension added token.",
+                                     array[i], String(name));
+                } else if (result == ValidValue::NoExtension) {
+                    auto extensions = GetEnumExtensions(array[i]);
+                    skip |= LogError(array_required_vuid, device, array_loc.dot(i), "(%" PRIu32 ") requires the extensions %s.",
+                                     array[i], String(extensions).c_str());
                 }
             }
         }

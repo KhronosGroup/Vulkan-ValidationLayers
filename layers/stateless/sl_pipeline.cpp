@@ -121,8 +121,9 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRe
     bool skip = false;
 
     if ((rendering_struct.depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
-        skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat), "VkFormat",
-                                   rendering_struct.depthAttachmentFormat, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
+        skip |=
+            ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat), vvl::Enum::VkFormat,
+                               rendering_struct.depthAttachmentFormat, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
 
         if (!vkuFormatHasDepth(rendering_struct.depthAttachmentFormat)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06587", device,
@@ -132,8 +133,9 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRe
     }
 
     if ((rendering_struct.stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) {
-        skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat), "VkFormat",
-                                   rendering_struct.stencilAttachmentFormat, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
+        skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
+                                   vvl::Enum::VkFormat, rendering_struct.stencilAttachmentFormat,
+                                   "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
         if (!vkuFormatHasStencil(rendering_struct.stencilAttachmentFormat)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06588", device,
                              loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
@@ -144,11 +146,11 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRe
     }
 
     if (rendering_struct.colorAttachmentCount != 0) {
-        skip |= ValidateRangedEnumArray(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
-                                        loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats),
-                                        "VkFormat", rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats,
-                                        true, true, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
-                                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579");
+        skip |= ValidateRangedEnumArray(
+            loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
+            loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats), vvl::Enum::VkFormat,
+            rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats, true, true,
+            "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579", "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579");
         if (rendering_struct.colorAttachmentCount > device_limits.maxColorAttachments) {
             skip |= LogError("VUID-VkPipelineRenderingCreateInfo-colorAttachmentCount-09533", device,
                              loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
@@ -160,7 +162,7 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const VkPipelineRe
     if (rendering_struct.pColorAttachmentFormats) {
         for (uint32_t j = 0; j < rendering_struct.colorAttachmentCount; ++j) {
             skip |= ValidateRangedEnum(loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, j),
-                                       "VkFormat", rendering_struct.pColorAttachmentFormats[j],
+                                       vvl::Enum::VkFormat, rendering_struct.pColorAttachmentFormats[j],
                                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
         }
     }
@@ -1161,7 +1163,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
                 // If logicOpEnable is VK_TRUE, logicOp must be a valid VkLogicOp value
                 if (color_blend_state.logicOpEnable == VK_TRUE) {
-                    skip |= ValidateRangedEnum(color_loc.dot(Field::logicOp), "VkLogicOp", color_blend_state.logicOp,
+                    skip |= ValidateRangedEnum(color_loc.dot(Field::logicOp), vvl::Enum::VkLogicOp, color_blend_state.logicOp,
                                                "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
                 }
 

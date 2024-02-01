@@ -723,8 +723,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
 TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "does not fall within the begin..end range of the core VkFormat enumeration tokens");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceFormatProperties-format-parameter");
     // Specify an invalid VkFormat value
     // Expected to trigger an error with
     // StatelessValidation::ValidateRangedEnum

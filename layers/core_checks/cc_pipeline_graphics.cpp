@@ -2614,13 +2614,12 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pip
 
     const auto combiner_ops = fragment_shading_rate_state->combinerOps;
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
-        const auto enums = ValidParamValues<VkFragmentShadingRateCombinerOpKHR>();
-        if (std::find(enums.begin(), enums.end(), combiner_ops[0]) == enums.end()) {
+        if (IsValidEnumValue(combiner_ops[0]) != ValidValue::Valid) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567", device,
                              create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
                              "(0x%" PRIx32 ") is invalid.", combiner_ops[0]);
         }
-        if (std::find(enums.begin(), enums.end(), combiner_ops[1]) == enums.end()) {
+        if (IsValidEnumValue(combiner_ops[1]) != ValidValue::Valid) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568", device,
                              create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
                              "(0x%" PRIx32 ") is invalid.", combiner_ops[1]);

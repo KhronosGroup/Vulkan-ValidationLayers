@@ -500,7 +500,7 @@ const PromotedExtensionInfoMap& GetDevicePromotionInfoMap() {
 
 const InstanceExtensions::Info& GetInstanceVersionMap(const char* version) {
     static const InstanceExtensions::Info empty_info{nullptr, InstanceExtensions::RequirementVec()};
-    static const vvl::unordered_map<std::string, InstanceExtensions::Info> version_map = {
+    static const vvl::unordered_map<std::string_view, InstanceExtensions::Info> version_map = {
         {"VK_VERSION_1_1", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_1, {})},
         {"VK_VERSION_1_2", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_2, {})},
         {"VK_VERSION_1_3", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_3, {})},
@@ -511,7 +511,7 @@ const InstanceExtensions::Info& GetInstanceVersionMap(const char* version) {
 
 const DeviceExtensions::Info& GetDeviceVersionMap(const char* version) {
     static const DeviceExtensions::Info empty_info{nullptr, DeviceExtensions::RequirementVec()};
-    static const vvl::unordered_map<std::string, DeviceExtensions::Info> version_map = {
+    static const vvl::unordered_map<std::string_view, DeviceExtensions::Info> version_map = {
         {"VK_VERSION_1_1", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_1, {})},
         {"VK_VERSION_1_2", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_2, {})},
         {"VK_VERSION_1_3", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_3, {})},
