@@ -1354,16 +1354,23 @@ bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevic
         const Location as_loc = error_obj.location.dot(Field::pAccelerationStructures, i);
         auto as_state = Get<vvl::AccelerationStructureKHR>(pAccelerationStructures[i]);
         const auto &as_info = as_state->build_info_khr;
-        if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
-            if (!(as_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
-                const LogObjectList objlist(device, pAccelerationStructures[i]);
-                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431", objlist, as_loc,
-                                 "has flags %s.", string_VkBuildAccelerationStructureFlagsKHR(as_info.flags).c_str());
-            }
-        }
+
         if (as_state) {
             skip |= ValidateHostVisibleMemoryIsBoundToBuffer(*as_state->buffer_state, as_loc,
                                                              "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
+            if (!as_state->built) {
+                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964", device, as_loc,
+                                 "has not been built.");
+            } else {
+                if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
+                    if (!(as_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
+                        const LogObjectList objlist(device, pAccelerationStructures[i]);
+                        skip |=
+                            LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431", objlist,
+                                     as_loc, "has flags %s.", string_VkBuildAccelerationStructureFlagsKHR(as_info.flags).c_str());
+                    }
+                }
+            }
         }
     }
     return skip;
