@@ -6077,9 +6077,10 @@ TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_BinarySemaphore) {
         "execution dependency and can hazard with accesses in the first batch.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkImageObj image(m_device);
     image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -6171,10 +6172,12 @@ TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_TimelineSemaphore) {
         "execution dependency and can hazard with accesses in the first batch.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_features = vku::InitStructHelper();
+    timeline_features.timelineSemaphore = VK_TRUE;
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper(&timeline_features);
+    sync2_features.synchronization2 = VK_TRUE;
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     VkImageObj image(m_device);
     image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -6268,9 +6271,10 @@ TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_TimelineSemaphore) {
 TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     TEST_DESCRIPTION("SHADER_READ_BIT barrier cannot protect UNIFORM_READ_BIT accesses");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
     constexpr VkDeviceSize size = 1024;
     const vkt::Buffer staging_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
