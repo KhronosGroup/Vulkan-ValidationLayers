@@ -1666,6 +1666,11 @@ const char* String(Struct structure) {
     {"VkVideoBeginCodingInfoKHR", 26},
     {"VkVideoCapabilitiesKHR", 23},
     {"VkVideoCodingControlInfoKHR", 28},
+    {"VkVideoDecodeAV1CapabilitiesKHR", 32},
+    {"VkVideoDecodeAV1DpbSlotInfoKHR", 31},
+    {"VkVideoDecodeAV1PictureInfoKHR", 31},
+    {"VkVideoDecodeAV1ProfileInfoKHR", 31},
+    {"VkVideoDecodeAV1SessionParametersCreateInfoKHR", 47},
     {"VkVideoDecodeCapabilitiesKHR", 29},
     {"VkVideoDecodeH264CapabilitiesKHR", 33},
     {"VkVideoDecodeH264DpbSlotInfoKHR", 32},
@@ -2279,6 +2284,7 @@ const char* String(Field field) {
     {"fenceCount", 11},
     {"fieldOffsetGranularity", 23},
     {"fillModeNonSolid", 17},
+    {"filmGrainSupport", 17},
     {"filter", 7},
     {"filterCenter", 13},
     {"filterCubic", 12},
@@ -2343,6 +2349,7 @@ const char* String(Field field) {
     {"fragmentStoresAndAtomics", 25},
     {"frameBSize", 11},
     {"frameBoundary", 14},
+    {"frameHeaderOffset", 18},
     {"frameID", 8},
     {"frameISize", 11},
     {"framePSize", 11},
@@ -2712,6 +2719,7 @@ const char* String(Field field) {
     {"maxInstances", 13},
     {"maxInterpolationOffset", 23},
     {"maxL1ReferenceCount", 20},
+    {"maxLevel", 9},
     {"maxLevelIdc", 12},
     {"maxLod", 7},
     {"maxLuminance", 13},
@@ -3428,6 +3436,7 @@ const char* String(Field field) {
     {"pStdPictureInfo", 16},
     {"pStdReferenceInfo", 18},
     {"pStdSPSs", 9},
+    {"pStdSequenceHeader", 19},
     {"pStdSliceHeader", 16},
     {"pStdSliceSegmentHeader", 23},
     {"pStdVPSs", 9},
@@ -3462,6 +3471,8 @@ const char* String(Field field) {
     {"pTagInfo", 9},
     {"pTessellationState", 19},
     {"pTexelBufferView", 17},
+    {"pTileOffsets", 13},
+    {"pTileSizes", 11},
     {"pTimeDomainCount", 17},
     {"pTimeDomains", 13},
     {"pTimes", 7},
@@ -3741,6 +3752,7 @@ const char* String(Field field) {
     {"rectangularLines", 17},
     {"reductionMode", 14},
     {"reference", 10},
+    {"referenceNameSlotIndices", 25},
     {"referencePictureFormat", 23},
     {"referenceSlotCount", 19},
     {"refreshDuration", 16},
@@ -4061,6 +4073,7 @@ const char* String(Field field) {
     {"stdHeaderVersion", 17},
     {"stdPPSCount", 12},
     {"stdPPSId", 9},
+    {"stdProfile", 11},
     {"stdProfileIdc", 14},
     {"stdSPSCount", 12},
     {"stdSPSId", 9},
@@ -4187,6 +4200,7 @@ const char* String(Field field) {
     {"textureCompressionBC", 21},
     {"textureCompressionETC2", 23},
     {"textureSampleWeighted", 22},
+    {"tileCount", 10},
     {"tileProperties", 15},
     {"tileSize", 9},
     {"tiling", 7},
@@ -4628,6 +4642,7 @@ const char* String(Extension extension) {
     {"VK_KHR_uniform_buffer_standard_layout", 38},
     {"VK_KHR_variable_pointers", 25},
     {"VK_KHR_vertex_attribute_divisor", 32},
+    {"VK_KHR_video_decode_av1", 24},
     {"VK_KHR_video_decode_h264", 25},
     {"VK_KHR_video_decode_h265", 25},
     {"VK_KHR_video_decode_queue", 26},
@@ -5142,6 +5157,7 @@ bool IsFieldPointer(Field field) {
     case Field::pStdPictureInfo:
     case Field::pStdReferenceInfo:
     case Field::pStdSPSs:
+    case Field::pStdSequenceHeader:
     case Field::pStdSliceHeader:
     case Field::pStdSliceSegmentHeader:
     case Field::pStdVPSs:
@@ -5176,6 +5192,8 @@ bool IsFieldPointer(Field field) {
     case Field::pTagInfo:
     case Field::pTessellationState:
     case Field::pTexelBufferView:
+    case Field::pTileOffsets:
+    case Field::pTileSizes:
     case Field::pTimeDomainCount:
     case Field::pTimeDomains:
     case Field::pTimes:

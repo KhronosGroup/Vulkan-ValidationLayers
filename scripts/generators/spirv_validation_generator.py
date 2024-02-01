@@ -35,6 +35,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             'TextureBlockMatch2QCOM',
             'FloatControls2',
             'QuadControlKHR',
+            'MaximallyReconvergesKHR',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.

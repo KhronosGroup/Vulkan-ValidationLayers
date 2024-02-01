@@ -716,6 +716,21 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
                 safe_pNext = new safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixPropertiesKHR *>(pNext), copy_state, false);
                 break;
+            case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PROFILE_INFO_KHR:
+                safe_pNext = new safe_VkVideoDecodeAV1ProfileInfoKHR(reinterpret_cast<const VkVideoDecodeAV1ProfileInfoKHR *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_CAPABILITIES_KHR:
+                safe_pNext = new safe_VkVideoDecodeAV1CapabilitiesKHR(reinterpret_cast<const VkVideoDecodeAV1CapabilitiesKHR *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_SESSION_PARAMETERS_CREATE_INFO_KHR:
+                safe_pNext = new safe_VkVideoDecodeAV1SessionParametersCreateInfoKHR(reinterpret_cast<const VkVideoDecodeAV1SessionParametersCreateInfoKHR *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PICTURE_INFO_KHR:
+                safe_pNext = new safe_VkVideoDecodeAV1PictureInfoKHR(reinterpret_cast<const VkVideoDecodeAV1PictureInfoKHR *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_DPB_SLOT_INFO_KHR:
+                safe_pNext = new safe_VkVideoDecodeAV1DpbSlotInfoKHR(reinterpret_cast<const VkVideoDecodeAV1DpbSlotInfoKHR *>(pNext), copy_state, false);
+                break;
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR:
                 safe_pNext = new safe_VkPhysicalDeviceVideoMaintenance1FeaturesKHR(reinterpret_cast<const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(pNext), copy_state, false);
                 break;
@@ -2475,6 +2490,21 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PROFILE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeAV1ProfileInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_CAPABILITIES_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeAV1CapabilitiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_SESSION_PARAMETERS_CREATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeAV1SessionParametersCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PICTURE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeAV1PictureInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_DPB_SLOT_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeAV1DpbSlotInfoKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(header);
