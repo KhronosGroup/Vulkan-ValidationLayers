@@ -846,6 +846,30 @@ bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPrope
                          "accelerationStructureCount (%" PRIu32 ") x stride (%zu).",
                          dataSize, accelerationStructureCount, stride);
     }
+    const Location query_type_loc = error_obj.location.dot(Field::queryType);
+    const Location data_size_loc = error_obj.location.dot(Field::dataSize);
+    if (dataSize < sizeof(VkDeviceSize)) {
+        switch (queryType) {
+            case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
+                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03449", device, query_type_loc,
+                                 "is %s, but %s is %zu.", string_VkQueryType(queryType), data_size_loc.Fields().c_str(), dataSize);
+                break;
+            case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
+                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03451", device, query_type_loc,
+                                 "is %s, but %s is %zu.", string_VkQueryType(queryType), data_size_loc.Fields().c_str(), dataSize);
+                break;
+            case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR:
+                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06734", device, query_type_loc,
+                                 "is %s, but %s is %zu.", string_VkQueryType(queryType), data_size_loc.Fields().c_str(), dataSize);
+                break;
+            case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
+                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06732", device, query_type_loc,
+                                 "is %s, but %s is %zu.", string_VkQueryType(queryType), data_size_loc.Fields().c_str(), dataSize);
+                break;
+            default:
+                break;
+        }
+    }
 
     if (!(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
           queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR ||
