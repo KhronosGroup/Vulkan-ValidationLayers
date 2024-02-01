@@ -488,6 +488,36 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer c
 
     return skip;
 }
+bool CoreChecks::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                         const VkAccelerationStructureDeviceAddressInfoKHR *pInfo,
+                                                                         const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!enabled_features.accelerationStructure) {
+        skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-accelerationStructure-08935", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
+    }
+    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+        !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
+        skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-device-03504", device, error_obj.location,
+                         "bufferDeviceAddressMultiDevice feature was not enabled.");
+    }
+
+    const auto accel_struct = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure);
+    if (accel_struct) {
+        const Location info_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateMemoryIsBoundToBuffer(device, *accel_struct->buffer_state,
+                                              info_loc.dot(Field::accelerationStructure).dot(Field::buffer),
+                                              "VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09541");
+
+        if (!(accel_struct->buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+            skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09542", LogObjectList(device),
+                             info_loc.dot(Field::accelerationStructure).dot(Field::buffer), "was created with usage flag(s) %s.",
+                             string_VkBufferUsageFlags(accel_struct->buffer_state->createInfo.usage).c_str());
+        }
+    }
+
+    return skip;
+}
 
 bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
                                              const VkAccelerationStructureBuildGeometryInfoKHR &info,
@@ -567,21 +597,10 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         BufferAddressValidation<1> buffer_address_validator = {
                             {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03807", LogObjectList(cmd_buffer),
                                [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                                   if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
-                                       if (out_error_msg) {
-                                           if (const auto mem_state = buffer_state->MemState();
-                                               mem_state && mem_state->Destroyed()) {
-                                               *out_error_msg += "buffer is bound to memory (" + FormatHandle(mem_state->Handle()) +
-                                                                 ") but it has been freed";
-                                           } else {
-                                               *out_error_msg += "buffer has not been bound to memory";
-                                           }
-                                       }
-                                       return false;
-                                   }
-                                   return true;
+                                   return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
+                                                                                                  out_error_msg);
                                },
-                               []() { return "The following buffers are not bound to memory or it has been freed:\n"; }}}}};
+                               []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
 
                         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
                             *this, index_buffer_states, p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
