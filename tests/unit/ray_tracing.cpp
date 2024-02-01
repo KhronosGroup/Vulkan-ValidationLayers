@@ -2186,11 +2186,11 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesHost) {
     blas.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
-
     m_commandBuffer->begin();
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_commandBuffer->end();
+
+    vk::DeviceWaitIdle(*m_device);
 
     constexpr size_t stride = 1;
     constexpr size_t data_size = sizeof(uint32_t) * stride;
@@ -2219,9 +2219,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesHost) {
     }
 }
 
-// TODO - 7230
-// Crahses in BuildGeometryInfoKHR::GetSizeInfo calling vkGetAccelerationStructureBuildSizesKHR on Windows AMD and Android
-TEST_F(NegativeRayTracing, DISABLED_WriteAccelerationStructuresPropertiesDevice) {
+TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDevice) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2229,7 +2227,8 @@ TEST_F(NegativeRayTracing, DISABLED_WriteAccelerationStructuresPropertiesDevice)
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
@@ -2322,9 +2321,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
     }
 }
 
-// TODO - 7230
-// Crahses in BuildGeometryInfoKHR::GetSizeInfo calling vkGetAccelerationStructureBuildSizesKHR on Windows AMD and Android
-TEST_F(NegativeRayTracing, DISABLED_WriteAccelerationStructuresPropertiesMaintenance1Device) {
+TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Device) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2333,24 +2330,90 @@ TEST_F(NegativeRayTracing, DISABLED_WriteAccelerationStructuresPropertiesMainten
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::rayTracingMaintenance1);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
 
     // On device query with invalid query type
     vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
-    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
+    m_commandBuffer->begin();
+    blas.BuildCmdBuffer(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    vk::DeviceWaitIdle(*m_device);
 
     m_commandBuffer->begin();
-
-    blas.BuildCmdBuffer(m_commandBuffer->handle());
     // Incorrect query type
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-06742");
     vk::CmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &blas.GetDstAS()->handle(),
                                                     VK_QUERY_TYPE_OCCLUSION, query_pool.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall) {
+    TEST_DESCRIPTION(
+        "Call vkWriteAccelerationStructuresPropertiesKHR with a dataSize that is smaller that VkDeviceSize for relevant query "
+        "types");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // On host query with invalid query type
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+    blas.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+    blas.GetDstAS()->Build();
+
+    constexpr size_t stride = 1;
+    constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
+    uint8_t data[data_size];
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964");
+    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data,
+                                                 sizeof(VkDeviceSize));
+    m_errorMonitor->VerifyFound();
+
+    blas.BuildHost();
+
+    // Incorrect data size
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03448");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03449");
+    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 1, data, stride);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03450");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03451");
+    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, 1, data, stride);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06731");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06732");
+    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, 1, data, stride);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06733");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06734");
+    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, 1,
+                                                 data, stride);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRayTracing, BuildAccelerationStructuresDeferredOperation) {
