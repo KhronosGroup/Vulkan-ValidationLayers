@@ -30,6 +30,8 @@
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
 // clang-format off
+static constexpr VkAccessFlags2 kShaderReadExpandBits = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT|VK_ACCESS_2_SHADER_STORAGE_READ_BIT|VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+static constexpr VkAccessFlags2 kShaderWriteExpandBits = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
 
 // Fake stages and accesses for acquire present support
 static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x0000040000000000ULL;
