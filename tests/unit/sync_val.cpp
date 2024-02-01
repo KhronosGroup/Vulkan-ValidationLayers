@@ -6071,7 +6071,8 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     m_default_queue->wait();
 }
 
-TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_BinarySemaphore) {
+// NOTE: disabled to test Android GalaxyUltra test failures
+TEST_F(NegativeSyncVal, DISABLED_QSTransitionHazardsPreviousBatch_BinarySemaphore) {
     TEST_DESCRIPTION(
         "Two submission batches synchronized with binary semaphore. Layout transition in the second batch does not create proper "
         "execution dependency and can hazard with accesses in the first batch.");
@@ -6165,7 +6166,8 @@ TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_BinarySemaphore) {
     m_default_queue->wait();
 }
 
-TEST_F(NegativeSyncVal, QSTransitionHazardsPreviousBatch_TimelineSemaphore) {
+// NOTE: disabled to test Android GalaxyUltra test failures
+TEST_F(NegativeSyncVal, DISABLED_QSTransitionHazardsPreviousBatch_TimelineSemaphore) {
     TEST_DESCRIPTION(
         "Two submission batches synchronized with timeline semaphore. Layout transition in the second batch does not create proper "
         "execution dependency and can hazard with accesses in the first batch.");
