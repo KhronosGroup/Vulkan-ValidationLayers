@@ -425,6 +425,13 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 kMaxEnableFlags,
             } EnableFlags;
 
+            // When testing for a valid value, allow a way to right away return how it might not be valid
+            enum class ValidValue {
+                Valid = 0,
+                NotFound, // example, trying to use a random int for an enum
+                NoExtension, // trying to use a proper value, but the extension is required
+            };
+
             typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
             typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
@@ -755,7 +762,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
         };
 
         template <typename T>
-        std::vector<T> ValidParamValues() const;
+        ValidValue IsValidEnumValue(T value) const;
+        template <typename T>
+        vvl::Extensions GetEnumExtensions(T value) const;
 };
 // clang-format on
 ''')

@@ -366,7 +366,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
             const InstanceExtensions::Info &GetInstanceVersionMap(const char* version) {
                 static const InstanceExtensions::Info empty_info{nullptr, InstanceExtensions::RequirementVec()};
-                static const vvl::unordered_map<std::string, InstanceExtensions::Info> version_map = {
+                static const vvl::unordered_map<std::string_view, InstanceExtensions::Info> version_map = {
             ''')
         for version in self.vk.versions.keys():
             out.append(f'{{"{version}", InstanceExtensions::Info(&InstanceExtensions::{self.fieldName[version]}, {{}})}},\n')
@@ -377,7 +377,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
             const DeviceExtensions::Info &GetDeviceVersionMap(const char* version) {
                 static const DeviceExtensions::Info empty_info{nullptr, DeviceExtensions::RequirementVec()};
-                static const vvl::unordered_map<std::string, DeviceExtensions::Info> version_map = {
+                static const vvl::unordered_map<std::string_view, DeviceExtensions::Info> version_map = {
             ''')
         for version in self.vk.versions.keys():
             out.append(f'{{"{version}", DeviceExtensions::Info(&DeviceExtensions::{self.fieldName[version]}, {{}})}},\n')

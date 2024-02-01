@@ -190,7 +190,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
     const auto *sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
     if (pCreateInfo->compareEnable == VK_TRUE) {
-        skip |= ValidateRangedEnum(create_info_loc.dot(Field::compareOp), "VkCompareOp", pCreateInfo->compareOp,
+        skip |= ValidateRangedEnum(create_info_loc.dot(Field::compareOp), vvl::Enum::VkCompareOp, pCreateInfo->compareOp,
                                    "VUID-VkSamplerCreateInfo-compareEnable-01080");
         if (sampler_reduction != nullptr) {
             if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
@@ -220,7 +220,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     if ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
         (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
         (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
-        skip |= ValidateRangedEnum(create_info_loc.dot(Field::borderColor), "VkBorderColor", pCreateInfo->borderColor,
+        skip |= ValidateRangedEnum(create_info_loc.dot(Field::borderColor), vvl::Enum::VkBorderColor, pCreateInfo->borderColor,
                                    "VUID-VkSamplerCreateInfo-addressModeU-01078");
     }
 
@@ -674,7 +674,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
             } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
                 for (uint32_t descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
                     skip |= ValidateRangedEnum(writes_loc.dot(Field::pImageInfo, descriptor_index).dot(Field::imageLayout),
-                                               "VkImageLayout", descriptor_writes.pImageInfo[descriptor_index].imageLayout,
+                                               vvl::Enum::VkImageLayout, descriptor_writes.pImageInfo[descriptor_index].imageLayout,
                                                kVUIDUndefined);
                 }
             }

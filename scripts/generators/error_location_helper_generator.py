@@ -116,6 +116,14 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         for index, field in enumerate(self.fields, start=1):
             out.append(f'    {field} = {index},\n')
         out.append('};\n')
+        out.append('\n')
+
+        out.append('enum class Enum {\n')
+        out.append('    Empty = 0,\n')
+        # Want alpha-sort for ease of look at list while debugging
+        for index, enum in enumerate(sorted(self.vk.enums.values()), start=1):
+            out.append(f'    {enum.name} = {index},\n')
+        out.append('};\n')
 
         out.append('\n')
         out.append('// Need underscore prefix to not conflict with namespace, but still easy to match generation\n')
@@ -142,6 +150,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             const char* String(Func func);
             const char* String(Struct structure);
             const char* String(Field field);
+            const char* String(Enum value);
             const char* String(Extension extension);
             std::string String(const Extensions& extensions);
             std::string String(const Requirement& requirement);
@@ -196,6 +205,17 @@ const char* String(Field field) {
             out.append(f'    {{"{field}", {len(field) + 1}}},\n')
         out.append('''    };
     return table[(int)field].data();
+}
+
+const char* String(Enum value) {
+    static const std::string_view table[] = {
+    {"INVALID_EMPTY", 15}, // Enum::Empty
+''')
+        # Need to be alpha-sort also to match array indexing
+        for enum in sorted(self.vk.enums.values()):
+            out.append(f'    {{"{enum.name}", {len(enum.name) + 1}}},\n')
+        out.append('''    };
+    return table[(int)value].data();
 }
 
 const char* String(Extension extension) {

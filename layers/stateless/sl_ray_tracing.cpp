@@ -1002,7 +1002,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
 
         const Location geometry_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
 
-        skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometryType), "VkGeometryTypeKHR", geom.geometryType,
+        skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR, geom.geometryType,
                                    "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
         if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
             constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT};
@@ -1015,16 +1015,16 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
             skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles), geom.geometry.triangles.pNext,
                                         allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
-            skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::vertexFormat), "VkFormat",
-                                       geom.geometry.triangles.vertexFormat,
+            skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::vertexFormat),
+                                       vvl::Enum::VkFormat, geom.geometry.triangles.vertexFormat,
                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
             skip |=
                 ValidateStructType(geometry_loc.dot(Field::geometry).dot(Field::triangles),
                                    "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR", &geom.geometry.triangles,
                                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
                                    "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
-            skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::indexType), "VkIndexType",
-                                       geom.geometry.triangles.indexType,
+            skip |= ValidateRangedEnum(geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::indexType),
+                                       vvl::Enum::VkIndexType, geom.geometry.triangles.indexType,
                                        "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
 
             if (geom.geometry.triangles.vertexStride > vvl::kU32Max) {
@@ -1198,7 +1198,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                              info->scratchData.deviceAddress,
                              phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
         }
-        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", info->mode,
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), vvl::Enum::VkBuildAccelerationStructureModeKHR, info->mode,
                                    "VUID-vkCmdBuildAccelerationStructuresKHR-mode-04628");
         if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR && info->srcAccelerationStructure == VK_NULL_HANDLE) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630", commandBuffer, info_loc.dot(Field::mode),
@@ -1343,7 +1343,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                              info->scratchData.deviceAddress,
                              phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
         }
-        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", info->mode,
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), vvl::Enum::VkBuildAccelerationStructureModeKHR, info->mode,
                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-mode-04628");
 
         if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR && info->srcAccelerationStructure == VK_NULL_HANDLE) {
@@ -1502,7 +1502,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
 
         skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(*info, error_obj.handle, error_obj.location);
 
-        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), "VkBuildAccelerationStructureModeKHR", info->mode,
+        skip |= ValidateRangedEnum(info_loc.dot(Field::mode), vvl::Enum::VkBuildAccelerationStructureModeKHR, info->mode,
                                    "VUID-vkBuildAccelerationStructuresKHR-mode-04628");
 
         if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR && info->srcAccelerationStructure == VK_NULL_HANDLE) {
