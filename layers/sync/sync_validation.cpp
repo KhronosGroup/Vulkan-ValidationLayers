@@ -2899,6 +2899,9 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // The submit id is a mutable automic which is not recoverable on a skip == true condition
     uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
 
+    // Update label stack as we progress through batches and command buffers
+    auto current_label_stack = cmd_state->queue->GetQueueState()->cmdbuf_label_stack;
+
     // verify each submit batch
     // Since the last batch from the queue state is const, we need to track the last_batch separately from the
     // most recently created batch
@@ -2909,11 +2912,14 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);
         batch->SetupCommandBufferInfo(submit);
         batch->SetupAccessContext(last_batch, submit, cmd_state->signaled);
+        batch->SetCurrentLabelStack(&current_label_stack);
 
         // Skip import and validation of empty batches
         if (batch->GetTagRange().size()) {
             batch->SetupBatchTags();
             skip |= batch->DoQueueSubmitValidate(*this, *cmd_state, submit);
+        } else {
+            batch->ReplayLabelCommandsFromEmptyBatch();
         }
 
         // Empty batches could have semaphores, though.

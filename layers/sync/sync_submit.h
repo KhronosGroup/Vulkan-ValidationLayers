@@ -176,7 +176,8 @@ class BatchAccessLog {
         CBSubmitLog &operator=(CBSubmitLog &&other) = default;
         CBSubmitLog(const BatchRecord &batch, std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs,
                     std::shared_ptr<const CommandExecutionContext::AccessLog> log);
-        CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb);
+        CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb,
+                    const std::vector<std::string> &initial_label_stack);
         size_t Size() const { return log_->size(); }
         AccessRecord operator[](ResourceUsageTag tag) const;
 
@@ -187,17 +188,12 @@ class BatchAccessLog {
         BatchRecord batch_;
         std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs_;
         std::shared_ptr<const CommandExecutionContext::AccessLog> log_;
-
-        struct DebugRegions {
-            std::vector<uint32_t> region_index_for_tag;  // region index for each access log record
-            std::vector<std::string> regions;            // fully qualified region names
-            DebugRegions() = default;
-            DebugRegions(const BatchRecord &batch, const CommandBufferAccessContext &cb);
-        };
-        DebugRegions debug_regions_;
+        // label stack at the point when command buffer is submitted to the queue
+        std::vector<std::string> initial_label_stack_;
     };
 
-    ResourceUsageTag Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access);
+    ResourceUsageTag Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access,
+                            const std::vector<std::string> &initial_label_stack);
     void Import(const BatchAccessLog &other);
     void Insert(const BatchRecord &batch, const ResourceUsageRange &range,
                 std::shared_ptr<const CommandExecutionContext::AccessLog> log);
@@ -269,6 +265,7 @@ class QueueBatchContext : public CommandExecutionContext {
 
     void SetupBatchTags(const ResourceUsageRange &tag_range);
     void SetupBatchTags();
+    void SetCurrentLabelStack(std::vector<std::string>* current_label_stack);
     void ResetEventsContext() { events_context_.Clear(); }
     ResourceUsageTag GetTagLimit() const override { return batch_.bias; }
     // begin is the tag bias  / .size() is the number of total records that should eventually be in access_log_
@@ -306,6 +303,7 @@ class QueueBatchContext : public CommandExecutionContext {
     void NextSubpassReplaySetup(ReplayState &replay) override;
     void EndRenderPassReplayCleanup(ReplayState &replay) override;
 
+    void ReplayLabelCommandsFromEmptyBatch();
     void Cleanup();
 
   private:
@@ -330,6 +328,7 @@ class QueueBatchContext : public CommandExecutionContext {
     BatchAccessLog::BatchRecord batch_;  // Holds the cumulative tag bias, and command buffer counts for Import support.
     CommandBuffers command_buffers_;
     ConstBatchSet async_batches_;
+    std::vector<std::string> *current_label_stack_ = nullptr;
 };
 
 class QueueSyncState {
