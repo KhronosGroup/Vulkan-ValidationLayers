@@ -312,7 +312,7 @@
                         },
                         {
                             "key": "unique_handles",
-                            "value": false
+                            "value": true
                         },
                         {
                             "key": "object_lifetime",
