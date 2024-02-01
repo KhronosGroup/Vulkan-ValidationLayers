@@ -5996,11 +5996,6 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
     VkBufferCopy region = {0, 0, 256};
-
-    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
-    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
-    vkt::CommandPool pool0(*m_device, pool_create_info);
-
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(m_device, m_commandPool);
@@ -6023,6 +6018,96 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
+    cb2.end();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "RegionA::RegionB");
+    m_default_queue->submit(cb2, vkt::Fence{}, false);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeSyncVal, QSDebugRegion5) {
+    TEST_DESCRIPTION("Prior access debug region reporting: debug region is formed by two command buffers from the same submit");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    cb0.begin();
+    label.pLabelName = "RegionA";
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+    cb0.end();
+
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    cb1.begin();
+    label.pLabelName = "RegionB";
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
+    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
+    cb1.end();
+
+    std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
+    m_default_queue->submit(command_buffers, vkt::Fence{});
+
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
+    cb2.end();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "RegionA::RegionB");
+    m_default_queue->submit(cb2, vkt::Fence{}, false);
+    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeSyncVal, QSDebugRegion6) {
+    TEST_DESCRIPTION("Prior access debug region reporting: debug region is formed by two batches from the same submit");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    cb0.begin();
+    label.pLabelName = "RegionA";
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+    cb0.end();
+
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    cb1.begin();
+    label.pLabelName = "RegionB";
+    vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
+    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
+    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
+    cb1.end();
+
+    VkSubmitInfo submit_infos[2];
+    submit_infos[0] = vku::InitStructHelper();
+    submit_infos[0].commandBufferCount = 1;
+    submit_infos[0].pCommandBuffers = &cb0.handle();
+    submit_infos[1] = vku::InitStructHelper();
+    submit_infos[1].commandBufferCount = 1;
+    submit_infos[1].pCommandBuffers = &cb1.handle();
+    vk::QueueSubmit(*m_default_queue, 2, submit_infos, VK_NULL_HANDLE);
+
+    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "RegionA::RegionB");
     m_default_queue->submit(cb2, vkt::Fence{}, false);
