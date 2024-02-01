@@ -315,11 +315,19 @@ void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
     current_access_context_ = &access_context_;
 }
 
+void QueueBatchContext::ReplayLabelCommandsFromEmptyBatch() {
+    for (const auto& cb : command_buffers_) {
+        assert(cb.cb->access_context.GetTagLimit() == 0);
+        vvl::CommandBuffer::ReplayLabelCommands(cb.cb->GetLabelCommands(), *current_label_stack_);
+    }
+}
+
 void QueueBatchContext::Cleanup() {
     // Clear these after validation and import, not valid after.
     batch_ = BatchAccessLog::BatchRecord();
     command_buffers_.clear();
     async_batches_.clear();
+    current_label_stack_ = nullptr;
 }
 
 // Overload for QueuePresent semaphore waiting.  Not applicable to QueueSubmit semaphores
@@ -613,8 +621,13 @@ void QueueBatchContext::SetupBatchTags() {
     SetTagBias(global_tags.begin);
 }
 
+void QueueBatchContext::SetCurrentLabelStack(std::vector<std::string>* current_label_stack) {
+    assert(current_label_stack != nullptr);
+    this->current_label_stack_ = current_label_stack;
+}
+
 void QueueBatchContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext& submitted_cb) {
-    const ResourceUsageTag end_tag = batch_log_.Import(batch_, submitted_cb);
+    const ResourceUsageTag end_tag = batch_log_.Import(batch_, submitted_cb, *current_label_stack_);
     batch_.bias = end_tag;
     batch_.cb_index++;
 }
@@ -641,15 +654,19 @@ bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator& sync_state, Q
     //  For each submit in the batch...
     for (const auto& cb : command_buffers_) {
         const auto& cb_access_context = cb.cb->access_context;
-        if (cb_access_context.GetTagLimit() == 0) {
+        if (cb_access_context.GetTagLimit() == 0) {  // skip CBs without tagged commands
+            // Command buffer might still contain label commands
+            vvl::CommandBuffer::ReplayLabelCommands(cb.cb->GetLabelCommands(), *current_label_stack_);
+            // Skip index for correct reporting
             batch_.cb_index++;
-            continue;  // Skip empty CB's but also skip the unused index for correct reporting
+            continue;
         }
         skip |= ReplayState(*this, cb_access_context, cmd_state.error_obj, cb.index).ValidateFirstUse();
 
         // The barriers have already been applied in ValidatFirstUse
         ResourceUsageRange tag_range = ImportRecordedAccessLog(cb_access_context);
         ResolveSubmittedCommandBuffer(*cb_access_context.GetCurrentAccessContext(), tag_range.begin);
+        vvl::CommandBuffer::ReplayLabelCommands(cb.cb->GetLabelCommands(), *current_label_stack_);
     }
     return skip;
 }
@@ -808,11 +825,12 @@ SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo* inf
     }
 }
 
-ResourceUsageTag BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access) {
+ResourceUsageTag BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access,
+                                        const std::vector<std::string>& initial_label_stack) {
     ResourceUsageTag bias = batch.bias;
     ResourceUsageTag tag_limit = bias + cb_access.GetTagLimit();
     ResourceUsageRange import_range = {bias, tag_limit};
-    log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_access)));
+    log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_access, initial_label_stack)));
     return tag_limit;
 }
 
@@ -893,11 +911,15 @@ BatchAccessLog::AccessRecord BatchAccessLog::operator[](ResourceUsageTag tag) co
 }
 
 std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageRecord& record) const {
-    assert(log_->size() == debug_regions_.region_index_for_tag.size());
-    ptrdiff_t record_index = &record - log_->data();
-    assert(record_index >= 0 && record_index < (ptrdiff_t)log_->size());
-    uint32_t region_index = debug_regions_.region_index_for_tag[record_index];
-    return debug_regions_.regions[region_index];
+    auto label_stack = initial_label_stack_;
+    const auto& label_commands = (*cbs_)[0]->GetLabelCommands();
+    if (!label_commands.empty()) {
+        assert(record.label_command_index < label_commands.size());
+        auto command_to_replay = vvl::make_span(label_commands.data(), record.label_command_index + 1);
+        vvl::CommandBuffer::ReplayLabelCommands(command_to_replay, label_stack);
+    }
+    const auto debug_region = vvl::CommandBuffer::GetDebugRegionNameForLabelStack(label_stack);
+    return debug_region;
 }
 
 BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsageTag tag) const {
@@ -905,8 +927,7 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsa
     const size_t index = tag - batch_.bias;
     assert(log_);
     assert(index < log_->size());
-    const auto debug_name_provider = debug_regions_.region_index_for_tag.empty() ? nullptr : this;
-    return AccessRecord{&batch_, &(*log_)[index], debug_name_provider};
+    return AccessRecord{&batch_, &(*log_)[index], this};
 }
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch,
@@ -914,70 +935,9 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch,
                                          std::shared_ptr<const CommandExecutionContext::AccessLog> log)
     : batch_(batch), cbs_(cbs), log_(log) {}
 
-BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb)
-    : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), debug_regions_(batch, cb) {}
-
-BatchAccessLog::CBSubmitLog::DebugRegions::DebugRegions(const BatchRecord& batch, const CommandBufferAccessContext& cb) {
-    const auto& label_commands = cb.GetCBState().GetLabelCommands();
-    if (label_commands.empty()) {
-        return;
-    }
-    // Get queue's active debug region
-    std::string current_debug_region;
-    const vvl::Queue& queue = *batch.queue->GetQueueState();
-    for (const std::string& label_name : queue.cmdbuf_label_stack) {
-        if (!current_debug_region.empty()) {
-            current_debug_region += "::";
-        }
-        current_debug_region += label_name;
-    }
-
-    uint32_t current_label_command_index = vvl::kU32Max;
-    std::vector<size_t> offset_stack;
-    std::unordered_map<std::string, uint32_t> name_to_index;
-
-    // Associate each tagged command with a debug region that encompasses it
-    const auto access_log = cb.GetAccessLogShared();
-    region_index_for_tag.reserve(access_log->size());
-    for (const ResourceUsageRecord& record : *access_log) {
-        if (record.command == vvl::Func::vkCmdExecuteCommands) {
-            // Debug regions reporting is fully supported for secondary buffers,
-            // but not specifically for vkCmdExecuteCommands command
-            region_index_for_tag.push_back(vvl::kU32Max);
-            continue;
-        }
-        // Find debug region this record's command belongs to.
-        assert(current_label_command_index == vvl::kU32Max || current_label_command_index <= record.label_command_index);
-        while (current_label_command_index != record.label_command_index) {
-            const auto& command = label_commands[++current_label_command_index];
-            if (command.begin) {
-                offset_stack.push_back(current_debug_region.size());
-                if (!current_debug_region.empty()) {
-                    current_debug_region += "::";
-                }
-                current_debug_region += command.label_name;
-            } else {
-                // Unbalanced labels are handled by the core validation but we also do a check
-                // here in case core validation is disabled.
-                if (offset_stack.empty()) {
-                    continue;
-                }
-                assert(offset_stack.back() < current_debug_region.size());
-                current_debug_region.resize(offset_stack.back());
-                offset_stack.pop_back();
-            }
-        }
-        // Associate record with a debug region
-        auto it = name_to_index.find(current_debug_region);
-        if (it == name_to_index.end()) {
-            regions.push_back(current_debug_region);
-            uint32_t index = static_cast<uint32_t>(regions.size() - 1);
-            it = name_to_index.insert(std::make_pair(current_debug_region, index)).first;
-        }
-        const uint32_t region_index = it->second;
-        region_index_for_tag.push_back(region_index);
-    }
-}
+BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb,
+                                         const std::vector<std::string>& initial_label_stack)
+    : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
 PresentedImage::PresentedImage(const SyncValidator& sync_state, const std::shared_ptr<QueueBatchContext> batch_,
                                VkSwapchainKHR swapchain, uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)

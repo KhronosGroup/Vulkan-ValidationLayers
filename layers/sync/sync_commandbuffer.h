@@ -186,7 +186,7 @@ struct DebugNameProvider {
 class CommandExecutionContext : public SyncValidationInfo {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
-    using CommandBufferSet = vvl::unordered_set<std::shared_ptr<const vvl::CommandBuffer>>;
+    using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
     CommandExecutionContext() : SyncValidationInfo(nullptr) {}
     CommandExecutionContext(const SyncValidator *sync_validator) : SyncValidationInfo(sync_validator) {}
     virtual ~CommandExecutionContext() = default;
@@ -265,7 +265,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     // NOTE: because this class is encapsulated in syncval_state::CommandBuffer, it isn't safe
     // to use shared_from_this from the constructor.
-    void SetSelfReference() { cbs_referenced_->insert(cb_state_->shared_from_this()); }
+    void SetSelfReference() { cbs_referenced_->push_back(cb_state_->shared_from_this()); }
 
     ~CommandBufferAccessContext() override = default;
     const CommandExecutionContext &GetExecutionContext() const { return *this; }

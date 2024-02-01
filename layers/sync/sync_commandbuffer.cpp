@@ -110,7 +110,7 @@ void CommandBufferAccessContext::Reset() {
     access_log_ = std::make_shared<AccessLog>();
     cbs_referenced_ = std::make_shared<CommandBufferSet>();
     if (cb_state_) {
-        cbs_referenced_->insert(cb_state_->shared_from_this());
+        cbs_referenced_->push_back(cb_state_->shared_from_this());
     }
     sync_ops_.clear();
     command_number_ = 0;
@@ -839,7 +839,7 @@ void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContex
 }
 
 void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &recorded_context) {
-    cbs_referenced_->emplace(recorded_context.GetCBStateShared());
+    cbs_referenced_->emplace_back(recorded_context.GetCBStateShared());
     access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
 
     // Adjust command indices for the log records added from recorded_context.
@@ -909,27 +909,12 @@ ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(vvl::Func com
 std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRecord &record) const {
     const bool use_proxy = !proxy_label_commands_.empty();
     const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
-
-    // Replay commands up to the specified command index.
     assert(record.label_command_index < label_commands.size());
+    auto command_to_replay = vvl::make_span(label_commands.data(), record.label_command_index + 1);
     std::vector<std::string> label_stack;
-    for (uint32_t i = 0; i <= record.label_command_index; i++) {
-        const auto &command = label_commands[i];
-        if (command.begin) {
-            label_stack.push_back(command.label_name.empty() ? "(unnamed region)" : command.label_name);
-        } else if (!label_stack.empty()) {  // primary command buffer labels are not necessarily balanced
-            label_stack.pop_back();
-        }
-    }
-    // Concatenate nested labels
-    std::string name;
-    for (const std::string &label_name : label_stack) {
-        if (!name.empty()) {
-            name += "::";
-        }
-        name += label_name;
-    }
-    return name;
+    vvl::CommandBuffer::ReplayLabelCommands(command_to_replay, label_stack);
+    const auto debug_region = vvl::CommandBuffer::GetDebugRegionNameForLabelStack(label_stack);
+    return debug_region;
 }
 
 void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {
@@ -1144,7 +1129,7 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         if (formatter.debug_name_provider) {
             const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
             if (!debug_region_name.empty()) {
-                out << ", debug region: " << debug_region_name;
+                out << ", debug_region: " << debug_region_name;
             }
         }
     }
