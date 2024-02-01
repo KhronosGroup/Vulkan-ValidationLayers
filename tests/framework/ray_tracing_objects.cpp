@@ -176,7 +176,7 @@ GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vkt::Device &dev
     assert(vkGetAccelerationStructureDeviceAddressKHR);
     VkAccelerationStructureDeviceAddressInfoKHR as_address_info = vku::InitStructHelper();
     as_address_info.accelerationStructure = bottom_level_as;
-    VkDeviceAddress as_address = vkGetAccelerationStructureDeviceAddressKHR(device.handle(), &as_address_info);
+    const VkDeviceAddress as_address = vkGetAccelerationStructureDeviceAddressKHR(device.handle(), &as_address_info);
     instance_.vk_instance = std::make_unique<VkAccelerationStructureInstanceKHR>();
     instance_.vk_instance->accelerationStructureReference = static_cast<uint64_t>(as_address);
     // leave other instance_ attributes to 0
@@ -277,6 +277,13 @@ VkDeviceAddress AccelerationStructureKHR::GetBufferDeviceAddress() const {
     assert(device_buffer_.initialized());
     assert(device_buffer_.create_info().size > 0);
     return device_buffer_.address();
+}
+
+VkDeviceAddress AccelerationStructureKHR::GetAccelerationStructureDeviceAddress() const {
+    VkAccelerationStructureDeviceAddressInfoKHR as_address_info = vku::InitStructHelper();
+    as_address_info.accelerationStructure = handle();
+    const VkDeviceAddress as_address = vk::GetAccelerationStructureDeviceAddressKHR(*device_, &as_address_info);
+    return as_address;
 }
 
 void AccelerationStructureKHR::Build() {

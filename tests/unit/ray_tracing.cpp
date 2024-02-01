@@ -1006,6 +1006,30 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracing, GetAccelerationStructureAddressBabBuffer) {
+    TEST_DESCRIPTION(
+        "Call vkGetAccelerationStructureDeviceAddressKHR on an acceleration structure whose buffer is missing usage "
+        "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, and whose memory has been destroyed");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    blas->Build();
+
+    blas->GetBuffer().memory().destroy();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09541");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09542");
+    (void)blas->GetAccelerationStructureDeviceAddress();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysKHR.");
 
