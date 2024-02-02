@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -859,6 +859,7 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
 TEST_F(NegativeSubpass, InputAttachmentReferences) {
     TEST_DESCRIPTION("Create a subpass with the meta data aspect mask set for an input attachment");
 
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 

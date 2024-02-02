@@ -732,6 +732,7 @@ TEST_F(NegativeAndroidHardwareBuffer, PhysDevImageFormatProp2) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer GetPhysicalDeviceImageFormatProperties.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 

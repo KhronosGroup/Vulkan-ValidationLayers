@@ -319,6 +319,7 @@ vvl_sources = [
   "layers/vulkan/generated/thread_safety_counter_instances.h",
   "layers/vulkan/generated/valid_enum_values.cpp",
   "layers/vulkan/generated/valid_enum_values.h",
+  "layers/vulkan/generated/valid_flag_values.cpp",
   "layers/vulkan/generated/vk_api_version.h",
   "layers/vulkan/generated/vk_dispatch_table_helper.cpp",
   "layers/vulkan/generated/vk_dispatch_table_helper.h",

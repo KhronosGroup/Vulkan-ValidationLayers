@@ -1991,6 +1991,7 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());

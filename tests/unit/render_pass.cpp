@@ -3203,8 +3203,8 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.pEnabledFeatures = nullptr;
-    device_create_info.enabledExtensionCount = 0;
-    device_create_info.ppEnabledExtensionNames = nullptr;
+    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice second_device;
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));

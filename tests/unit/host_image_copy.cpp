@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Google, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,26 +173,6 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
     m_errorMonitor->VerifyFound();
     region_to_image.imageSubresource.baseArrayLayer = 0;
     region_from_image.imageSubresource.baseArrayLayer = 0;
-
-    {
-        // Can't use subsampled image
-        VkImageObj image_subsampled(m_device);
-        image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
-        image_subsampled.Init(image_ci);
-        image_subsampled.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        copy_to_image.dstImage = image_subsampled;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969");
-        vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
-        m_errorMonitor->VerifyFound();
-
-        copy_from_image.srcImage = image_subsampled;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07969");
-        vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
-        m_errorMonitor->VerifyFound();
-        copy_to_image.dstImage = image;
-        copy_from_image.srcImage = image;
-        image_ci.flags = 0;
-    }
 
     // Extent bigger than image - Can't get 07970 without getting 07971, 07972 or 09104, so test both 07971 and 07970 here
     region_to_image.imageExtent.width = width + 1;
@@ -875,24 +855,6 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     image_copy_2.srcSubresource.baseArrayLayer = 0;
     image_copy_2.dstSubresource.baseArrayLayer = 0;
 
-    {
-        // Can't use subsampled image
-        VkImageObj image_subsampled1(m_device);
-        VkImageObj image_subsampled2(m_device);
-        image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
-        image_subsampled1.Init(image_ci);
-        image_subsampled2.Init(image_ci);
-        image_subsampled1.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        image_subsampled2.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        copy_image_to_image.dstImage = image_subsampled1;
-        copy_image_to_image.srcImage = image_subsampled2;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07969");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07969");
-        vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
-        m_errorMonitor->VerifyFound();
-        image_ci.flags = 0;
-    }
-
     // Extent bigger than image - Can't get 07970 without getting 07971, 07972 or 09104, so test both 07971 and 07970 here
     image_copy_2.extent.width = width + 1;
     copy_image_to_image.dstImage = image1;
@@ -1179,6 +1141,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
 
     // No aspect plane bits
     image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageSubresourceLayers-aspectMask-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceLayers-aspectMask-02247");
     // Also get aspect not present in image
     m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105");
@@ -1192,6 +1155,113 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcSubresource.layerCount = 1;
+}
+
+TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemorySubsampled) {
+    TEST_DESCRIPTION("Use VK_EXT_fragment_density_map with VK_EXT_host_image_copy");
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        width, height, 1, 1, format,
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
+
+    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+
+    std::vector<uint8_t> pixels(width * height * 4);
+
+    VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
+    region_to_image.pHostPointer = pixels.data();
+    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region_to_image.imageSubresource.layerCount = 1;
+    region_to_image.imageExtent.width = width;
+    region_to_image.imageExtent.height = height;
+    region_to_image.imageExtent.depth = 1;
+
+    VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
+    copy_to_image.flags = 0;
+    copy_to_image.dstImage = image;
+    copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image.regionCount = 1;
+    copy_to_image.pRegions = &region_to_image;
+
+    VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
+    region_from_image.pHostPointer = pixels.data();
+    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region_from_image.imageSubresource.layerCount = 1;
+    region_from_image.imageExtent.width = width;
+    region_from_image.imageExtent.height = height;
+    region_from_image.imageExtent.depth = 1;
+
+    VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
+    copy_from_image.flags = 0;
+    copy_from_image.srcImage = image;
+    copy_from_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_from_image.regionCount = 1;
+    copy_from_image.pRegions = &region_from_image;
+
+    VkImageObj image_subsampled(m_device);
+    image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+    image_subsampled.Init(image_ci);
+    image_subsampled.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    copy_to_image.dstImage = image_subsampled;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
+    m_errorMonitor->VerifyFound();
+
+    copy_from_image.srcImage = image_subsampled;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07969");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
+    m_errorMonitor->VerifyFound();
+    copy_to_image.dstImage = image;
+    copy_from_image.srcImage = image;
+    image_ci.flags = 0;
+}
+
+TEST_F(NegativeHostImageCopy, HostCopyImageToImageSubsampled) {
+    TEST_DESCRIPTION("Use VK_EXT_fragment_density_map with VK_EXT_host_image_copy");
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        width, height, 1, 1, format,
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
+
+    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkImageCopy2 image_copy_2 = vku::InitStructHelper();
+    image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy_2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy_2.extent = {width, height, 1};
+
+    image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+
+    VkImageObj image_subsampled1(m_device);
+    VkImageObj image_subsampled2(m_device);
+    image_subsampled1.Init(image_ci);
+    image_subsampled2.Init(image_ci);
+    image_subsampled1.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    image_subsampled2.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkCopyImageToImageInfoEXT copy_image_to_image = vku::InitStructHelper();
+    copy_image_to_image.flags = 0;
+    copy_image_to_image.regionCount = 1;
+    copy_image_to_image.pRegions = &image_copy_2;
+    copy_image_to_image.srcImageLayout = layout;
+    copy_image_to_image.dstImageLayout = layout;
+    copy_image_to_image.dstImage = image_subsampled1;
+    copy_image_to_image.srcImage = image_subsampled2;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07969");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07969");
+    vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {

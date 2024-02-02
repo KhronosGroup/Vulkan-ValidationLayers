@@ -405,7 +405,8 @@ class StatelessValidation : public ValidationObject {
                              ") does not fall within the begin..end range of the %s enumeration tokens and is "
                              "not an extension added token.",
                              value, String(name));
-        } else if (result == ValidValue::NoExtension) {
+        } else if (result == ValidValue::NoExtension && device != VK_NULL_HANDLE) {
+            // If called from an instance function, there is no device to base extension support off of
             auto extensions = GetEnumExtensions(value);
             skip |= LogError(vuid, device, loc, "(%" PRIu32 ") requires the extensions %s.", value, String(extensions).c_str());
         }
@@ -452,7 +453,8 @@ class StatelessValidation : public ValidationObject {
                                      ") does not fall within the begin..end range of the %s enumeration tokens and is "
                                      "not an extension added token.",
                                      array[i], String(name));
-                } else if (result == ValidValue::NoExtension) {
+                } else if (result == ValidValue::NoExtension && device != VK_NULL_HANDLE) {
+                    // If called from an instance function, there is no device to base extension support off of
                     auto extensions = GetEnumExtensions(array[i]);
                     skip |= LogError(array_required_vuid, device, array_loc.dot(i), "(%" PRIu32 ") requires the extensions %s.",
                                      array[i], String(extensions).c_str());

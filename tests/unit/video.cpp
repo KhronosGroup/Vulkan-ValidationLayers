@@ -451,6 +451,7 @@ TEST_F(NegativeVideo, CreateSessionVideoMaintenance1NotEnabled) {
     create_info.pVideoProfile = config.Profile();
     create_info.pStdHeaderVersion = config.StdVersion();
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoSessionCreateInfoKHR-flags-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoSessionCreateInfoKHR-flags-08371");
     context.vk.CreateVideoSessionKHR(m_device->device(), &create_info, nullptr, &session);
     m_errorMonitor->VerifyFound();
@@ -646,7 +647,6 @@ TEST_F(NegativeVideo, CreateSessionInvalidDecodeReferencePictureFormat) {
     VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
     create_info.pVideoProfile = config.Profile();
     create_info.pStdHeaderVersion = config.StdVersion();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoSessionCreateInfoKHR-referencePictureFormat-04852");
     create_info.referencePictureFormat = VK_FORMAT_D16_UNORM;
     context.vk.CreateVideoSessionKHR(m_device->device(), &create_info, nullptr, &session);
@@ -11286,6 +11286,7 @@ TEST_F(NegativeVideo, CreateBufferProfileIndependentNotSupported) {
         buffer_ci.usage |= VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR;
     }
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferCreateInfo-flags-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-08325");
     vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
     m_errorMonitor->VerifyFound();
@@ -11428,6 +11429,7 @@ TEST_F(NegativeVideo, CreateImageProfileIndependentNotSupported) {
         image_ci.usage |= VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
     }
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-08328");
     vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();

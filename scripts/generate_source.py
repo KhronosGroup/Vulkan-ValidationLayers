@@ -66,6 +66,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.safe_struct_generator import SafeStructOutputGenerator
     from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
+    from generators.valid_flag_values_generator import ValidFlagValuesOutputGenerator
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
@@ -123,6 +124,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'valid_enum_values.cpp' : {
             'generator' : ValidEnumValuesOutputGenerator,
+            'genCombined': False,
+        },
+        'valid_flag_values.cpp' : {
+            'generator' : ValidFlagValuesOutputGenerator,
             'genCombined': False,
         },
         'object_tracker.h' : {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,8 +203,7 @@ VkResult RayTracingPipelineHelper::CreateNVRayTracingPipeline(bool do_late_bind)
 
 void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, vkt::Buffer *vbo, vkt::Buffer *ibo,
                                                     VkGeometryNV *geometry, VkDeviceSize offset, bool buffer_device_address) {
-    VkBufferUsageFlags usage =
-        VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    VkBufferUsageFlags usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     void *alloc_pnext = nullptr;
     if (buffer_device_address) {

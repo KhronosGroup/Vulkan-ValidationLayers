@@ -356,7 +356,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
 
 TEST_F(NegativeWsi, SwapchainImageParams) {
     TEST_DESCRIPTION("Swapchain with invalid implied image creation parameters");
-    const char *vuid = "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778";
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     AddSurfaceExtension();
 
@@ -422,7 +422,7 @@ TEST_F(NegativeWsi, SwapchainImageParams) {
     }
 
     if (found_bad_usage) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778");
         vk::CreateSwapchainKHR(device(), &create_info_bad_usage, nullptr, &m_swapchain);
         m_errorMonitor->VerifyFound();
     } else {

@@ -691,7 +691,7 @@ TEST_F(NegativeCommand, ClearColorAttachmentsZeroExtent) {
 
 TEST_F(NegativeCommand, ClearAttachmentsAspectMasks) {
     TEST_DESCRIPTION("Check VkClearAttachment invalid aspect masks.");
-
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -3435,6 +3435,7 @@ TEST_F(NegativeCommand, CopyImageAspectMismatch) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     auto ds_format = FindSupportedDepthStencilFormat(gpu());

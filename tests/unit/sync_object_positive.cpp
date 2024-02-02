@@ -2361,7 +2361,7 @@ TEST_F(PositiveSyncObject, BarrierAccessSyncMicroMap) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 

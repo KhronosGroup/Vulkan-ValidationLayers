@@ -3394,6 +3394,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingMultisampleState) {
 TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     TEST_DESCRIPTION("Use invalid VkRenderingFragmentDensityMapAttachmentInfoEXT");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
@@ -6434,7 +6435,7 @@ TEST_F(NegativeDynamicRendering, MissingImageCreateSubsampled) {
 
 TEST_F(NegativeDynamicRendering, DynamicRenderingInlineContents) {
     TEST_DESCRIPTION("Use dynamic rendering with VK_RENDERING_CONTENTS_INLINE_BIT_EXT");
-
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();

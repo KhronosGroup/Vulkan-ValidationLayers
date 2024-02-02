@@ -3138,6 +3138,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

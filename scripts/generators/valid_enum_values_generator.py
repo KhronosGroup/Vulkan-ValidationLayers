@@ -24,6 +24,10 @@ from generators.generator_utils import PlatformGuardHelper
 class ValidEnumValuesOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
+        self.ignoreList = [
+            'VkStructureType', # Structs are checked as there own thing
+            'VkResult' # The spots it is used (VkBindMemoryStatusKHR, VkPresentInfoKHR) are really returrn values
+        ]
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -61,7 +65,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         guard_helper = PlatformGuardHelper()
-        for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
+        for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect))
             out.append(f'template<> ValidValue ValidationObject::IsValidEnumValue({enum.name} value) const;\n')
         out.extend(guard_helper.add_guard(None))
@@ -72,7 +76,6 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
         out = []
         out.append('''
             #include "chassis.h"
-            #include "utils/hash_vk_types.h"
 
             //  Checking for values is a 2 part process
             //    1. Check if is valid at all
@@ -88,7 +91,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             ''')
         guard_helper = PlatformGuardHelper()
 
-        for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
+        for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect, extra_newline=True))
             out.append(f'template<> ValidValue ValidationObject::IsValidEnumValue({enum.name} value) const {{\n')
             out.append('    switch (value) {\n')
@@ -104,10 +107,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                 expression = []
                 # Ignore the base extensions needed to use the enum, only focus on the field specific extensions
                 for extension in [x for x in field.extensions if x not in enum.extensions]:
-                    if extension.instance:
-                        expression.append(f'IsExtEnabled(instance_extensions.{extension.name.lower()})')
-                    else:
-                        expression.append(f'IsExtEnabled(device_extensions.{extension.name.lower()})')
+                    expression.append(f'IsExtEnabled(device_extensions.{extension.name.lower()})')
                 if (len(expression) == 0):
                     continue
                 expression = " || ".join(expression)
@@ -126,7 +126,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             out.extend(guard_helper.add_guard(None, extra_newline=True))
 
         # For those that had an extension on field, provide a way to get it to print a useful error message out
-        for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
+        for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect, extra_newline=True))
 
             # Need empty functions to resolve all template variations

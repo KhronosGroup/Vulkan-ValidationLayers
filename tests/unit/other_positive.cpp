@@ -707,3 +707,11 @@ TEST_F(VkPositiveLayerTest, ExtensionPhysicalDeviceFeatureKHR) {
     query_feature.globalPriorityQuery = VK_TRUE;
     RETURN_IF_SKIP(InitState(nullptr, &query_feature));
 }
+
+TEST_F(VkPositiveLayerTest, NoExtensionFromInstanceFunction) {
+    TEST_DESCRIPTION("Valid because we instance functions don't know which device it needs");
+    RETURN_IF_SKIP(Init());
+    VkFormatProperties format_properties;
+    // need VK_KHR_sampler_ycbcr_conversion if it was a device function
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B16G16R16G16_422_UNORM, &format_properties);
+}

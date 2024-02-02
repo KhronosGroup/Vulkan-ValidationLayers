@@ -200,7 +200,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayoutWithoutExtension) {
 
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-DrawState-ExtensionNotEnabled");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
     vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }

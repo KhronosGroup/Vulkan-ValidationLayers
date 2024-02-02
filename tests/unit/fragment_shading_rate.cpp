@@ -1020,6 +1020,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
     VkRenderPass rp;
 
     rpci.flags = VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderPassCreateInfo2-flags-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-flags-04521");
     vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
@@ -2392,6 +2393,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
 TEST_F(NegativeFragmentShadingRate, StageUsage) {
     TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature disabled");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 

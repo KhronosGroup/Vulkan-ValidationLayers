@@ -22,6 +22,7 @@ void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2K
                                                       VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework(enabled_features));

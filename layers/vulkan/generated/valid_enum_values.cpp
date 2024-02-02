@@ -23,7 +23,6 @@
 // NOLINTBEGIN
 
 #include "chassis.h"
-#include "utils/hash_vk_types.h"
 
 //  Checking for values is a 2 part process
 //    1. Check if is valid at all
@@ -35,86 +34,6 @@
 //
 //  Another key point to consider is being able to tell the user a value is invalid because it "doesn't exist" vs
 //  "forgot to enable an extension" is VERY important
-
-template <>
-ValidValue ValidationObject::IsValidEnumValue(VkResult value) const {
-    switch (value) {
-        case VK_SUCCESS:
-        case VK_NOT_READY:
-        case VK_TIMEOUT:
-        case VK_EVENT_SET:
-        case VK_EVENT_RESET:
-        case VK_INCOMPLETE:
-        case VK_ERROR_OUT_OF_HOST_MEMORY:
-        case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-        case VK_ERROR_INITIALIZATION_FAILED:
-        case VK_ERROR_DEVICE_LOST:
-        case VK_ERROR_MEMORY_MAP_FAILED:
-        case VK_ERROR_LAYER_NOT_PRESENT:
-        case VK_ERROR_EXTENSION_NOT_PRESENT:
-        case VK_ERROR_FEATURE_NOT_PRESENT:
-        case VK_ERROR_INCOMPATIBLE_DRIVER:
-        case VK_ERROR_TOO_MANY_OBJECTS:
-        case VK_ERROR_FORMAT_NOT_SUPPORTED:
-        case VK_ERROR_FRAGMENTED_POOL:
-        case VK_ERROR_UNKNOWN:
-            return ValidValue::Valid;
-        case VK_ERROR_OUT_OF_POOL_MEMORY:
-            return IsExtEnabled(device_extensions.vk_khr_maintenance1) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-            return IsExtEnabled(device_extensions.vk_khr_external_memory) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_FRAGMENTATION:
-            return IsExtEnabled(device_extensions.vk_ext_descriptor_indexing) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
-            return IsExtEnabled(device_extensions.vk_khr_buffer_device_address) ||
-                           IsExtEnabled(device_extensions.vk_ext_buffer_device_address)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        case VK_PIPELINE_COMPILE_REQUIRED:
-            return IsExtEnabled(device_extensions.vk_ext_pipeline_creation_cache_control) ? ValidValue::Valid
-                                                                                          : ValidValue::NoExtension;
-        case VK_ERROR_SURFACE_LOST_KHR:
-        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-            return IsExtEnabled(instance_extensions.vk_khr_surface) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_SUBOPTIMAL_KHR:
-        case VK_ERROR_OUT_OF_DATE_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_swapchain) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_display_swapchain) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_VALIDATION_FAILED_EXT:
-            return IsExtEnabled(instance_extensions.vk_ext_debug_report) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INVALID_SHADER_NV:
-            return IsExtEnabled(device_extensions.vk_nv_glsl_shader) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_video_queue) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
-            return IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_NOT_PERMITTED_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_global_priority) || IsExtEnabled(device_extensions.vk_ext_global_priority)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
-            return IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_THREAD_IDLE_KHR:
-        case VK_THREAD_DONE_KHR:
-        case VK_OPERATION_DEFERRED_KHR:
-        case VK_OPERATION_NOT_DEFERRED_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_deferred_host_operations) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_video_encode_queue) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
-            return IsExtEnabled(device_extensions.vk_ext_image_compression_control) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT:
-            return IsExtEnabled(device_extensions.vk_ext_shader_object) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
 
 template <>
 ValidValue ValidationObject::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const {
@@ -218,14 +137,14 @@ ValidValue ValidationObject::IsValidEnumValue(VkObjectType value) const {
         case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT:
             return IsExtEnabled(device_extensions.vk_ext_private_data) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_SURFACE_KHR:
-            return IsExtEnabled(instance_extensions.vk_khr_surface) ? ValidValue::Valid : ValidValue::NoExtension;
+            return IsExtEnabled(device_extensions.vk_khr_surface) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_SWAPCHAIN_KHR:
             return IsExtEnabled(device_extensions.vk_khr_swapchain) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_DISPLAY_KHR:
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR:
-            return IsExtEnabled(instance_extensions.vk_khr_display) ? ValidValue::Valid : ValidValue::NoExtension;
+            return IsExtEnabled(device_extensions.vk_khr_display) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
-            return IsExtEnabled(instance_extensions.vk_ext_debug_report) ? ValidValue::Valid : ValidValue::NoExtension;
+            return IsExtEnabled(device_extensions.vk_ext_debug_report) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_VIDEO_SESSION_KHR:
         case VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR:
             return IsExtEnabled(device_extensions.vk_khr_video_queue) ? ValidValue::Valid : ValidValue::NoExtension;
@@ -233,7 +152,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkObjectType value) const {
         case VK_OBJECT_TYPE_CU_FUNCTION_NVX:
             return IsExtEnabled(device_extensions.vk_nvx_binary_import) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
-            return IsExtEnabled(instance_extensions.vk_ext_debug_utils) ? ValidValue::Valid : ValidValue::NoExtension;
+            return IsExtEnabled(device_extensions.vk_ext_debug_utils) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
             return IsExtEnabled(device_extensions.vk_khr_acceleration_structure) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT:
@@ -1249,7 +1168,7 @@ ValidValue ValidationObject::IsValidEnumValue(VkColorSpaceKHR value) const {
         case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
         case VK_COLOR_SPACE_PASS_THROUGH_EXT:
         case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
-            return IsExtEnabled(instance_extensions.vk_ext_swapchain_colorspace) ? ValidValue::Valid : ValidValue::NoExtension;
+            return IsExtEnabled(device_extensions.vk_ext_swapchain_colorspace) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_COLOR_SPACE_DISPLAY_NATIVE_AMD:
             return IsExtEnabled(device_extensions.vk_amd_display_native_hdr) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
@@ -2090,60 +2009,6 @@ ValidValue ValidationObject::IsValidEnumValue(VkShaderGroupShaderKHR value) cons
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
-    };
-}
-
-template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkResult value) const {
-    switch (value) {
-        case VK_ERROR_OUT_OF_POOL_MEMORY:
-            return {vvl::Extension::_VK_KHR_maintenance1};
-        case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-            return {vvl::Extension::_VK_KHR_external_memory};
-        case VK_ERROR_FRAGMENTATION:
-            return {vvl::Extension::_VK_EXT_descriptor_indexing};
-        case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS:
-            return {vvl::Extension::_VK_KHR_buffer_device_address, vvl::Extension::_VK_EXT_buffer_device_address};
-        case VK_PIPELINE_COMPILE_REQUIRED:
-            return {vvl::Extension::_VK_EXT_pipeline_creation_cache_control};
-        case VK_ERROR_SURFACE_LOST_KHR:
-        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-            return {vvl::Extension::_VK_KHR_surface};
-        case VK_SUBOPTIMAL_KHR:
-        case VK_ERROR_OUT_OF_DATE_KHR:
-            return {vvl::Extension::_VK_KHR_swapchain};
-        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
-            return {vvl::Extension::_VK_KHR_display_swapchain};
-        case VK_ERROR_VALIDATION_FAILED_EXT:
-            return {vvl::Extension::_VK_EXT_debug_report};
-        case VK_ERROR_INVALID_SHADER_NV:
-            return {vvl::Extension::_VK_NV_glsl_shader};
-        case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR:
-        case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR:
-            return {vvl::Extension::_VK_KHR_video_queue};
-        case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
-            return {vvl::Extension::_VK_EXT_image_drm_format_modifier};
-        case VK_ERROR_NOT_PERMITTED_KHR:
-            return {vvl::Extension::_VK_KHR_global_priority, vvl::Extension::_VK_EXT_global_priority};
-        case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
-            return {vvl::Extension::_VK_EXT_full_screen_exclusive};
-        case VK_THREAD_IDLE_KHR:
-        case VK_THREAD_DONE_KHR:
-        case VK_OPERATION_DEFERRED_KHR:
-        case VK_OPERATION_NOT_DEFERRED_KHR:
-            return {vvl::Extension::_VK_KHR_deferred_host_operations};
-        case VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR:
-            return {vvl::Extension::_VK_KHR_video_encode_queue};
-        case VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
-            return {vvl::Extension::_VK_EXT_image_compression_control};
-        case VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT:
-            return {vvl::Extension::_VK_EXT_shader_object};
-        default:
-            return {};
     };
 }
 

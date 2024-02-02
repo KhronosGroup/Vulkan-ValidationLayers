@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -10,11 +10,36 @@
  */
 
 #include "external_memory_sync.h"
+#include "error_monitor.h"
 
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <generated/enum_flag_bits.h>
 
 #include "utils/vk_layer_utils.h"
+
+// We are trying to query unsupported handle types, which means we will likley trigger *-handleType-parameter VUs
+void IgnoreHandleTypeError(ErrorMonitor *monitor) {
+    monitor->SetAllowedFailureMsg("VUID-VkFenceGetFdInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkFenceGetWin32HandleInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkImportFenceFdInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkImportMemoryFdInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkImportSemaphoreFdInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkMemoryGetFdInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkMemoryGetWin32HandleInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkSemaphoreGetFdInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-vkGetMemoryFdPropertiesKHR-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-parameter");
+    monitor->SetAllowedFailureMsg("VUID-vkGetMemoryWin32HandlePropertiesKHR-handleType-parameter");
+
+    monitor->SetAllowedFailureMsg("VUID-VkExportFenceCreateInfo-handleTypes-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkExportMemoryAllocateInfo-handleTypes-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkExportSemaphoreCreateInfo-handleTypes-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkExternalMemoryBufferCreateInfo-handleTypes-parameter");
+    monitor->SetAllowedFailureMsg("VUID-VkExternalMemoryImageCreateInfo-handleTypes-parameter");
+}
 
 VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type) {
