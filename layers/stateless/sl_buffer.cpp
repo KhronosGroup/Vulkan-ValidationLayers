@@ -82,9 +82,9 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
     }
 
     if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
-        skip |=
-            ValidateFlags(create_info_loc.dot(Field::usage), "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits, pCreateInfo->usage,
-                          kRequiredFlags, "VUID-VkBufferCreateInfo-None-09499", "VUID-VkBufferCreateInfo-None-09500");
+        skip |= ValidateFlags(create_info_loc.dot(Field::usage), vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits,
+                              pCreateInfo->usage, kRequiredFlags, "VUID-VkBufferCreateInfo-None-09499",
+                              "VUID-VkBufferCreateInfo-None-09500");
     }
 
     return skip;
