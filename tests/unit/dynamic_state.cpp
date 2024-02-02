@@ -4210,6 +4210,7 @@ TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableFeatures) {
 
 TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
     TEST_DESCRIPTION("Bad aspect masks for vkCmdSetAttachmentFeedbackLoopEnableEXT");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 

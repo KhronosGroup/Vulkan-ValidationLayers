@@ -361,7 +361,17 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, vvl::
  */
 bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
                                         const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
-    return ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+    bool skip = false;
+    skip |= ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+    if (!skip && value != 0) {
+        vvl::Extensions required = IsValidFlagValue(flag_bitmask, value, device_extensions);
+        if (!required.empty() && device != VK_NULL_HANDLE) {
+            // If called from an instance function, there is no device to base extension support off of
+            skip |= LogError(vuid, device, loc, "(0x%" PRIx32 ") has %s values that requires the extensions %s.", value,
+                             String(flag_bitmask), String(required).c_str());
+        }
+    }
+    return skip;
 }
 
 /**
@@ -381,7 +391,17 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
  */
 bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
                                         const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
-    return ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+    bool skip = false;
+    skip |= ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+    if (!skip && value != 0) {
+        vvl::Extensions required = IsValidFlag64Value(flag_bitmask, value, device_extensions);
+        if (!required.empty() && device != VK_NULL_HANDLE) {
+            // If called from an instance function, there is no device to base extension support off of
+            skip |= LogError(vuid, device, loc, "(0x%" PRIx64 ") has %s values that requires the extensions %s.", value,
+                             String(flag_bitmask), String(required).c_str());
+        }
+    }
+    return skip;
 }
 
 /**

@@ -564,15 +564,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     }
     // Validate state for shared presentable case
     if (shared_present_mode) {
-        if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
-            // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2787
-            if (LogError("UNASSIGNED-DrawState-ExtensionNotEnabled", device, create_info_loc,
-                         "called with presentMode %s which requires the VK_KHR_shared_presentable_image extension, which has not "
-                         "been enabled.",
-                         string_VkPresentModeKHR(present_mode))) {
-                return true;
-            }
-        } else if (pCreateInfo->minImageCount != 1) {
+        if (pCreateInfo->minImageCount != 1) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-minImageCount-01383", device, create_info_loc,
                          "called with presentMode %s, but minImageCount value is %d. For shared presentable image, minImageCount "
                          "must be 1.",

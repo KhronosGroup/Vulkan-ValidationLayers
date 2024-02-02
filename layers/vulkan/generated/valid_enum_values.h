@@ -22,8 +22,6 @@
 
 // NOLINTBEGIN
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkResult value) const;
-template <>
 ValidValue ValidationObject::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const;
 template <>
 ValidValue ValidationObject::IsValidEnumValue(VkImageLayout value) const;

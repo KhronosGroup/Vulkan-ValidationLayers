@@ -1992,3 +1992,16 @@ TEST_F(VkLayerTest, MissingExtensionPhysicalDeviceFeaturePromoted) {
     vk::CreateDevice(gpu_, &dev_info, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, DescriptorBufferNoExtension) {
+    TEST_DESCRIPTION("Create VkBuffer without the extension.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 64;
+    buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-None-09499");
+    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}

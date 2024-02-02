@@ -655,6 +655,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -667,7 +668,6 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_create_info.size = 1024;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
-
     const auto buffer_exportable_types =
         FindSupportedExternalMemoryHandleTypes(gpu(), buffer_create_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!buffer_exportable_types) {

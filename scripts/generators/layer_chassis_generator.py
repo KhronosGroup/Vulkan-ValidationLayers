@@ -767,6 +767,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
         vvl::Extensions GetEnumExtensions(T value) const;
 };
 // clang-format on
+
+// VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
+vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions& device_extensions);
+vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, const DeviceExtensions& device_extensions);
+
 ''')
 
         out.append('extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;')

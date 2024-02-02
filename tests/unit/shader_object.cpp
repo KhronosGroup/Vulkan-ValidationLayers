@@ -387,8 +387,6 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
 TEST_F(NegativeShaderObject, InvalidStage) {
     TEST_DESCRIPTION("Create shader with invalid stage.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08425");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -401,10 +399,12 @@ TEST_F(NegativeShaderObject, InvalidStage) {
     createInfo.pName = "main";
 
     VkShaderEXT shader;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08425");
     vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08426");
 
     createInfo.stage = VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI;

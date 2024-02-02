@@ -578,6 +578,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 #if defined(VVL_ENABLE_TSAN)
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
 #endif
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
