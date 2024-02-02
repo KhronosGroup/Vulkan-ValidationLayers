@@ -462,9 +462,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCo
 
     for (uint32_t i = 0; i < bufferCount; i++) {
         if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pBindingInfos[i].pNext)) {
-            skip |= ValidateFlags(error_obj.location.dot(Field::pBindingInfos, i).dot(Field::usage), "VkBufferUsageFlagBits",
-                                  AllVkBufferUsageFlagBits, pBindingInfos[i].usage, kRequiredFlags,
-                                  "VUID-VkDescriptorBufferBindingInfoEXT-None-09499",
+            skip |= ValidateFlags(error_obj.location.dot(Field::pBindingInfos, i).dot(Field::usage),
+                                  vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits, pBindingInfos[i].usage,
+                                  kRequiredFlags, "VUID-VkDescriptorBufferBindingInfoEXT-None-09499",
                                   "VUID-VkDescriptorBufferBindingInfoEXT-None-09500");
         }
     }
@@ -478,9 +478,9 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceExternalBufferP
     bool skip = false;
 
     if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pExternalBufferInfo->pNext)) {
-        skip |= ValidateFlags(error_obj.location.dot(Field::pExternalBufferInfo).dot(Field::usage), "VkBufferUsageFlagBits",
-                              AllVkBufferUsageFlagBits, pExternalBufferInfo->usage, kRequiredFlags,
-                              "VUID-VkPhysicalDeviceExternalBufferInfo-None-09499",
+        skip |= ValidateFlags(error_obj.location.dot(Field::pExternalBufferInfo).dot(Field::usage),
+                              vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits, pExternalBufferInfo->usage,
+                              kRequiredFlags, "VUID-VkPhysicalDeviceExternalBufferInfo-None-09499",
                               "VUID-VkPhysicalDeviceExternalBufferInfo-None-09500");
     }
 
@@ -696,17 +696,19 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         }
 
         if (physical_device_features.inheritedQueries) {
-            skip |= ValidateFlags(inheritance_loc.dot(Field::queryFlags), "VkQueryControlFlagBits", AllVkQueryControlFlagBits,
-                                  info->queryFlags, kOptionalFlags, "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+            skip |= ValidateFlags(inheritance_loc.dot(Field::queryFlags), vvl::FlagBitmask::VkQueryControlFlagBits,
+                                  AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
+                                  "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
         } else {  // !inheritedQueries
             skip |= ValidateReservedFlags(inheritance_loc.dot(Field::queryFlags), info->queryFlags,
                                           "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
         }
 
         if (physical_device_features.pipelineStatisticsQuery) {
-            skip |= ValidateFlags(inheritance_loc.dot(Field::pipelineStatistics), "VkQueryPipelineStatisticFlagBits",
-                                  AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
-                                  "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
+            skip |=
+                ValidateFlags(inheritance_loc.dot(Field::pipelineStatistics), vvl::FlagBitmask::VkQueryPipelineStatisticFlagBits,
+                              AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
+                              "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
         } else {  // !pipelineStatisticsQuery
             skip |= ValidateReservedFlags(inheritance_loc.dot(Field::pipelineStatistics), info->pipelineStatistics,
                                           "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");

@@ -168,9 +168,9 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
                              "or VK_GEOMETRY_TYPE_AABBS_NV.");
         }
     }
-    skip |=
-        ValidateFlags(loc.dot(Field::flags), "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsKHR,
-                      info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
+    skip |= ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
+                          AllVkBuildAccelerationStructureFlagBitsKHR, info.flags, kOptionalFlags,
+                          "VUID-VkAccelerationStructureInfoNV-flags-parameter");
     return skip;
 }
 
@@ -328,8 +328,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
 
         const auto *pipeline_create_flags = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(pCreateInfos[i].pNext);
         if (!pipeline_create_flags) {
-            skip |= ValidateFlags(create_info_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                                  pCreateInfos[i].flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoNV-None-09497");
+            skip |= ValidateFlags(create_info_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineCreateFlagBits,
+                                  AllVkPipelineCreateFlagBits, pCreateInfos[i].flags, kOptionalFlags,
+                                  "VUID-VkRayTracingPipelineCreateInfoNV-None-09497");
         }
 
         const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
@@ -486,8 +487,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
 
         const auto *pipeline_create_flags = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(pCreateInfos[i].pNext);
         if (!pipeline_create_flags) {
-            skip |= ValidateFlags(create_info_loc.dot(Field::flags), "VkPipelineCreateFlagBits", AllVkPipelineCreateFlagBits,
-                                  pCreateInfos[i].flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoKHR-None-09497");
+            skip |= ValidateFlags(create_info_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineCreateFlagBits,
+                                  AllVkPipelineCreateFlagBits, pCreateInfos[i].flags, kOptionalFlags,
+                                  "VUID-VkRayTracingPipelineCreateInfoKHR-None-09497");
         }
 
         const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);

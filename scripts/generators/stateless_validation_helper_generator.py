@@ -18,7 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import os
 import re
 from generators.generator_utils import buildListVUID, PlatformGuardHelper
@@ -849,7 +848,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allFlags = 'All' + flagBitsName
                         count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {count_required_vuid}, {array_required_vuid});\n')
+                        usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {count_required_vuid}, {array_required_vuid});\n')
                     elif member.type == 'VkBool32' and member.const:
                         count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
@@ -954,7 +953,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allFlagsName = 'All' + flagBitsName
                         zeroVuidArg = '' if member.optional else ', ' + zeroVuid
                         condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
-                        usedLines.append(f'skip |= ValidateFlags({errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
+                        usedLines.append(f'skip |= ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
                     elif member.type == 'VkBool32':
                         usedLines.append(f'skip |= ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.vk.enums and member.type != 'VkStructureType':

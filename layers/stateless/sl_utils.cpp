@@ -314,13 +314,13 @@ bool StatelessValidation::ValidateReservedFlags(const Location &loc, VkFlags val
 
 // helper to implement validation of both 32 bit and 64 bit flags.
 template <typename FlagTypedef>
-bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, const char *flag_bits_name, FlagTypedef all_flags,
+bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask flag_bitmask, FlagTypedef all_flags,
                                                       FlagTypedef value, const FlagType flag_type, const char *vuid,
                                                       const char *flags_zero_vuid) const {
     bool skip = false;
 
     if ((value & ~all_flags) != 0) {
-        skip |= LogError(vuid, device, loc, "contains flag bits that are not recognized members of %s.", flag_bits_name);
+        skip |= LogError(vuid, device, loc, "contains flag bits that are not recognized members of %s.", String(flag_bitmask));
     }
 
     const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
@@ -337,7 +337,8 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, const
 
     const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
     if (is_bits_type && !HasMaxOneBitSet(value)) {
-        skip |= LogError(vuid, device, loc, "contains multiple members of %s when only a single value is allowed.", flag_bits_name);
+        skip |= LogError(vuid, device, loc, "contains multiple members of %s when only a single value is allowed.",
+                         String(flag_bitmask));
     }
 
     return skip;
@@ -350,7 +351,7 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, const
  * for that type.
  *
  * @param loc Name of API call being validated.
- * @param flag_bits_name Name of the VkFlags type being validated.
+ * @param flag_bitmask Name of the VkFlags type being validated.
  * @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
  * @param value VkFlags value to validate.
  * @param flag_type The type of flag, like optional, or single bit.
@@ -358,9 +359,9 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, const
  * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
  * @return Boolean value indicating that the call should be skipped.
  */
-bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bits_name, VkFlags all_flags, VkFlags value,
+bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
                                         const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
-    return ValidateFlagsImplementation<VkFlags>(loc, flag_bits_name, all_flags, value, flag_type, vuid, flags_zero_vuid);
+    return ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
 }
 
 /**
@@ -370,7 +371,7 @@ bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bi
  * for that type.
  *
  * @param loc Name of API call being validated.
- * @param flag_bits_name Name of the VkFlags64 type being validated.
+ * @param flag_bitmask Name of the VkFlags64 type being validated.
  * @param all_flags A bit mask combining all valid flag bits for the VkFlags64 type being validated.
  * @param value VkFlags64 value to validate.
  * @param flag_type The type of flag, like optional, or single bit.
@@ -378,9 +379,9 @@ bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bi
  * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
  * @return Boolean value indicating that the call should be skipped.
  */
-bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bits_name, VkFlags64 all_flags, VkFlags64 value,
+bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
                                         const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
-    return ValidateFlagsImplementation<VkFlags64>(loc, flag_bits_name, all_flags, value, flag_type, vuid, flags_zero_vuid);
+    return ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
 }
 
 /**
@@ -391,7 +392,7 @@ bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bi
  *
  * @param count_loc Name of parameter being validated.
  * @param array_loc Name of parameter being validated.
- * @param flag_bits_name Name of the VkFlags type being validated.
+ * @param flag_bitmask Name of the VkFlags type being validated.
  * @param all_flags A bitmask combining all valid flag bits for the VkFlags type being validated.
  * @param count Number of VkFlags values in the array.
  * @param array Array of VkFlags value to validate.
@@ -399,7 +400,7 @@ bool StatelessValidation::ValidateFlags(const Location &loc, const char *flag_bi
  * @param array_required_vuid The VUID for the 'array' parameter.
  * @return Boolean value indicating that the call should be skipped.
  */
-bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Location &array_loc, const char *flag_bits_name,
+bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask,
                                              VkFlags all_flags, uint32_t count, const VkFlags *array, bool count_required,
                                              const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
@@ -412,7 +413,7 @@ bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Lo
         for (uint32_t i = 0; i < count; ++i) {
             if ((array[i] & (~all_flags)) != 0) {
                 skip |= LogError(array_required_vuid, device, array_loc.dot(i),
-                                 "contains flag bits that are not recognized members of %s.", flag_bits_name);
+                                 "contains flag bits that are not recognized members of %s.", String(flag_bitmask));
             }
         }
     }

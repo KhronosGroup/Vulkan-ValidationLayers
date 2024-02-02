@@ -469,16 +469,16 @@ class StatelessValidation : public ValidationObject {
 
     // helper to implement validation of both 32 bit and 64 bit flags.
     template <typename FlagTypedef>
-    bool ValidateFlagsImplementation(const Location &loc, const char *flag_bits_name, FlagTypedef all_flags, FlagTypedef value,
+    bool ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask flag_bitmask, FlagTypedef all_flags, FlagTypedef value,
                                      const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
-    bool ValidateFlags(const Location &loc, const char *flag_bits_name, VkFlags all_flags, VkFlags value, const FlagType flag_type,
-                       const char *vuid, const char *flags_zero_vuid = nullptr) const;
-
-    bool ValidateFlags(const Location &loc, const char *flag_bits_name, VkFlags64 all_flags, VkFlags64 value,
+    bool ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
                        const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
-    bool ValidateFlagsArray(const Location &count_loc, const Location &array_loc, const char *flag_bits_name, VkFlags all_flags,
+    bool ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
+                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
+
+    bool ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags,
                             uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
                             const char *array_required_vuid) const;
 

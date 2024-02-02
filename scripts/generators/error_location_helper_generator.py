@@ -125,6 +125,13 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             out.append(f'    {enum.name} = {index},\n')
         out.append('};\n')
 
+        out.append('enum class FlagBitmask {\n')
+        out.append('    Empty = 0,\n')
+        # Want alpha-sort for ease of look at list while debugging
+        for index, bitmask in enumerate(sorted(self.vk.bitmasks.values()), start=1):
+            out.append(f'    {bitmask.name} = {index},\n')
+        out.append('};\n')
+
         out.append('\n')
         out.append('// Need underscore prefix to not conflict with namespace, but still easy to match generation\n')
         out.append('enum class Extension {\n')
@@ -151,6 +158,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             const char* String(Struct structure);
             const char* String(Field field);
             const char* String(Enum value);
+            const char* String(FlagBitmask value);
             const char* String(Extension extension);
             std::string String(const Extensions& extensions);
             std::string String(const Requirement& requirement);
@@ -214,6 +222,17 @@ const char* String(Enum value) {
         # Need to be alpha-sort also to match array indexing
         for enum in sorted(self.vk.enums.values()):
             out.append(f'    {{"{enum.name}", {len(enum.name) + 1}}},\n')
+        out.append('''    };
+    return table[(int)value].data();
+}
+
+const char* String(FlagBitmask value) {
+    static const std::string_view table[] = {
+    {"INVALID_EMPTY", 15}, // FlagBitmask::Empty
+''')
+        # Need to be alpha-sort also to match array indexing
+        for bitmask in sorted(self.vk.bitmasks.values()):
+            out.append(f'    {{"{bitmask.name}", {len(bitmask.name) + 1}}},\n')
         out.append('''    };
     return table[(int)value].data();
 }
