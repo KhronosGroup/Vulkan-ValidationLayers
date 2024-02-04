@@ -118,6 +118,7 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
     TEST_DESCRIPTION("Creating image with incompatible external memory handle types from NVIDIA extension");
 
+    AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 

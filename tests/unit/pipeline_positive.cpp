@@ -1702,7 +1702,8 @@ TEST_F(PositivePipeline, ShaderModuleIdentifierZeroLength) {
 
 TEST_F(PositivePipeline, IgnoredPipelineCreateFlags) {
     TEST_DESCRIPTION("Create pipeline with invalid flags when allowed");
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

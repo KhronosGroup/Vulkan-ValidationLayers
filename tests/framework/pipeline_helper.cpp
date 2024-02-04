@@ -48,7 +48,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     vp_state_ci_.pScissors = &scissor_;
 
     // InitRasterizationInfo
-    rs_state_ci_ = vku::InitStructHelper(&line_state_ci_);
+    rs_state_ci_ = vku::InitStructHelper();
     rs_state_ci_.flags = 0;
     rs_state_ci_.depthClampEnable = VK_FALSE;
     rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
@@ -64,6 +64,10 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     line_state_ci_.stippledLineEnable = VK_FALSE;
     line_state_ci_.lineStippleFactor = 0;
     line_state_ci_.lineStipplePattern = 0;
+    if (test.IsExtensionsEnabled(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME) ||
+        test.IsExtensionsEnabled(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME)) {
+        rs_state_ci_.pNext = &line_state_ci_;
+    }
 
     // InitBlendStateInfo
     cb_ci_ = vku::InitStructHelper();

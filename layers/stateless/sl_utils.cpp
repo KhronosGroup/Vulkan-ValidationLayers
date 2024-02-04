@@ -158,12 +158,12 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
  * @param allowed_type_count Total number of allowed structure types.
  * @param allowed_types Array of structure types allowed for pNext.
  * @param header_version Version of header defining the pNext validation rules.
- * @param is_physdev_api True if the first parameter of the function is a VkPhysicalDevice (ex vkCreateDevice)
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
                                               const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
-                                              const char *stype_vuid, const bool is_physdev_api, const bool is_const_param) const {
+                                              const char *stype_vuid, VkPhysicalDevice caller_physical_device,
+                                              const bool is_const_param) const {
     bool skip = false;
     const Location pNext_loc = loc.dot(Field::pNext);
     const char *api_name = loc.StringFunc();
@@ -224,7 +224,7 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
                             }
                         }
                         // Send Location without pNext field so the pNext() connector can be used
-                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, is_physdev_api, is_const_param);
+                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, caller_physical_device, is_const_param);
                     }
                 }
                 current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);

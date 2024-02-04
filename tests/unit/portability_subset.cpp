@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020-2022 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -646,4 +646,35 @@ TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
         ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
         vk::DestroyInstance(local_instance, nullptr);
     }
+}
+
+TEST_F(VkPortabilitySubsetTest, FeatureWithoutExtension) {
+    TEST_DESCRIPTION("Make sure can't use portability without VK_KHR_portability_subset");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    if (DeviceExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Test needs no VK_KHR_portability_subset support";
+    }
+
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR feature = vku::InitStructHelper();
+
+    vkt::PhysicalDevice physical_device(gpu());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
+    std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
+    auto qci = queue_info.data();
+    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+        if (qci[i].queueCount) {
+            create_queue_infos.push_back(qci[i]);
+        }
+    }
+
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&feature);
+    device_create_info.queueCreateInfoCount = queue_info.size();
+    device_create_info.pQueueCreateInfos = queue_info.data();
+    VkDevice testDevice;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-pNext");
+    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    m_errorMonitor->VerifyFound();
 }

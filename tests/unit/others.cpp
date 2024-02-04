@@ -63,21 +63,11 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     RETURN_IF_SKIP(Init());
-    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper();
-    VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
-    phys_dev_props_2.pNext = &bad_version_1_1_struct;
-
-    // VkPhysDevVulkan12Props was introduced in 1.2, so try adding it to a 1.1 pNext chain
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-        vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
-        m_errorMonitor->VerifyFound();
-    }
 
     // 1.1 context, VK_KHR_depth_stencil_resolve is NOT enabled, but using its struct is valid
     if (DeviceExtensionSupported(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
         VkPhysicalDeviceDepthStencilResolveProperties unenabled_device_ext_struct = vku::InitStructHelper();
-        phys_dev_props_2.pNext = &unenabled_device_ext_struct;
+        VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&unenabled_device_ext_struct);
         if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
             vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
         } else {
@@ -601,6 +591,8 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
     pipe.gp_ci_.pInputAssemblyState = &iasci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
+    // one for each struct
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -2004,4 +1996,64 @@ TEST_F(VkLayerTest, DescriptorBufferNoExtension) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-None-09499");
     vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, MissingExtensionStruct) {
+    TEST_DESCRIPTION("Don't add extension but use extended structure");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_maintenance5 not supported";
+    }
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+
+    // added in VK_KHR_maintenance5
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
+
+    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    buffer_view_ci.range = VK_WHOLE_SIZE;
+    buffer_view_ci.buffer = buffer.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferViewCreateInfo-pNext-pNext");
+    vkt::BufferView view(*m_device, buffer_view_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, Features11WithoutVulkan12) {
+    TEST_DESCRIPTION("VkPhysicalDeviceVulkan11Features was added in Vulkan1.2");
+    if (m_instance_api_version < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "Need 1.2 instance support";
+    }
+    app_info_.apiVersion = m_instance_api_version.Value();
+    RETURN_IF_SKIP(InitFramework());
+    if (physDevProps().apiVersion > VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Need 1.0/1.1 device support";
+    }
+
+    float priorities[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.flags = 0;
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priorities[0];
+
+    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&features11);
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pQueueCreateInfos = &queue_info;
+    VkDevice testDevice;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-pNext");
+    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    m_errorMonitor->VerifyFound();
+
+    if (physDevProps().apiVersion == VK_API_VERSION_1_1) {
+        VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&bad_version_1_1_struct);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+        vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+        m_errorMonitor->VerifyFound();
+    }
 }

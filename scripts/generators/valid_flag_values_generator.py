@@ -101,12 +101,12 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             for expression, names in expressionMap.items():
                 extensions = expression.split(',')
                 checkExpression = []
-                for extesion in extensions:
-                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extesion.lower()})')
+                for extension in extensions:
+                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
                 checkExpression = " && ".join(checkExpression)
                 resultExpression = []
-                for extesion in extensions:
-                    resultExpression.append(f'vvl::Extension::_{extesion}')
+                for extension in extensions:
+                    resultExpression.append(f'vvl::Extension::_{extension}')
                 resultExpression = ", ".join(resultExpression)
 
                 out.append(f'if (value & ({" | ".join(names)})) {{\n')
@@ -149,12 +149,12 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             for expression, names in expressionMap.items():
                 extensions = expression.split(',')
                 checkExpression = []
-                for extesion in extensions:
-                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extesion.lower()})')
+                for extension in extensions:
+                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
                 checkExpression = " && ".join(checkExpression)
                 resultExpression = []
-                for extesion in extensions:
-                    resultExpression.append(f'vvl::Extension::_{extesion}')
+                for extension in extensions:
+                    resultExpression.append(f'vvl::Extension::_{extension}')
                 resultExpression = ", ".join(resultExpression)
 
                 out.append(f'if (value & ({" | ".join(names)})) {{\n')
