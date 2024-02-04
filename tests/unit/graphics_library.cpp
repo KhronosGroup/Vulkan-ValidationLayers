@@ -2691,7 +2691,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateFragShaderNull) {
     frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
     frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
     frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-MultisampleState");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-09567");
     frag_shader_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
