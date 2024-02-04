@@ -2074,6 +2074,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
 
 TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkDeviceMemory mem;
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
@@ -2081,19 +2082,30 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     mem_alloc.allocationSize = 4;
 
     // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryAllocateInfoNV
-    {
-        VkExportMemoryAllocateInfoNV export_memory_info_nv = vku::InitStructHelper();
-        export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
+    VkExportMemoryAllocateInfoNV export_memory_info_nv = vku::InitStructHelper();
+    export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
-        VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&export_memory_info_nv);
-        export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&export_memory_info_nv);
+    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
-        mem_alloc.pNext = &export_memory_info;
-        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+    mem_alloc.pNext = &export_memory_info;
+    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+    m_errorMonitor->VerifyFound();
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(NegativeMemory, MemoryAllocatepNextChainWin32) {
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    VkDeviceMemory mem;
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
+    mem_alloc.memoryTypeIndex = 0;
+    mem_alloc.allocationSize = 4;
+
     // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryWin32HandleInfoNV
     {
         VkExportMemoryWin32HandleInfoNV export_memory_info_win32_nv = vku::InitStructHelper();
@@ -2122,8 +2134,8 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
         vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
         m_errorMonitor->VerifyFound();
     }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 }
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
     TEST_DESCRIPTION("Validate usage of VkDeviceImageMemoryRequirementsKHR.");

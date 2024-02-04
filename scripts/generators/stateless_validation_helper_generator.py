@@ -347,8 +347,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
             bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                bool is_physdev_api, bool is_const_param) const {
+                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
                 bool skip = false;
+                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
 
@@ -372,29 +373,18 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
             if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
                 pnext_check += f'''
-                    if (api_version < {struct.version.nameApi}) {{
-                        skip |= LogError(
-                                pnext_vuid, instance, loc.dot(Field::pNext),
-                                "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
-                                "current effective API version is %s.", StringAPIVersion(api_version).c_str());
+                    if (is_physdev_api) {{
+                        VkPhysicalDeviceProperties device_properties = {{}};
+                        DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
+                        if (device_properties.apiVersion < {struct.version.nameApi}) {{
+                            skip |= LogError(
+                                    pnext_vuid, instance, loc.dot(Field::pNext),
+                                    "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
+                                    "current effective API version is %s.", StringAPIVersion(api_version).c_str());
+                        }}
                     }}
                     '''
 
-            extension_feature_struct = 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends and len(struct.extensions) > 0
-            if extension_feature_struct:
-                extension_check = []
-                extensions = [x.name for x in struct.extensions]
-                for extension in extensions:
-                    extension_check.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
-
-                pnext_check += f'''
-                        if ({" && ".join(extension_check)}) {{
-                            skip |= LogError(
-                                pnext_vuid, instance, loc.dot(Field::pNext),
-                                "includes a pointer to a {struct.name}, but when creating VkDevice, the parent extension "
-                                "({" or ".join(extensions)}) was not included in ppEnabledExtensionNames.");
-                        }}
-                    '''
             elif struct.sType in stype_version_dict.keys():
                 ext_name = stype_version_dict[struct.sType]
 
@@ -430,6 +420,30 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3122
                 pnext_check += 'if (is_const_param) {\n'
                 pnext_check += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
+
+                # We do the extension checking here at the pNext chaining because if the struct is only used in a new extended command,
+                # using that command will always trigger a "missing extension" VU
+                checkExpression = []
+                resultExpression = []
+                for extension in [x.name for x in struct.extensions if x.device]:
+                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
+                    resultExpression.append(extension)
+                # TODO - Video session creation checks will fail tests if no extensions are found (need to fix test logic)
+                if len(checkExpression) > 0 and 'Video' not in struct.name:
+                    # Special message for device features
+                    if 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends:
+                        pnext_check += f'''if ({" && ".join(checkExpression)}){{
+                            skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                "includes a pointer to a {struct.name}, but when creating VkDevice, the parent extension "
+                                "({" or ".join(resultExpression)}) was not included in ppEnabledExtensionNames.");
+                            }}
+                        '''
+                    else:
+                        pnext_check += f'''if ({" && ".join(checkExpression)}){{
+                                skip |= LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions {" or ".join(resultExpression)}");
+                            }}
+                            '''
+
                 struct_validation_source = f'{struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
                 struct_validation_source += '}\n'
             pnext_case += f'{pnext_check}{struct_validation_source}'
@@ -906,9 +920,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         usedLines.append(expr)
 
                     is_const_str = 'true' if member.const else 'false'
-                    isPhysDevice_str = 'true' if isPhysDevice else 'false'
+                    isPhysDevice_str = 'physicalDevice' if isPhysDevice else 'VK_NULL_HANDLE'
                     for setter, _, elem in multi_string_iter(usedLines):
-                        elem = re.sub(r', (true|false)', '', elem)
+                        elem = re.sub(r', (true|false|physicalDevice|VK_NULL_HANDLE)', '', elem)
                         m = validate_pnext_rx.match(elem)
                         if m is not None:
                             setter(f'{m.group(1)}, {isPhysDevice_str}, {is_const_str}{m.group(2)}')

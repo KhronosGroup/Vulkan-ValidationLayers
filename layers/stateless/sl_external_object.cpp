@@ -293,7 +293,7 @@ bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice d
     skip |=
         ValidateStructPnext(error_obj.location.dot(Field::pMetalObjectsInfo), pMetalObjectsInfo->pNext, allowed_structs.size(),
                             allowed_structs.data(), GeneratedVulkanHeaderVersion, "VUID-VkExportMetalObjectsInfoEXT-pNext-pNext",
-                            "VUID-VkExportMetalObjectsInfoEXT-sType-unique", false, true);
+                            "VUID-VkExportMetalObjectsInfoEXT-sType-unique", VK_NULL_HANDLE, true);
     return skip;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT

@@ -541,7 +541,8 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
 
 TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     TEST_DESCRIPTION("Test using VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't enable provokingVertexLast.");
-
+    AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::provokingVertexLast);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
