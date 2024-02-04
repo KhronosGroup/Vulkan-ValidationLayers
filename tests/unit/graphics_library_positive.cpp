@@ -149,9 +149,10 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
+    // Note - Don't need renderPass  when doing full link
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3764#note_451564
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -234,7 +235,6 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout_null.handle();
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -422,7 +422,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -512,7 +511,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -671,7 +669,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -747,7 +744,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -848,7 +844,6 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -1728,4 +1723,54 @@ TEST_F(PositiveGraphicsLibrary, BadRenderPassVertexInput) {
     VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
     pipe.gp_ci_.renderPass = bad_rp;
     pipe.CreateGraphicsPipeline(false);
+}
+
+TEST_F(PositiveGraphicsLibrary, LinkWithNoLayout) {
+    TEST_DESCRIPTION("You don't need a layout if fragment shader / pre-rasterization not required");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.InitState();
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    // Linking != Required pre-rasterization shader state
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &pre_raster_lib.pipeline_;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo(&link_info);
+    vertex_input_lib.InitState();
+    vertex_input_lib.gp_ci_.layout = VK_NULL_HANDLE;
+    vertex_input_lib.gp_ci_.renderPass = renderPass();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+}
+
+TEST_F(PositiveGraphicsLibrary, LinkWithNoRenderPass) {
+    TEST_DESCRIPTION("You don't need a Renderpass if only using vertex input");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.InitState();
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &pre_raster_lib.pipeline_;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo(&link_info);
+    vertex_input_lib.InitState();
+    vertex_input_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    vertex_input_lib.CreateGraphicsPipeline(false);
 }

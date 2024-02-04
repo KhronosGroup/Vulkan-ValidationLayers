@@ -268,6 +268,8 @@ class Pipeline : public StateObject {
 
     // Used to know if the pipeline substate is being created (as opposed to being linked)
     // Important as some pipeline checks need pipeline state that won't be there if the substate is from linking
+    // Many VUs say "the pipeline require" which means "not being linked in as a library"
+    // If the VUs says "created with" then you should NOT use this function
     bool OwnsSubState(const std::shared_ptr<PipelineSubState> sub_state) const { return sub_state && (&sub_state->parent == this); }
 
     const std::shared_ptr<const vvl::RenderPass> RenderPassState() const {
@@ -282,7 +284,10 @@ class Pipeline : public StateObject {
         return rp_state;
     }
 
-    bool IsRenderPassStateRequired() const { return pre_raster_state || fragment_shader_state || fragment_output_state; }
+    // A pipeline does not "require" state that is specified in a library.
+    bool IsRenderPassStateRequired() const {
+        return OwnsSubState(pre_raster_state) || OwnsSubState(fragment_shader_state) || OwnsSubState(fragment_output_state);
+    }
 
     const std::shared_ptr<const vvl::PipelineLayout> PipelineLayoutState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
