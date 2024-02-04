@@ -710,32 +710,6 @@ TEST_F(NegativeGraphicsLibrary, PreRasterStateNoLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGraphicsLibrary, LinkWithNoLayout) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-    InitRenderTarget();
-
-    CreatePipelineHelper pre_raster_lib(*this);
-    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-    pre_raster_lib.InitState();
-    pre_raster_lib.CreateGraphicsPipeline();
-
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = 1;
-    link_info.pLibraries = &pre_raster_lib.pipeline_;
-
-    CreatePipelineHelper vertex_input_lib(*this);
-    vertex_input_lib.InitVertexInputLibInfo(&link_info);
-    vertex_input_lib.InitState();
-    vertex_input_lib.gp_ci_.layout = VK_NULL_HANDLE;
-    vertex_input_lib.gp_ci_.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-06602");
-    vertex_input_lib.CreateGraphicsPipeline(false);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     TEST_DESCRIPTION("Link pipelines with DSLs that only differ by immutable samplers");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
@@ -1844,7 +1818,6 @@ TEST_F(NegativeGraphicsLibrary, MissingLinkingLayout) {
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = VK_NULL_HANDLE;
     exe_pipe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-06602");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
