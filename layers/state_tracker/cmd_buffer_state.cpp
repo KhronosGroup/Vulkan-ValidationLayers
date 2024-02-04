@@ -1309,7 +1309,7 @@ void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, 
         return;
     }
     vvl::Image *image_state = view_state.image_state.get();
-    auto *subresource_map = GetImageSubresourceLayoutMap(*image_state);
+    auto *subresource_map = image_state ? GetImageSubresourceLayoutMap(*image_state) : nullptr;
     if (subresource_map) {
         subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
     }
