@@ -135,6 +135,18 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
         m_errorMonitor->VerifyFound();
     }
 
+    if (GetConfigDecodeAV1()) {
+        VideoConfig config = GetConfigDecodeAV1();
+
+        profile = *config.Profile();
+        profile.pNext = nullptr;
+
+        // Missing codec-specific info for AV1 decode profile
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256");
+        vk.GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        m_errorMonitor->VerifyFound();
+    }
+
     if (GetConfigEncodeH264()) {
         VideoConfig config = GetConfigEncodeH264();
 
@@ -200,6 +212,26 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
 
         // Missing H.265 decode caps struct for H.265 decode profile
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07185");
+        caps.pNext = &decode_caps;
+        vk.GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (GetConfigDecodeAV1()) {
+        VideoConfig config = GetConfigDecodeAV1();
+
+        auto caps = vku::InitStruct<VkVideoCapabilitiesKHR>();
+        auto decode_caps = vku::InitStruct<VkVideoDecodeCapabilitiesKHR>();
+        auto decode_av1_caps = vku::InitStruct<VkVideoDecodeAV1CapabilitiesKHR>();
+
+        // Missing decode caps struct for decode profile
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183");
+        caps.pNext = &decode_av1_caps;
+        vk.GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        m_errorMonitor->VerifyFound();
+
+        // Missing AV1 decode caps struct for AV1 decode profile
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-09257");
         caps.pNext = &decode_caps;
         vk.GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
@@ -1118,6 +1150,23 @@ TEST_F(NegativeVideo, CreateSessionParamsMissingCodecInfo) {
         m_errorMonitor->VerifyFound();
     }
 
+    if (GetConfigDecodeAV1()) {
+        VideoConfig config = GetConfigDecodeAV1();
+        VideoContext context(DeviceObj(), config);
+
+        VkVideoSessionParametersKHR params;
+        VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
+        auto other_codec_info = vku::InitStruct<VkVideoDecodeH264SessionParametersCreateInfoKHR>();
+        other_codec_info.maxStdSPSCount = 1;
+        other_codec_info.maxStdPPSCount = 1;
+        create_info.pNext = &other_codec_info;
+        create_info.videoSession = context.Session();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-09259");
+        context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params);
+        m_errorMonitor->VerifyFound();
+    }
+
     if (GetConfigEncodeH264()) {
         VideoConfig config = GetConfigEncodeH264();
         VideoContext context(m_device, config);
@@ -1384,6 +1433,37 @@ TEST_F(NegativeVideo, CreateSessionParamsDecodeH265ExceededCapacity) {
     h265_ci.maxStdVPSCount = 2;
     h265_ci.maxStdSPSCount = 4;
     h265_ci.maxStdPPSCount = 6;
+    context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params2);
+    m_errorMonitor->VerifyFound();
+
+    context.vk.DestroyVideoSessionParametersKHR(m_device->device(), params, nullptr);
+}
+
+TEST_F(NegativeVideo, CreateSessionParamsDecodeAV1TemplateNotAllowed) {
+    TEST_DESCRIPTION("vkCreateVideoSessionParametersKHR - AV1 decode does not allow using parameters templates");
+
+    RETURN_IF_SKIP(Init());
+    VideoConfig config = GetConfigDecodeAV1();
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support";
+    }
+
+    VideoContext context(DeviceObj(), config);
+
+    StdVideoAV1SequenceHeader seq_header{};
+    auto av1_ci = vku::InitStruct<VkVideoDecodeAV1SessionParametersCreateInfoKHR>();
+    av1_ci.pStdSequenceHeader = &seq_header;
+
+    VkVideoSessionParametersKHR params, params2;
+    VkVideoSessionParametersCreateInfoKHR create_info = *config.SessionParamsCreateInfo();
+    create_info.pNext = &av1_ci;
+    create_info.videoSession = context.Session();
+
+    context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params);
+
+    create_info.videoSessionParametersTemplate = params;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-09258");
     context.vk.CreateVideoSessionParametersKHR(m_device->device(), &create_info, nullptr, &params2);
     m_errorMonitor->VerifyFound();
 
@@ -2240,6 +2320,25 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ConflictingKeys) {
     m_errorMonitor->VerifyFound();
 
     context.vk.DestroyVideoSessionParametersKHR(m_device->device(), params, nullptr);
+}
+
+TEST_F(NegativeVideo, UpdateSessionParamsDecodeAV1) {
+    TEST_DESCRIPTION("vkUpdateVideoSessionParametersKHR - not supported for AV1 decode");
+
+    RETURN_IF_SKIP(Init());
+    VideoConfig config = GetConfigDecodeAV1();
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support";
+    }
+
+    VideoContext context(DeviceObj(), config);
+
+    auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
+    update_info.updateSequenceCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateVideoSessionParametersKHR-09260");
+    context.vk.UpdateVideoSessionParametersKHR(m_device->device(), context.SessionParams(), &update_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ConflictingKeys) {
@@ -3209,6 +3308,31 @@ TEST_F(NegativeVideo, BeginCodingDecodeH265RequiresParams) {
 
     cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoBeginCodingInfoKHR-videoSession-07248");
+    cb.BeginVideoCoding(begin_info);
+    m_errorMonitor->VerifyFound();
+    cb.end();
+}
+
+TEST_F(NegativeVideo, BeginCodingDecodeAV1RequiresParams) {
+    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - AV1 decode requires session parameters");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfigDecodeAV1();
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support";
+    }
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    VkVideoBeginCodingInfoKHR begin_info = context.Begin();
+    begin_info.videoSessionParameters = VK_NULL_HANDLE;
+
+    cb.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoBeginCodingInfoKHR-videoSession-09261");
     cb.BeginVideoCoding(begin_info);
     m_errorMonitor->VerifyFound();
     cb.end();
@@ -7420,7 +7544,7 @@ TEST_F(NegativeVideo, DecodeSetupResourceNull) {
 TEST_F(NegativeVideo, EncodeSetupNull) {
     TEST_DESCRIPTION("vkCmdEncodeVideoKHR - reconstructed picture is required for sessions with DPB slots");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     auto config = GetConfig(GetConfigsWithReferences(GetConfigsEncode()));
     if (!config) {
@@ -8558,7 +8682,7 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivation) {
 TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - test DPB slot deactivation caused by H.264 interlaced reference invalidation");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
     if (!config) {
@@ -8718,7 +8842,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
         "vkCmdDecodeVideoKHR - H.264 reference picture kind (frame, top field, bottom field) mismatch "
         "between actual DPB slot contents and specified reference pictures");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
     if (!config) {
@@ -8840,7 +8964,7 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
 TEST_F(NegativeVideo, DecodeInvalidationOnlyH264Interlaced) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - test H.264 interlaced reference invalidation without implicit DPB slot deactivation");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
     if (!config) {
@@ -9229,6 +9353,218 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH265) {
         cb.DecodeVideo(decode_info);
         m_errorMonitor->VerifyFound();
     }
+
+    cb.EndVideoCoding(context.End());
+    cb.end();
+}
+
+TEST_F(NegativeVideo, DecodeInvalidCodecInfoAV1) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - invalid/missing AV1 codec-specific information");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeAV1(), 2), 2));
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support with 2 reference pictures and 2 DPB slots";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = 2;
+    config.SessionCreateInfo()->maxActiveReferencePictures = 2;
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    VideoDecodeInfo decode_info = context.DecodeFrame(0);
+
+    StdVideoDecodeAV1PictureInfo std_picture_info{};
+    auto picture_info = vku::InitStruct<VkVideoDecodeAV1PictureInfoKHR>();
+    uint32_t tile_offset = 0;
+    uint32_t tile_size = (uint32_t)decode_info->srcBufferRange;
+    picture_info.pStdPictureInfo = &std_picture_info;
+
+    for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
+        picture_info.referenceNameSlotIndices[i] = -1;
+    }
+
+    picture_info.tileCount = 1;
+    picture_info.pTileOffsets = &tile_offset;
+    picture_info.pTileSizes = &tile_size;
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin().AddResource(0, 0).AddResource(-1, 1));
+
+    // Missing AV1 picture info
+    {
+        decode_info = context.DecodeFrame(0);
+        decode_info->pNext = nullptr;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pNext-09250");
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Frame header offset must be within buffer range
+    {
+        decode_info = context.DecodeFrame(0);
+        decode_info->pNext = &picture_info;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-frameHeaderOffset-09251");
+        picture_info.frameHeaderOffset = (uint32_t)decode_info->srcBufferRange;
+        cb.DecodeVideo(decode_info);
+        picture_info.frameHeaderOffset = 0;
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Tile offsets must be within buffer range
+    {
+        decode_info = context.DecodeFrame(0);
+        decode_info->pNext = &picture_info;
+
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pTileOffsets-09253");
+        tile_offset = (uint32_t)decode_info->srcBufferRange;
+        cb.DecodeVideo(decode_info);
+        tile_offset = 0;
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Tile offset plus size must be within buffer range
+    {
+        decode_info = context.DecodeFrame(0);
+        decode_info->pNext = &picture_info;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252");
+        tile_size = (uint32_t)decode_info->srcBufferRange + 1;
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252");
+        tile_offset = 1;
+        tile_size = (uint32_t)decode_info->srcBufferRange;
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+
+        tile_offset = 0;
+        tile_size = (uint32_t)decode_info->srcBufferRange;
+    }
+
+    // Film grain cannot be used if the video profile did not enable support for it
+    {
+        decode_info = context.DecodeFrame(0);
+        decode_info->pNext = &picture_info;
+
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-09249");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-filmGrainSupport-09248");
+        std_picture_info.flags.apply_grain = 1;
+        cb.DecodeVideo(decode_info);
+        std_picture_info.flags.apply_grain = 0;
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Missing AV1 setup reference info
+    {
+        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        slot.pNext = nullptr;
+        slot.slotIndex = 0;
+        slot.pPictureResource = &context.Dpb()->Picture(0);
+
+        decode_info = context.DecodeFrame(1);
+        decode_info->pNext = &picture_info;
+        decode_info->pSetupReferenceSlot = &slot;
+
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07141");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-09254");
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Missing AV1 reference info
+    {
+        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        slot.pNext = nullptr;
+        slot.slotIndex = 0;
+        slot.pPictureResource = &context.Dpb()->Picture(0);
+
+        decode_info = context.DecodeFrame(1);
+        decode_info->pNext = &picture_info;
+        decode_info->referenceSlotCount = 1;
+        decode_info->pReferenceSlots = &slot;
+
+        picture_info.referenceNameSlotIndices[3] = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pNext-09255");
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+
+        picture_info.referenceNameSlotIndices[3] = -1;
+    }
+
+    // Missing reference in referenceNameSlotIndices to reference slot
+    {
+        auto slot = vku::InitStruct<VkVideoReferenceSlotInfoKHR>();
+        slot.pNext = nullptr;
+        slot.slotIndex = 0;
+        slot.pPictureResource = &context.Dpb()->Picture(0);
+
+        decode_info = context.DecodeFrame(1);
+        decode_info->pNext = &picture_info;
+        decode_info->referenceSlotCount = 1;
+        decode_info->pReferenceSlots = &slot;
+
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pNext-09255");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-slotIndex-09263");
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Missing reference slot for DPB slot index refered to by referenceNameSlotIndices
+    {
+        decode_info = context.DecodeFrame(0);
+        decode_info->pNext = &picture_info;
+
+        picture_info.referenceNameSlotIndices[3] = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-referenceNameSlotIndices-09262");
+        cb.DecodeVideo(decode_info);
+        m_errorMonitor->VerifyFound();
+
+        picture_info.referenceNameSlotIndices[3] = -1;
+    }
+
+    cb.EndVideoCoding(context.End());
+    cb.end();
+}
+
+TEST_F(NegativeVideo, DecodeAV1FilmGrainRequiresDistinct) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - AV1 film grain requires distinct reconstructed picture");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()));
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support with reference pictures and film grain";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = 1;
+    config.SessionCreateInfo()->maxActiveReferencePictures = 1;
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07140");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07146");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-09249");
+    cb.DecodeVideo(context.DecodeFrame(0).ApplyFilmGrain().SetDecodeOutput(context.Dpb()->Picture(0)));
+    m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
     cb.end();
