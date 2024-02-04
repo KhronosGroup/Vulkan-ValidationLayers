@@ -1019,9 +1019,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         if (!frag_shader_info.ms_state && frag_output_info.ms_state) {
             // if Fragment Output has sampleShadingEnable == false, Fragement Shader may be null
             if (frag_output_info.ms_state->sampleShadingEnable) {
-                // Missing VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6408
                 const char *vuid =
-                    (frag_shader_info.init == GPLInitType::gpl_flags)   ? "UNASSIGNED-VkGraphicsPipelineCreateInfo-MultisampleState"
+                    (frag_shader_info.init == GPLInitType::gpl_flags)   ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-09567"
                     : (frag_output_info.init == GPLInitType::gpl_flags) ? "VUID-VkGraphicsPipelineCreateInfo-flags-06637"
                                                                         : "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06636";
                 skip |= LogError(
