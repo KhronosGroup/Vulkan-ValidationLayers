@@ -653,6 +653,15 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
             break;
         }
 
+        case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
+            const auto decode_av1 = vku::FindStructInPNextChain<VkVideoDecodeAV1ProfileInfoKHR>(profile->pNext);
+            if (decode_av1 == nullptr) {
+                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", object, loc.dot(Field::pNext),
+                                 profile_pnext_msg, "VkVideoDecodeAV1ProfileInfoKHR");
+            }
+            break;
+        }
+
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
             const auto encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264ProfileInfoKHR>(profile->pNext);
             if (encode_h264 == nullptr) {
@@ -704,6 +713,7 @@ bool CoreChecks::ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR *p
             switch (profile_list->pProfiles[i].videoCodecOperation) {
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
+                case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
                     if (has_decode_profile) {
                         skip |= LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", object, loc,
                                          "contains more than one profile with decode codec operation.");
@@ -1109,6 +1119,56 @@ bool CoreChecks::ValidateEncodeH265ParametersAddInfo(const vvl::VideoSession &vs
     return skip;
 }
 
+bool CoreChecks::ValidateDecodeDistinctOutput(const vvl::CommandBuffer &cb_state, const VkVideoDecodeInfoKHR &decode_info,
+                                              const Location &loc) const {
+    bool skip = false;
+    auto cmd_loc = Location(loc.function);
+
+    const auto &vs_state = *cb_state.bound_video_session;
+    const auto &profile_caps = vs_state.profile->GetCapabilities();
+
+    if ((profile_caps.decode.flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR) == 0) {
+        const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+        switch (vs_state.GetCodecOp()) {
+            case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
+                // In case of AV1 decode distinct output can be used for film grain enabled frames
+                auto picture_info = vku::FindStructInPNextChain<VkVideoDecodeAV1PictureInfoKHR>(decode_info.pNext);
+                bool film_grain_enabled =
+                    (picture_info && picture_info->pStdPictureInfo && picture_info->pStdPictureInfo->flags.apply_grain);
+                if (!vs_state.profile->HasAV1FilmGrainSupport()) {
+                    skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07141", objlist, cmd_loc,
+                                     "the AV1 decode profile %s was created with does not support "
+                                     "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR and does not have "
+                                     "VkVideoDecodeAV1ProfileInfoKHR::filmGrainSupport set to VK_TRUE but "
+                                     "pDecodeInfo->dstPictureResource and pSetupReferenceSlot->pPictureResource "
+                                     "do not match.",
+                                     FormatHandle(vs_state).c_str());
+                } else if (!film_grain_enabled) {
+                    skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07141", objlist, cmd_loc,
+                                     "the AV1 decode profile %s was created with does not support "
+                                     "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR and "
+                                     "film grain is not enabled for the decoded picture but "
+                                     "pDecodeInfo->dstPictureResource and pSetupReferenceSlot->pPictureResource "
+                                     "do not match.",
+                                     FormatHandle(vs_state).c_str());
+                }
+                break;
+            }
+
+            default: {
+                skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07141", objlist, cmd_loc,
+                                 "the video profile %s was created with does not support "
+                                 "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR but "
+                                 "pDecodeInfo->dstPictureResource and pSetupReferenceSlot->pPictureResource "
+                                 "do not match.",
+                                 FormatHandle(vs_state).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateVideoDecodeInfoH264(const vvl::CommandBuffer &cb_state, const VkVideoDecodeInfoKHR &decode_info,
                                              const Location &loc) const {
     bool skip = false;
@@ -1295,6 +1355,112 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const vvl::CommandBuffer &cb_state,
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pNext-07164", cb_state.Handle(),
                              loc.dot(Field::pReferenceSlots, i).dot(Field::pNext), pnext_msg, "VkVideoDecodeH265DpbSlotInfoKHR");
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateVideoDecodeInfoAV1(const vvl::CommandBuffer &cb_state, const VkVideoDecodeInfoKHR &decode_info,
+                                            const Location &loc) const {
+    bool skip = false;
+
+    const char *pnext_msg = "chain does not contain a %s structure.";
+
+    const auto &vs_state = *cb_state.bound_video_session;
+
+    if (decode_info.pSetupReferenceSlot) {
+        auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeAV1DpbSlotInfoKHR>(decode_info.pSetupReferenceSlot->pNext);
+        if (!dpb_slot_info) {
+            skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-09254", cb_state.Handle(),
+                             loc.dot(Field::pSetupReferenceSlot).dot(Field::pNext), pnext_msg, "VkVideoDecodeAV1DpbSlotInfoKHR");
+        }
+    }
+
+    vvl::unordered_set<int32_t> reference_slot_indices{};
+    for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
+        auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeAV1DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
+        if (!dpb_slot_info) {
+            skip |= LogError("VUID-vkCmdDecodeVideoKHR-pNext-09255", cb_state.Handle(),
+                             loc.dot(Field::pReferenceSlots, i).dot(Field::pNext), pnext_msg, "VkVideoDecodeAV1DpbSlotInfoKHR");
+        }
+
+        reference_slot_indices.insert(decode_info.pReferenceSlots[i].slotIndex);
+    }
+
+    auto picture_info = vku::FindStructInPNextChain<VkVideoDecodeAV1PictureInfoKHR>(decode_info.pNext);
+    if (picture_info) {
+        auto std_picture_info = picture_info->pStdPictureInfo;
+
+        if (std_picture_info->flags.apply_grain) {
+            if (!vs_state.profile->HasAV1FilmGrainSupport()) {
+                skip |= LogError("VUID-vkCmdDecodeVideoKHR-filmGrainSupport-09248", cb_state.Handle(),
+                                 loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::pStdPictureInfo),
+                                 "has flags.apply_grain set but %s was created with an AV1 decode profile "
+                                 "with filmGrainSupport disabled.",
+                                 FormatHandle(vs_state).c_str());
+            }
+
+            if (decode_info.pSetupReferenceSlot != nullptr && decode_info.pSetupReferenceSlot->pPictureResource != nullptr) {
+                auto dst_resource = vvl::VideoPictureResource(this, decode_info.dstPictureResource);
+                auto setup_resource = vvl::VideoPictureResource(this, *decode_info.pSetupReferenceSlot->pPictureResource);
+                if (dst_resource == setup_resource) {
+                    skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-09249", cb_state.Handle(),
+                                     loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::pStdPictureInfo),
+                                     "has flags.apply_grain set but the decode output picture and the "
+                                     "reconstructed picture are not distinct.");
+                }
+            }
+        }
+
+        vvl::unordered_set<int32_t> reference_name_slot_indices{};
+        for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
+            if (picture_info->referenceNameSlotIndices[i] >= 0) {
+                if (reference_slot_indices.find(picture_info->referenceNameSlotIndices[i]) == reference_slot_indices.end()) {
+                    skip |= LogError("VUID-vkCmdDecodeVideoKHR-referenceNameSlotIndices-09262", cb_state.Handle(),
+                                     loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::referenceNameSlotIndices, i),
+                                     "(%d) does not match the slotIndex of any of the elements of pDecodeInfo->pReferenceSlots.",
+                                     picture_info->referenceNameSlotIndices[i]);
+                }
+
+                reference_name_slot_indices.insert(picture_info->referenceNameSlotIndices[i]);
+            }
+        }
+
+        for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
+            if (reference_name_slot_indices.find(decode_info.pReferenceSlots[i].slotIndex) == reference_name_slot_indices.end()) {
+                skip |= LogError("VUID-vkCmdDecodeVideoKHR-slotIndex-09263", cb_state.Handle(),
+                                 loc.dot(Field::pReferenceSlots, i),
+                                 "(%d) does not match any of the elements of "
+                                 "VkVideoDecodeAV1PictureInfoKHR::referenceNameSlotIndices.",
+                                 decode_info.pReferenceSlots[i].slotIndex);
+            }
+        }
+
+        if (picture_info->frameHeaderOffset >= decode_info.srcBufferRange) {
+            skip |= LogError("VUID-vkCmdDecodeVideoKHR-frameHeaderOffset-09251", cb_state.Handle(),
+                             loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::frameHeaderOffset),
+                             "(%u) is greater than or equal to pDecodeInfo->srcBufferRange (%" PRIu64 ").",
+                             picture_info->frameHeaderOffset, decode_info.srcBufferRange);
+        }
+
+        for (uint32_t i = 0; i < picture_info->tileCount; ++i) {
+            if (picture_info->pTileOffsets[i] >= decode_info.srcBufferRange) {
+                skip |= LogError("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09253", cb_state.Handle(),
+                                 loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::pTileOffsets, i),
+                                 "(%u) is greater than or equal to pDecodeInfo->srcBufferRange (%" PRIu64 ").",
+                                 picture_info->pTileOffsets[i], decode_info.srcBufferRange);
+            }
+
+            if (picture_info->pTileOffsets[i] + picture_info->pTileSizes[i] > decode_info.srcBufferRange) {
+                skip |= LogError("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252", cb_state.Handle(),
+                                 loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::pTileOffsets, i),
+                                 "(%u) plus pTileSizes[%u] (%u) is greater than pDecodeInfo->srcBufferRange (%" PRIu64 ").",
+                                 picture_info->pTileOffsets[i], i, picture_info->pTileSizes[i], decode_info.srcBufferRange);
+            }
+        }
+    } else {
+        skip |= LogError("VUID-vkCmdDecodeVideoKHR-pNext-09250", cb_state.Handle(), loc.dot(Field::pNext), pnext_msg,
+                         "VkVideoDecodeAV1PictureInfoKHR");
     }
 
     return skip;
@@ -2161,6 +2327,14 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysical
             }
             break;
 
+        case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
+            is_decode = true;
+            if (!vku::FindStructInPNextChain<VkVideoDecodeAV1CapabilitiesKHR>(pCapabilities->pNext)) {
+                skip |= LogError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-09257", physicalDevice, caps_loc,
+                                 caps_pnext_msg, "VkVideoDecodeAV1CapabilitiesKHR");
+            }
+            break;
+
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
             is_encode = true;
             if (!vku::FindStructInPNextChain<VkVideoEncodeH264CapabilitiesKHR>(pCapabilities->pNext)) {
@@ -2591,6 +2765,21 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
             break;
         }
 
+        case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
+            auto codec_info = vku::FindStructInPNextChain<VkVideoDecodeAV1SessionParametersCreateInfoKHR>(pCreateInfo->pNext);
+            if (!codec_info) {
+                skip |=
+                    LogError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-09259", device,
+                             create_info_loc.dot(Field::pNext), pnext_chain_msg, "VkVideoDecodeAV1SessionParametersCreateInfoKHR");
+            }
+            if (pCreateInfo->videoSessionParametersTemplate != VK_NULL_HANDLE) {
+                skip |= LogError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-09258", device,
+                                 create_info_loc.dot(Field::videoSessionParametersTemplate),
+                                 "must be VK_NULL_HANDLE when using an AV1 decode profile.");
+            }
+            break;
+        }
+
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
             auto codec_info = vku::FindStructInPNextChain<VkVideoEncodeH264SessionParametersCreateInfoKHR>(pCreateInfo->pNext);
             if (codec_info) {
@@ -2800,6 +2989,12 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
                                      FormatHandle(videoSessionParameters).c_str());
                 }
             }
+            break;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
+            skip |= LogError("VUID-vkUpdateVideoSessionParametersKHR-09260", videoSessionParameters, error_obj.location,
+                             "AV1 decode session parameters cannot be updated.");
             break;
         }
 
@@ -3267,6 +3462,10 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
             codec_op_requires_params_vuid = "VUID-VkVideoBeginCodingInfoKHR-videoSession-07248";
             break;
 
+        case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
+            codec_op_requires_params_vuid = "VUID-VkVideoBeginCodingInfoKHR-videoSession-09261";
+            break;
+
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
             codec_op_requires_params_vuid = "VUID-VkVideoBeginCodingInfoKHR-videoSession-07249";
             break;
@@ -3702,15 +3901,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                  FormatHandle(*vs_state).c_str());
             }
 
-            if ((profile_caps.decode.flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR) == 0 &&
-                !dst_same_as_setup) {
-                const LogObjectList objlist(commandBuffer, vs_state->Handle());
-                skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07141", objlist, error_obj.location,
-                                 "the video profile %s was created with does not support "
-                                 "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR but "
-                                 "pDecodeInfo->dstPictureResource and pSetupReferenceSlot->pPictureResource "
-                                 "do not match.",
-                                 FormatHandle(*vs_state).c_str());
+            if (!dst_same_as_setup) {
+                skip |= ValidateDecodeDistinctOutput(*cb_state, *pDecodeInfo, decode_info_loc);
             }
         }
     }
@@ -3847,6 +4039,10 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
             skip |= ValidateVideoDecodeInfoH265(*cb_state, *pDecodeInfo, decode_info_loc);
+            break;
+
+        case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
+            skip |= ValidateVideoDecodeInfoAV1(*cb_state, *pDecodeInfo, decode_info_loc);
             break;
 
         default:

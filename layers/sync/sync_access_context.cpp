@@ -222,8 +222,8 @@ void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, Attachm
 void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                                       SyncStageAccessIndex current_usage, ResourceUsageTag tag) {
     const auto image = static_cast<const ImageState *>(resource.image_state.get());
-    const auto offset = vs_state.profile->GetEffectiveImageOffset(resource.coded_offset);
-    const auto extent = vs_state.profile->GetEffectiveImageExtent(resource.coded_extent);
+    const auto offset = resource.GetEffectiveImageOffset(vs_state);
+    const auto extent = resource.GetEffectiveImageExtent(vs_state);
     ImageRangeGen range_gen(image->MakeImageRangeGen(resource.range, offset, extent, false));
     UpdateAccessState(range_gen, current_usage, SyncOrdering::kNonAttachment, tag);
 }
@@ -356,8 +356,8 @@ HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, Atta
 HazardResult AccessContext::DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                                          SyncStageAccessIndex current_usage) const {
     const auto image = static_cast<const ImageState *>(resource.image_state.get());
-    const auto offset = vs_state.profile->GetEffectiveImageOffset(resource.coded_offset);
-    const auto extent = vs_state.profile->GetEffectiveImageExtent(resource.coded_extent);
+    const auto offset = resource.GetEffectiveImageOffset(vs_state);
+    const auto extent = resource.GetEffectiveImageExtent(vs_state);
     ImageRangeGen range_gen(image->MakeImageRangeGen(resource.range, offset, extent, false));
     HazardDetector detector(current_usage);
     return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);

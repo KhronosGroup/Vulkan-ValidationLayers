@@ -76,7 +76,7 @@ TEST_F(PositiveVideo, VideoDecodeProfileIndependentResources) {
     TEST_DESCRIPTION("Test video profile independent resources with decode");
 
     EnableVideoMaintenance1();
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
     if (!IsVideoMaintenance1Enabled()) {
         GTEST_SKIP() << "Test requires videoMaintenance1";
     }
@@ -107,7 +107,7 @@ TEST_F(PositiveVideo, VideoEncodeProfileIndependentResources) {
     TEST_DESCRIPTION("Test video profile independent resources with encode");
 
     EnableVideoMaintenance1();
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
     if (!IsVideoMaintenance1Enabled()) {
         GTEST_SKIP() << "Test requires videoMaintenance1";
     }
@@ -233,7 +233,7 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
 TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
     TEST_DESCRIPTION("Tests H.264/AVC interlaced video decode with partial DPB slot picture reference invalidation");
 
-    RETURN_IF_SKIP(Init())
+    RETURN_IF_SKIP(Init());
 
     const uint32_t dpb_slots = 3;
     const uint32_t active_refs = 2;
@@ -326,10 +326,115 @@ TEST_F(PositiveVideo, VideoDecodeH265) {
     m_device->wait();
 }
 
+TEST_F(PositiveVideo, VideoDecodeAV1) {
+    TEST_DESCRIPTION("Tests basic AV1 video decode use case for framework verification purposes");
+
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t dpb_slots = 3;
+    const uint32_t active_refs = 2;
+
+    VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeAV1(), dpb_slots), active_refs));
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support with at least 3 DPB slots and 2 active references";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = dpb_slots;
+    config.SessionCreateInfo()->maxActiveReferencePictures = active_refs;
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
+    cb.ControlVideoCoding(context.Control().Reset());
+    cb.DecodeVideo(context.DecodeReferenceFrame(0));
+    cb.DecodeVideo(context.DecodeFrame(1).AddReferenceFrame(0));
+    cb.DecodeVideo(context.DecodeReferenceFrame(1).AddReferenceFrame(0));
+    cb.DecodeVideo(context.DecodeFrame(2));
+    cb.DecodeVideo(context.DecodeReferenceFrame(2).AddReferenceFrame(0).AddReferenceFrame(1));
+    cb.EndVideoCoding(context.End());
+    cb.end();
+    context.Queue().submit(cb);
+    m_device->wait();
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin().AddResource(0, 0).InvalidateSlot(1).AddResource(-1, 1).AddResource(2, 2));
+    cb.DecodeVideo(context.DecodeFrame(1));
+    cb.DecodeVideo(context.DecodeReferenceFrame(1).AddReferenceFrame(0).AddReferenceFrame(2));
+    cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1));
+    cb.EndVideoCoding(context.End());
+    cb.end();
+    context.Queue().submit(cb);
+    m_device->wait();
+}
+
+TEST_F(PositiveVideo, DecodeAV1DistinctWithFilmGrain) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - AV1 works with distinct reconstructed picture if using film grain");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()),
+                                                 [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support with reference pictures, film grain, and no distinct mode";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = 1;
+    config.SessionCreateInfo()->maxActiveReferencePictures = 1;
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
+    cb.DecodeVideo(context.DecodeReferenceFrame(0).ApplyFilmGrain());
+    cb.EndVideoCoding(context.End());
+    cb.end();
+}
+
+TEST_F(PositiveVideo, DecodeAV1CoincideWithoutFilmGrain) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - AV1 only requires distinct reconstructed picture if using film grain");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()),
+                                                 [](const VideoConfig& config) { return config.SupportsDecodeOutputCoincide(); }));
+    if (!config) {
+        GTEST_SKIP() << "Test requires AV1 decode support with reference pictures, film grain, and coincide mode";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = 1;
+    config.SessionCreateInfo()->maxActiveReferencePictures = 1;
+
+    VideoContext context(DeviceObj(), config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07146");
+    cb.DecodeVideo(context.DecodeFrame(0).SetDecodeOutput(context.Dpb()->Picture(0)));
+
+    cb.EndVideoCoding(context.End());
+    cb.end();
+}
+
 TEST_F(PositiveVideo, VideoEncodeH264) {
     TEST_DESCRIPTION("Tests basic H.264/AVC video encode use case for framework verification purposes");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
 
     const uint32_t dpb_slots = 3;
     const uint32_t active_refs = 2;
@@ -388,7 +493,7 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
 TEST_F(PositiveVideo, VideoEncodeH265) {
     TEST_DESCRIPTION("Tests basic H.265/HEVC video encode use case for framework verification purposes");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
 
     const uint32_t dpb_slots = 3;
     const uint32_t active_refs = 2;
@@ -450,7 +555,7 @@ TEST_F(PositiveVideo, EncodeRateControlH264LayerCount) {
         "vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - H.264 temporal layer count must only match "
         "the layer count if the layer count is greater than 1");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
         return config.EncodeCapsH264()->maxTemporalLayerCount > 1;
@@ -481,7 +586,7 @@ TEST_F(PositiveVideo, EncodeRateControlH265LayerCount) {
         "vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - H.265 sub-layer count must only match "
         "the layer count if the layer count is greater than 1");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
         return config.EncodeCapsH265()->maxSubLayerCount > 1;
@@ -510,7 +615,7 @@ TEST_F(PositiveVideo, EncodeRateControlH265LayerCount) {
 TEST_F(PositiveVideo, GetEncodedSessionParamsH264) {
     TEST_DESCRIPTION("vkGetEncodedVideoSessionParametersKHR - test basic usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfigEncodeH264();
     if (!config) {
@@ -544,7 +649,7 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH264) {
 TEST_F(PositiveVideo, GetEncodedSessionParamsH265) {
     TEST_DESCRIPTION("vkGetEncodedVideoSessionParametersKHR - test basic usage");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfigEncodeH265();
     if (!config) {

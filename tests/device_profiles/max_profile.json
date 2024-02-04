@@ -1945,6 +1945,7 @@
                 "VK_KHR_timeline_semaphore": 1,
                 "VK_KHR_uniform_buffer_standard_layout": 1,
                 "VK_KHR_variable_pointers": 1,
+                "VK_KHR_video_decode_av1": 1,
                 "VK_KHR_video_decode_h264": 1,
                 "VK_KHR_video_decode_h265": 1,
                 "VK_KHR_video_decode_queue": 1,
@@ -7625,7 +7626,8 @@
                     "VkQueueFamilyVideoPropertiesKHR": {
                         "videoCodecOperations": [
                             "VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR",
-                            "VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR"
+                            "VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR",
+                            "VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR"
                         ]
                     }
                 },

@@ -50,6 +50,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
         union {
             VkVideoDecodeH264ProfileInfoKHR decode_h264;
             VkVideoDecodeH265ProfileInfoKHR decode_h265;
+            VkVideoDecodeAV1ProfileInfoKHR decode_av1;
             VkVideoEncodeH264ProfileInfoKHR encode_h264;
             VkVideoEncodeH265ProfileInfoKHR encode_h265;
         };
@@ -65,6 +66,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
         union {
             VkVideoDecodeH264CapabilitiesKHR decode_h264;
             VkVideoDecodeH265CapabilitiesKHR decode_h265;
+            VkVideoDecodeAV1CapabilitiesKHR decode_av1;
             VkVideoEncodeH264CapabilitiesKHR encode_h264;
             VkVideoEncodeH265CapabilitiesKHR encode_h265;
         };
@@ -80,6 +82,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
     bool IsEncode() const { return profile_.is_encode; }
     VkVideoCodecOperationFlagBitsKHR GetCodecOp() const { return profile_.base.videoCodecOperation; }
     VkVideoDecodeH264PictureLayoutFlagBitsKHR GetH264PictureLayout() const { return profile_.decode_h264.pictureLayout; }
+    bool HasAV1FilmGrainSupport() const { return profile_.decode_av1.filmGrainSupport; }
 
     VkExtent2D GetMaxCodingBlockSize() const {
         switch (profile_.base.videoCodecOperation) {
@@ -97,32 +100,6 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
                 assert(false);
                 return {0, 0};
         }
-    }
-
-    VkOffset3D GetEffectiveImageOffset(VkOffset2D coded_offset) const {
-        VkOffset3D offset{coded_offset.x, coded_offset.y, 0};
-
-        // Round to picture access granularity
-        const auto gran = capabilities_.base.pictureAccessGranularity;
-        offset.x = (offset.x / gran.width) * gran.width;
-        offset.y = (offset.y / gran.height) * gran.height;
-        return offset;
-    }
-
-    VkExtent3D GetEffectiveImageExtent(VkExtent2D coded_extent) const {
-        VkExtent3D extent{coded_extent.width, coded_extent.height, 0};
-
-        // H.264 decode interlacing with separate planes only accesses half of the coded height
-        if (GetCodecOp() == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR &&
-            GetH264PictureLayout() == VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_SEPARATE_PLANES_BIT_KHR) {
-            extent.height /= 2;
-        }
-
-        // Round to picture access granularity
-        const auto gran = capabilities_.base.pictureAccessGranularity;
-        extent.width = ((extent.width + gran.width - 1) / gran.width) * gran.width;
-        extent.height = ((extent.height + gran.height - 1) / gran.height) * gran.height;
-        return extent;
     }
 
     struct compare {
@@ -152,6 +129,11 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
 
                     case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
                         match = match && lhs->profile_.decode_h265.stdProfileIdc == rhs->profile_.decode_h265.stdProfileIdc;
+                        break;
+
+                    case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
+                        match = match && lhs->profile_.decode_av1.stdProfile == rhs->profile_.decode_av1.stdProfile &&
+                                lhs->profile_.decode_av1.filmGrainSupport == rhs->profile_.decode_av1.filmGrainSupport;
                         break;
 
                     case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
@@ -194,6 +176,10 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
                 }
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
                     hc << desc->profile_.decode_h265.stdProfileIdc;
+                    break;
+                }
+                case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
+                    hc << desc->profile_.decode_av1.stdProfile << desc->profile_.decode_av1.filmGrainSupport;
                     break;
                 }
                 case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
@@ -281,6 +267,9 @@ class VideoPictureResource {
             return hc.Value();
         }
     };
+
+    VkOffset3D GetEffectiveImageOffset(const vvl::VideoSession &vs_state) const;
+    VkExtent3D GetEffectiveImageExtent(const vvl::VideoSession &vs_state) const;
 
   private:
     VkImageSubresourceRange GetImageSubresourceRange(ImageView const *image_view_state, uint32_t layer);
@@ -578,10 +567,15 @@ class VideoSessionParameters : public StateObject {
         uint32_t pps_capacity;
     };
 
+    struct AV1Parameters {
+        std::unique_ptr<StdVideoAV1SequenceHeader> seq_header;
+    };
+
     struct Data {
         uint32_t update_sequence_counter;
         H264Parameters h264;
         H265Parameters h265;
+        AV1Parameters av1;
     };
 
     struct EncodeConfig {
@@ -668,6 +662,8 @@ class VideoSessionParameters : public StateObject {
                 return nullptr;
             }
         }
+
+        const StdVideoAV1SequenceHeader *GetAV1SequenceHeader() const { return data_->av1.seq_header.get(); }
 
       private:
         std::unique_lock<std::mutex> lock_;
