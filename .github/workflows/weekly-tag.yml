@@ -1,0 +1,21 @@
+name: Weekly tag
+
+# run every friday at 00:15 UTC
+on:
+  schedule:
+  - cron: "0 15  * * 5"
+
+jobs:
+  runs-on: ubuntu-latest
+  permissions: write-all
+  - name: Create Tag
+  uses: actions/github-script@v6
+  with:
+    script: |
+      const {DIST_VERSION} = $(date +weekly-%F)
+      github.rest.git.createRef({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        ref: 'refs/tags/v${DIST_VERSION}',
+        sha: context.sha
+      })
