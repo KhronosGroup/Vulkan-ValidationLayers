@@ -37,6 +37,8 @@ Updates to this repository which correspond to a new Vulkan specification releas
 
 This scheme was adopted following the `1.3.266` Vulkan specification release.
 
+Weekly automated (and untested) tags are generated with the following format: `snapshot-<year>wk<week-number>`, eg. `snapshot-2024wk06`.
+
 ## License
 This work is released as open source under a Apache-style license from Khronos including a Khronos copyright.
 
