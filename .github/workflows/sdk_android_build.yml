@@ -1,5 +1,5 @@
-# Copyright (c) 2023 Valve Corporation
-# Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2024 Valve Corporation
+# Copyright (c) 2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: vvl-android
+        name: vvl-android-${{ matrix.abi }}
         path: ./build-android/libs/lib/
 
   release:
@@ -112,20 +112,16 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        - {
-            name: "Upload Android Release Tar Gzip Artifact",
-            artifact: "vvl-android",
-            command: "tar czf",
-            suffix: "tar.gz",
-            type: "application/x-gtar"
-          }
-        - {
-            name: "Upload Android Release Zip Artifact",
-            artifact: "vvl-android",
-            command: "zip -r",
-            suffix: "zip",
-            type: "application/zip"
-          }
+        - name: "Upload Android Release Tar Gzip Artifact"
+          artifact: "vvl-android"
+          command: "tar cvzf"
+          suffix: "tar.gz"
+          type: "application/x-gtar"
+        - name: "Upload Android Release Zip Artifact"
+          artifact: "vvl-android"
+          command: "zip -r"
+          suffix: "zip"
+          type: "application/zip"
     steps:
     - name: Get sdk version string
       id: get_sdk_version
@@ -135,8 +131,9 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        name: ${{ matrix.config.artifact }}
         path: ./android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
+        merge-multiple: true
+        pattern: ${{ matrix.config.artifact }}-*
     - name: Make release artifacts
       run: |
         ${{ matrix.config.command }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
