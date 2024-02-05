@@ -1433,9 +1433,12 @@ TEST_F(NegativeRayTracing, IndirectStridesMultiple) {
 
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.SetIndirectStride(13);
+    blas.SetIndirectDeviceAddress(13);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectStrides-03787");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectDeviceAddresses-03648");
     blas.BuildCmdBufferIndirect(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 }

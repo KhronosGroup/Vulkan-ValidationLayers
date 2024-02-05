@@ -433,6 +433,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetIndirectStride(uint32_t indirect_
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetIndirectDeviceAddress(std::optional<VkDeviceAddress> indirect_buffer_address) {
+    indirect_buffer_address_ = indirect_buffer_address;
+    return *this;
+}
+
 void BuildGeometryInfoKHR::BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     if (blas_) {
         blas_->BuildCmdBuffer(cmd_buffer, use_ppGeometries);
@@ -608,7 +613,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     std::vector<uint32_t> p_max_primitive_counts(vk_info_.geometryCount, 1);
     const uint32_t *pp_max_primitive_counts = p_max_primitive_counts.data();
 
-    const VkDeviceAddress indirect_address = indirect_buffer_->address();
+    const VkDeviceAddress indirect_address = indirect_buffer_address_ ? *indirect_buffer_address_ : indirect_buffer_->address();
 
     vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_address, &indirect_stride_,
                                                   &pp_max_primitive_counts);
