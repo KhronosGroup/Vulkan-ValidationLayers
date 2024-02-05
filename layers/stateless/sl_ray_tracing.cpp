@@ -1471,6 +1471,12 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
             }
         }
 
+        if (SafeModulo(pIndirectDeviceAddresses[info_i], 4) != 0) {
+            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectDeviceAddresses-03648", commandBuffer,
+                             error_obj.location.dot(Field::pIndirectStrides, info_i), "is 0x%" PRIx64 ".",
+                             pIndirectDeviceAddresses[info_i]);
+        }
+
         if (SafeModulo(pIndirectStrides[info_i], 4) != 0) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pIndirectStrides-03787", commandBuffer,
                              error_obj.location.dot(Field::pIndirectStrides, info_i), "is %" PRIu32 ".", pIndirectStrides[info_i]);
