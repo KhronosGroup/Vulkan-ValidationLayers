@@ -551,13 +551,14 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 }
             }
         } else {  // Handle created by non-Vulkan API (as opposite to using vkGetMemoryWin32HandleKHR)
-            constexpr VkExternalMemoryHandleTypeFlags nt_handles =
-                VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT |
-                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
-            constexpr VkExternalMemoryHandleTypeFlags global_share_handles =
-                VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT;
+            constexpr VkExternalMemoryHandleTypeFlags nt_handles_outside_vulkan_api =
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT |
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+            constexpr VkExternalMemoryHandleTypeFlags global_share_handles_outside_vulkan_api =
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT;
 
-            if ((import_memory_win32_info->handleType & (nt_handles | global_share_handles)) != 0) {
+            if ((import_memory_win32_info->handleType &
+                 (nt_handles_outside_vulkan_api | global_share_handles_outside_vulkan_api)) != 0) {
                 VkMemoryWin32HandlePropertiesKHR handle_properties = vku::InitStructHelper();
                 DispatchGetMemoryWin32HandlePropertiesKHR(device, import_memory_win32_info->handleType,
                                                           import_memory_win32_info->handle, &handle_properties);
