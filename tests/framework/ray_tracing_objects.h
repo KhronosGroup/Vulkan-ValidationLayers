@@ -16,6 +16,7 @@
 #include "shader_helper.h"
 
 #include <memory>
+#include <optional>
 
 namespace vkt {
 // acceleration structure
@@ -178,6 +179,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetDeferredOp(VkDeferredOperationKHR deferred_op);
     BuildGeometryInfoKHR& SetUpdateDstAccelStructSizeBeforeBuild(bool update_before_build);
     BuildGeometryInfoKHR& SetIndirectStride(uint32_t indirect_stride);
+    BuildGeometryInfoKHR& SetIndirectDeviceAddress(std::optional<VkDeviceAddress> indirect_buffer_address);
 
     // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
     // then will build/update an acceleration structure.
@@ -221,6 +223,7 @@ class BuildGeometryInfoKHR {
     std::unique_ptr<uint8_t[]> host_scratch_;
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
     std::unique_ptr<vkt::Buffer> indirect_buffer_;
+    std::optional<VkDeviceAddress> indirect_buffer_address_{};
     uint32_t indirect_stride_ = sizeof(VkAccelerationStructureBuildRangeInfoKHR);
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos_;
     VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;
