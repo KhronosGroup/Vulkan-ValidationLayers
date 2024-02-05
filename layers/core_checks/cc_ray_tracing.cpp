@@ -1461,17 +1461,24 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     if (query_pool_ci.queryType != queryType) {
         skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryPool-02493", commandBuffer,
                          error_obj.location.dot(Field::queryType),
-                         "was created with %s which is differnent from the type queryPool was created with %s.",
+                         "was created with %s which is different from the type queryPool was created with (%s).",
                          string_VkQueryType(queryType), string_VkQueryType(query_pool_ci.queryType));
     }
     for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
-        if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
-            auto as_state = Get<vvl::AccelerationStructureKHR>(pAccelerationStructures[i]);
-            if (!(as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
-                skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431", commandBuffer,
-                                 error_obj.location.dot(Field::pAccelerationStructures, i),
-                                 "was built with %s, but queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR.",
-                                 string_VkBuildAccelerationStructureFlagsKHR(as_state->build_info_khr.flags).c_str());
+        const Location as_loc = error_obj.location.dot(Field::pAccelerationStructures, i);
+        auto as_state = Get<vvl::AccelerationStructureKHR>(pAccelerationStructures[i]);
+
+        if (!as_state->built) {
+            skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964", device, as_loc,
+                             "has not been built.");
+        } else {
+            if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
+                if (!(as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
+                    skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431",
+                                     commandBuffer, as_loc,
+                                     "was built with %s, but queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR.",
+                                     string_VkBuildAccelerationStructureFlagsKHR(as_state->build_info_khr.flags).c_str());
+                }
             }
         }
     }
@@ -1605,6 +1612,11 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
     }
     auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
     if (src_accel_state) {
+        if (!src_accel_state->built) {
+            skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963", device, info_loc.dot(Field::src),
+                             "has not been built.");
+        }
+
         auto buffer_state = Get<vvl::Buffer>(src_accel_state->create_infoKHR.buffer);
         skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::src),
                                               "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
