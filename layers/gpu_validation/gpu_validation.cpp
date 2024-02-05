@@ -542,6 +542,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
         ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
         aborted = true;
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
+        return CommandResources();
     }
 
     // It is possible to have no descriptor sets bound, for example if using push constants.
@@ -607,7 +608,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
         aborted = true;
-        return std::make_unique<PreDrawResources>();
+        return nullptr;
     }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -617,7 +618,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources(use_shader_objects);
     if (!shared_resources) {
-        return std::make_unique<gpuav::PreDrawResources>();
+        return nullptr;
     }
 
     auto draw_resources = std::make_unique<PreDrawResources>();
@@ -633,7 +634,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         if (validation_pipeline == VK_NULL_HANDLE) {
             ReportSetupProblem(device, "Could not find or create a pipeline. Aborting GPU-AV");
             aborted = true;
-            return std::make_unique<PreDrawResources>();
+            return nullptr;
         }
     }
     VkResult result = VK_SUCCESS;
@@ -642,7 +643,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate descriptor set. Aborting GPU-AV");
         aborted = true;
-        return std::make_unique<PreDrawResources>();
+        return nullptr;
     }
 
     const uint32_t buffer_count = 3;
@@ -691,7 +692,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
             ReportSetupProblem(device, "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV");
             aborted = true;
-            return std::make_unique<PreDrawResources>();
+            return nullptr;
         }
 
         // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndirectCommand))
@@ -797,7 +798,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
         aborted = true;
-        return std::make_unique<PreDispatchResources>();
+        return nullptr;
     }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -822,7 +823,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate descriptor set. Aborting GPU-AV");
         aborted = true;
-        return std::make_unique<PreDispatchResources>();
+        return nullptr;
     }
 
     const uint32_t buffer_count = 2;
@@ -883,7 +884,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
 
     PreTraceRaysResources::SharedResources *shared_resources = GetSharedTraceRaysValidationResources();
     if (!shared_resources) {
-        return std::make_unique<PreTraceRaysResources>();
+        return nullptr;
     }
 
     // Allocate descriptor set. Can I assume VK_EXT_descriptor_indexing is supported?
@@ -899,7 +900,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate descriptor set for ray tracing validation pipeline. Aborting GPU-AV");
         aborted = true;
-        return std::make_unique<PreTraceRaysResources>();
+        return nullptr;
     }
 
     constexpr uint32_t buffer_count = 1;
@@ -924,7 +925,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
         aborted = true;
-        return std::make_unique<PreTraceRaysResources>();
+        return nullptr;
     }
 
     // Save current ray tracing pipeline state
@@ -970,38 +971,37 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBufferToImageValidationResources(
     vvl::Func cmd, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
     if (!gpuav_settings.validate_copies) {
-        auto cmd_resources_ptr = std::make_unique<PreCopyBufferToImageResources>();
-        return cmd_resources_ptr;
+        return nullptr;
     }
 
     // No need to perform validation if VK_EXT_depth_range_unrestricted is enabled
     if (IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
-        return std::make_unique<PreCopyBufferToImageResources>();
+        return nullptr;
     }
 
     auto image_state = Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
         ReportSetupProblem(device, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image");
         aborted = true;
-        return std::make_unique<PreCopyBufferToImageResources>();
+        return nullptr;
     }
 
     // Only need to perform validation for depth image having a depth format that is not unsigned normalized.
     // For unsigned normalized formats, depth is by definition in range [0, 1]
     if (!IsValueIn(image_state->safe_create_info.format, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT})) {
-        return std::make_unique<PreCopyBufferToImageResources>();
+        return nullptr;
     }
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(device, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer");
         aborted = true;
-        return std::make_unique<PreCopyBufferToImageResources>();
+        return nullptr;
     }
 
     gpuav::PreCopyBufferToImageResources::SharedResources *shared_resources = GetSharedCopyBufferToImageValidationResources();
     if (!shared_resources) {
-        return std::make_unique<PreCopyBufferToImageResources>();
+        return nullptr;
     }
 
     CommandResources cmd_resources;
@@ -1009,7 +1009,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
     // Only the output buffer is needed
     if (AllocateOutputMem(cmd_resources.output_mem_block) == false) {
         aborted = true;
-        return std::make_unique<PreCopyBufferToImageResources>();
+        return nullptr;
     }
     auto copy_buffer_to_img_resources = std::make_unique<PreCopyBufferToImageResources>();
     CommandResources &base = *copy_buffer_to_img_resources;
@@ -1056,7 +1056,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
             aborted = true;
-            return std::make_unique<PreCopyBufferToImageResources>();
+            return nullptr;
         }
 
         uint32_t *gpu_regions_u32_ptr = nullptr;
@@ -1066,7 +1066,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, "Unable to map device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
             aborted = true;
-            return std::make_unique<PreCopyBufferToImageResources>();
+            return nullptr;
         }
 
         const uint32_t block_size = image_state->safe_create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
@@ -1113,7 +1113,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         if (gpu_regions_count == 0) {
             // Nothing to validate
             copy_buffer_to_img_resources->Destroy(*this);
-            return std::make_unique<PreCopyBufferToImageResources>();
+            return nullptr;
         }
 
         gpu_regions_u32_ptr[0] = image_state->safe_create_info.extent.width;
@@ -1135,7 +1135,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
             aborted = true;
-            return std::make_unique<PreDispatchResources>();
+            return nullptr;
         }
 
         std::array<VkDescriptorBufferInfo, 3> descriptor_buffer_infos = {};
@@ -1618,6 +1618,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
 void gpuav::Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer,
                                              std::unique_ptr<CommandResources> command_resources) {
     if (aborted) return;
+    if (!command_resources) return;
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
