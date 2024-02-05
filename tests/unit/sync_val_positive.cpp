@@ -1053,3 +1053,102 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
     m_default_queue->wait();
 }
+
+TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
+    TEST_DESCRIPTION("Test color resolve with dynamic rendering");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&sync2_features);
+    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+
+    const uint32_t width = 64;
+    const uint32_t height = 64;
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    auto color_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
+    color_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferColorSampleCounts
+    VkImageObj color_image(m_device);
+    color_image.Init(color_ci);
+    color_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    vkt::ImageView color_image_view = color_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    auto color_resolved_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
+    VkImageObj color_resolved_image(m_device);
+    color_resolved_image.Init(color_resolved_ci);
+    color_resolved_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    vkt::ImageView color_resolved_image_view = color_resolved_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = color_resolved_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue.color = m_clear_color;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {width, height};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRendering(*m_commandBuffer, &rendering_info);
+    vk::CmdEndRendering(*m_commandBuffer);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
+    TEST_DESCRIPTION("Test depth resolve with dynamic rendering");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&sync2_features);
+    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+
+    const uint32_t width = 64;
+    const uint32_t height = 64;
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    auto depth_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
+    depth_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferDepthSampleCounts
+    VkImageObj depth_image(m_device);
+    depth_image.Init(depth_ci);
+    depth_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    auto depth_resolved_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
+    VkImageObj depth_resolved_image(m_device);
+    depth_resolved_image.Init(depth_resolved_ci);
+    depth_resolved_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    vkt::ImageView depth_resolved_image_view = depth_resolved_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = depth_image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    depth_attachment.resolveMode = VK_RESOLVE_MODE_MIN_BIT;
+    depth_attachment.resolveImageView = depth_resolved_image_view;
+    depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depth_attachment.clearValue.depthStencil.depth = 1.0f;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {width, height};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRendering(*m_commandBuffer, &rendering_info);
+    vk::CmdEndRendering(*m_commandBuffer);
+    m_commandBuffer->end();
+}
