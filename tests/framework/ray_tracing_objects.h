@@ -48,8 +48,7 @@ class GeometryKHR {
         std::unique_ptr<VkAabbPositionsKHR[]> host_buffer;
     };
     struct Instance {
-        // As of now, only manage one instance
-        std::unique_ptr<VkAccelerationStructureInstanceKHR> vk_instance{};
+        std::vector<VkAccelerationStructureInstanceKHR> vk_instances{};
         // Used to (eventually, no need for host instance) store on device instance
         vkt::Buffer buffer;
     };
@@ -86,9 +85,10 @@ class GeometryKHR {
     GeometryKHR& SetAABBsStride(VkDeviceSize stride);
     GeometryKHR& SetAABBsDeviceAddress(VkDeviceAddress address);
     // Instance
-    GeometryKHR& SetInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR bottom_level_as);
-    GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR bottom_level_as);
-    GeometryKHR& SetInstanceDeviceAddress(VkDeviceAddress address);
+    GeometryKHR& AddInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR blas);
+    GeometryKHR& AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas);
+    GeometryKHR& SetInstancesDeviceAddress(VkDeviceAddress address);
+    GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i);
 
     GeometryKHR& Build();
 

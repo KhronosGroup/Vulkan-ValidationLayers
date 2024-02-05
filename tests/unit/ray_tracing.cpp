@@ -3000,7 +3000,7 @@ TEST_F(NegativeRayTracing, InstanceBufferBadAddress) {
     m_commandBuffer->begin();
     tlas.SetupBuild(*m_device, true);
 
-    tlas.GetGeometries()[0].SetInstanceDeviceAddress(0);
+    tlas.GetGeometries()[0].SetInstancesDeviceAddress(0);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813");
     tlas.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
@@ -3360,4 +3360,29 @@ TEST_F(NegativeRayTracing, PipelineNullMissShader) {
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     m_device->wait();
+}
+
+TEST_F(NegativeRayTracing, HostInstanceInvalid) {
+    TEST_DESCRIPTION("build a TLAS with an invalid geometry.instances.data.hostAddress");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    // Build Bottom Level Acceleration Structure
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device));
+    blas->BuildHost();
+
+    // Build Top Level Acceleration Structure
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(*m_device, blas);
+    tlas.GetGeometries()[0].SetInstanceHostAccelStructRef(VK_NULL_HANDLE, 0);
+    tlas.GetGeometries()[0].AddInstanceHostAccelStructRef(VK_NULL_HANDLE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03779");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03779");
+    tlas.BuildHost();
+    m_errorMonitor->VerifyFound();
 }

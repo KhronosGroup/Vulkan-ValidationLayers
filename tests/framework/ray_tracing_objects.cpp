@@ -170,15 +170,16 @@ GeometryKHR &GeometryKHR::SetAABBsDeviceAddress(VkDeviceAddress address) {
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vkt::Device &device, VkAccelerationStructureKHR bottom_level_as) {
+GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &device, VkAccelerationStructureKHR blas) {
     auto vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
         vk::GetDeviceProcAddr(device.handle(), "vkGetAccelerationStructureDeviceAddressKHR"));
     assert(vkGetAccelerationStructureDeviceAddressKHR);
     VkAccelerationStructureDeviceAddressInfoKHR as_address_info = vku::InitStructHelper();
-    as_address_info.accelerationStructure = bottom_level_as;
+    as_address_info.accelerationStructure = blas;
     const VkDeviceAddress as_address = vkGetAccelerationStructureDeviceAddressKHR(device.handle(), &as_address_info);
-    instance_.vk_instance = std::make_unique<VkAccelerationStructureInstanceKHR>();
-    instance_.vk_instance->accelerationStructureReference = static_cast<uint64_t>(as_address);
+    instance_.vk_instances.emplace_back(VkAccelerationStructureInstanceKHR{});
+    ++primitiveCount_;
+    instance_.vk_instances.back().accelerationStructureReference = static_cast<uint64_t>(as_address);
     // leave other instance_ attributes to 0
 
     // Create instance buffer. Do not copy instance_.vk_instance into it, for now no point in doing it for the test framework
@@ -195,18 +196,24 @@ GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vkt::Device &dev
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceHostAccelStructRef(VkAccelerationStructureKHR bottom_level_as) {
-    instance_.vk_instance = std::make_unique<VkAccelerationStructureInstanceKHR>();
-    instance_.vk_instance->accelerationStructureReference = (uint64_t)(bottom_level_as);
+GeometryKHR &GeometryKHR::AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas) {
+    instance_.vk_instances.emplace_back(VkAccelerationStructureInstanceKHR{});
+    ++primitiveCount_;
+    instance_.vk_instances.back().accelerationStructureReference = (uint64_t)(blas);
     // leave other instance_ attributes to 0
 
     vk_obj_.geometry.instances.arrayOfPointers = VK_FALSE;
-    vk_obj_.geometry.instances.data.hostAddress = instance_.vk_instance.get();
+    vk_obj_.geometry.instances.data.hostAddress = instance_.vk_instances.data();
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceDeviceAddress(VkDeviceAddress address) {
+GeometryKHR &GeometryKHR::SetInstancesDeviceAddress(VkDeviceAddress address) {
     vk_obj_.geometry.instances.data.deviceAddress = address;
+    return *this;
+}
+
+GeometryKHR &GeometryKHR::SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i) {
+    instance_.vk_instances[instance_i].accelerationStructureReference = (uint64_t)(blas);
     return *this;
 }
 
@@ -869,8 +876,7 @@ GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device &device, VkAccelerati
     GeometryKHR instance_geometry;
 
     instance_geometry.SetType(GeometryKHR::Type::Instance);
-    instance_geometry.SetPrimitiveCount(1);
-    instance_geometry.SetInstanceDeviceAccelStructRef(device, device_instance);
+    instance_geometry.AddInstanceDeviceAccelStructRef(device, device_instance);
 
     return instance_geometry;
 }
@@ -879,8 +885,7 @@ GeometryKHR GeometrySimpleHostInstance(VkAccelerationStructureKHR host_instance)
     GeometryKHR instance_geometry;
 
     instance_geometry.SetType(GeometryKHR::Type::Instance);
-    instance_geometry.SetPrimitiveCount(1);
-    instance_geometry.SetInstanceHostAccelStructRef(host_instance);
+    instance_geometry.AddInstanceHostAccelStructRef(host_instance);
 
     return instance_geometry;
 }
