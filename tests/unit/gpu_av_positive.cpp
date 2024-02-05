@@ -751,3 +751,38 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     m_commandBuffer->QueueCommandBuffer();
     vk::DeviceWaitIdle(*m_device);
 }
+
+TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
+    TEST_DESCRIPTION("Make sure resources are managed correctly afer a CopyBufferToImage call.");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::CommandBuffer cb_0(m_device, m_commandPool);
+    vkt::CommandBuffer cb_1(m_device, m_commandPool);
+
+    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    VkImageObj image(m_device);
+    image.init(&image_ci);
+
+    vkt::Buffer buffer(*m_device, 4096, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32, 32, 1};
+    region.bufferOffset = 0;
+
+    cb_0.begin();
+    vk::CmdCopyBufferToImage(cb_0.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    cb_0.end();
+    m_default_queue->submit(cb_0);
+    m_default_queue->wait();
+
+    cb_1.begin();
+    cb_1.end();
+    m_default_queue->submit(cb_1);
+    m_default_queue->wait();
+}
