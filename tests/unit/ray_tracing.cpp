@@ -559,6 +559,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     m_commandBuffer->begin();
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
     vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
@@ -566,6 +567,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     copy_info.src = valid_blas->handle();
     copy_info.dst = blas_no_mem->handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
     vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
@@ -575,6 +577,69 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 }
 
 TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
+    TEST_DESCRIPTION("Test CmdCopyAccelerationStructureKHR with buffers not bound to memory");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    // Init a non host visible buffer
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR |
+                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+    VkMemoryRequirements memory_requirements = buffer.memory_requirements();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo memory_alloc = vku::InitStructHelper(&alloc_flags);
+    memory_alloc.allocationSize = memory_requirements.size;
+    const bool memory_found =
+        m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!memory_found) {
+        GTEST_SKIP() << "Could not find suitable memory type, skipping test";
+    }
+    vkt::DeviceMemory device_memory(*m_device, memory_alloc);
+    ASSERT_TRUE(device_memory.initialized());
+    vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas->SetDeviceBuffer(std::move(buffer));
+    blas->Build();
+
+    auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas_no_mem->SetDeviceBufferInitNoMem(true);
+    blas_no_mem->Build();
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_no_mem->handle();
+    copy_info.dst = blas->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
+    vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    copy_info.src = blas->handle();
+    copy_info.dst = blas_no_mem->handle();
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
+    vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
     TEST_DESCRIPTION("Test CmdCopyAccelerationStructureKHR with buffers not bound to memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -598,51 +663,29 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
-    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    blas->SetDeviceBuffer(std::move(buffer));
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
     blas->Build();
 
-    auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    blas_no_mem->SetDeviceBufferInitNoMem(true);
-    blas_no_mem->Build();
-
-    auto blas_host_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    blas_host_mem->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    blas_host_mem->Build();
+    auto blas_no_host_mem = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
+    blas_no_host_mem->SetDeviceBuffer(std::move(buffer));
+    blas_no_host_mem->Build();
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
-    copy_info.src = blas_no_mem->handle();
-    copy_info.dst = blas->handle();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
 
-    m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
-    vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
-    m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
-
-    copy_info.src = blas->handle();
-    copy_info.dst = blas_no_mem->handle();
-
-    m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
-    vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
-    m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
-
-    copy_info.src = blas->handle();
-    copy_info.dst = blas_host_mem->handle();
+    copy_info.src = blas_no_host_mem->handle();
+    copy_info.dst = blas->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyAccelerationStructureKHR-buffer-03727");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 
-    copy_info.src = blas_host_mem->handle();
-    copy_info.dst = blas->handle();
+    copy_info.src = blas->handle();
+    copy_info.dst = blas_no_host_mem->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyAccelerationStructureKHR-buffer-03728");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2263,12 +2306,44 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDevice) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_commandBuffer->begin();
-
     blas.BuildCmdBuffer(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    vk::DeviceWaitIdle(*m_device);
+
+    m_commandBuffer->begin();
     // Incorrect query type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-06742");
     vk::CmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &blas.GetDstAS()->handle(),
                                                     VK_QUERY_TYPE_OCCLUSION, query_pool.handle(), 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDeviceBlasNotBuilt) {
+    TEST_DESCRIPTION("vkCmdWriteAccelerationStructuresPropertiesKHR with unbuilt blas");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+    blas.GetDstAS()->Build();
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 1);
+
+    m_commandBuffer->begin();
+    // blas not built
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964");
+    vk::CmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &blas.GetDstAS()->handle(),
+                                                    VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, query_pool.handle(),
+                                                    0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
