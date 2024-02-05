@@ -3600,7 +3600,8 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
             }
         } else if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
             if (cb_state.activeRenderPass->inheritance_rendering_info.depthAttachmentFormat !=
-                pipeline_rendering_ci.depthAttachmentFormat) {
+                    pipeline_rendering_ci.depthAttachmentFormat &&
+                !enabled_features.dynamicRenderingUnusedAttachments) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_depth_format_08914, objlist, loc,
                                  "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat (%s) must match corresponding "
@@ -3650,7 +3651,8 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
             }
         } else if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
             if (cb_state.activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat !=
-                pipeline_rendering_ci.stencilAttachmentFormat) {
+                    pipeline_rendering_ci.stencilAttachmentFormat &&
+                !enabled_features.dynamicRenderingUnusedAttachments) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_stencil_format_08917, objlist, loc,
                                  "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat (%s) must match corresponding "
