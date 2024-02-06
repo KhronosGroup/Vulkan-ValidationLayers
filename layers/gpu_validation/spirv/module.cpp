@@ -139,6 +139,24 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
     }
 }
 
+bool Module::HasCapability(spv::Capability capability) {
+    for (const auto& inst : capabilities_) {
+        if (inst->Word(1) == capability) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Will only add if not already added
+void Module::AddCapability(spv::Capability capability) {
+    if (!HasCapability(capability)) {
+        auto new_inst = std::make_unique<Instruction>(2, spv::OpCapability);
+        new_inst->Fill({(uint32_t)capability});
+        capabilities_.emplace_back(std::move(new_inst));
+    }
+}
+
 void Module::RunPassBindlessDescriptorPass() {
     BindlessDescriptorPass pass(*this);
     pass.Run();
@@ -476,6 +494,13 @@ void Module::LinkFunction(const LinkInfo& info) {
         }
 
         annotations_.push_back(std::move(decoration));
+    }
+
+    // The instrumentation code has atomicAdd() to update the output buffer
+    // If the incoming code only has VulkanMemoryModel it will need to support device scope
+    if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
+        // TODO - Add warning if device doesn't support feature
+        AddCapability(spv::CapabilityVulkanMemoryModelDeviceScope);
     }
 
     // Update entrypoint interface if 1.4+

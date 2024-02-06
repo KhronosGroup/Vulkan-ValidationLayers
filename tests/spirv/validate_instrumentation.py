@@ -59,7 +59,7 @@ if __name__ == '__main__':
             spirv_file = os.path.join(currentpath, file)
 
             # If spirv-val is failing before, it will fail later too
-            exit_code = subprocess.call([spirv_val_path, spirv_file])
+            exit_code = subprocess.call([spirv_val_path, spirv_file], stderr=subprocess.DEVNULL)
             if exit_code != 0:
                 continue
 

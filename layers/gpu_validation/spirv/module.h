@@ -71,6 +71,10 @@ class Module {
     void RunPassBindlessDescriptorPass();
     void RunPassBufferDeviceAddress();
 
+    // Helpers
+    bool HasCapability(spv::Capability capability);
+    void AddCapability(spv::Capability capability);
+
   private:
     // provides a way to map back and know which original SPIR-V this was from
     const uint32_t shader_id_;
