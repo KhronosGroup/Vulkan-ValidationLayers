@@ -1063,6 +1063,36 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupStackSize) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup) {
+    TEST_DESCRIPTION("Call vkGetRayTracingShaderGroupStackSizeKHR on an unused shader in a shader group");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    auto tlas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
+    pipeline.SetRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.Build();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline.Handle(), 42, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline.Handle(), 0, VK_SHADER_GROUP_SHADER_ANY_HIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_device->wait();
+}
+
 TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {
     TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupHandlesKHR");
 
