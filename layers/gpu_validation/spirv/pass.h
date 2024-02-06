@@ -37,6 +37,8 @@ class Pass {
     uint32_t GetStageInfo(Function& function, spv::ExecutionModel execution_model);
 
     bool HasCapability(spv::Capability capability);
+    void AddCapability(spv::Capability capability);
+
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration);
     const Instruction* GetMemeberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration);
 

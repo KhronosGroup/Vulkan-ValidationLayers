@@ -188,6 +188,15 @@ bool Pass::HasCapability(spv::Capability capability) {
     return false;
 }
 
+// Will only add if not already added
+void Pass::AddCapability(spv::Capability capability) {
+    if (!HasCapability(capability)) {
+        auto new_inst = std::make_unique<Instruction>(2, spv::OpCapability);
+        new_inst->Fill({(uint32_t)capability});
+        module_.capabilities_.emplace_back(std::move(new_inst));
+    }
+}
+
 const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) {
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
@@ -306,6 +315,7 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
             null_id = module_.TakeNextId();
             // We need to put any intermittent instructions here so Phi is first in the merge block
             invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
+            AddCapability(spv::CapabilityInt64);
         } else {
             if ((phi_type.spv_type_ == SpvType::kInt || phi_type.spv_type_ == SpvType::kFloat) && phi_type.inst_.Word(2) < 32) {
                 // You can't make a constant of a 8-int, 16-int, 16-float without having the capability
@@ -316,11 +326,7 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
                 spv::Capability capability = (phi_type.spv_type_ == SpvType::kFloat) ? spv::CapabilityFloat16
                                              : (phi_type.inst_.Word(2) == 16)        ? spv::CapabilityInt16
                                                                                      : spv::CapabilityInt8;
-                if (!HasCapability(capability)) {
-                    auto new_inst = std::make_unique<Instruction>(2, spv::OpCapability);
-                    new_inst->Fill({(uint32_t)capability});
-                    module_.capabilities_.emplace_back(std::move(new_inst));
-                }
+                AddCapability(capability);
             }
 
             null_id = module_.type_manager_.GetConstantNull(phi_type).Id();
