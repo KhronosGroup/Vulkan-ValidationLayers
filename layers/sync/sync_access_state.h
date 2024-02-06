@@ -293,22 +293,11 @@ class ResourceAccessState : public SyncStageAccess {
             // then the barrier access is unsafe (R/W after R)
             return (src_exec_scope & (stage | barriers)) == 0;
         }
-        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2KHR src_exec_scope,
-                                 const SyncStageAccessFlags &src_access_scope) const {
+        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2KHR src_exec_scope) const {
             // If the read stage is not in the src sync scope
             // *AND* not execution chained with an existing sync barrier (that's the or)
             // then the barrier access is unsafe (R/W after R)
             VkPipelineStageFlags2 queue_ordered_stage = (queue == barrier_queue) ? stage : VK_PIPELINE_STAGE_2_NONE;
-
-            // NOTE: over time sync validation will transition not to use TOP_OF_PIPE/BOTTOM_OF_PIPE as
-            // as part of the **internal implementation** and in that case the `barriers` variable will
-            // never include TOP_OF_PIPE (it will be replaced by NONE or ALL_COMMANDS depending on the
-            // context), so the following condition won't be needed. Until then, enforce the rule that
-            // TOP_OF_PIPE is equaivalent to NONE in the first sync scope when source access is 0.
-            if (src_exec_scope == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT && src_access_scope.none()) {
-                src_exec_scope = VK_PIPELINE_STAGE_2_NONE;
-            }
-
             return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
         }
 

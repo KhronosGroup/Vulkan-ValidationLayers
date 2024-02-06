@@ -264,7 +264,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
     if (last_reads.size()) {
         // Look at the reads if any
         for (const auto &read_access : last_reads) {
-            if (read_access.IsReadBarrierHazard(queue_id, src_exec_scope, src_access_scope)) {
+            if (read_access.IsReadBarrierHazard(queue_id, src_exec_scope)) {
                 hazard.Set(this, usage_info, WRITE_AFTER_READ, read_access.access, read_access.tag);
                 break;
             }
@@ -312,7 +312,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
                     // If the read stage is not in the src sync scope
                     // *AND* not execution chained with an existing sync barrier (that's the or)
                     // then the barrier access is unsafe (R/W after R)
-                    if (scope_read.IsReadBarrierHazard(event_queue, src_exec_scope, src_access_scope)) {
+                    if (scope_read.IsReadBarrierHazard(event_queue, src_exec_scope)) {
                         hazard.Set(this, usage_info, WRITE_AFTER_READ, scope_read.access, scope_read.tag);
                         break;
                     }
