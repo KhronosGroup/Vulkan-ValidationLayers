@@ -57,6 +57,12 @@ if __name__ == '__main__':
     for currentpath, folders, files in os.walk(args.shaders):
         for file in files:
             spirv_file = os.path.join(currentpath, file)
+
+            # If spirv-val is failing before, it will fail later too
+            exit_code = subprocess.call([spirv_val_path, spirv_file])
+            if exit_code != 0:
+                continue
+
             command = f'{exe_path} {spirv_file} -o {temp_file} --all-passes'
             if args.verbose:
                 print(command)
