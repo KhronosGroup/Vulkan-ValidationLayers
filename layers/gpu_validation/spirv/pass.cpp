@@ -138,17 +138,20 @@ uint32_t Pass::GetStageInfo(Function& function, spv::ExecutionModel execution_mo
             }
         } break;
         case spv::ExecutionModelGeometry: {
-            stage_info[1] = create_load(spv::BuiltInPrimitiveId);
+            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+            stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
             const uint32_t load_id = create_load(spv::BuiltInInvocationId);
             stage_info[2] = CastToUint32(load_id, block, &inst_it);
         } break;
         case spv::ExecutionModelTessellationControl: {
             const uint32_t load_id = create_load(spv::BuiltInInvocationId);
             stage_info[1] = CastToUint32(load_id, block, &inst_it);
-            stage_info[2] = create_load(spv::BuiltInPrimitiveId);
+            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+            stage_info[2] = CastToUint32(primitive_id, block, &inst_it);
         } break;
         case spv::ExecutionModelTessellationEvaluation: {
-            stage_info[1] = create_load(spv::BuiltInPrimitiveId);
+            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+            stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
 
             // convert vec3 to uvec3
             const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
