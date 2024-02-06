@@ -279,6 +279,10 @@ class GpuAVDescriptorIndexingTest : public GpuAVTest {
 class NegativeGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
 class PositiveGpuAVDescriptorIndexing : public GpuAVDescriptorIndexingTest {};
 
+class GpuAVSpirvTest : public GpuAVTest {};
+class NegativeGpuAVSpirv : public GpuAVSpirvTest {};
+class PositiveGpuAVSpirv : public GpuAVSpirvTest {};
+
 class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
 
 class GpuAVOOBTest : public GpuAVTest {};
