@@ -55,6 +55,10 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
             entry_points_.emplace_back(std::move(new_inst));
         } else if (opcode == spv::Op::OpExecutionMode || opcode == spv::Op::OpExecutionModeId) {
             execution_modes_.emplace_back(std::move(new_inst));
+        } else if (opcode == spv::Op::OpLine || opcode == spv::Op::OpNoLine) {
+            // OpLine must no be groupped in between other debug operations
+            // https://github.com/KhronosGroup/SPIRV-Tools/issues/5513
+            types_values_constants_.emplace_back(std::move(new_inst));
         } else if (DebugOperation(opcode)) {
             debug_infos_.emplace_back(std::move(new_inst));
         } else if (AnnotationOperation(opcode)) {
@@ -83,7 +87,7 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
             type_manager_.AddType(std::move(new_inst), spv_type);
         } else {
             // unknown instruction, try and just keep in last section to not just crash
-            // example: OpSpecConstant, OpLine
+            // example: OpSpecConstant
             types_values_constants_.emplace_back(std::move(new_inst));
         }
         it += length;
