@@ -701,6 +701,10 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpFinishWritingNodePayloadAMDX";
         case spv::OpInitializeNodePayloadsAMDX:
             return "OpInitializeNodePayloadsAMDX";
+        case spv::OpGroupNonUniformQuadAllKHR:
+            return "OpGroupNonUniformQuadAllKHR";
+        case spv::OpGroupNonUniformQuadAnyKHR:
+            return "OpGroupNonUniformQuadAnyKHR";
         case spv::OpHitObjectRecordHitMotionNV:
             return "OpHitObjectRecordHitMotionNV";
         case spv::OpHitObjectRecordHitWithIndexMotionNV:
@@ -995,6 +999,10 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpGroupLogicalOrKHR";
         case spv::OpGroupLogicalXorKHR:
             return "OpGroupLogicalXorKHR";
+        case spv::OpMaskedGatherINTEL:
+            return "OpMaskedGatherINTEL";
+        case spv::OpMaskedScatterINTEL:
+            return "OpMaskedScatterINTEL";
 
         default:
             return "Unknown Opcode";
@@ -1231,6 +1239,10 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "StencilRefGreaterBackAMD";
         case spv::ExecutionModeStencilRefLessBackAMD:
             return "StencilRefLessBackAMD";
+        case spv::ExecutionModeQuadDerivativesKHR:
+            return "QuadDerivativesKHR";
+        case spv::ExecutionModeRequireFullQuadsKHR:
+            return "RequireFullQuadsKHR";
         case spv::ExecutionModeOutputLinesNV:
             return "OutputLinesNV";
         case spv::ExecutionModeOutputPrimitivesNV:
@@ -1273,6 +1285,10 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "NumSIMDWorkitemsINTEL";
         case spv::ExecutionModeSchedulerTargetFmaxMhzINTEL:
             return "SchedulerTargetFmaxMhzINTEL";
+        case spv::ExecutionModeMaximallyReconvergesKHR:
+            return "MaximallyReconvergesKHR";
+        case spv::ExecutionModeFPFastMathDefault:
+            return "FPFastMathDefault";
         case spv::ExecutionModeStreamingInterfaceINTEL:
             return "StreamingInterfaceINTEL";
         case spv::ExecutionModeRegisterMapInterfaceINTEL:
@@ -2203,6 +2219,8 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpFinalizeNodePayloadsAMDX, {{OperandKind::Id}}},
         {spv::OpFinishWritingNodePayloadAMDX, {{OperandKind::Id}}},
         {spv::OpInitializeNodePayloadsAMDX, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpGroupNonUniformQuadAllKHR, {{OperandKind::Id}}},
+        {spv::OpGroupNonUniformQuadAnyKHR, {{OperandKind::Id}}},
         {spv::OpHitObjectRecordHitMotionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpHitObjectRecordHitWithIndexMotionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpHitObjectRecordMissMotionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
@@ -2350,6 +2368,8 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGroupLogicalAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalOrKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalXorKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
+        {spv::OpMaskedGatherINTEL, {{OperandKind::Id, OperandKind::Literal, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpMaskedScatterINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Literal, OperandKind::Id}}},
     };  // clang-format on
 
     auto info = kOperandTable.find(opcode);
