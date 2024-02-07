@@ -479,10 +479,10 @@ class CoreChecks : public ValidationStateTracker {
         return result;
     }
 
-    bool ValidateHostVisibleMemoryIsBoundToAccelStructBuffer(const vvl::AccelerationStructureKHR& accel_struct,
-                                                             const Location& buffer_loc, const char* vuid) const;
-    bool ValidateBufferMemoryIsNotMultiInstance(const vvl::Buffer& buffer, LogObjectList objlist, const Location& buffer_loc,
-                                                const char* vuid, const char* error_msg_beginning = "") const;
+    bool ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR& accel_struct, const Location& buffer_loc,
+                                                      const char* vuid) const;
+    bool ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR& accel_struct,
+                                                           const Location& accel_struct_loc, const char* vuid) const;
     bool ValidateMemoryIsBoundToImage(const LogObjectList& objlist, const vvl::Image& image_state, const Location& loc,
                                       const char* vuid) const;
 
