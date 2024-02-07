@@ -293,11 +293,26 @@ class ResourceAccessState : public SyncStageAccess {
             // then the barrier access is unsafe (R/W after R)
             return (src_exec_scope & (stage | barriers)) == 0;
         }
-        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2KHR src_exec_scope) const {
+        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2KHR src_exec_scope,
+                                 const SyncStageAccessFlags &src_access_scope) const {
             // If the read stage is not in the src sync scope
             // *AND* not execution chained with an existing sync barrier (that's the or)
             // then the barrier access is unsafe (R/W after R)
             VkPipelineStageFlags2 queue_ordered_stage = (queue == barrier_queue) ? stage : VK_PIPELINE_STAGE_2_NONE;
+
+            // Current implementation relies on TOP_OF_PIPE constant due to the fact that it's non-zero value
+            // and AND-ing with it can create execution dependency when it's necessary. When NONE constant is
+            // used, which equals to zero, then AND-ing with it always results in 0 which means "no barrier",
+            // so it's not possible to use NONE internally in equivalent way to TOP_OF_PIPE.
+            // Replace NONE with TOP_OF_PIPE in the scenarios where they are equivalent.
+            //
+            // If we update implementation to get rid of deprecated TOP_OF_PIPE/BOTTOM_OF_PIPE then we must
+            // invert the condition below and exchange TOP_OF_PIPE and NONE roles, so deprecated stages would
+            // not propagate into implementation internals.
+            if (src_exec_scope == VK_PIPELINE_STAGE_2_NONE && src_access_scope.none()) {
+                src_exec_scope = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+            }
+
             return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
         }
 
