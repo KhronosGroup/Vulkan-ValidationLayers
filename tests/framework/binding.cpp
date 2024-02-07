@@ -989,6 +989,12 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
     init(dev, createInfo);
 }
 
+NON_DISPATCHABLE_HANDLE_DTOR(PipelineCache, vk::DestroyPipelineCache)
+
+void PipelineCache::init(const Device &dev, const VkPipelineCacheCreateInfo &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreatePipelineCache, dev, &info);
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
 void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
