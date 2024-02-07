@@ -302,6 +302,8 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpFragmentFetchAMD:
         case spv::OpReadClockKHR:
         case spv::OpFinishWritingNodePayloadAMDX:
+        case spv::OpGroupNonUniformQuadAllKHR:
+        case spv::OpGroupNonUniformQuadAnyKHR:
         case spv::OpHitObjectGetWorldToObjectNV:
         case spv::OpHitObjectGetObjectToWorldNV:
         case spv::OpHitObjectGetObjectRayDirectionNV:
@@ -402,6 +404,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpGroupLogicalAndKHR:
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
+        case spv::OpMaskedGatherINTEL:
             return true;
         default:
             return false;
@@ -692,6 +695,8 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpFragmentFetchAMD:
         case spv::OpReadClockKHR:
         case spv::OpFinishWritingNodePayloadAMDX:
+        case spv::OpGroupNonUniformQuadAllKHR:
+        case spv::OpGroupNonUniformQuadAnyKHR:
         case spv::OpHitObjectGetWorldToObjectNV:
         case spv::OpHitObjectGetObjectToWorldNV:
         case spv::OpHitObjectGetObjectRayDirectionNV:
@@ -799,6 +804,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpGroupLogicalAndKHR:
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
+        case spv::OpMaskedGatherINTEL:
             return true;
         default:
             return false;
@@ -869,6 +875,8 @@ static constexpr bool GroupOperation(uint32_t opcode) {
         case spv::OpGroupNonUniformLogicalXor:
         case spv::OpGroupNonUniformQuadBroadcast:
         case spv::OpGroupNonUniformQuadSwap:
+        case spv::OpGroupNonUniformQuadAllKHR:
+        case spv::OpGroupNonUniformQuadAnyKHR:
         case spv::OpGroupNonUniformPartitionNV:
             return true;
         default:
