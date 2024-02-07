@@ -1478,6 +1478,9 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
         const Location as_loc = error_obj.location.dot(Field::pAccelerationStructures, i);
         auto as_state = Get<vvl::AccelerationStructureKHR>(pAccelerationStructures[i]);
 
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *as_state->buffer_state, as_loc.dot(Field::buffer),
+                                              "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-buffer-03736");
+
         if (!as_state->built) {
             skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964", device, as_loc,
                              "has not been built.");
