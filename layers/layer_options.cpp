@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+/* Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,6 +62,8 @@ const char *SETTING_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
 const char *SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
 const char *SETTING_GPUAV_SELECT_INSTRUMENTED_SHADERS = "select_instrumented_shaders";
 const char *SETTING_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS = "gpuav_max_buffer_device_addresses";
+const char *SETTING_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
+const char *SETTING_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS = "gpuav_debug_dump_instrumented_shaders";
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
@@ -393,39 +395,51 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
     }
 
+    GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_DESCRIPTORS)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_DESCRIPTORS,
-                                settings_data->gpuav_settings->validate_descriptors);
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_DESCRIPTORS, gpuav_settings.validate_descriptors);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER,
-                                settings_data->gpuav_settings->validate_indirect_buffer);
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VALIDATE_INDIRECT_BUFFER, gpuav_settings.validate_indirect_buffer);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT,
-                                settings_data->gpuav_settings->vma_linear_output);
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_WARN_ON_ROBUST_OOB)) {
-        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_WARN_ON_ROBUST_OOB,
-                                settings_data->gpuav_settings->warn_on_robust_oob);
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
         vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
-                                settings_data->gpuav_settings->cache_instrumented_shaders);
+                                gpuav_settings.cache_instrumented_shaders);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
         vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_SELECT_INSTRUMENTED_SHADERS,
-                                settings_data->gpuav_settings->select_instrumented_shaders);
+                                gpuav_settings.select_instrumented_shaders);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS)) {
         vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_MAX_BUFFER_DEVICE_ADDRESS_BUFFERS,
-                                settings_data->gpuav_settings->gpuav_max_buffer_device_addresses);
+                                gpuav_settings.gpuav_max_buffer_device_addresses);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS,
+                                gpuav_settings.gpuav_debug_validate_instrumented_shaders);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, SETTING_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS)) {
+        vkuGetLayerSettingValue(layer_setting_set, SETTING_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS,
+                                gpuav_settings.gpuav_debug_dump_instrumented_shaders);
+    }
+
+    if (gpuav_settings.gpuav_debug_validate_instrumented_shaders || gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
+        // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
+        gpuav_settings.cache_instrumented_shaders = false;
     }
 
     const auto *validation_features_ext = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(settings_data->create_info);

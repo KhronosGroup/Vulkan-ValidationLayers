@@ -104,13 +104,6 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     BaseClass::CreateDevice(pCreateInfo);
     Location loc(vvl::Func::vkCreateDevice);
 
-    debug_validate_instrumented_shaders = !GetEnvironment("VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS").empty();
-    debug_dump_instrumented_shaders = !GetEnvironment("VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS").empty();
-    if (debug_validate_instrumented_shaders || debug_dump_instrumented_shaders) {
-        // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
-        gpuav_settings.cache_instrumented_shaders = false;
-    }
-
     if (api_version < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
         aborted = true;

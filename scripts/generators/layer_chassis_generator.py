@@ -1106,8 +1106,7 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 CHECK_ENABLED local_enables{};
                 CHECK_DISABLED local_disables{};
                 bool lock_setting;
-                // select_instrumented_shaders is the only gpu-av setting that is off by default
-                GpuAVSettings local_gpuav_settings = {true, true, true, true, true, true, false, 10000};
+                GpuAVSettings local_gpuav_settings = {};
                 ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
                                                                 pCreateInfo,
                                                                 local_enables,
