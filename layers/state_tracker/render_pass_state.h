@@ -115,6 +115,7 @@ class RenderPass : public StateObject {
 
     bool UsesColorAttachment(uint32_t subpass) const;
     bool UsesDepthStencilAttachment(uint32_t subpass) const;
+    bool UsesNoAttachment(uint32_t subpass) const;
     // prefer this to checking the individual flags unless you REALLY need to check one or the other
     bool UsesDynamicRendering() const { return use_dynamic_rendering || use_dynamic_rendering_inherited; }
     uint32_t GetDynamicRenderingColorAttachmentCount() const;

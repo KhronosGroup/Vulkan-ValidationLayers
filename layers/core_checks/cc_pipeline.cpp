@@ -344,8 +344,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                         const uint32_t subpass = cb_state->GetActiveSubpass();
                         // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
                         // pMultisampleState->rasterizationSamples.
-                        if (!render_pass->UsesDynamicRendering() && !render_pass->UsesColorAttachment(subpass) &&
-                            !render_pass->UsesDepthStencilAttachment(subpass)) {
+                        if (render_pass->UsesNoAttachment(subpass)) {
                             // If execution ends up here, GetActiveSubpassRasterizationSampleCount() can still be empty if this is
                             // the first bound pipeline with the previous conditions holding. Rasterization samples count for the
                             // subpass will be updated in PostCallRecordCmdBindPipeline, if it is empty.
@@ -355,7 +354,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                 *subpass_rasterization_samples != multisample_state->rasterizationSamples) {
                                 const LogObjectList objlist(device, render_pass->Handle(), pipeline_state.Handle());
                                 skip |= LogError(
-                                    "VUID-VkGraphicsPipelineCreateInfo-subpass-00758", objlist, error_obj.location,
+                                    "VUID-vkCmdBindPipeline-pipeline-00781", objlist, error_obj.location,
                                     "variableMultisampleRate is VK_FALSE "
                                     "and "
                                     "pipeline has pMultisampleState->rasterizationSamples equal to %s, while a previously bound "

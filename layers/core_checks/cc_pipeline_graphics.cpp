@@ -1977,6 +1977,17 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                                  msrtss_info->rasterizationSamples, ms_loc.dot(Field::rasterizationSamples).Fields().c_str(),
                                  multisample_state->rasterizationSamples);
             }
+
+            if (rp_state->UsesNoAttachment(pipeline.Subpass())) {
+                if ((multisample_state->rasterizationSamples & phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) == 0) {
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-subpass-00758", rp_state->Handle(),
+                                     ms_loc.dot(Field::rasterizationSamples),
+                                     "(%s) is not in "
+                                     "framebufferNoAttachmentsSampleCounts (%s) but attempting to use a zero-attachment subpass.",
+                                     string_VkSampleCountFlagBits(multisample_state->rasterizationSamples),
+                                     string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts).c_str());
+                }
+            }
         }
 
         // VK_NV_fragment_coverage_to_color

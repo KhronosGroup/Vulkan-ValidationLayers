@@ -585,27 +585,26 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         if (enabled_features.variableMultisampleRate == VK_FALSE &&
-            !cb_state.activeRenderPass->UsesColorAttachment(cb_state.GetActiveSubpass()) &&
-            !cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
-            std::stringstream message;
+            cb_state.activeRenderPass->UsesNoAttachment(cb_state.GetActiveSubpass())) {
             if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
                     cb_state.GetActiveSubpassRasterizationSampleCount();
                 subpass_rasterization_samples &&
                 *subpass_rasterization_samples != cb_state.dynamic_state_value.rasterization_samples) {
-                message << "VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE and the rasterizationSamples set with "
-                           "vkCmdSetRasterizationSamplesEXT() were "
-                        << string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples)
-                        << "but a previous draw used rasterization samples " << *subpass_rasterization_samples << ".";
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+                skip |= LogError(
+                    vuid.sample_locations_07471, objlist, loc,
+                    "VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE and the rasterizationSamples set with "
+                    "vkCmdSetRasterizationSamplesEXT() were %s but a previous draw used rasterization samples %" PRIu32 ".",
+                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                    *subpass_rasterization_samples);
             } else if ((cb_state.dynamic_state_value.rasterization_samples &
                         phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) == 0) {
-                message << "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() are "
-                        << string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples)
-                        << ", but this bit is not in framebufferNoAttachmentsSampleCounts ("
-                        << string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) << ").";
-            }
-            if (!message.str().empty()) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                skip |= LogError(vuid.sample_locations_07471, objlist, loc, "%s.", message.str().c_str());
+                skip |= LogError(vuid.sample_locations_07471, objlist, loc,
+                                 "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() are %s but this bit is not in "
+                                 "framebufferNoAttachmentsSampleCounts (%s).",
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                                 string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts).c_str());
             }
         }
     }
