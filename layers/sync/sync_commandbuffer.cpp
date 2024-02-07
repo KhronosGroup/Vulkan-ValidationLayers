@@ -216,6 +216,8 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
         for (uint32_t i = 0; i < attachment_count && !skip; i++) {
             const auto &attachment = info.attachments[i];
             if (attachment.resolve_gen) {
+                const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
+                const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
                 // The logic about whether to resolve is embedded in the Attachment constructor
                 assert(attachment.view);
                 HazardResult hazard = access_context->DetectHazard(attachment.view_gen, kResolveRead, kResolveOrder);
@@ -263,6 +265,8 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
         for (uint32_t i = 0; i < attachment_count; i++) {
             const auto &attachment = info.attachments[i];
             if (attachment.resolve_gen) {
+                const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
+                const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
                 access_context->UpdateAccessState(attachment.view_gen, kResolveRead, kResolveOrder, store_tag);
                 access_context->UpdateAccessState(*attachment.resolve_gen, kResolveWrite, kResolveOrder, store_tag);
             }
