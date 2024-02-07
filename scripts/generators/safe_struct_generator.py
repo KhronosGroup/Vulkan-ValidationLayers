@@ -298,7 +298,7 @@ void FreePnextChain(const void *pNext) {
             out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'        case {struct.sType}:\n')
             out.append(f'            delete reinterpret_cast<const safe_{struct.name} *>(header);\n')
-            out.append(f'            break;\n')
+            out.append('            break;\n')
         out.extend(guard_helper.add_guard(None))
 
         out.append('''
@@ -340,278 +340,290 @@ void FreePnextChain(const void *pNext) {
 
         custom_definitions = {
             # as_geom_khr_host_alloc maps a VkAccelerationStructureGeometryKHR to its host allocated instance array, if the user supplied such an array.
-            'VkAccelerationStructureGeometryKHR':
-            """
-            struct ASGeomKHRExtraData {
-                ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
-                    ptr(alloc),
-                    primitiveOffset(primOffset),
-                    primitiveCount(primCount)
-                {}
-                ~ASGeomKHRExtraData() {
-                    if (ptr)
-                        delete[] ptr;
-                }
-                uint8_t *ptr;
-                uint32_t primitiveOffset;
-                uint32_t primitiveCount;
-            };
+            'VkAccelerationStructureGeometryKHR': '''
+                struct ASGeomKHRExtraData {
+                    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
+                        ptr(alloc),
+                        primitiveOffset(primOffset),
+                        primitiveCount(primCount)
+                    {}
+                    ~ASGeomKHRExtraData() {
+                        if (ptr)
+                            delete[] ptr;
+                    }
+                    uint8_t *ptr;
+                    uint32_t primitiveOffset;
+                    uint32_t primitiveCount;
+                };
 
-            vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;"""
+                vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;
+            '''
             }
 
         custom_defeault_construct_txt = {
-                'VkDescriptorDataEXT' :
-                    '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
-                    '    *pType = VK_DESCRIPTOR_TYPE_MAX_ENUM;\n'
+                'VkDescriptorDataEXT' : '''
+                    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
+                    *pType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+                '''
             }
 
         custom_construct_txt = {
                 # VkWriteDescriptorSet is special case because pointers may be non-null but ignored
-                'VkWriteDescriptorSet' :
-                    '    switch (descriptorType) {\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:\n'
-                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:\n'
-                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:\n'
-                    '        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:\n'
-                    '        if (descriptorCount && in_struct->pImageInfo) {\n'
-                    '            pImageInfo = new VkDescriptorImageInfo[descriptorCount];\n'
-                    '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
-                    '                pImageInfo[i] = in_struct->pImageInfo[i];\n'
-                    '            }\n'
-                    '        }\n'
-                    '        break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:\n'
-                    '        if (descriptorCount && in_struct->pBufferInfo) {\n'
-                    '            pBufferInfo = new VkDescriptorBufferInfo[descriptorCount];\n'
-                    '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
-                    '                pBufferInfo[i] = in_struct->pBufferInfo[i];\n'
-                    '            }\n'
-                    '        }\n'
-                    '        break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:\n'
-                    '        if (descriptorCount && in_struct->pTexelBufferView) {\n'
-                    '            pTexelBufferView = new VkBufferView[descriptorCount];\n'
-                    '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
-                    '                pTexelBufferView[i] = in_struct->pTexelBufferView[i];\n'
-                    '            }\n'
-                    '        }\n'
-                    '        break;\n'
-                    '        default:\n'
-                    '        break;\n'
-                    '    }\n',
-                'VkShaderModuleCreateInfo' :
-                    '    if (in_struct->pCode) {\n'
-                    '        pCode = reinterpret_cast<uint32_t *>(new uint8_t[codeSize]);\n'
-                    '        memcpy((void *)pCode, (void *)in_struct->pCode, codeSize);\n'
-                    '    }\n',
+                'VkWriteDescriptorSet' : '''
+                    switch (descriptorType) {
+                        case VK_DESCRIPTOR_TYPE_SAMPLER:
+                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+                        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+                        if (descriptorCount && in_struct->pImageInfo) {
+                            pImageInfo = new VkDescriptorImageInfo[descriptorCount];
+                            for (uint32_t i = 0; i < descriptorCount; ++i) {
+                                pImageInfo[i] = in_struct->pImageInfo[i];
+                            }
+                        }
+                        break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                        if (descriptorCount && in_struct->pBufferInfo) {
+                            pBufferInfo = new VkDescriptorBufferInfo[descriptorCount];
+                            for (uint32_t i = 0; i < descriptorCount; ++i) {
+                                pBufferInfo[i] = in_struct->pBufferInfo[i];
+                            }
+                        }
+                        break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                        if (descriptorCount && in_struct->pTexelBufferView) {
+                            pTexelBufferView = new VkBufferView[descriptorCount];
+                            for (uint32_t i = 0; i < descriptorCount; ++i) {
+                                pTexelBufferView[i] = in_struct->pTexelBufferView[i];
+                            }
+                        }
+                        break;
+                        default:
+                        break;
+                    }
+                ''',
+                'VkShaderModuleCreateInfo' : '''
+                    if (in_struct->pCode) {
+                        pCode = reinterpret_cast<uint32_t *>(new uint8_t[codeSize]);
+                        memcpy((void *)pCode, (void *)in_struct->pCode, codeSize);
+                    }
+                ''',
                 # VkGraphicsPipelineCreateInfo is special case because its pointers may be non-null but ignored
-                'VkGraphicsPipelineCreateInfo' :
-                    '    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;\n'
-                    '    if (stageCount && in_struct->pStages) {\n'
-                    '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
-                    '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
-                    '            pStages[i].initialize(&in_struct->pStages[i]);\n'
-                    '        }\n'
-                    '    }\n'
-                    '    if (in_struct->pVertexInputState)\n'
-                    '        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);\n'
-                    '    else\n'
-                    '        pVertexInputState = nullptr;\n'
-                    '    if (in_struct->pInputAssemblyState)\n'
-                    '        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(in_struct->pInputAssemblyState);\n'
-                    '    else\n'
-                    '        pInputAssemblyState = nullptr;\n'
-                    '    bool has_tessellation_stage = false;\n'
-                    '    if (stageCount && pStages)\n'
-                    '        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)\n'
-                    '            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)\n'
-                    '                has_tessellation_stage = true;\n'
-                    '    if (in_struct->pTessellationState && has_tessellation_stage)\n'
-                    '        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);\n'
-                    '    else\n'
-                    '        pTessellationState = nullptr; // original pTessellationState pointer ignored\n'
-                    '    bool is_dynamic_has_rasterization = false;\n'
-                    '    if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {\n'
-                    '        for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)\n'
-                    '            if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)\n'
-                    '                is_dynamic_has_rasterization = true;\n'
-                    '    }\n'
-                    '    const bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;\n'
-                    '    if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {\n'
-                    '        bool is_dynamic_viewports = false;\n'
-                    '        bool is_dynamic_scissors = false;\n'
-                    '        if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {\n'
-                    '            for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_viewports; ++i)\n'
-                    '                if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_VIEWPORT)\n'
-                    '                    is_dynamic_viewports = true;\n'
-                    '            for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_scissors; ++i)\n'
-                    '                if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_SCISSOR)\n'
-                    '                    is_dynamic_scissors = true;\n'
-                    '        }\n'
-                    '        pViewportState = new safe_VkPipelineViewportStateCreateInfo(in_struct->pViewportState, is_dynamic_viewports, is_dynamic_scissors);\n'
-                    '    } else\n'
-                    '        pViewportState = nullptr; // original pViewportState pointer ignored\n'
-                    '    if (in_struct->pRasterizationState)\n'
-                    '        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);\n'
-                    '    else\n'
-                    '        pRasterizationState = nullptr;\n'
-                    '    if (in_struct->pMultisampleState && (renderPass != VK_NULL_HANDLE || has_rasterization || is_graphics_library))\n'
-                    '        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);\n'
-                    '    else\n'
-                    '        pMultisampleState = nullptr; // original pMultisampleState pointer ignored\n'
-                    '    // needs a tracked subpass state uses_depthstencil_attachment\n'
-                    '    if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))\n'
-                    '        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);\n'
-                    '    else\n'
-                    '        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored\n'
-                    '    // needs a tracked subpass state usesColorAttachment\n'
-                    '    if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))\n'
-                    '        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);\n'
-                    '    else\n'
-                    '        pColorBlendState = nullptr; // original pColorBlendState pointer ignored\n'
-                    '    if (in_struct->pDynamicState)\n'
-                    '        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(in_struct->pDynamicState);\n'
-                    '    else\n'
-                    '        pDynamicState = nullptr;\n',
+                'VkGraphicsPipelineCreateInfo' : '''
+                    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
+                    if (stageCount && in_struct->pStages) {
+                        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+                        for (uint32_t i = 0; i < stageCount; ++i) {
+                            pStages[i].initialize(&in_struct->pStages[i]);
+                        }
+                    }
+                    if (in_struct->pVertexInputState)
+                        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);
+                    else
+                        pVertexInputState = nullptr;
+                    if (in_struct->pInputAssemblyState)
+                        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(in_struct->pInputAssemblyState);
+                    else
+                        pInputAssemblyState = nullptr;
+                    bool has_tessellation_stage = false;
+                    if (stageCount && pStages)
+                        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
+                            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
+                                has_tessellation_stage = true;
+                    if (in_struct->pTessellationState && has_tessellation_stage)
+                        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
+                    else
+                        pTessellationState = nullptr; // original pTessellationState pointer ignored
+                    bool is_dynamic_has_rasterization = false;
+                    if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
+                        for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+                            if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                                is_dynamic_has_rasterization = true;
+                    }
+                    const bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
+                    if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {
+                        bool is_dynamic_viewports = false;
+                        bool is_dynamic_scissors = false;
+                        if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
+                            for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_viewports; ++i)
+                                if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_VIEWPORT)
+                                    is_dynamic_viewports = true;
+                            for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_scissors; ++i)
+                                if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_SCISSOR)
+                                    is_dynamic_scissors = true;
+                        }
+                        pViewportState = new safe_VkPipelineViewportStateCreateInfo(in_struct->pViewportState, is_dynamic_viewports, is_dynamic_scissors);
+                    } else
+                        pViewportState = nullptr; // original pViewportState pointer ignored
+                    if (in_struct->pRasterizationState)
+                        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);
+                    else
+                        pRasterizationState = nullptr;
+                    if (in_struct->pMultisampleState && (renderPass != VK_NULL_HANDLE || has_rasterization || is_graphics_library))
+                        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);
+                    else
+                        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
+                    // needs a tracked subpass state uses_depthstencil_attachment
+                    if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))
+                        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);
+                    else
+                        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
+                    // needs a tracked subpass state usesColorAttachment
+                    if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))
+                        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);
+                    else
+                        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
+                    if (in_struct->pDynamicState)
+                        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(in_struct->pDynamicState);
+                    else
+                        pDynamicState = nullptr;
+                ''',
                  # VkPipelineViewportStateCreateInfo is special case because its pointers may be non-null but ignored
-                'VkPipelineViewportStateCreateInfo' :
-                    '    if (in_struct->pViewports && !is_dynamic_viewports) {\n'
-                    '        pViewports = new VkViewport[in_struct->viewportCount];\n'
-                    '        memcpy ((void *)pViewports, (void *)in_struct->pViewports, sizeof(VkViewport)*in_struct->viewportCount);\n'
-                    '    }\n'
-                    '    else\n'
-                    '        pViewports = nullptr;\n'
-                    '    if (in_struct->pScissors && !is_dynamic_scissors) {\n'
-                    '        pScissors = new VkRect2D[in_struct->scissorCount];\n'
-                    '        memcpy ((void *)pScissors, (void *)in_struct->pScissors, sizeof(VkRect2D)*in_struct->scissorCount);\n'
-                    '    }\n'
-                    '    else\n'
-                    '        pScissors = nullptr;\n',
+                'VkPipelineViewportStateCreateInfo' : '''
+                    if (in_struct->pViewports && !is_dynamic_viewports) {
+                        pViewports = new VkViewport[in_struct->viewportCount];
+                        memcpy ((void *)pViewports, (void *)in_struct->pViewports, sizeof(VkViewport)*in_struct->viewportCount);
+                    }
+                    else
+                        pViewports = nullptr;
+                    if (in_struct->pScissors && !is_dynamic_scissors) {
+                        pScissors = new VkRect2D[in_struct->scissorCount];
+                        memcpy ((void *)pScissors, (void *)in_struct->pScissors, sizeof(VkRect2D)*in_struct->scissorCount);
+                    }
+                    else
+                        pScissors = nullptr;
+                ''',
                 # VkFrameBufferCreateInfo is special case because its pAttachments pointer may be non-null but ignored
-                'VkFramebufferCreateInfo' :
-                    '    if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {\n'
-                    '        pAttachments = new VkImageView[attachmentCount];\n'
-                    '        for (uint32_t i = 0; i < attachmentCount; ++i) {\n'
-                    '            pAttachments[i] = in_struct->pAttachments[i];\n'
-                    '        }\n'
-                    '    }\n',
+                'VkFramebufferCreateInfo' : '''
+                    if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
+                        pAttachments = new VkImageView[attachmentCount];
+                        for (uint32_t i = 0; i < attachmentCount; ++i) {
+                            pAttachments[i] = in_struct->pAttachments[i];
+                        }
+                    }
+                ''',
                 # VkDescriptorSetLayoutBinding is special case because its pImmutableSamplers pointer may be non-null but ignored
-                'VkDescriptorSetLayoutBinding' :
-                    '    const bool sampler_type = in_struct->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER || in_struct->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;\n'
-                    '    if (descriptorCount && in_struct->pImmutableSamplers && sampler_type) {\n'
-                    '        pImmutableSamplers = new VkSampler[descriptorCount];\n'
-                    '        for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
-                    '            pImmutableSamplers[i] = in_struct->pImmutableSamplers[i];\n'
-                    '        }\n'
-                    '    }\n',
-                'VkAccelerationStructureBuildGeometryInfoKHR':
-                    '    if (geometryCount) {\n'
-                    '        if ( in_struct->ppGeometries) {\n'
-                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
-                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i], is_host, &build_range_infos[i]);\n'
-                    '            }\n'
-                    '        } else {\n'
-                    '            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];\n'
-                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i], is_host, &build_range_infos[i]);\n'
-                    '            }\n'
-                    '        }\n'
-                    '    }\n',
-                'VkAccelerationStructureGeometryKHR':
-                    '    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {\n'
-                    '        if (geometry.instances.arrayOfPointers) {\n'
-                    '            size_t pp_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);\n'
-                    '            size_t p_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
-                    '            size_t array_size = build_range_info->primitiveOffset + pp_array_size + p_array_size;\n'
-                    '            uint8_t *allocation = new uint8_t[array_size];\n'
-                    '            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + build_range_info->primitiveOffset);\n'
-                    '            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + build_range_info->primitiveOffset + pp_array_size);\n'
-                    '            for (uint32_t i = 0; i < build_range_info->primitiveCount; ++i) {\n'
-                    '                const uint8_t *byte_ptr = reinterpret_cast<const uint8_t *>(in_struct->geometry.instances.data.hostAddress);\n'
-                    '                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(byte_ptr + build_range_info->primitiveOffset)[i]);\n'
-                    '                ppInstances[i] = &pInstances[i];\n'
-                    '            }\n'
-                    '            geometry.instances.data.hostAddress = allocation;\n'
-                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));\n'
-                    '        } else {\n'
-                    '            const auto primitive_offset = build_range_info->primitiveOffset;\n'
-                    '            const auto primitive_count = build_range_info->primitiveCount;\n'
-                    '            size_t array_size = primitive_offset + primitive_count * sizeof(VkAccelerationStructureInstanceKHR);\n'
-                    '            uint8_t *allocation = new uint8_t[array_size];\n'
-                    '            auto host_address = static_cast<const uint8_t*>(in_struct->geometry.instances.data.hostAddress);\n'
-                    '            memcpy(allocation + primitive_offset, host_address + primitive_offset, primitive_count * sizeof(VkAccelerationStructureInstanceKHR));\n'
-                    '            geometry.instances.data.hostAddress = allocation;\n'
-                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));\n'
-                    '        }\n'
-                    '    }\n',
-                'VkMicromapBuildInfoEXT':
-                    '    if (in_struct->pUsageCounts) {\n'
-                    '        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
-                    '        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
-                    '    }\n'
-                    '    if (in_struct->ppUsageCounts) {\n'
-                    '        VkMicromapUsageEXT** pointer_array  = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
-                    '        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
-                    '            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
-                    '        }\n'
-                    '        ppUsageCounts = pointer_array;\n'
-                    '    }\n',
-                'VkAccelerationStructureTrianglesOpacityMicromapEXT':
-                    '    if (in_struct->pUsageCounts) {\n'
-                    '        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
-                    '        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
-                    '    }\n'
-                    '    if (in_struct->ppUsageCounts) {\n'
-                    '        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
-                    '        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
-                    '            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
-                    '        }\n'
-                    '        ppUsageCounts = pointer_array;\n'
-                    '    }\n',
-                'VkAccelerationStructureTrianglesDisplacementMicromapNV':
-                    '    if (in_struct->pUsageCounts) {\n'
-                    '        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
-                    '        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
-                    '    }\n'
-                    '    if (in_struct->ppUsageCounts) {\n'
-                    '        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
-                    '        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
-                    '            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
-                    '        }\n'
-                    '        ppUsageCounts = pointer_array;\n'
-                    '    }\n',
-                'VkDescriptorDataEXT' :
-                    '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
-                    '\n'
-                    '    switch (type)\n'
-                    '    {\n'
-                    '        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*in_struct->pSampler); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*in_struct->pCombinedImageSampler); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = in_struct->pSampledImage ? new VkDescriptorImageInfo(*in_struct->pSampledImage) : nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = in_struct->pStorageImage ? new VkDescriptorImageInfo(*in_struct->pStorageImage) : nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*in_struct->pInputAttachmentImage); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = in_struct->pUniformTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformTexelBuffer) : nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = in_struct->pStorageTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageTexelBuffer) : nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = in_struct->pUniformBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformBuffer) : nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = in_struct->pStorageBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageBuffer) : nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = in_struct->accelerationStructure; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = in_struct->accelerationStructure; break;\n'
-                    '        default:                                            break;\n'
-                    '    }\n'
-                    '\n'
-                    '    *pType = type;\n',
+                'VkDescriptorSetLayoutBinding' : '''
+                    const bool sampler_type = in_struct->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER || in_struct->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    if (descriptorCount && in_struct->pImmutableSamplers && sampler_type) {
+                        pImmutableSamplers = new VkSampler[descriptorCount];
+                        for (uint32_t i = 0; i < descriptorCount; ++i) {
+                            pImmutableSamplers[i] = in_struct->pImmutableSamplers[i];
+                        }
+                    }
+                ''',
+                'VkAccelerationStructureBuildGeometryInfoKHR': '''
+                    if (geometryCount) {
+                        if ( in_struct->ppGeometries) {
+                            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];
+                            for (uint32_t i = 0; i < geometryCount; ++i) {
+                                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i], is_host, &build_range_infos[i]);
+                            }
+                        } else {
+                            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];
+                            for (uint32_t i = 0; i < geometryCount; ++i) {
+                                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i], is_host, &build_range_infos[i]);
+                            }
+                        }
+                    }
+                ''',
+                'VkAccelerationStructureGeometryKHR': '''
+                    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+                        if (geometry.instances.arrayOfPointers) {
+                            size_t pp_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+                            size_t p_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+                            size_t array_size = build_range_info->primitiveOffset + pp_array_size + p_array_size;
+                            uint8_t *allocation = new uint8_t[array_size];
+                            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + build_range_info->primitiveOffset);
+                            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + build_range_info->primitiveOffset + pp_array_size);
+                            for (uint32_t i = 0; i < build_range_info->primitiveCount; ++i) {
+                                const uint8_t *byte_ptr = reinterpret_cast<const uint8_t *>(in_struct->geometry.instances.data.hostAddress);
+                                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(byte_ptr + build_range_info->primitiveOffset)[i]);
+                                ppInstances[i] = &pInstances[i];
+                            }
+                            geometry.instances.data.hostAddress = allocation;
+                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
+                        } else {
+                            const auto primitive_offset = build_range_info->primitiveOffset;
+                            const auto primitive_count = build_range_info->primitiveCount;
+                            size_t array_size = primitive_offset + primitive_count * sizeof(VkAccelerationStructureInstanceKHR);
+                            uint8_t *allocation = new uint8_t[array_size];
+                            auto host_address = static_cast<const uint8_t*>(in_struct->geometry.instances.data.hostAddress);
+                            memcpy(allocation + primitive_offset, host_address + primitive_offset, primitive_count * sizeof(VkAccelerationStructureInstanceKHR));
+                            geometry.instances.data.hostAddress = allocation;
+                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
+                        }
+                    }
+                ''',
+                'VkMicromapBuildInfoEXT': '''
+                    if (in_struct->pUsageCounts) {
+                        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
+                        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
+                    }
+                    if (in_struct->ppUsageCounts) {
+                        VkMicromapUsageEXT** pointer_array  = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
+                        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
+                            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
+                        }
+                        ppUsageCounts = pointer_array;
+                    }
+                ''',
+                'VkAccelerationStructureTrianglesOpacityMicromapEXT': '''
+                    if (in_struct->pUsageCounts) {
+                        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
+                        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
+                    }
+                    if (in_struct->ppUsageCounts) {
+                        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
+                        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
+                            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
+                        }
+                        ppUsageCounts = pointer_array;
+                    }
+                ''',
+                'VkAccelerationStructureTrianglesDisplacementMicromapNV': '''
+                    if (in_struct->pUsageCounts) {
+                        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
+                        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
+                    }
+                    if (in_struct->ppUsageCounts) {
+                        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
+                        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
+                            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
+                        }
+                        ppUsageCounts = pointer_array;
+                    }
+                ''',
+                'VkDescriptorDataEXT' : '''
+                    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
+
+                    switch (type) {
+                        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;
+                        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*in_struct->pSampler); break;
+                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*in_struct->pCombinedImageSampler); break;
+                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = in_struct->pSampledImage ? new VkDescriptorImageInfo(*in_struct->pSampledImage) : nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = in_struct->pStorageImage ? new VkDescriptorImageInfo(*in_struct->pStorageImage) : nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*in_struct->pInputAttachmentImage); break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = in_struct->pUniformTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformTexelBuffer) : nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = in_struct->pStorageTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageTexelBuffer) : nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = in_struct->pUniformBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformBuffer) : nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = in_struct->pStorageBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageBuffer) : nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = in_struct->accelerationStructure; break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = in_struct->accelerationStructure; break;
+                        default:                                            break;
+                    }
+
+                    *pType = type;
+                ''',
                 'VkPipelineRenderingCreateInfo': '''
                     bool custom_init = copy_state && copy_state->init;
                     if (custom_init) {
@@ -633,150 +645,155 @@ void FreePnextChain(const void *pNext) {
 
         custom_copy_txt = {
                 # VkGraphicsPipelineCreateInfo is special case because it has custom construct parameters
-                'VkGraphicsPipelineCreateInfo' :
-                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
-                    '    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);\n'
-                    '    if (stageCount && copy_src.pStages) {\n'
-                    '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
-                    '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
-                    '            pStages[i].initialize(&copy_src.pStages[i]);\n'
-                    '        }\n'
-                    '    }\n'
-                    '    if (copy_src.pVertexInputState)\n'
-                    '        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);\n'
-                    '    else\n'
-                    '        pVertexInputState = nullptr;\n'
-                    '    if (copy_src.pInputAssemblyState)\n'
-                    '        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src.pInputAssemblyState);\n'
-                    '    else\n'
-                    '        pInputAssemblyState = nullptr;\n'
-                    '    bool has_tessellation_stage = false;\n'
-                    '    if (stageCount && pStages)\n'
-                    '        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)\n'
-                    '            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)\n'
-                    '                has_tessellation_stage = true;\n'
-                    '    if (copy_src.pTessellationState && has_tessellation_stage)\n'
-                    '        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);\n'
-                    '    else\n'
-                    '        pTessellationState = nullptr; // original pTessellationState pointer ignored\n'
-                    '    bool is_dynamic_has_rasterization = false;\n'
-                    '    if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {\n'
-                    '        for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)\n'
-                    '            if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)\n'
-                    '                is_dynamic_has_rasterization = true;\n'
-                    '    }\n'
-                    '    const bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;\n'
-                    '    if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {\n'
-                    '        pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);\n'
-                    '    } else\n'
-                    '        pViewportState = nullptr; // original pViewportState pointer ignored\n'
-                    '    if (copy_src.pRasterizationState)\n'
-                    '        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src.pRasterizationState);\n'
-                    '    else\n'
-                    '        pRasterizationState = nullptr;\n'
-                    '    if (copy_src.pMultisampleState && (has_rasterization || is_graphics_library))\n'
-                    '        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src.pMultisampleState);\n'
-                    '    else\n'
-                    '        pMultisampleState = nullptr; // original pMultisampleState pointer ignored\n'
-                    '    if (copy_src.pDepthStencilState && (has_rasterization || is_graphics_library))\n'
-                    '        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src.pDepthStencilState);\n'
-                    '    else\n'
-                    '        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored\n'
-                    '    if (copy_src.pColorBlendState && (has_rasterization || is_graphics_library))\n'
-                    '        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src.pColorBlendState);\n'
-                    '    else\n'
-                    '        pColorBlendState = nullptr; // original pColorBlendState pointer ignored\n'
-                    '    if (copy_src.pDynamicState)\n'
-                    '        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src.pDynamicState);\n'
-                    '    else\n'
-                    '        pDynamicState = nullptr;\n',
+                'VkGraphicsPipelineCreateInfo' : '''
+                    pNext = SafePnextCopy(copy_src.pNext);
+                    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
+                    if (stageCount && copy_src.pStages) {
+                        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+                        for (uint32_t i = 0; i < stageCount; ++i) {
+                            pStages[i].initialize(&copy_src.pStages[i]);
+                        }
+                    }
+                    if (copy_src.pVertexInputState)
+                        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);
+                    else
+                        pVertexInputState = nullptr;
+                    if (copy_src.pInputAssemblyState)
+                        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src.pInputAssemblyState);
+                    else
+                        pInputAssemblyState = nullptr;
+                    bool has_tessellation_stage = false;
+                    if (stageCount && pStages)
+                        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
+                            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
+                                has_tessellation_stage = true;
+                    if (copy_src.pTessellationState && has_tessellation_stage)
+                        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
+                    else
+                        pTessellationState = nullptr; // original pTessellationState pointer ignored
+                    bool is_dynamic_has_rasterization = false;
+                    if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {
+                        for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+                            if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                                is_dynamic_has_rasterization = true;
+                    }
+                    const bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
+                    if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {
+                        pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
+                    } else
+                        pViewportState = nullptr; // original pViewportState pointer ignored
+                    if (copy_src.pRasterizationState)
+                        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src.pRasterizationState);
+                    else
+                        pRasterizationState = nullptr;
+                    if (copy_src.pMultisampleState && (has_rasterization || is_graphics_library))
+                        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src.pMultisampleState);
+                    else
+                        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
+                    if (copy_src.pDepthStencilState && (has_rasterization || is_graphics_library))
+                        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src.pDepthStencilState);
+                    else
+                        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
+                    if (copy_src.pColorBlendState && (has_rasterization || is_graphics_library))
+                        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src.pColorBlendState);
+                    else
+                        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
+                    if (copy_src.pDynamicState)
+                        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src.pDynamicState);
+                    else
+                        pDynamicState = nullptr;
+                ''',
                  # VkPipelineViewportStateCreateInfo is special case because it has custom construct parameters
-                'VkPipelineViewportStateCreateInfo' :
-                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
-                    '    if (copy_src.pViewports) {\n'
-                    '        pViewports = new VkViewport[copy_src.viewportCount];\n'
-                    '        memcpy ((void *)pViewports, (void *)copy_src.pViewports, sizeof(VkViewport)*copy_src.viewportCount);\n'
-                    '    }\n'
-                    '    else\n'
-                    '        pViewports = nullptr;\n'
-                    '    if (copy_src.pScissors) {\n'
-                    '        pScissors = new VkRect2D[copy_src.scissorCount];\n'
-                    '        memcpy ((void *)pScissors, (void *)copy_src.pScissors, sizeof(VkRect2D)*copy_src.scissorCount);\n'
-                    '    }\n'
-                    '    else\n'
-                    '        pScissors = nullptr;\n',
-                'VkFramebufferCreateInfo' :
-                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
-                    '    if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {\n'
-                    '        pAttachments = new VkImageView[attachmentCount];\n'
-                    '        for (uint32_t i = 0; i < attachmentCount; ++i) {\n'
-                    '            pAttachments[i] = copy_src.pAttachments[i];\n'
-                    '        }\n'
-                    '    }\n',
-                'VkAccelerationStructureBuildGeometryInfoKHR':
-                    '    if (geometryCount) {\n'
-                    '        if ( copy_src.ppGeometries) {\n'
-                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
-                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(*copy_src.ppGeometries[i]);\n'
-                    '            }\n'
-                    '        } else {\n'
-                    '            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];\n'
-                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                pGeometries[i] = safe_VkAccelerationStructureGeometryKHR(copy_src.pGeometries[i]);\n'
-                    '            }\n'
-                    '        }\n'
-                    '    }\n',
-                'VkAccelerationStructureGeometryKHR':
-                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
-                    '    auto src_iter = as_geom_khr_host_alloc.find(&copy_src);\n'
-                    '    if (src_iter != as_geom_khr_host_alloc.end()) {\n'
-                    '        auto &src_alloc = src_iter->second;\n'
-                    '        if (geometry.instances.arrayOfPointers) {\n'
-                    '            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);\n'
-                    '            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
-                    '            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;\n'
-                    '            uint8_t *allocation = new uint8_t[array_size];\n'
-                    '            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);\n'
-                    '            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);\n'
-                    '            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {\n'
-                    '                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);\n'
-                    '                ppInstances[i] = &pInstances[i];\n'
-                    '            }\n'
-                    '            geometry.instances.data.hostAddress = allocation;\n'
-                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));\n'
-                    '        } else {\n'
-                    '            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);\n'
-                    '            uint8_t *allocation = new uint8_t[array_size];\n'
-                    '            memcpy(allocation, src_alloc->ptr, array_size);\n'
-                    '            geometry.instances.data.hostAddress = allocation;\n'
-                    '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));\n'
-                    '        }\n'
-                    '    }\n',
-                'VkDescriptorDataEXT' :
-                    '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
-                    '    VkDescriptorType type = *(VkDescriptorType*)&copy_src.type_at_end[sizeof(VkDescriptorDataEXT)];\n'
-                    '\n'
-                    '    switch (type)\n'
-                    '    {\n'
-                    '        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*copy_src.pSampler); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*copy_src.pCombinedImageSampler); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = new VkDescriptorImageInfo(*copy_src.pSampledImage); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = new VkDescriptorImageInfo(*copy_src.pStorageImage); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*copy_src.pInputAttachmentImage); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformTexelBuffer); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageTexelBuffer); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformBuffer); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageBuffer); break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = copy_src.accelerationStructure; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = copy_src.accelerationStructure; break;\n'
-                    '        default:                                            break;\n'
-                    '    }\n'
-                    '\n'
-                    '    *pType = type;\n',
+                'VkPipelineViewportStateCreateInfo' : '''
+                    pNext = SafePnextCopy(copy_src.pNext);
+                    if (copy_src.pViewports) {
+                        pViewports = new VkViewport[copy_src.viewportCount];
+                        memcpy ((void *)pViewports, (void *)copy_src.pViewports, sizeof(VkViewport)*copy_src.viewportCount);
+                    }
+                    else
+                        pViewports = nullptr;
+                    if (copy_src.pScissors) {
+                        pScissors = new VkRect2D[copy_src.scissorCount];
+                        memcpy ((void *)pScissors, (void *)copy_src.pScissors, sizeof(VkRect2D)*copy_src.scissorCount);
+                    }
+                    else
+                        pScissors = nullptr;
+                ''',
+                'VkFramebufferCreateInfo' : '''
+                    pNext = SafePnextCopy(copy_src.pNext);
+                    if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
+                        pAttachments = new VkImageView[attachmentCount];
+                        for (uint32_t i = 0; i < attachmentCount; ++i) {
+                            pAttachments[i] = copy_src.pAttachments[i];
+                        }
+                    }
+                ''',
+                'VkAccelerationStructureBuildGeometryInfoKHR': '''
+                    if (geometryCount) {
+                        if ( copy_src.ppGeometries) {
+                            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];
+                            for (uint32_t i = 0; i < geometryCount; ++i) {
+                                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(*copy_src.ppGeometries[i]);
+                            }
+                        } else {
+                            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];
+                            for (uint32_t i = 0; i < geometryCount; ++i) {
+                                pGeometries[i] = safe_VkAccelerationStructureGeometryKHR(copy_src.pGeometries[i]);
+                            }
+                        }
+                    }
+                ''',
+                'VkAccelerationStructureGeometryKHR': '''
+                    pNext = SafePnextCopy(copy_src.pNext);
+                    auto src_iter = as_geom_khr_host_alloc.find(&copy_src);
+                    if (src_iter != as_geom_khr_host_alloc.end()) {
+                        auto &src_alloc = src_iter->second;
+                        if (geometry.instances.arrayOfPointers) {
+                            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
+                            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+                            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;
+                            uint8_t *allocation = new uint8_t[array_size];
+                            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);
+                            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);
+                            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {
+                                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);
+                                ppInstances[i] = &pInstances[i];
+                            }
+                            geometry.instances.data.hostAddress = allocation;
+                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+                        } else {
+                            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+                            uint8_t *allocation = new uint8_t[array_size];
+                            memcpy(allocation, src_alloc->ptr, array_size);
+                            geometry.instances.data.hostAddress = allocation;
+                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
+                        }
+                    }
+                ''',
+                'VkDescriptorDataEXT' : '''
+                    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
+                    VkDescriptorType type = *(VkDescriptorType*)&copy_src.type_at_end[sizeof(VkDescriptorDataEXT)];
+
+                    switch (type) {
+                        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;
+                        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*copy_src.pSampler); break;
+                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*copy_src.pCombinedImageSampler); break;
+                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = new VkDescriptorImageInfo(*copy_src.pSampledImage); break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = new VkDescriptorImageInfo(*copy_src.pStorageImage); break;
+                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*copy_src.pInputAttachmentImage); break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformTexelBuffer); break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageTexelBuffer); break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformBuffer); break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageBuffer); break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = copy_src.accelerationStructure; break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = copy_src.accelerationStructure; break;
+                        default:                                            break;
+                    }
+
+                    *pType = type;
+                ''',
                 'VkPipelineRenderingCreateInfo': '''
                     if (copy_src.pColorAttachmentFormats) {
                         pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
@@ -786,74 +803,79 @@ void FreePnextChain(const void *pNext) {
             }
 
         custom_destruct_txt = {
-                'VkShaderModuleCreateInfo' :
-                    '    if (pCode)\n'
-                    '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n',
-                'VkAccelerationStructureBuildGeometryInfoKHR' :
-                    '    if (ppGeometries) {\n'
-                    '        for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '             delete ppGeometries[i];\n'
-                    '        }\n'
-                    '        delete[] ppGeometries;\n'
-                    '    } else if(pGeometries) {\n'
-                    '        delete[] pGeometries;\n'
-                    '    }\n',
-                'VkAccelerationStructureGeometryKHR':
-                    '    auto iter = as_geom_khr_host_alloc.pop(this);\n'
-                    '    if (iter != as_geom_khr_host_alloc.end()) {\n'
-                    '        delete iter->second;\n'
-                    '    }\n',
-                'VkMicromapBuildInfoEXT':
-                    '    if (pUsageCounts)\n'
-                    '        delete[] pUsageCounts;\n'
-                    '    if (ppUsageCounts) {\n'
-                    '        for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
-                    '             delete ppUsageCounts[i];\n'
-                    '        }\n'
-                    '        delete[] ppUsageCounts;\n'
-                    '    }\n',
-                'VkAccelerationStructureTrianglesOpacityMicromapEXT':
-                    '    if (pUsageCounts)\n'
-                    '        delete[] pUsageCounts;\n'
-                    '    if (ppUsageCounts) {\n'
-                    '        for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
-                    '             delete ppUsageCounts[i];\n'
-                    '        }\n'
-                    '        delete[] ppUsageCounts;\n'
-                    '    }\n',
-                'VkAccelerationStructureTrianglesDisplacementMicromapNV':
-                    '    if (pUsageCounts)\n'
-                    '        delete[] pUsageCounts;\n'
-                    '    if (ppUsageCounts) {\n'
-                    '        for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
-                    '             delete ppUsageCounts[i];\n'
-                    '        }\n'
-                    '        delete[] ppUsageCounts;\n'
-                    '    }\n',
-                'VkDescriptorDataEXT' :
-                    '\n'
-                    '    VkDescriptorType& thisType = *(VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
-                    '\n'
-                    '    switch (thisType)\n'
-                    '    {\n'
-                    '        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:                    delete pSampler;              pSampler              = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     delete pCombinedImageSampler; pCombinedImageSampler = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              delete pSampledImage;         pSampledImage         = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              delete pStorageImage;         pStorageImage         = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           delete pInputAttachmentImage; pInputAttachmentImage = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       delete pUniformTexelBuffer;   pUniformTexelBuffer   = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       delete pStorageTexelBuffer;   pStorageTexelBuffer   = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             delete pUniformBuffer;        pUniformBuffer        = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             delete pStorageBuffer;        pStorageBuffer        = nullptr; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = 0ull; break;\n'
-                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = 0ull; break;\n'
-                    '        default:                                            break;\n'
-                    '    }\n'
-                    '\n'
-                    '    thisType = VK_DESCRIPTOR_TYPE_MAX_ENUM;\n',
+                'VkShaderModuleCreateInfo' : '''
+                    if (pCode)
+                        delete[] reinterpret_cast<const uint8_t *>(pCode);
+                ''',
+                'VkAccelerationStructureBuildGeometryInfoKHR' : '''
+                    if (ppGeometries) {
+                        for (uint32_t i = 0; i < geometryCount; ++i) {
+                             delete ppGeometries[i];
+                        }
+                        delete[] ppGeometries;
+                    } else if(pGeometries) {
+                        delete[] pGeometries;
+                    }
+                ''',
+                'VkAccelerationStructureGeometryKHR': '''
+                    auto iter = as_geom_khr_host_alloc.pop(this);
+                    if (iter != as_geom_khr_host_alloc.end()) {
+                        delete iter->second;
+                    }
+                ''',
+                'VkMicromapBuildInfoEXT': '''
+                    if (pUsageCounts)
+                        delete[] pUsageCounts;
+                    if (ppUsageCounts) {
+                        for (uint32_t i = 0; i < usageCountsCount; ++i) {
+                             delete ppUsageCounts[i];
+                        }
+                        delete[] ppUsageCounts;
+                    }
+                ''',
+                'VkAccelerationStructureTrianglesOpacityMicromapEXT': '''
+                    if (pUsageCounts)
+                        delete[] pUsageCounts;
+                    if (ppUsageCounts) {
+                        for (uint32_t i = 0; i < usageCountsCount; ++i) {
+                             delete ppUsageCounts[i];
+                        }
+                        delete[] ppUsageCounts;
+                    }
+                ''',
+                'VkAccelerationStructureTrianglesDisplacementMicromapNV': '''
+                    if (pUsageCounts)
+                        delete[] pUsageCounts;
+                    if (ppUsageCounts) {
+                        for (uint32_t i = 0; i < usageCountsCount; ++i) {
+                             delete ppUsageCounts[i];
+                        }
+                        delete[] ppUsageCounts;
+                    }
+                ''',
+                'VkDescriptorDataEXT' : '''
+                    VkDescriptorType& thisType = *(VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
+
+                    switch (thisType) {
+                        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;
+                        case VK_DESCRIPTOR_TYPE_SAMPLER:                    delete pSampler;              pSampler              = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     delete pCombinedImageSampler; pCombinedImageSampler = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              delete pSampledImage;         pSampledImage         = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              delete pStorageImage;         pStorageImage         = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           delete pInputAttachmentImage; pInputAttachmentImage = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       delete pUniformTexelBuffer;   pUniformTexelBuffer   = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       delete pStorageTexelBuffer;   pStorageTexelBuffer   = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             delete pUniformBuffer;        pUniformBuffer        = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             delete pStorageBuffer;        pStorageBuffer        = nullptr; break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = 0ull; break;
+                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = 0ull; break;
+                        default:                                            break;
+                    }
+
+                    thisType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+                '''
             }
 
         wsiStructs = [

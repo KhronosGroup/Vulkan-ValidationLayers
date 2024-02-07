@@ -10324,6 +10324,7 @@ safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::safe_VkAcceleration
     ppUsageCounts = nullptr;
     micromap = copy_src.micromap;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src.usageCountsCount);
@@ -10368,6 +10369,7 @@ safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& safe_VkAcceleration
     ppUsageCounts = nullptr;
     micromap = copy_src.micromap;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src.usageCountsCount);
@@ -10422,6 +10424,7 @@ void safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::initialize(
     ppUsageCounts = nullptr;
     micromap = in_struct->micromap;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT) * in_struct->usageCountsCount);
@@ -10455,6 +10458,7 @@ void safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::initialize(
     ppUsageCounts = nullptr;
     micromap = copy_src->micromap;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src->usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src->pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src->usageCountsCount);
