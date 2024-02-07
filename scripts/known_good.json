@@ -46,15 +46,12 @@
             "commit": "7657cb1c698aa684cfb0546b97b5ff64626a5300"
         },
         {
-            "name": "robin-hood-hashing",
-            "url": "https://github.com/martinus/robin-hood-hashing.git",
-            "sub_dir": "robin-hood-hashing",
-            "build_dir": "robin-hood-hashing/build",
-            "install_dir": "robin-hood-hashing/build/install",
-            "cmake_options": [
-                "-DRH_STANDALONE_PROJECT=OFF"
-            ],
-            "commit": "3.11.5"
+            "name": "unordered_dense",
+            "url": "https://github.com/martinus/unordered_dense.git",
+            "sub_dir": "unordered_dense",
+            "build_dir": "unordered_dense/build",
+            "install_dir": "unordered_dense/build/install",
+            "commit": "v4.4.0"
         },
         {
             "name": "mimalloc",
@@ -149,7 +146,7 @@
         "Vulkan-Utility-Libraries": "VULKAN_UTILITY_LIBRARIES_INSTALL_DIR",
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
-        "robin-hood-hashing": "ROBIN_HOOD_HASHING_INSTALL_DIR",
+        "unordered_dense": "UNORDERED_DENSE_INSTALL_DIR",
         "googletest": "GOOGLETEST_INSTALL_DIR",
         "mimalloc": "MIMALLOC_INSTALL_DIR"
     }

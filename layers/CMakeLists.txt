@@ -79,11 +79,11 @@ target_link_libraries(VkLayer_utils PUBLIC
 target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
 target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
 
-find_package(robin_hood CONFIG)
-option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
-if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
-    target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
+find_package(unordered_dense CONFIG)
+option(USE_UNORDERED_DENSE "unordered_denser provides faster versions of std::unordered_map and std::unordered_set" ${unordered_dense_FOUND})
+if (USE_UNORDERED_DENSE)
+    target_link_libraries(VkLayer_utils PUBLIC unordered_dense::unordered_dense)
+    target_compile_definitions(VkLayer_utils PUBLIC USE_UNORDERED_DENSE)
 endif()
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some

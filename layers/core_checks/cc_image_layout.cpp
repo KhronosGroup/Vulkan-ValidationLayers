@@ -160,11 +160,8 @@ void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer *cb_state) {
 
 static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const vvl::Image &image_state) {
     // This approach allows for a single hash lookup or/create new
-    auto &layout_map = map[&image_state];
-    if (!layout_map) {
-        layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
-    }
-    return &(*layout_map);
+    auto result = map.emplace(&image_state, image_state.subresource_encoder.SubresourceCount());
+    return &(result.first->second.value());
 }
 
 // Helper to update the Global or Overlay layout map

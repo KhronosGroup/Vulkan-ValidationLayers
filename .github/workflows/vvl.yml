@@ -60,27 +60,27 @@ jobs:
 
   linux:
     runs-on: ubuntu-22.04
-    name: "linux (${{matrix.sanitize}} sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
+    name: "linux (${{matrix.sanitize}} sanitizer, ${{matrix.config}}, unordered_dense ${{matrix.unordered_dense}} )"
     strategy:
       fail-fast: false
       matrix:
         sanitize: [ address, thread ]
         config: [debug, release]
-        robin_hood: [ "ON" ]
+        unordered_dense: [ "ON" ]
         include:
-          # Test with Robin Hood disabled
+          # Test with unordered_dense disabled
           # Chromium build, and some package managers don't use it.
           - config: release
-            robin_hood: "OFF"
+            unordered_dense: "OFF"
             sanitize: address
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.config }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
+          key: ${{ matrix.config }}-${{ matrix.sanitize }}-${{matrix.unordered_dense}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_UNORDERED_DENSE=${{matrix.unordered_dense}}'
         env:
           CFLAGS: -fsanitize=${{ matrix.sanitize }}
           CXXFLAGS: -fsanitize=${{ matrix.sanitize }}
@@ -145,7 +145,7 @@ jobs:
             build-ci/external/glslang/build/install
             build-ci/external/googltest/build/install
             build-ci/external/mimalloc/build/install
-            build-ci/external/robin-hood-hashing/build/install
+            build-ci/external/unordered_dense/build/install
             build-ci/external/SPIRV-Headers/build/install
             build-ci/external/SPIRV-Tools/build/install
             build-ci/external/Vulkan-Headers/build/install
