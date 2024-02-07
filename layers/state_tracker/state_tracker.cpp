@@ -2282,8 +2282,7 @@ void ValidationStateTracker::PostCallRecordCmdBindPipeline(VkCommandBuffer comma
                 // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
                 // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
                 // first bound pipeline.
-                if (!render_pass->UsesDynamicRendering() && !render_pass->UsesColorAttachment(subpass) &&
-                    !render_pass->UsesDepthStencilAttachment(subpass)) {
+                if (render_pass->UsesNoAttachment(subpass)) {
                     if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
                             cb_state->GetActiveSubpassRasterizationSampleCount();
                         !subpass_rasterization_samples) {

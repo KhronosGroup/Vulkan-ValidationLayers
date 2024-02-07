@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -343,6 +343,12 @@ bool RenderPass::UsesDepthStencilAttachment(uint32_t subpass_num) const {
         }
     }
     return result;
+}
+
+// vkspec.html#renderpass-noattachments
+bool RenderPass::UsesNoAttachment(uint32_t subpass) const {
+    // If using dynamic rendering, there is no subpass, so return 'false'
+    return !UsesColorAttachment(subpass) && !UsesDepthStencilAttachment(subpass) && !UsesDynamicRendering();
 }
 
 uint32_t RenderPass::GetDynamicRenderingColorAttachmentCount() const {

@@ -16,6 +16,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 TEST_F(NegativeSubpass, NonGraphicsPipeline) {
     TEST_DESCRIPTION("Create a subpass with the compute pipeline bind point");
@@ -1244,4 +1245,35 @@ TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
     m_commandBuffer->NextSubpass();
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
+    TEST_DESCRIPTION("Create no attachment subpass that goes against framebufferNoAttachmentsSampleCounts");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    if ((m_device->phy().limits_.framebufferNoAttachmentsSampleCounts & VK_SAMPLE_COUNT_8_BIT) != 0) {
+        GTEST_SKIP() << "Need framebufferNoAttachmentsSampleCounts with no support";
+    }
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.CreateRenderPass();
+
+    VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
+    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_8_BIT;
+    ms_state.sampleShadingEnable = VK_FALSE;
+    ms_state.minSampleShading = 0.0f;
+    ms_state.pSampleMask = nullptr;
+    ms_state.alphaToCoverageEnable = VK_FALSE;
+    ms_state.alphaToOneEnable = VK_FALSE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.pipe_ms_state_ci_ = ms_state;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
