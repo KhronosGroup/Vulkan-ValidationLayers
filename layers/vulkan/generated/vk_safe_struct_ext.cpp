@@ -9102,6 +9102,7 @@ safe_VkDescriptorDataEXT::safe_VkDescriptorDataEXT(const safe_VkDescriptorDataEX
     pUniformBuffer = nullptr;
     pStorageBuffer = nullptr;
     accelerationStructure = copy_src.accelerationStructure;
+
     VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
     VkDescriptorType type = *(VkDescriptorType*)&copy_src.type_at_end[sizeof(VkDescriptorDataEXT)];
 
@@ -9222,6 +9223,7 @@ safe_VkDescriptorDataEXT& safe_VkDescriptorDataEXT::operator=(const safe_VkDescr
     pUniformBuffer = nullptr;
     pStorageBuffer = nullptr;
     accelerationStructure = copy_src.accelerationStructure;
+
     VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
     VkDescriptorType type = *(VkDescriptorType*)&copy_src.type_at_end[sizeof(VkDescriptorDataEXT)];
 
@@ -9401,6 +9403,7 @@ void safe_VkDescriptorDataEXT::initialize(const VkDescriptorDataEXT* in_struct, 
     pUniformBuffer = nullptr;
     pStorageBuffer = nullptr;
     accelerationStructure = in_struct->accelerationStructure;
+
     VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
 
     switch (type) {
@@ -9463,6 +9466,7 @@ void safe_VkDescriptorDataEXT::initialize(const safe_VkDescriptorDataEXT* copy_s
     pUniformBuffer = nullptr;
     pStorageBuffer = nullptr;
     accelerationStructure = copy_src->accelerationStructure;
+
     VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
     VkDescriptorType type = *(VkDescriptorType*)&copy_src->type_at_end[sizeof(VkDescriptorDataEXT)];
 
@@ -12901,6 +12905,7 @@ safe_VkMicromapBuildInfoEXT::safe_VkMicromapBuildInfoEXT(const safe_VkMicromapBu
     triangleArray.initialize(&copy_src.triangleArray);
     triangleArrayStride = copy_src.triangleArrayStride;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src.usageCountsCount);
@@ -12939,6 +12944,7 @@ safe_VkMicromapBuildInfoEXT& safe_VkMicromapBuildInfoEXT::operator=(const safe_V
     triangleArray.initialize(&copy_src.triangleArray);
     triangleArrayStride = copy_src.triangleArrayStride;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src.usageCountsCount);
@@ -12987,6 +12993,7 @@ void safe_VkMicromapBuildInfoEXT::initialize(const VkMicromapBuildInfoEXT* in_st
     triangleArray.initialize(&in_struct->triangleArray);
     triangleArrayStride = in_struct->triangleArrayStride;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT) * in_struct->usageCountsCount);
@@ -13015,6 +13022,7 @@ void safe_VkMicromapBuildInfoEXT::initialize(const safe_VkMicromapBuildInfoEXT* 
     triangleArray.initialize(&copy_src->triangleArray);
     triangleArrayStride = copy_src->triangleArrayStride;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src->usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src->pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src->usageCountsCount);
@@ -13573,6 +13581,7 @@ safe_VkAccelerationStructureTrianglesOpacityMicromapEXT::safe_VkAccelerationStru
     ppUsageCounts = nullptr;
     micromap = copy_src.micromap;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src.usageCountsCount);
@@ -13609,6 +13618,7 @@ safe_VkAccelerationStructureTrianglesOpacityMicromapEXT& safe_VkAccelerationStru
     ppUsageCounts = nullptr;
     micromap = copy_src.micromap;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src.usageCountsCount);
@@ -13655,6 +13665,7 @@ void safe_VkAccelerationStructureTrianglesOpacityMicromapEXT::initialize(
     ppUsageCounts = nullptr;
     micromap = in_struct->micromap;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT) * in_struct->usageCountsCount);
@@ -13680,6 +13691,7 @@ void safe_VkAccelerationStructureTrianglesOpacityMicromapEXT::initialize(
     ppUsageCounts = nullptr;
     micromap = copy_src->micromap;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pUsageCounts) {
         pUsageCounts = new VkMicromapUsageEXT[copy_src->usageCountsCount];
         memcpy((void*)pUsageCounts, (void*)copy_src->pUsageCounts, sizeof(VkMicromapUsageEXT) * copy_src->usageCountsCount);

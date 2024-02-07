@@ -2327,6 +2327,7 @@ safe_VkShaderModuleCreateInfo::safe_VkShaderModuleCreateInfo(const safe_VkShader
     codeSize = copy_src.codeSize;
     pCode = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pCode) {
         pCode = reinterpret_cast<uint32_t*>(new uint8_t[codeSize]);
         memcpy((void*)pCode, (void*)copy_src.pCode, codeSize);
@@ -2344,6 +2345,7 @@ safe_VkShaderModuleCreateInfo& safe_VkShaderModuleCreateInfo::operator=(const sa
     codeSize = copy_src.codeSize;
     pCode = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pCode) {
         pCode = reinterpret_cast<uint32_t*>(new uint8_t[codeSize]);
         memcpy((void*)pCode, (void*)copy_src.pCode, codeSize);
@@ -2366,6 +2368,7 @@ void safe_VkShaderModuleCreateInfo::initialize(const VkShaderModuleCreateInfo* i
     codeSize = in_struct->codeSize;
     pCode = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pCode) {
         pCode = reinterpret_cast<uint32_t*>(new uint8_t[codeSize]);
         memcpy((void*)pCode, (void*)in_struct->pCode, codeSize);
@@ -2379,6 +2382,7 @@ void safe_VkShaderModuleCreateInfo::initialize(const safe_VkShaderModuleCreateIn
     codeSize = copy_src->codeSize;
     pCode = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pCode) {
         pCode = reinterpret_cast<uint32_t*>(new uint8_t[codeSize]);
         memcpy((void*)pCode, (void*)copy_src->pCode, codeSize);
@@ -3013,6 +3017,7 @@ safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo(
     pViewports = nullptr;
     scissorCount = copy_src.scissorCount;
     pScissors = nullptr;
+
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pViewports) {
         pViewports = new VkViewport[copy_src.viewportCount];
@@ -3040,6 +3045,7 @@ safe_VkPipelineViewportStateCreateInfo& safe_VkPipelineViewportStateCreateInfo::
     pViewports = nullptr;
     scissorCount = copy_src.scissorCount;
     pScissors = nullptr;
+
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pViewports) {
         pViewports = new VkViewport[copy_src.viewportCount];
@@ -3074,6 +3080,7 @@ void safe_VkPipelineViewportStateCreateInfo::initialize(const VkPipelineViewport
     scissorCount = in_struct->scissorCount;
     pScissors = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewports && !is_dynamic_viewports) {
         pViewports = new VkViewport[in_struct->viewportCount];
         memcpy((void*)pViewports, (void*)in_struct->pViewports, sizeof(VkViewport) * in_struct->viewportCount);
@@ -3094,6 +3101,7 @@ void safe_VkPipelineViewportStateCreateInfo::initialize(const safe_VkPipelineVie
     pViewports = nullptr;
     scissorCount = copy_src->scissorCount;
     pScissors = nullptr;
+
     pNext = SafePnextCopy(copy_src->pNext);
     if (copy_src->pViewports) {
         pViewports = new VkViewport[copy_src->viewportCount];
@@ -3790,6 +3798,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     subpass = copy_src.subpass;
     basePipelineHandle = copy_src.basePipelineHandle;
     basePipelineIndex = copy_src.basePipelineIndex;
+
     pNext = SafePnextCopy(copy_src.pNext);
     const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
     if (stageCount && copy_src.pStages) {
@@ -3884,6 +3893,7 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     subpass = copy_src.subpass;
     basePipelineHandle = copy_src.basePipelineHandle;
     basePipelineIndex = copy_src.basePipelineIndex;
+
     pNext = SafePnextCopy(copy_src.pNext);
     const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
     if (stageCount && copy_src.pStages) {
@@ -3994,6 +4004,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     basePipelineHandle = in_struct->basePipelineHandle;
     basePipelineIndex = in_struct->basePipelineIndex;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     const bool is_graphics_library =
         vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
     if (stageCount && in_struct->pStages) {
@@ -4086,6 +4097,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     subpass = copy_src->subpass;
     basePipelineHandle = copy_src->basePipelineHandle;
     basePipelineIndex = copy_src->basePipelineIndex;
+
     pNext = SafePnextCopy(copy_src->pNext);
     const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src->pNext);
     if (stageCount && copy_src->pStages) {
@@ -4726,6 +4738,7 @@ safe_VkDescriptorSetLayoutBinding::safe_VkDescriptorSetLayoutBinding(const safe_
     descriptorCount = copy_src.descriptorCount;
     stageFlags = copy_src.stageFlags;
     pImmutableSamplers = nullptr;
+
     const bool sampler_type = copy_src.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
                               copy_src.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     if (descriptorCount && copy_src.pImmutableSamplers && sampler_type) {
@@ -4746,6 +4759,7 @@ safe_VkDescriptorSetLayoutBinding& safe_VkDescriptorSetLayoutBinding::operator=(
     descriptorCount = copy_src.descriptorCount;
     stageFlags = copy_src.stageFlags;
     pImmutableSamplers = nullptr;
+
     const bool sampler_type = copy_src.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
                               copy_src.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     if (descriptorCount && copy_src.pImmutableSamplers && sampler_type) {
@@ -4770,6 +4784,7 @@ void safe_VkDescriptorSetLayoutBinding::initialize(const VkDescriptorSetLayoutBi
     descriptorCount = in_struct->descriptorCount;
     stageFlags = in_struct->stageFlags;
     pImmutableSamplers = nullptr;
+
     const bool sampler_type = in_struct->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
                               in_struct->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     if (descriptorCount && in_struct->pImmutableSamplers && sampler_type) {
@@ -4787,6 +4802,7 @@ void safe_VkDescriptorSetLayoutBinding::initialize(const safe_VkDescriptorSetLay
     descriptorCount = copy_src->descriptorCount;
     stageFlags = copy_src->stageFlags;
     pImmutableSamplers = nullptr;
+
     const bool sampler_type = copy_src->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
                               copy_src->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     if (descriptorCount && copy_src->pImmutableSamplers && sampler_type) {
@@ -4965,6 +4981,7 @@ safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet(const safe_VkWriteDescripto
     pBufferInfo = nullptr;
     pTexelBufferView = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     switch (descriptorType) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
@@ -5023,6 +5040,7 @@ safe_VkWriteDescriptorSet& safe_VkWriteDescriptorSet::operator=(const safe_VkWri
     pBufferInfo = nullptr;
     pTexelBufferView = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     switch (descriptorType) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
@@ -5087,6 +5105,7 @@ void safe_VkWriteDescriptorSet::initialize(const VkWriteDescriptorSet* in_struct
     pBufferInfo = nullptr;
     pTexelBufferView = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     switch (descriptorType) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
@@ -5138,6 +5157,7 @@ void safe_VkWriteDescriptorSet::initialize(const safe_VkWriteDescriptorSet* copy
     pBufferInfo = nullptr;
     pTexelBufferView = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     switch (descriptorType) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
@@ -5219,6 +5239,7 @@ safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo(const safe_VkFramebuf
     width = copy_src.width;
     height = copy_src.height;
     layers = copy_src.layers;
+
     pNext = SafePnextCopy(copy_src.pNext);
     if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
@@ -5242,6 +5263,7 @@ safe_VkFramebufferCreateInfo& safe_VkFramebufferCreateInfo::operator=(const safe
     width = copy_src.width;
     height = copy_src.height;
     layers = copy_src.layers;
+
     pNext = SafePnextCopy(copy_src.pNext);
     if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
@@ -5271,6 +5293,7 @@ void safe_VkFramebufferCreateInfo::initialize(const VkFramebufferCreateInfo* in_
     height = in_struct->height;
     layers = in_struct->layers;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
         for (uint32_t i = 0; i < attachmentCount; ++i) {
@@ -5289,6 +5312,7 @@ void safe_VkFramebufferCreateInfo::initialize(const safe_VkFramebufferCreateInfo
     width = copy_src->width;
     height = copy_src->height;
     layers = copy_src->layers;
+
     pNext = SafePnextCopy(copy_src->pNext);
     if (attachmentCount && copy_src->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
