@@ -1,7 +1,7 @@
 
-/* Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
+/* Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
  * limitations under the License.
  */
 #pragma once
-typedef struct {
-    bool validate_descriptors;
-    bool validate_indirect_buffer;
-    bool validate_copies;
-    bool vma_linear_output;
-    bool warn_on_robust_oob;
-    bool cache_instrumented_shaders;
-    bool select_instrumented_shaders;
-    uint32_t gpuav_max_buffer_device_addresses;
-} GpuAVSettings;
+struct GpuAVSettings {
+    bool validate_descriptors = true;
+    bool validate_indirect_buffer = true;
+    bool validate_copies = true;
+    bool vma_linear_output = true;
+    bool warn_on_robust_oob = true;
+    bool cache_instrumented_shaders = true;
+    bool select_instrumented_shaders = false;
+    uint32_t gpuav_max_buffer_device_addresses = 10000;
+
+    bool gpuav_debug_validate_instrumented_shaders = false;
+    bool gpuav_debug_dump_instrumented_shaders = false;
+};

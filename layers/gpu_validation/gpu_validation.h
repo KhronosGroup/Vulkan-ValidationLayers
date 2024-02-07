@@ -485,9 +485,6 @@ class Validator : public gpu_tracker::Validator {
     bool buffer_device_address_enabled = false;
 
     std::optional<DescriptorHeap> desc_heap{};  // optional only to defer construction
-
-    bool debug_validate_instrumented_shaders = false;
-    bool debug_dump_instrumented_shaders = false;
 };
 
 struct RestorablePipelineState {

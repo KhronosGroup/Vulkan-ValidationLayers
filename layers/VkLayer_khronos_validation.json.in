@@ -992,6 +992,68 @@
                                                     }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "gpuav_debug_settings",
+                                            "label": "Developer Debug Settings",
+                                            "description": "GPU-AV debug settings",
+                                            "type": "GROUP",
+                                            "view": "ADVANCED",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            },
+                                            "settings": [
+                                                {
+                                                    "key": "gpuav_debug_validate_instrumented_shaders",
+                                                    "label": "Validate instrumented shaders",
+                                                    "description": "Run spirv-val after doing shader instrumentation",
+                                                    "type": "BOOL",
+                                                    "default": false,
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "validate_gpu_based",
+                                                                "value": "GPU_BASED_GPU_ASSISTED"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "key": "gpuav_debug_dump_instrumented_shaders",
+                                                    "label": "Dump instrumented shaders",
+                                                    "description": "Will dump the instrumented shaders (before and after) to working directory",
+                                                    "type": "BOOL",
+                                                    "default": false,
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "validate_gpu_based",
+                                                                "value": "GPU_BASED_GPU_ASSISTED"
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
                                         }
                                     ]
                                 }
