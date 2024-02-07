@@ -68,7 +68,7 @@
                 "-DMI_BUILD_SHARED=OFF",
                 "-DMI_BUILD_TESTS=OFF"
             ],
-            "commit": "v2.0.7",
+            "commit": "v2.1.2",
             "build_platforms": [
                 "windows"
             ]
