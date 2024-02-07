@@ -2336,7 +2336,7 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeAV1) {
     auto update_info = vku::InitStruct<VkVideoSessionParametersUpdateInfoKHR>();
     update_info.updateSequenceCount = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateVideoSessionParametersKHR-09260");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-09260");
     context.vk.UpdateVideoSessionParametersKHR(m_device->device(), context.SessionParams(), &update_info);
     m_errorMonitor->VerifyFound();
 }

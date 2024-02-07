@@ -2993,8 +2993,8 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
-            skip |= LogError("VUID-vkUpdateVideoSessionParametersKHR-09260", videoSessionParameters, error_obj.location,
-                             "AV1 decode session parameters cannot be updated.");
+            skip |= LogError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-09260", videoSessionParameters,
+                             error_obj.location, "AV1 decode session parameters cannot be updated.");
             break;
         }
 
