@@ -93,8 +93,8 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, cons
 }
 
 // Check to see if host-visible memory was bound to this buffer
-bool CoreChecks::ValidateHostVisibleMemoryIsBoundToAccelStructBuffer(const vvl::AccelerationStructureKHR &accel_struct,
-                                                                     const Location &buffer_loc, const char *vuid) const {
+bool CoreChecks::ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR &accel_struct,
+                                                              const Location &buffer_loc, const char *vuid) const {
     bool result = false;
     result |= ValidateMemoryIsBoundToBuffer(device, *accel_struct.buffer_state, buffer_loc, vuid);
     if (!result) {
@@ -111,16 +111,15 @@ bool CoreChecks::ValidateHostVisibleMemoryIsBoundToAccelStructBuffer(const vvl::
     return result;
 }
 
-bool CoreChecks::ValidateBufferMemoryIsNotMultiInstance(const vvl::Buffer &buffer, LogObjectList objlist,
-                                                        const Location &buffer_loc, const char *vuid,
-                                                        const char *error_msg_beginning) const {
+bool CoreChecks::ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR &accel_struct,
+                                                                   const Location &accel_struct_loc, const char *vuid) const {
     bool skip = false;
-    if (const vvl::DeviceMemory *buffer_mem = buffer.MemState()) {
+    if (const vvl::DeviceMemory *buffer_mem = accel_struct.buffer_state->MemState()) {
         if (buffer_mem->multi_instance) {
-            objlist.add(buffer.Handle());
-            objlist.add(buffer_mem->Handle());
-            skip |= LogError(vuid, objlist, buffer_loc, "%s is bound to memory (%s) that was allocated with multiple instances.",
-                             error_msg_beginning, FormatHandle(buffer_mem->Handle()).c_str());
+            const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), buffer_mem->Handle());
+            skip |= LogError(vuid, objlist, accel_struct_loc,
+                             "has been created with a buffer bound to memory (%s) that was allocated with multiple instances.",
+                             FormatHandle(buffer_mem->Handle()).c_str());
         }
     }
     return skip;
