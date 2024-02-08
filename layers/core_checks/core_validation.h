@@ -266,30 +266,23 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
-    bool LogInvalidAttachmentMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                     const vvl::RenderPass& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
-                                     const char* msg, const Location& loc, const char* error_code) const;
-    bool LogInvalidPnextMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                const vvl::RenderPass& rp2_state, const char* msg, const Location& loc,
-                                const char* error_code) const;
-    bool LogInvalidDependencyMessage(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                     const vvl::RenderPass& rp2_state, const char* msg, const Location& loc,
-                                     const char* error_code) const;
     bool ValidateStageMaskHost(const Location& stage_mask_loc, VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
                            const Location& size_loc) const;
     bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
-    bool ValidateAttachmentCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                         const vvl::RenderPass& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
-                                         const Location& loc, const char* error_code) const;
-    bool ValidateSubpassCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                      const vvl::RenderPass& rp2_state, const int subpass, const Location& loc,
-                                      const char* error_code) const;
-    bool ValidateDependencyCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                         const vvl::RenderPass& rp2_state, const uint32_t dependency, const Location& loc,
-                                         const char* error_code) const;
-    bool ValidateRenderPassCompatibility(const char* type1_string, const vvl::RenderPass& rp1_state, const char* type2_string,
-                                         const vvl::RenderPass& rp2_state, const Location& loc, const char* vuid) const;
+    bool ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
+                                         uint32_t primary_attachment, uint32_t secondary_attachment, const Location& caller_loc,
+                                         const Location& attachment_loc, const char* vuid) const;
+    bool ValidateSubpassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                      const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state, const int subpass,
+                                      const Location& loc, const char* vuid) const;
+    bool ValidateDependencyCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
+                                         const uint32_t dependency, const Location& loc, const char* vuid) const;
+    bool ValidateRenderPassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state, const Location& loc,
+                                         const char* vuid) const;
     bool ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateQueueFamilyIndex(const vvl::PhysicalDevice* pd_state, uint32_t requested_queue_family, const char* vuid,
                                   const Location& loc) const;

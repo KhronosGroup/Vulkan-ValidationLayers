@@ -23,6 +23,7 @@
 
 #include "containers/range_vector.h"
 #include "core_validation.h"
+#include "error_message/error_strings.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 
@@ -201,20 +202,18 @@ bool CoreChecks::CheckItgOffset(const LogObjectList &objlist, const VkOffset3D &
         // If the queue family image transfer granularity is (0, 0, 0), then the offset must always be (0, 0, 0)
         if (IsExtentAllZeroes(offset_extent) == false) {
             skip |= LogError(vuid, objlist, offset_loc,
-                             "(x=%" PRId32 ", y=%" PRId32 ", z=%" PRId32
-                             ") must be (x=0, y=0, z=0) when the command buffer's queue family "
+                             "(%s) must be (x=0, y=0, z=0) when the command buffer's queue family "
                              "image transfer granularity is (w=0, h=0, d=0).",
-                             offset.x, offset.y, offset.z);
+                             string_VkOffset3D(offset).c_str());
         }
     } else {
         // If the queue family image transfer granularity is not (0, 0, 0), then the offset dimensions must always be even
         // integer multiples of the image transfer granularity.
         if (IsExtentAligned(offset_extent, granularity) == false) {
             skip |= LogError(vuid, objlist, offset_loc,
-                             "(x=%" PRId32 ", y=%" PRId32 ", z=%" PRId32
-                             ") dimensions must be even integer multiples of this command "
-                             "buffer's queue family image transfer granularity (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32 ").",
-                             offset.x, offset.y, offset.z, granularity.width, granularity.height, granularity.depth);
+                             "(%s) dimensions must be even integer multiples of this command "
+                             "buffer's queue family image transfer granularity (%s).",
+                             string_VkOffset3D(offset).c_str(), string_VkExtent3D(granularity).c_str());
         }
     }
     return skip;
@@ -239,12 +238,9 @@ bool CoreChecks::CheckItgExtent(const LogObjectList &objlist, const VkExtent3D &
         // subresource extent.
         if (IsExtentEqual(extent, subresource_extent) == false) {
             skip |= LogError(vuid, objlist, extent_loc,
-                             "(w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32 ") must match the image subresource extents (w=%" PRIu32
-                             ", h=%" PRIu32 ", d=%" PRIu32
-                             ") "
+                             "(%s) must match the image subresource extents (%s) "
                              "when the command buffer's queue family image transfer granularity is (w=0, h=0, d=0).",
-                             extent.width, extent.height, extent.depth, subresource_extent.width, subresource_extent.height,
-                             subresource_extent.depth);
+                             string_VkExtent3D(extent).c_str(), string_VkExtent3D(subresource_extent).c_str());
         }
     } else {
         // If the queue family image transfer granularity is not (0, 0, 0), then the extent dimensions must always be even
@@ -276,16 +272,12 @@ bool CoreChecks::CheckItgExtent(const LogObjectList &objlist, const VkExtent3D &
         }
         if (!(x_ok && y_ok && z_ok)) {
             skip |= LogError(vuid, objlist, extent_loc,
-                             "(w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
-                             ") dimensions must be even integer multiples of this command "
-                             "buffer's queue family image transfer granularity (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
-                             ") or offset (x=%" PRId32 ", y=%" PRId32 ", z=%" PRId32
-                             ") + "
-                             "extent (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
-                             ") must match the image subresource extents (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32 ").",
-                             extent.width, extent.height, extent.depth, granularity.width, granularity.height, granularity.depth,
-                             offset.x, offset.y, offset.z, extent.width, extent.height, extent.depth, subresource_extent.width,
-                             subresource_extent.height, subresource_extent.depth);
+                             "(%s) dimensions must be even integer multiples of this command "
+                             "buffer's queue family image transfer granularity (%s) or offset (%s) + "
+                             "extent (%s) must match the image subresource extents (%s).",
+                             string_VkExtent3D(extent).c_str(), string_VkExtent3D(granularity).c_str(),
+                             string_VkOffset3D(offset).c_str(), string_VkExtent3D(extent).c_str(),
+                             string_VkExtent3D(subresource_extent).c_str());
         }
     }
     return skip;
@@ -2104,10 +2096,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             src_block_extent.depth != dst_block_extent.depth) {
             const char *compatible_vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-09247" : "VUID-vkCmdCopyImage-srcImage-09247";
             skip |= LogError(compatible_vuid, all_objlist, loc,
-                             "srcImage format %s has texel block extent (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32
-                             ") and dstImage format %s has texel block extent (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32 ").",
-                             string_VkFormat(src_format), src_block_extent.width, src_block_extent.height, src_block_extent.depth,
-                             string_VkFormat(dst_format), dst_block_extent.width, dst_block_extent.height, dst_block_extent.depth);
+                             "srcImage format %s has texel block extent (%s) and dstImage format %s has texel block extent (%s).",
+                             string_VkFormat(src_format), string_VkExtent3D(src_block_extent).c_str(), string_VkFormat(dst_format),
+                             string_VkExtent3D(dst_block_extent).c_str());
         }
     }
 
@@ -2408,13 +2399,11 @@ bool CoreChecks::ValidateImageBounds(const HandleT handle, const vvl::Image &ima
             const LogObjectList objlist(handle, image_state.Handle());
             skip |= LogError(vuid, objlist, region_loc,
                              "exceeds image bounds\n"
-                             "region extent (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32
-                             ")\n"
-                             "region offset (x = %" PRId32 ", y = %" PRId32 ", z = %" PRId32
-                             ")\n"
-                             "image extent (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32 ")\n",
-                             extent.width, extent.height, extent.depth, offset.x, offset.y, offset.z, image_extent.width,
-                             image_extent.height, image_extent.depth);
+                             "region extent (%s)\n"
+                             "region offset (%s)\n"
+                             "image extent (%s)\n",
+                             string_VkExtent3D(extent).c_str(), string_VkOffset3D(offset).c_str(),
+                             string_VkExtent3D(image_extent).c_str());
         }
     }
 
@@ -2987,12 +2976,11 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                                               : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09115";
                 LogObjectList objlist(device, image_state->Handle());
                 skip |= LogError(vuid, objlist, loc,
-                                 "pRegion[%" PRIu32 "].imageExtent (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
-                                 ") must match the image's subresource "
-                                 "extents (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
-                                 ") %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
-                                 i, region.imageExtent.width, region.imageExtent.height, region.imageExtent.depth,
-                                 subresource_extent.width, subresource_extent.height, subresource_extent.depth, info_type);
+                                 "pRegion[%" PRIu32
+                                 "].imageExtent (%s) must match the image's subresource "
+                                 "extents (%s) %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                                 i, string_VkExtent3D(region.imageExtent).c_str(), string_VkExtent3D(subresource_extent).c_str(),
+                                 info_type);
             }
             if ((region.memoryRowLength != 0) || (region.memoryImageHeight != 0)) {
                 const char *vuid =
@@ -3175,22 +3163,19 @@ bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 regio
         const char *vuid =
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcOffset-09114" : "VUID-VkCopyImageToImageInfoEXT-dstOffset-09114";
         Field field = is_src ? Field::srcOffset : Field::dstOffset;
+        VkOffset3D offset = is_src ? region.srcOffset : region.dstOffset;
         const LogObjectList objlist(device);
-        skip |= LogError(vuid, objlist, region_loc.dot(field),
-                         "is (x = %" PRIu32 ", y = %" PRIu32 ", z = %" PRIu32 ") but flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT.",
-                         region.srcOffset.x, region.srcOffset.y, region.srcOffset.z);
+        skip |= LogError(vuid, objlist, region_loc.dot(field), "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT.",
+                         string_VkOffset3D(offset).c_str());
     }
     if (!IsExtentEqual(region.extent, image_state.createInfo.extent)) {
         const char *vuid =
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-09115" : "VUID-VkCopyImageToImageInfoEXT-dstImage-09115";
         const LogObjectList objlist(device, image_state.Handle());
         skip |= LogError(vuid, objlist, region_loc.dot(Field::imageExtent),
-                         "(w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32
-                         ") must match the image's subresource "
-                         "extents (w = %" PRIu32 ", h = %" PRIu32 ", d = %" PRIu32
-                         ") when VkCopyImageToImageInfoEXT->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
-                         region.extent.width, region.extent.height, region.extent.depth, image_state.createInfo.extent.width,
-                         image_state.createInfo.extent.height, image_state.createInfo.extent.depth);
+                         "(%s) must match the image's subresource "
+                         "extents (%s) when VkCopyImageToImageInfoEXT->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                         string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(image_state.createInfo.extent).c_str());
     }
     return skip;
 }

@@ -3404,7 +3404,7 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LastBound &last_bound_stat
     // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
     if (cb_state.activeRenderPass->VkHandle() != rp_state->VkHandle()) {
         // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
-        skip |= ValidateRenderPassCompatibility("active render pass", *cb_state.activeRenderPass.get(), "pipeline state object",
+        skip |= ValidateRenderPassCompatibility(cb_state.Handle(), *cb_state.activeRenderPass.get(), pipeline.Handle(),
                                                 *rp_state.get(), loc, vuid.render_pass_compatible_02684);
     }
     const auto subpass = pipeline.Subpass();
