@@ -478,7 +478,10 @@ class CoreChecks : public ValidationStateTracker {
         }
         return result;
     }
-
+    bool ValidateAccelStructsMemoryDoNotOverlap(const Location& function_loc, LogObjectList objlist,
+                                                const vvl::AccelerationStructureKHR& accel_struct_a, const Location& loc_a,
+                                                const vvl::AccelerationStructureKHR& accel_struct_b, const Location& loc_b,
+                                                const char* vuid) const;
     bool ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR& accel_struct, const Location& buffer_loc,
                                                       const char* vuid) const;
     bool ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR& accel_struct,
