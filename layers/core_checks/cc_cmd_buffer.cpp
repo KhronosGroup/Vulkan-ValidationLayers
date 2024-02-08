@@ -94,8 +94,8 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     if (framebuffer->createInfo.renderPass != info->renderPass) {
                         auto render_pass = Get<vvl::RenderPass>(info->renderPass);
                         // renderPass that framebuffer was created with must be compatible with local renderPass
-                        skip |= ValidateRenderPassCompatibility("framebuffer", *framebuffer->rp_state.get(), "command buffer",
-                                                                *render_pass.get(), inheritance_loc,
+                        skip |= ValidateRenderPassCompatibility(framebuffer->Handle(), *framebuffer->rp_state.get(),
+                                                                cb_state->Handle(), *render_pass.get(), inheritance_loc,
                                                                 "VUID-VkCommandBufferBeginInfo-flags-00055");
                     }
                 }
@@ -897,8 +897,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         // Make sure render pass is compatible with parent command buffer pass if secondary command buffer has
                         // "render pass continue" usage flag
                         if (cb_state.activeRenderPass->VkHandle() != secondary_rp_state->VkHandle()) {
-                            skip |= ValidateRenderPassCompatibility("primary command buffer", *cb_state.activeRenderPass.get(),
-                                                                    "secondary command buffer", *secondary_rp_state.get(), cb_loc,
+                            skip |= ValidateRenderPassCompatibility(cb_state.Handle(), *cb_state.activeRenderPass.get(),
+                                                                    secondary_rp_state->Handle(), *secondary_rp_state.get(), cb_loc,
                                                                     "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
                         }
                         //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB

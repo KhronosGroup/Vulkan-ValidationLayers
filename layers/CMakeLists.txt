@@ -27,6 +27,7 @@ target_sources(VkLayer_utils PRIVATE
     error_message/logging.cpp
     error_message/error_location.cpp
     error_message/error_location.h
+    error_message/error_strings.h
     error_message/record_object.h
     external/xxhash.h
     ${API_TYPE}/generated/error_location_helper.cpp

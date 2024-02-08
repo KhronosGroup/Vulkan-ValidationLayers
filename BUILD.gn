@@ -399,6 +399,7 @@ source_set("vulkan_layer_utils") {
     "layers/containers/sparse_containers.h",
     "layers/error_message/error_location.cpp",
     "layers/error_message/error_location.h",
+    "layers/error_message/error_strings.h",
     "layers/error_message/logging.cpp",
     "layers/error_message/logging.h",
     "layers/error_message/record_object.h",
