@@ -56,6 +56,11 @@ struct LogObjectList {
         object_list.emplace_back(object, ConvertCoreObjectToVulkanObject(VkHandleInfo<HANDLE_T>::kVkObjectType));
     }
 
+    template <typename... HANDLE_T>
+    void add(HANDLE_T... objects) {
+        (..., add(objects));
+    }
+
     void add(VulkanTypedHandle typed_handle) { object_list.emplace_back(typed_handle); }
 
     template <typename HANDLE_T>

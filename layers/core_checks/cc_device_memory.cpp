@@ -92,6 +92,33 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, cons
     return result;
 }
 
+bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location &function_loc, LogObjectList objlist,
+                                                        const vvl::AccelerationStructureKHR &accel_struct_a, const Location &loc_a,
+                                                        const vvl::AccelerationStructureKHR &accel_struct_b, const Location &loc_b,
+                                                        const char *vuid) const {
+    bool skip = false;
+
+    const vvl::Buffer &buffer_a = *accel_struct_a.buffer_state;
+    const vvl::Buffer &buffer_b = *accel_struct_b.buffer_state;
+
+    const sparse_container::range<VkDeviceSize> range_a(accel_struct_a.create_infoKHR.offset, accel_struct_a.create_infoKHR.size);
+    const sparse_container::range<VkDeviceSize> range_b(accel_struct_b.create_infoKHR.offset, accel_struct_b.create_infoKHR.size);
+
+    if (const auto [memory, overlap_range] = buffer_a.GetResourceMemoryOverlap(range_a, &buffer_b, range_b);
+        memory != VK_NULL_HANDLE) {
+        objlist.add(accel_struct_a.Handle(), buffer_a.Handle(), accel_struct_b.Handle(), buffer_b.Handle());
+
+        skip |= LogError(vuid, objlist, function_loc,
+                         "memory backing buffer (%s) used as storage for %s (%s) overlaps memory backing buffer (%s) used as "
+                         "storage for %s (%s). Overlapped memory is (%s) on range %s.",
+                         FormatHandle(buffer_a).c_str(), loc_a.Fields().c_str(), FormatHandle(accel_struct_a.Handle()).c_str(),
+                         FormatHandle(buffer_b).c_str(), loc_b.Fields().c_str(), FormatHandle(accel_struct_b.Handle()).c_str(),
+                         FormatHandle(memory).c_str(), string_range_hex(overlap_range).c_str());
+    }
+
+    return skip;
+}
+
 // Check to see if host-visible memory was bound to this buffer
 bool CoreChecks::ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR &accel_struct,
                                                               const Location &buffer_loc, const char *vuid) const {
