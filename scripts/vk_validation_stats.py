@@ -19,78 +19,60 @@
 import argparse
 import csv
 import glob
-import html
-import json
-import operator
 import os
 import re
 import sys
-import unicodedata
 import subprocess
 from collections import defaultdict
-from collections import OrderedDict
-from dataclasses import dataclass
 from generate_spec_error_message import ValidationJSON
 
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
+def IsVendor(vuid : str):
+    for vendor in ['IMG', 'AMD', 'AMDX', 'ARM', 'FSL', 'BRCM', 'NXP', 'NV', 'NVX',
+                   'VIV', 'VSI', 'KDAB', 'ANDROID', 'CHROMIUM', 'FUCHSIA', 'GGP',
+                   'GOOGLE', 'QCOM', 'LUNARG', 'NZXT', 'SAMSUNG', 'SEC', 'TIZEN',
+                   'RENDERDOC', 'NN', 'MVK', 'MESA', 'INTEL', 'HUAWEI', 'VALVE',
+                   'QNX', 'JUICE', 'FB', 'RASTERGRID', 'MSFT']:
+        vkObject = vuid.split('-')[1]
+        if vkObject.endswith(vendor):
+            return True
+    return False
+
 verbose_mode = False
 remove_duplicates = False
-vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
-
-# Hard-coded flags that could be command line args, if we decide that's useful
-ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
+vuid_prefixes = ['VUID-']
 
 # These files should not change unless event there is a major refactoring in SPIR-V Tools
 # Paths are relative from root of SPIR-V Tools repo
 spirvtools_source_files = ["source/val/validation_state.cpp"]
 spirvtools_test_files = ["test/val/*.cpp"]
 
-def buildKvuidDict(unassigned_vuid_files):
-    kvuid_dict = {}
-
-    for uf in unassigned_vuid_files:
-        line_num = 0
-        with open(uf, encoding='utf-8') as f:
-            for line in f:
-                line_num = line_num + 1
-                if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
-                    continue
-
-                if 'kVUID_' in line:
-                    kvuid_pos = line.find('kVUID_'); assert(kvuid_pos >= 0)
-                    eq_pos = line.find('=', kvuid_pos)
-                    if eq_pos >= 0:
-                        kvuid = line[kvuid_pos:eq_pos].strip(' \t\n;"')
-                        unassigned_str = line[eq_pos+1:].strip(' \t\n;"')
-                        # Handle the case when the value of the constant is on a new line due to formatting
-                        if unassigned_str == '':
-                            line = f.readline()
-                            pos = line.find('"')
-                            unassigned_str = line[pos+1:].strip(' \t\n;"')
-                        kvuid_dict[kvuid] = unassigned_str
-    return kvuid_dict
-
 class ValidationSource:
-    def __init__(self, source_file_list, unassigned_vuid_files):
+    def __init__(self, source_file_list):
         self.source_files = source_file_list
-        self.unassigned_vuid_files = unassigned_vuid_files
         self.vuid_count_dict = {} # dict of vuid values to the count of how much they're used, and location of where they're used
         self.duplicated_checks = 0
         self.explicit_vuids = set()
         self.implicit_vuids = set()
-        self.unassigned_vuids = set()
         self.all_vuids = set()
 
+    def dedup(self):
+        unique_explicit_vuids = {}
+        for item in sorted(self.explicit_vuids):
+            key = item[-5:]
+            unique_explicit_vuids[key] = item
+
+        self.explicit_vuids = set(list(unique_explicit_vuids.values()))
+        self.all_vuids = self.explicit_vuids | self.implicit_vuids
+
     def parse(self, spirv_val):
-        kvuid_dict = buildKvuidDict(self.unassigned_vuid_files)
 
         if spirv_val and spirv_val.enabled:
             self.source_files.extend(spirv_val.source_files)
 
-        vuid_duplicate = set()
         # build self.vuid_count_dict
         prepend = None
         for sf in self.source_files:
@@ -122,7 +104,6 @@ class ValidationSource:
                             if any(prefix in str for prefix in vuid_prefixes):
                                 vuid_list.append(str.strip(',);{}"*'))
                         for vuid in vuid_list:
-                            if vuid.startswith('kVUID_'): vuid = kvuid_dict[vuid]
                             if vuid not in self.vuid_count_dict:
                                 self.vuid_count_dict[vuid] = {}
                                 self.vuid_count_dict[vuid]['count'] = 1
@@ -132,7 +113,7 @@ class ValidationSource:
                                 if self.vuid_count_dict[vuid]['count'] == 1:    # only count first time duplicated
                                     self.duplicated_checks = self.duplicated_checks + 1
                                 self.vuid_count_dict[vuid]['count'] = self.vuid_count_dict[vuid]['count'] + 1
-                            self.vuid_count_dict[vuid]['file_line'].append('%s,%d' % (sf, line_num))
+                            self.vuid_count_dict[vuid]['file_line'].append(f'{sf},{line_num}')
                             if spirv_file:
                                 self.vuid_count_dict[vuid]['spirv'] = True
         # Sort vuids by type
@@ -140,10 +121,6 @@ class ValidationSource:
             if (vuid.startswith('VUID-')):
                 vuid_number = vuid[-5:]
                 if (vuid_number.isdecimal()):
-                    if remove_duplicates:
-                        if vuid_number in vuid_duplicate:
-                            continue
-                        vuid_duplicate.add(vuid_number)
                     self.explicit_vuids.add(vuid)    # explicit end in 5 numeric chars
                     if self.vuid_count_dict[vuid]['spirv']:
                         spirv_val.source_explicit_vuids.add(vuid)
@@ -151,37 +128,39 @@ class ValidationSource:
                     self.implicit_vuids.add(vuid)
                     if self.vuid_count_dict[vuid]['spirv']:
                         spirv_val.source_implicit_vuids.add(vuid)
-            elif (vuid.startswith('UNASSIGNED-')):
-                self.unassigned_vuids.add(vuid)
             else:
-                print("Unable to categorize VUID: %s" % vuid)
+                print(f'Unable to categorize VUID: {vuid}')
                 print("Confused while parsing VUIDs in layer source code - cannot proceed. (FIXME)")
                 exit(-1)
-        self.all_vuids = self.explicit_vuids | self.implicit_vuids | self.unassigned_vuids
+        self.all_vuids = self.explicit_vuids | self.implicit_vuids
         if spirv_file:
             spirv_val.source_all_vuids = spirv_val.source_explicit_vuids | spirv_val.source_implicit_vuids
 
 # Class to parse the validation layer test source and store testnames
 class ValidationTests:
-    def __init__(self, test_file_list, unassigned_vuid_files):
+    def __init__(self, test_file_list):
         self.test_files = test_file_list
-        self.unassigned_vuid_files = unassigned_vuid_files
         self.test_trigger_txt_list = ['TEST_F(']
         self.explicit_vuids = set()
         self.implicit_vuids = set()
-        self.unassigned_vuids = set()
         self.all_vuids = set()
         #self.test_to_vuids = {} # Map test name to VUIDs tested
         self.vuid_to_tests = defaultdict(set) # Map VUIDs to set of test names where implemented
 
+    def dedup(self):
+        unique_explicit_vuids = {}
+        for item in sorted(self.explicit_vuids):
+            key = item[-5:]
+            unique_explicit_vuids[key] = item
+
+        self.explicit_vuids = set(list(unique_explicit_vuids.values()))
+        self.all_vuids = self.explicit_vuids | self.implicit_vuids
+
     # Parse test files into internal data struct
     def parse(self, spirv_val):
-        kvuid_dict = buildKvuidDict(self.unassigned_vuid_files)
-
         if spirv_val and spirv_val.enabled:
             self.test_files.extend(spirv_val.test_files)
 
-        vuid_duplicate = set()
         # For each test file, parse test names into set
         grab_next_line = False # handle testname on separate line than wildcard
         testname = ''
@@ -227,18 +206,10 @@ class ValidationTests:
                         for sub_str in line_list:
                             if any(prefix in sub_str for prefix in vuid_prefixes):
                                 vuid_str = sub_str.strip(',);:"*')
-                                if 'BestPractices' in vuid_str:
-                                    continue
-                                if vuid_str.startswith('kVUID_'):
-                                    vuid_str = kvuid_dict[vuid_str]
                                 self.vuid_to_tests[vuid_str].add(testname)
                                 if (vuid_str.startswith('VUID-')):
                                     vuid_number = vuid_str[-5:]
                                     if (vuid_number.isdecimal()):
-                                        if remove_duplicates:
-                                            if vuid_number in vuid_duplicate:
-                                                continue
-                                            vuid_duplicate.add(vuid_number)
                                         self.explicit_vuids.add(vuid_str)    # explicit end in 5 numeric chars
                                         if spirv_file:
                                             spirv_val.test_explicit_vuids.add(vuid_str)
@@ -246,13 +217,11 @@ class ValidationTests:
                                         self.implicit_vuids.add(vuid_str)
                                         if spirv_file:
                                             spirv_val.test_implicit_vuids.add(vuid_str)
-                                elif (vuid_str.startswith('UNASSIGNED-')):
-                                    self.unassigned_vuids.add(vuid_str)
                                 else:
-                                    print("Unable to categorize VUID: %s" % vuid_str)
+                                    print(f'Unable to categorize VUID: {vuid_str}')
                                     print("Confused while parsing VUIDs in test code - cannot proceed. (FIXME)")
                                     exit(-1)
-        self.all_vuids = self.explicit_vuids | self.implicit_vuids | self.unassigned_vuids
+        self.all_vuids = self.explicit_vuids | self.implicit_vuids
 
 # Class to do consistency checking
 #
@@ -261,60 +230,49 @@ class Consistency:
         self.valid = all_json
         self.checks = all_checks
         self.tests = all_tests
+        # don't report
+        self.discard = [
+            'VUID-PrimitiveTriangleIndicesEXT-' # Currently a bug with clang-format in spirv-tools
+        ]
 
     # Report undefined VUIDs in source code
     def undef_vuids_in_layer_code(self):
         undef_set = self.checks - self.valid
-        undef_set.discard('VUID-Undefined') # don't report Undefined
-        if ignore_unassigned:
-            unassigned = set({uv for uv in undef_set if uv.startswith('UNASSIGNED-')})
-            undef_set = undef_set - unassigned
+        [undef_set.discard(item) for item in self.discard]
         if (len(undef_set) > 0):
-            print("\nFollowing VUIDs found in layer code are not defined in validusage.json (%d):" % len(undef_set))
+            print(f'\nFollowing VUIDs found in layer code are not defined in validusage.json ({len(undef_set)}):')
             undef = list(undef_set)
             undef.sort()
             for vuid in undef:
-                print("    %s" % vuid)
+                print(f'    {vuid}')
             return False
         return True
 
     # Report undefined VUIDs in tests
     def undef_vuids_in_tests(self):
         undef_set = self.tests - self.valid
-        undef_set.discard('VUID-Undefined') # don't report Undefined
-        if ignore_unassigned:
-            unassigned = set({uv for uv in undef_set if uv.startswith('UNASSIGNED-')})
-            undef_set = undef_set - unassigned
+        [undef_set.discard(item) for item in self.discard]
         if (len(undef_set) > 0):
-            print("\nFollowing VUIDs found in layer tests are not defined in validusage.json (%d):" % len(undef_set))
+            print(f'\nFollowing VUIDs found in layer tests are not defined in validusage.json ({len(undef_set)}):')
             undef = list(undef_set)
             undef.sort()
             for vuid in undef:
-                print("    %s" % vuid)
+                print(f'    {vuid}')
             return False
         return True
 
     # Report vuids in tests that are not in source
     def vuids_tested_not_checked(self):
         undef_set = self.tests - self.checks
-        undef_set.discard('VUID-Undefined') # don't report Undefined
-        if ignore_unassigned:
-            unassigned = set()
-            for vuid in undef_set:
-                if vuid.startswith('UNASSIGNED-'):
-                    unassigned.add(vuid)
-            undef_set = undef_set - unassigned
+        [undef_set.discard(item) for item in self.discard]
         if (len(undef_set) > 0):
-            print("\nFollowing VUIDs found in tests but are not checked in layer code (%d):" % len(undef_set))
+            print(f'\nFollowing VUIDs found in tests but are not checked in layer code ({len(undef_set)}):')
             undef = list(undef_set)
             undef.sort()
             for vuid in undef:
-                print("    %s" % vuid)
+                print(f'    {vuid}')
             return False
         return True
-
-    # TODO: Explicit checked VUIDs which have no test
-    # def explicit_vuids_checked_not_tested(self):
 
 
 # Class to output database in various flavors
@@ -330,12 +288,11 @@ class OutputDatabase:
         print(f'\nDumping database to text file: {filename}')
         with open(filename, 'w', encoding='utf-8') as txt:
             txt.write("## VUID Database\n")
-            txt.write("## Format: VUID_NAME | CHECKED | SPIRV-TOOL | TEST | TYPE | API/STRUCT | EXTENSION | VUID_TEXT\n##\n")
+            txt.write("## Format: VUID_NAME | CHECKED | SPIRV-TOOL | TEST | TYPE | API/STRUCT | VUID_TEXT\n##\n")
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
                 db_list = self.vj.vuid_db[vuid]
-                db_list.sort(key=operator.itemgetter('ext')) # sort list to ease diffs of output file
                 for db_entry in db_list:
                     checked = 'N'
                     spirv = 'N'
@@ -353,13 +310,13 @@ class OutputDatabase:
                         sep = ', '
                         test = sep.join(test_list)
 
-                    txt.write("%s | %s | %s | %s | %s | %s | %s | %s\n" % (vuid, checked, test, spirv, db_entry['type'], db_entry['api'], db_entry['ext'], db_entry['text']))
+                    txt.write(f'{vuid} | {checked} | {test} | {spirv} | {db_entry["type"]} | {db_entry["api"]} | {db_entry["ext"]}\n')
 
     def dump_csv(self, filename, only_unimplemented=False):
         print(f'\nDumping database to csv file: {filename}')
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             cw = csv.writer(csvfile)
-            cw.writerow(['VUID_NAME','CHECKED','SPIRV-TOOL', 'TEST','TYPE','API/STRUCT','EXTENSION','VUID_TEXT'])
+            cw.writerow(['VUID_NAME','CHECKED','SPIRV-TOOL', 'TEST','TYPE','API/STRUCT','VUID_TEXT'])
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
@@ -385,20 +342,21 @@ class OutputDatabase:
                     row.append(test)
                     row.append(db_entry['type'])
                     row.append(db_entry['api'])
-                    row.append(db_entry['ext'])
                     row.append(db_entry['text'])
                     cw.writerow(row)
 
     def dump_html(self, filename, only_unimplemented=False):
         print(f'\nDumping database to html file: {filename}')
         preamble = '<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n border: 1px solid black;\n border-collapse: collapse; \n}\n</style>\n<body>\n<h2>Valid Usage Database</h2>\n<font size="2" face="Arial">\n<table style="width:100%">\n'
-        headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>SPIRV-TOOL</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>EXTENSION</th><th>VUID TEXT</th></tr>\n'
+        headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>SPIRV-TOOL</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>VUID TEXT</th></tr>\n'
         with open(filename, 'w', encoding='utf-8') as hfile:
             hfile.write(preamble)
             hfile.write(headers)
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
+                if (not IsVendor(vuid)):
+                    continue
                 for db_entry in self.vj.vuid_db[vuid]:
                     checked = '<span style="color:red;">N</span>'
                     spirv = ''
@@ -409,41 +367,18 @@ class OutputDatabase:
                             checked = '<span style="color:limegreen;">Y</span>'
                             if vuid in self.sv.source_all_vuids:
                                 spirv = 'Y'
-                    hfile.write('<tr><th>%s</th>' % vuid)
-                    hfile.write('<th>%s</th>' % checked)
-                    hfile.write('<th>%s</th>' % spirv)
+                    hfile.write(f'<tr><th>{vuid}</th>')
+                    hfile.write(f'<th>{checked}</th>')
+                    hfile.write(f'<th>{spirv}</th>')
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         sep = ', '
                         test = sep.join(sorted(self.vt.vuid_to_tests[vuid]))
-                    hfile.write('<th>%s</th>' % test)
-                    hfile.write('<th>%s</th>' % db_entry['type'])
-                    hfile.write('<th>%s</th>' % db_entry['api'])
-                    hfile.write('<th>%s</th>' % db_entry['ext'])
-                    hfile.write('<th>%s</th></tr>\n' % db_entry['text'])
+                    hfile.write(f'<th>{test}</th>')
+                    hfile.write(f'<th>{db_entry["type"]}</th>')
+                    hfile.write(f'<th>{db_entry["api"]}</th>')
+                    hfile.write(f'<th>{db_entry["text"]}</th></tr>\n')
             hfile.write('</table>\n</body>\n</html>\n')
-
-    def dump_extension_coverage(self, filename):
-        print(f'\nDumping extension coverage report to file: {filename}')
-        @dataclass
-        class ExtEntry:
-            checked = 0
-            total = 0
-        ext_db = defaultdict(ExtEntry)
-        vuid_list = list(self.vj.all_vuids)
-        for vuid in vuid_list:
-            for db_entry in self.vj.vuid_db[vuid]:
-                for ext_name in set(re.findall(r'\w+', db_entry['ext'])):
-                    ext_db[ext_name].total += 1
-                    if vuid in self.vs.all_vuids:
-                        ext_db[ext_name].checked += 1
-
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-            cw = csv.writer(csvfile)
-            cw.writerow(['EXTENSION','CHECKED','TOTAL','COVERAGE'])
-            for ext_name in sorted(ext_db):
-                ext_entry = ext_db[ext_name]
-                cw.writerow([ext_name, ext_entry.checked, ext_entry.total, ext_entry.checked/ext_entry.total])
 
 class SpirvValidation:
     def __init__(self, repo_path):
@@ -469,11 +404,11 @@ class SpirvValidation:
             if process.poll() != 0:
                 throw
             elif verbose:
-                print('Found SPIR-V Tools version %s' % self.version)
+                print(f'Found SPIR-V Tools version {self.version}')
         except:
             # leave as default
             if verbose:
-                print('Could not find .git file for version of SPIR-V tools, marking as %s' % self.version)
+                print(f'Could not find .git file for version of SPIR-V tools, marking as {self.version}')
 
         # Find and parse files with VUIDs in source
         for path in spirvtools_source_files:
@@ -486,7 +421,6 @@ def main(argv):
     TXT_FILENAME = "validation_error_database.txt"
     CSV_FILENAME = "validation_error_database.csv"
     HTML_FILENAME = "validation_error_database.html"
-    EXTENSION_COVERAGE_FILENAME = "validation_extension_coverage.csv"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('json_file', help="registry file 'validusage.json'")
@@ -498,8 +432,6 @@ def main(argv):
                         help='report consistency warnings')
     parser.add_argument('-todo', action='store_true',
                         help='report unimplemented VUIDs')
-    parser.add_argument('-unassigned', action='store_true',
-                        help='report unassigned VUIDs')
     parser.add_argument('-vuid', metavar='VUID_NAME',
                         help='report status of individual VUID <VUID_NAME>')
     parser.add_argument('-spirvtools', metavar='PATH',
@@ -510,8 +442,6 @@ def main(argv):
                         help=f'export the error database in csv format to <FILENAME>, defaults to {CSV_FILENAME}')
     parser.add_argument('-html', nargs='?', const=HTML_FILENAME, metavar='FILENAME',
                         help=f'export the error database in html format to <FILENAME>, defaults to {HTML_FILENAME}')
-    parser.add_argument('-extension_coverage', nargs='?', const=EXTENSION_COVERAGE_FILENAME, metavar='FILENAME',
-                        help=f'export an extension coverage report to <FILENAME>, defaults to {EXTENSION_COVERAGE_FILENAME}')
     parser.add_argument('-remove_duplicates', action='store_true',
                         help='remove duplicate VUID numbers')
     parser.add_argument('-summary', action='store_true',
@@ -547,11 +477,6 @@ def main(argv):
 
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
-    unassigned_vuid_files = [repo_relative(path) for path in [
-        'layers/stateless/stateless_validation.h',
-        'layers/object_tracker/object_lifetime_validation.h'
-    ]]
-
     global verbose_mode
     verbose_mode = args.verbose
 
@@ -565,43 +490,42 @@ def main(argv):
     # Parse validusage json
     val_json = ValidationJSON(args.json_file)
     val_json.parse()
+    if remove_duplicates:
+        val_json.dedup()
     exp_json = len(val_json.explicit_vuids)
     imp_json = len(val_json.implicit_vuids)
     all_json = len(val_json.all_vuids)
     if verbose_mode:
-        print("Found %d unique error vuids in validusage.json file." % all_json)
-        print("  %d explicit" % exp_json)
-        print("  %d implicit" % imp_json)
-        if len(val_json.duplicate_vuids) > 0:
-            print("%d VUIDs appear in validusage.json more than once." % len(val_json.duplicate_vuids))
-            for vuid in val_json.duplicate_vuids:
-                print("  %s" % vuid)
-                for ext in val_json.vuid_db[vuid]:
-                    print("    with extension: %s" % ext['ext'])
+        print('Found {all_json} unique error vuids in validusage.json file.')
+        print(f'  {exp_json} explicit')
+        print(f'  {imp_json} implicit')
 
     # Parse layer source files
-    val_source = ValidationSource(layer_source_files, unassigned_vuid_files)
+    val_source = ValidationSource(layer_source_files)
     val_source.parse(spirv_val)
+    if remove_duplicates:
+        val_source.dedup()
     exp_checks = len(val_source.explicit_vuids)
     imp_checks = len(val_source.implicit_vuids)
-    all_checks = len(val_source.vuid_count_dict.keys())
+    all_checks = exp_checks + imp_checks
     spirv_exp_checks = len(spirv_val.source_explicit_vuids) if spirv_val.enabled else 0
     spirv_imp_checks = len(spirv_val.source_implicit_vuids) if spirv_val.enabled else 0
     spirv_all_checks = (spirv_exp_checks + spirv_imp_checks) if spirv_val.enabled else 0
     if verbose_mode:
-        print("Found %d unique vuid checks in layer source code." % all_checks)
-        print("  %d explicit" % exp_checks)
+        print('Found {all_checks} unique vuid checks in layer source code.')
+        print(f'  {exp_checks} explicit')
         if spirv_val.enabled:
-            print("    SPIR-V Tool make up %d" % spirv_exp_checks)
-        print("  %d implicit" % imp_checks)
+            print(f'    SPIR-V Tool make up {spirv_exp_checks}')
+        print(f'  {imp_checks} implicit')
         if spirv_val.enabled:
-            print("    SPIR-V Tool make up %d" % spirv_imp_checks)
-        print("  %d unassigned" % len(val_source.unassigned_vuids))
-        print("  %d checks are implemented more that once" % val_source.duplicated_checks)
+            print(f'    SPIR-V Tool make up {spirv_imp_checks}')
+        print(f'  {val_source.duplicated_checks} checks are implemented more that once')
 
     # Parse test files
-    val_tests = ValidationTests(test_source_files, unassigned_vuid_files)
+    val_tests = ValidationTests(test_source_files)
     val_tests.parse(spirv_val)
+    if remove_duplicates:
+        val_tests.dedup()
     exp_tests = len(val_tests.explicit_vuids)
     imp_tests = len(val_tests.implicit_vuids)
     all_tests = len(val_tests.all_vuids)
@@ -609,93 +533,76 @@ def main(argv):
     spirv_imp_tests = len(spirv_val.test_implicit_vuids) if spirv_val.enabled else 0
     spirv_all_tests = (spirv_exp_tests + spirv_imp_tests) if spirv_val.enabled else 0
     if verbose_mode:
-        print("Found %d unique error vuids in test source code." % all_tests)
-        print("  %d explicit" % exp_tests)
+        print('Found {all_tests} unique error vuids in test source code.')
+        print('  {exp_tests} explicit')
         if spirv_val.enabled:
-            print("    From SPIRV-Tools: %d" % spirv_exp_tests)
-        print("  %d implicit" % imp_tests)
+            print('    From SPIRV-Tools: {spirv_exp_tests}')
+        print('  {imp_tests} implicit')
         if spirv_val.enabled:
-            print("    From SPIRV-Tools: %d" % spirv_imp_tests)
-        print("  %d unassigned" % len(val_tests.unassigned_vuids))
+            print('    From SPIRV-Tools: {spirv_imp_tests}')
 
     # Process stats
     if args.summary:
         if spirv_val.enabled:
-            print("\nValidation Statistics (using validusage.json version %s and SPIRV-Tools version %s)" % (val_json.api_version, spirv_val.version))
+            print(f'\nValidation Statistics (using validusage.json version {val_json.api_version} and SPIRV-Tools version {spirv_val.version})')
         else:
-            print("\nValidation Statistics (using validusage.json version %s)" % val_json.api_version)
-        print("  VUIDs defined in JSON file:  %04d explicit, %04d implicit, %04d total." % (exp_json, imp_json, all_json))
-        print("  VUIDs checked in layer code: %04d explicit, %04d implicit, %04d total." % (exp_checks, imp_checks, all_checks))
+            print(f'\nValidation Statistics (using validusage.json version {val_json.api_version})')
+        print(f"  VUIDs defined in JSON file:  {exp_json:04d} explicit, {imp_json:04d} implicit, {all_json:04d} total.")
+        print(f"  VUIDs checked in layer code: {exp_checks:04d} explicit, {imp_checks:04d} implicit, {all_checks:04d} total.")
         if spirv_val.enabled:
-            print("             From SPIRV-Tools: %04d explicit, %04d implicit, %04d total." % (spirv_exp_checks, spirv_imp_checks, spirv_all_checks))
-        print("  VUIDs tested in layer tests: %04d explicit, %04d implicit, %04d total." % (exp_tests, imp_tests, all_tests))
+            print(f"             From SPIRV-Tools: {spirv_exp_checks:04d} explicit, {spirv_imp_checks:04d} implicit, {spirv_all_checks:04d} total.")
+        print(f"  VUIDs tested in layer tests: {exp_tests:04d} explicit, {imp_tests:04d} implicit, {all_tests:04d} total.")
         if spirv_val.enabled:
-            print("             From SPIRV-Tools: %04d explicit, %04d implicit, %04d total." % (spirv_exp_tests, spirv_imp_tests, spirv_all_tests))
+            print(f"             From SPIRV-Tools: {spirv_exp_tests:04d} explicit, {spirv_imp_tests:04d} implicit, {spirv_all_tests:04d} total.")
 
         print("\nVUID check coverage")
-        print("  Explicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * exp_checks / exp_json), exp_checks, exp_json))
-        print("  Implicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * imp_checks / imp_json), imp_checks, imp_json))
-        print("  Overall VUIDs checked:  %.1f%% (%d checked vs %d defined)" % ((100.0 * all_checks / all_json), all_checks, all_json))
+        print(f"  Explicit VUIDs checked: {(100.0 * exp_checks / exp_json):.1f}% ({exp_checks} checked vs {exp_json} defined)")
+        print(f"  Implicit VUIDs checked: {(100.0 * imp_checks / imp_json):.1f}% ({imp_checks} checked vs {imp_json} defined)")
+        print(f"  Overall VUIDs checked:  {(100.0 * all_checks / all_json):.1f}% ({all_checks} checked vs {all_json} defined)")
+
+        unimplemented_explicit = val_json.all_vuids - val_source.all_vuids
+        vendor_count = sum(1 for vuid in unimplemented_explicit if IsVendor(vuid))
+        print(f'    {len(unimplemented_explicit)} VUID checks remain unimplemented ({vendor_count} are from Vendor objects)')
 
         print("\nVUID test coverage")
-        print("  Explicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * exp_tests / exp_checks), exp_tests, exp_checks))
-        print("  Implicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * imp_tests / imp_checks), imp_tests, imp_checks))
-        print("  Overall VUIDs tested:  %.1f%% (%d tested vs %d checks)" % ((100.0 * all_tests / all_checks), all_tests, all_checks))
+        print(f"  Explicit VUIDs tested: {(100.0 * exp_tests / exp_checks):.1f}% ({exp_tests} tested vs {exp_checks} checks)")
+        print(f"  Implicit VUIDs tested: {(100.0 * imp_tests / imp_checks):.1f}% ({imp_tests} tested vs {imp_checks} checks)")
+        print(f"  Overall VUIDs tested:  {(100.0 * all_tests / all_checks):.1f}% ({all_tests} tested vs {all_checks} checks)")
 
     # Report status of a single VUID
     if args.vuid:
-        print("\n\nChecking status of <%s>" % args.vuid)
-        if args.vuid not in val_json.all_vuids and not args.vuid.startswith('UNASSIGNED-'):
+        print(f'\n\nChecking status of <{args.vuid}>')
+        if args.vuid not in val_json.all_vuids:
             print('  Not a valid VUID string.')
         else:
             if args.vuid in val_source.explicit_vuids:
                 print('  Implemented!')
                 line_list = val_source.vuid_count_dict[args.vuid]['file_line']
                 for line in line_list:
-                    print('    => %s' % line)
+                    print(f'    => {line}')
             elif args.vuid in val_source.implicit_vuids:
                 print('  Implemented! (Implicit)')
                 line_list = val_source.vuid_count_dict[args.vuid]['file_line']
                 for line in line_list:
-                    print('    => %s' % line)
+                    print(f'    => {line}')
             else:
                 print('  Not implemented.')
             if args.vuid in val_tests.all_vuids:
                 print('  Has a test!')
                 test_list = val_tests.vuid_to_tests[args.vuid]
                 for test in test_list:
-                    print('    => %s' % test)
+                    print(f'    => {test}')
             else:
                 print('  Not tested.')
 
     # Report unimplemented explicit VUIDs
     if args.todo:
         unim_explicit = val_json.explicit_vuids - val_source.explicit_vuids
-        print("\n\n%d explicit VUID checks remain unimplemented:" % len(unim_explicit))
+        print(f'\n\n{len(unim_explicit)} explicit VUID checks remain unimplemented:')
         ulist = list(unim_explicit)
         ulist.sort()
         for vuid in ulist:
-            print("  => %s" % vuid)
-
-    # Report unassigned VUIDs
-    if args.unassigned:
-        # TODO: I do not really want VUIDs created for warnings though here
-        print("\n\n%d checks without a spec VUID:" % len(val_source.unassigned_vuids))
-        ulist = list(val_source.unassigned_vuids)
-        ulist.sort()
-        for vuid in ulist:
-            print("  => %s" % vuid)
-            line_list = val_source.vuid_count_dict[vuid]['file_line']
-            for line in line_list:
-                print('    => %s' % line)
-        print("\n%d tests without a spec VUID:" % len(val_source.unassigned_vuids))
-        ulist = list(val_tests.unassigned_vuids)
-        ulist.sort()
-        for vuid in ulist:
-            print("  => %s" % vuid)
-            test_list = val_tests.vuid_to_tests[vuid]
-            for test in test_list:
-                print('    => %s' % test)
+            print(f'  => {vuid}')
 
     # Consistency tests
     if args.c:
@@ -716,8 +623,6 @@ def main(argv):
         db_out.dump_csv(args.csv, args.todo)
     if args.html:
         db_out.dump_html(args.html, args.todo)
-    if args.extension_coverage:
-        db_out.dump_extension_coverage(args.extension_coverage)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

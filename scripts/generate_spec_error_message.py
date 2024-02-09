@@ -28,13 +28,12 @@ from collections import defaultdict
 from collections import OrderedDict
 
 class ValidationJSON:
-    def __init__(self, filename):
+    def __init__(self, filename : str):
         self.filename = filename
         self.explicit_vuids = set()
         self.implicit_vuids = set()
         self.all_vuids = set()
         self.vuid_db = defaultdict(list) # Maps VUID string to list of json-data dicts
-        self.duplicate_vuids = set()
         self.api_version = "0.0.0"
 
         # A set of specific regular expression substitutions needed to clean up VUID text
@@ -95,6 +94,15 @@ class ValidationJSON:
          # explicit end in 5 numeric chars
          return vuid_number.isdecimal()
 
+    def dedup(self):
+        unique_explicit_vuids = {}
+        for item in sorted(self.explicit_vuids):
+            key = item[-5:]
+            unique_explicit_vuids[key] = item
+
+        self.explicit_vuids = set(list(unique_explicit_vuids.values()))
+        self.all_vuids = self.explicit_vuids | self.implicit_vuids
+
     def parse(self):
         self.json_dict = {}
         if not os.path.isfile(self.filename):
@@ -138,8 +146,8 @@ class ValidationJSON:
 
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
 
-        self.duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})
-        if len(self.duplicate_vuids) > 0:
+        duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})
+        if len(duplicate_vuids) > 0:
             print("Warning: duplicate VUIDs found in validusage.json")
 
     # make list of spec versions containing given VUID
