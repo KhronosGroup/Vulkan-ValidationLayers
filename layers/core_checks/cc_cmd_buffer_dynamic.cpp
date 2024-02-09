@@ -432,6 +432,72 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
+    if (pipeline_state && cb_state.activeRenderPass->UsesDynamicRendering() &&
+        IsExtEnabled(device_extensions.vk_ext_shader_object) && !last_bound_state.IsAnyGraphicsShaderBound()) {
+        const auto& rp_state = cb_state.activeRenderPass;
+        const safe_VkRenderingAttachmentLocationInfoKHR* location_current =
+            rp_state->dynamic_rendering_attachment_location_info.get();
+        const safe_VkRenderingInputAttachmentIndexInfoKHR* input_current =
+            rp_state->dynamic_rendering_input_attachment_input_info.get();
+
+        if (location_current) {
+            safe_VkRenderingAttachmentLocationInfoKHR location_pipeline = [&]() -> safe_VkRenderingAttachmentLocationInfoKHR {
+                safe_VkRenderingAttachmentLocationInfoKHR result;
+                const VkRenderingAttachmentLocationInfoKHR* location_pipeline =
+                    vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(
+                        pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pNext);
+                if (location_pipeline) {
+                    result = safe_VkRenderingAttachmentLocationInfoKHR(location_pipeline, {}, false);
+                } else {
+                    if (cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr()) {
+                        const VkPipelineRenderingCreateInfo* rendering_info =
+                            cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr();
+
+                        result.colorAttachmentCount = rendering_info->colorAttachmentCount;
+                        result.pColorAttachmentLocations = nullptr;
+                    } else {
+                        result.colorAttachmentCount = 0;
+                        result.pColorAttachmentLocations = nullptr;
+                    }
+                }
+                return result;
+            }();
+
+            skip |= ValidateDrawDynamicColorAttachmentLocations(cb_state.Handle(), loc, location_current, location_pipeline.ptr());
+        }
+        if (input_current) {
+            safe_VkRenderingInputAttachmentIndexInfoKHR input_pipeline =
+                [&]() -> safe_VkRenderingInputAttachmentIndexInfoKHR {
+                safe_VkRenderingInputAttachmentIndexInfoKHR result;
+
+                const VkRenderingInputAttachmentIndexInfoKHR* location_pipeline =
+                    vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(
+                        pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pNext);
+                if (location_pipeline) {
+                    result = safe_VkRenderingInputAttachmentIndexInfoKHR (location_pipeline, {}, false);
+                } else {
+                    if (cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr()) {
+                        const VkPipelineRenderingCreateInfo* rendering_info =
+                            cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr();
+
+                        result.colorAttachmentCount = rendering_info->colorAttachmentCount;
+                        result.pColorAttachmentInputIndices = nullptr;
+                        result.pDepthInputAttachmentIndex = nullptr;
+                        result.pStencilInputAttachmentIndex = nullptr;
+                    } else {
+                        result.colorAttachmentCount = 0;
+                        result.pColorAttachmentInputIndices = nullptr;
+                        result.pDepthInputAttachmentIndex = nullptr;
+                        result.pStencilInputAttachmentIndex = nullptr;
+                    }
+                }
+
+                return result;
+            }();
+            skip |= ValidateDrawDynamicInputAttachementIndices(cb_state.Handle(), loc, input_current, input_pipeline.ptr());
+        }
+    }
+
     return skip;
 }
 
@@ -979,6 +1045,108 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
     return skip;
 }
+
+bool CoreChecks::ValidateDrawDynamicColorAttachmentLocations(const LogObjectList& objlist, const Location& loc,
+                                                             const safe_VkRenderingAttachmentLocationInfoKHR* location_current,
+                                                             const VkRenderingAttachmentLocationInfoKHR* location) const {
+    std::ostringstream oss;
+    const bool inherited = loc.function == Func::vkCmdExecuteCommands;
+    const char* inh = inherited ? "VkCommandBufferInheritanceInfo" : "VkGraphicsPipelineCreateInfo";
+    const char* vuid = inherited ? "VUID-vkCmdExecuteCommands-pCommandBuffers-09504" : "VUID-vkCmdDraw-None-09548";
+    bool skip = false;
+
+    if (location) {
+        if (location_current) {
+            if (location_current->colorAttachmentCount == location->colorAttachmentCount) {
+                for (uint32_t i = 0; i < location_current->colorAttachmentCount; ++i) {
+                    const uint32_t u = location->pColorAttachmentLocations ? location->pColorAttachmentLocations[i] : i;
+                    if (location_current->pColorAttachmentLocations[i] != u) {
+                        oss << "current pColorAttachmentLocations[" << i << "]=" << location_current->pColorAttachmentLocations[i]
+                            << " != chained to " << inh << " pColorAttachmentLocations[" << i << "]=" << u << ",";
+                    }
+                }
+                if (!oss.str().empty()) {
+                    const std::string s = oss.str();
+                    oss.str(s.substr(0, s.size() - 1));
+                }
+            } else {
+                oss << "Current colorAttachmentCount (" << location_current->colorAttachmentCount
+                    << ") is not equal to set in chain to " << inh << " (" << location->colorAttachmentCount << ").";
+            }
+        }
+    }
+
+    const std::string message = oss.str();
+
+    if (!message.empty()) {
+        skip = LogError(vuid, objlist, loc, "%s", message.c_str());
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicInputAttachementIndices(const LogObjectList& objlist, const Location& loc,
+                                                            const safe_VkRenderingInputAttachmentIndexInfoKHR* input_current,
+                                                            const VkRenderingInputAttachmentIndexInfoKHR* input) const {
+    std::ostringstream oss;
+    const bool inherited = loc.function == Func::vkCmdExecuteCommands;
+    const char* inh = inherited ? "VkCommandBufferInheritanceInfo" : "VkGraphicsPipelineCreateInfo";
+    const char* vuid = inherited ? "VUID-vkCmdExecuteCommands-pCommandBuffers-09505" : "VUID-vkCmdDraw-None-09549";
+    bool skip = false;
+    auto match_ptrs = [](const uint32_t* a, const uint32_t* b) {
+        if (a == nullptr && b == nullptr) {
+            return true;
+        }
+        if (a != nullptr && b != nullptr && *a == *b) {
+            return true;
+        }
+        return false;
+    };
+
+    if (input) {
+        if (input_current) {
+            if (input_current->colorAttachmentCount == input->colorAttachmentCount) {
+                for (uint32_t i = 0; i < input_current->colorAttachmentCount; ++i) {
+                    const uint32_t u = input->pColorAttachmentInputIndices ? input->pColorAttachmentInputIndices[i] : i;
+                    if (input_current->pColorAttachmentInputIndices[i] != u) {
+                        oss << "current pColorAttachmentInputIndices[" << i
+                            << "]=" << input_current->pColorAttachmentInputIndices[i] << " != chained to " << inh
+                            << " pColorAttachmentInputIndices[" << i << "]=" << u << ",";
+                    }
+                }
+                if (!oss.str().empty()) {
+                    const std::string s = oss.str();
+                    oss.str(s.substr(0, s.size() - 1));
+                }
+                if (!match_ptrs(input_current->pDepthInputAttachmentIndex, input->pDepthInputAttachmentIndex)) {
+                    oss << "Current pDepthInputAttachmentIndex=" << input_current->pDepthInputAttachmentIndex;
+                    if (input_current->pDepthInputAttachmentIndex) oss << " value " << *input_current->pDepthInputAttachmentIndex;
+                    oss << ", set in chain " << inh << " pDepthInputAttachmentIndex=" << input->pDepthInputAttachmentIndex;
+                    if (input->pDepthInputAttachmentIndex) oss << " value " << *input->pDepthInputAttachmentIndex;
+                }
+                if (!match_ptrs(input_current->pStencilInputAttachmentIndex, input->pStencilInputAttachmentIndex)) {
+                    oss << "Current pStencilInputAttachmentIndex=" << input_current->pStencilInputAttachmentIndex;
+                    if (input_current->pStencilInputAttachmentIndex)
+                        oss << " value " << *input_current->pStencilInputAttachmentIndex;
+                    oss << ", set in chain " << inh << " pStencilInputAttachmentIndex=" << input->pStencilInputAttachmentIndex;
+                    if (input->pStencilInputAttachmentIndex) oss << " value " << *input->pStencilInputAttachmentIndex;
+                }
+            } else {
+                oss << "Current colorAttachmentCount (" << input_current->colorAttachmentCount
+                    << ") is not equal to set in chain to " << inh << " (" << input->colorAttachmentCount << ").";
+            }
+        }
+    }
+
+    const std::string message = oss.str();
+
+    if (!message.empty()) {
+        skip = LogError(vuid, objlist, loc, "%s", message.c_str());
+    }
+
+    return skip;
+}
+
 
 bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;

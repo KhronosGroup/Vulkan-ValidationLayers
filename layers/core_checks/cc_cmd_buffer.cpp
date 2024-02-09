@@ -874,6 +874,71 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00088", objlist, cb_loc,
                              "(%s) is not VK_COMMAND_BUFFER_LEVEL_SECONDARY.", FormatHandle(pCommandBuffers[i]).c_str());
         } else {
+            if (sub_cb_state.activeRenderPass && sub_cb_state.activeRenderPass->UsesDynamicRendering()) {
+                const safe_VkRenderingAttachmentLocationInfoKHR *location_current =
+                    sub_cb_state.activeRenderPass->dynamic_rendering_attachment_location_info.get();
+                const safe_VkRenderingInputAttachmentIndexInfoKHR *input_current =
+                    sub_cb_state.activeRenderPass->dynamic_rendering_input_attachment_input_info.get();
+
+                if (location_current) {
+                    std::shared_ptr<VkRenderingAttachmentLocationInfoKHR> location_inherited =
+                        [&]() -> std::shared_ptr<VkRenderingAttachmentLocationInfoKHR> {
+                        std::shared_ptr<VkRenderingAttachmentLocationInfoKHR> result;
+
+                        const safe_VkRenderingAttachmentLocationInfoKHR *safe_location_inherited =
+                            sub_cb_state.activeRenderPass->dynamic_rendering_attachment_location_info_inherited.get();
+                        const VkRenderingAttachmentLocationInfoKHR *location_inherited_local =
+                            (safe_location_inherited ? safe_location_inherited->ptr() : nullptr);
+                        if (location_inherited_local) {
+                            result = std::make_shared<VkRenderingAttachmentLocationInfoKHR>();
+                            *result = *location_inherited_local;
+                        } else {
+                            const VkCommandBufferInheritanceRenderingInfo *inheritance_rendering_info =
+                                sub_cb_state.activeRenderPass->inheritance_rendering_info.ptr();
+
+                            if (inheritance_rendering_info) {
+                                result = std::make_shared<VkRenderingAttachmentLocationInfoKHR>();
+                                result->colorAttachmentCount = inheritance_rendering_info->colorAttachmentCount;
+                                result->pColorAttachmentLocations = nullptr;
+                            }
+                        }
+                        return result;
+                    }();
+                    skip |= ValidateDrawDynamicColorAttachmentLocations(commandBuffer, error_obj.location, location_current,
+                                                                        location_inherited.get());
+                }
+                if (input_current) {
+                    std::shared_ptr<VkRenderingInputAttachmentIndexInfoKHR> input_inherited =
+                        [&]() -> std::shared_ptr<VkRenderingInputAttachmentIndexInfoKHR> {
+                        std::shared_ptr<VkRenderingInputAttachmentIndexInfoKHR> result;
+
+                        const safe_VkRenderingInputAttachmentIndexInfoKHR *safe_input_inherited =
+                            sub_cb_state.activeRenderPass->dynamic_rendering_input_attachment_index_info_inherited.get();
+                        const VkRenderingInputAttachmentIndexInfoKHR *input_inherited_local =
+                            safe_input_inherited ? safe_input_inherited->ptr() : nullptr;
+
+                        if (input_inherited_local) {
+                            result = std::make_shared<VkRenderingInputAttachmentIndexInfoKHR>();
+                            *result = *input_inherited_local;
+                        } else {
+                            const VkCommandBufferInheritanceRenderingInfo *inheritance_rendering_info =
+                                sub_cb_state.activeRenderPass->inheritance_rendering_info.ptr();
+
+                            if (inheritance_rendering_info) {
+                                result = std::make_shared<VkRenderingInputAttachmentIndexInfoKHR>();
+                                result->colorAttachmentCount = inheritance_rendering_info->colorAttachmentCount;
+                                result->pColorAttachmentInputIndices = nullptr;
+                                result->pDepthInputAttachmentIndex = nullptr;
+                                result->pStencilInputAttachmentIndex = nullptr;
+                            }
+                        }
+
+                        return result;
+                    }();
+                    skip |= ValidateDrawDynamicInputAttachementIndices(commandBuffer, error_obj.location, input_current,
+                                                                       input_inherited.get());
+                }
+            }
             if (!cb_state.activeRenderPass) {
                 if (sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);

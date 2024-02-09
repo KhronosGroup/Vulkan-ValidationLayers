@@ -584,7 +584,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     const auto &rp_state = pipeline.RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
         if (rp_state->UsesDynamicRendering()) {
-            total_resources += rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
+            total_resources += rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
         } else {
             // "For the fragment shader stage the framebuffer color attachments also count against this limit"
             if (pipeline.Subpass() < rp_state->createInfo.subpassCount) {

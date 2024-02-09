@@ -945,7 +945,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 auto inheritance_rendering_info =
                     vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
-                    activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
+                    activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info, beginInfo.pInheritanceInfo);
                 }
             }
 

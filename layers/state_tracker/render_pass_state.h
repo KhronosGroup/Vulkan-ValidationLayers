@@ -85,8 +85,12 @@ class RenderPass : public StateObject {
     const bool has_multiview_enabled;
     const bool rasterization_enabled{true};
     const safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
-    const safe_VkPipelineRenderingCreateInfo dynamic_rendering_pipeline_create_info;
+    const safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
     const safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
+    std::shared_ptr<safe_VkRenderingAttachmentLocationInfoKHR> dynamic_rendering_attachment_location_info;
+    std::shared_ptr<safe_VkRenderingAttachmentLocationInfoKHR> dynamic_rendering_attachment_location_info_inherited;
+    std::shared_ptr<safe_VkRenderingInputAttachmentIndexInfoKHR> dynamic_rendering_input_attachment_input_info;
+    std::shared_ptr<safe_VkRenderingInputAttachmentIndexInfoKHR> dynamic_rendering_input_attachment_index_info_inherited;
     const safe_VkRenderPassCreateInfo2 createInfo;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
@@ -107,9 +111,11 @@ class RenderPass : public StateObject {
     RenderPass(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo);
     RenderPass(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo);
 
-    RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled);
+    RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled,
+               VkGraphicsPipelineCreateInfo const *pPipelineCreateInfo);
     RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled);
-    RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
+    RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo,
+               VkCommandBufferInheritanceInfo const *pCommandBufferInheritanceCreateInfo);
 
     VkRenderPass VkHandle() const { return handle_.Cast<VkRenderPass>(); }
 

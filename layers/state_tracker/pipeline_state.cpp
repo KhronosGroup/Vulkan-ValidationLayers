@@ -985,3 +985,13 @@ bool LastBound::IsValidShaderBound(ShaderObjectStage stage) const {
 bool LastBound::IsValidShaderOrNullBound(ShaderObjectStage stage) const {
     return shader_object_bound[static_cast<uint32_t>(stage)];
 }
+
+bool LastBound::IsAnyGraphicsShaderBound() const {
+    return IsValidShaderBound(ShaderObjectStage::VERTEX) ||
+        IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL) ||
+        IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION) ||
+        IsValidShaderBound(ShaderObjectStage::GEOMETRY) ||
+        IsValidShaderBound(ShaderObjectStage::FRAGMENT) ||
+        IsValidShaderBound(ShaderObjectStage::TASK) ||
+        IsValidShaderBound(ShaderObjectStage::MESH);
+}

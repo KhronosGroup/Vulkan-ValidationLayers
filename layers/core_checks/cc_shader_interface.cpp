@@ -756,8 +756,8 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const spirv:
                 "Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
                 "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment", location);
         } else if (pipeline.fragment_output_state && output &&
-                   (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
-            const VkFormat format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
+                   (location < rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount)) {
+            const VkFormat format = rp_state->dynamic_pipeline_rendering_create_info.pColorAttachmentFormats[location];
             const uint32_t attachment_type = spirv::GetFormatType(format);
             const uint32_t output_type = module_state.GetNumericType(output->type_id);
 

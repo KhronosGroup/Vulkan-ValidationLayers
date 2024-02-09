@@ -295,15 +295,28 @@ RenderPass::RenderPass(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInf
 const VkPipelineRenderingCreateInfo VkPipelineRenderingCreateInfo_default = {
     VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO, nullptr, 0, 0, nullptr, VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
 
-RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled)
+RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled,
+                       VkGraphicsPipelineCreateInfo const *pPipelineCreateInfo)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
       rasterization_enabled(rasterization_enabled),
-      dynamic_rendering_pipeline_create_info((pPipelineRenderingCreateInfo && rasterization_enabled)
+      dynamic_pipeline_rendering_create_info((pPipelineRenderingCreateInfo && rasterization_enabled)
                                                  ? pPipelineRenderingCreateInfo
-                                                 : &VkPipelineRenderingCreateInfo_default) {}
+                                                 : &VkPipelineRenderingCreateInfo_default) {
+    if (use_dynamic_rendering) {
+        auto location_ptr = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pPipelineCreateInfo->pNext);
+        if (location_ptr)
+            dynamic_rendering_attachment_location_info =
+                std::make_shared<safe_VkRenderingAttachmentLocationInfoKHR>(location_ptr, (PNextCopyState *)0, false);
+
+        auto index_ptr = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pPipelineCreateInfo->pNext);
+        if (index_ptr)
+            dynamic_rendering_input_attachment_input_info =
+                std::make_shared<safe_VkRenderingInputAttachmentIndexInfoKHR>(index_ptr, (PNextCopyState *)0, false);
+    }
+}
 
 bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
     bool result = false;
@@ -399,12 +412,31 @@ RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization
       rasterization_enabled(rasterization_enabled),
       dynamic_rendering_begin_rendering_info((pRenderingInfo && rasterization_enabled) ? pRenderingInfo : nullptr) {}
 
-RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo)
+RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo,
+                       VkCommandBufferInheritanceInfo const *pCommandBufferInheritanceCreateInfo)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(true),
       has_multiview_enabled(false),
-      inheritance_rendering_info(pInheritanceRenderingInfo) {}
+      inheritance_rendering_info(pInheritanceRenderingInfo) {
+    if (use_dynamic_rendering_inherited) {
+        auto location_ptr =
+            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pCommandBufferInheritanceCreateInfo->pNext);
+        if (location_ptr) {
+            dynamic_rendering_attachment_location_info =
+                std::make_shared<safe_VkRenderingAttachmentLocationInfoKHR>(location_ptr, (PNextCopyState *)0, false);
+            dynamic_rendering_attachment_location_info_inherited = dynamic_rendering_attachment_location_info;
+        }
+
+        auto index_ptr =
+            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pCommandBufferInheritanceCreateInfo->pNext);
+        if (index_ptr) {
+            dynamic_rendering_input_attachment_input_info =
+                std::make_shared<safe_VkRenderingInputAttachmentIndexInfoKHR>(index_ptr, (PNextCopyState *)0, false);
+            dynamic_rendering_input_attachment_index_info_inherited = dynamic_rendering_input_attachment_input_info;
+        }
+    }
+}
 
 Framebuffer::Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
                          std::vector<std::shared_ptr<vvl::ImageView>> &&attachments)

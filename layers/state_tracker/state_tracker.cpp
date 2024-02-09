@@ -1895,7 +1895,8 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
             const bool rasterization_enabled = vvl::Pipeline::EnablesRasterizationStates(*this, create_info);
             const bool has_fragment_output_state =
                 vvl::Pipeline::ContainsSubState(this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
-            render_pass = std::make_shared<vvl::RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state);
+            render_pass = std::make_shared<vvl::RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state,
+                                                            &create_info);
         } else {
             const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
             const bool has_link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext) != nullptr;
@@ -5161,6 +5162,26 @@ void ValidationStateTracker::PostCallRecordCmdSetFragmentShadingRateKHR(VkComman
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR);
     cb_state->dynamic_state_value.fragment_size = *pFragmentSize;
+}
+
+void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocationsKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfoKHR *pLocationInfo, const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    if (cb_state->activeRenderPass) {
+        cb_state->activeRenderPass->dynamic_rendering_attachment_location_info =
+            std::make_shared<safe_VkRenderingAttachmentLocationInfoKHR>(pLocationInfo, (PNextCopyState *)0, false);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+    const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo, const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    if (cb_state->activeRenderPass) {
+        cb_state->activeRenderPass->dynamic_rendering_input_attachment_input_info =
+            std::make_shared<safe_VkRenderingInputAttachmentIndexInfoKHR>(pLocationInfo, (PNextCopyState *)0, false);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer,

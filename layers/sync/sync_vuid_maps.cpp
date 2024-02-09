@@ -1018,6 +1018,11 @@ static const std::map<VkImageLayout, std::array<Entry, 2>> kImageLayoutErrors{
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07006"},
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07006"},
      }}},
+    {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09550"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09550"},
+     }}},
     {VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,
      {{
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
@@ -1184,6 +1189,16 @@ static const std::map<ImageError, std::vector<Entry>> kImageErrors{
          {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-oldLayout-01181"},
          {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-oldLayout-01181"},
      }},
+    {ImageError::kDynamicRenderingLocalReadNew,
+     {
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09552"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09552"},
+     }},
+    {ImageError::kDynamicRenderingLocalReadOld,
+     {
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09551"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09551"},
+     }},
 };
 
 const std::string &GetImageBarrierVUID(const Location &loc, ImageError error) {
@@ -1323,10 +1338,25 @@ const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageEr
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09553"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09553"},
          }},
-        {ShaderTileImageError::kShaderTileImageBarrierError,
+        {ShaderTileImageError::kShaderTileImageFramebufferSpace,
          {
-             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-08719"},
-             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-08719"},
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-srcStageMask-09556"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-srcStageMask-09556"},
+         }},
+        {ShaderTileImageError::kShaderTileImageNoBuffersOrImages,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09554"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09554"},
+         }},
+        {ShaderTileImageError::kShaderTileImageLayout,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-09555"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-image-09555"},
+         }},
+        {ShaderTileImageError::kShaderTileImageDependencyFlags,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-dependencyFlags-07891"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-dependencyFlags-07891"},
          }},
     };
 
