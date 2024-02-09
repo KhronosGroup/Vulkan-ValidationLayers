@@ -83,6 +83,8 @@ enum class ImageError {
     kRenderPassMismatchColorUnused,
     kRenderPassMismatchAhbZero,
     kRenderPassLayoutChange,
+    kDynamicRenderingLocalReadNew,
+    kDynamicRenderingLocalReadOld,
 };
 
 const std::string &GetImageBarrierVUID(const Location &loc, ImageError error);
@@ -114,7 +116,13 @@ enum class SubmitError {
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 
-enum class ShaderTileImageError { kShaderTileImageFeatureError, kShaderTileImageBarrierError };
+enum class ShaderTileImageError {
+    kShaderTileImageFeatureError,
+    kShaderTileImageFramebufferSpace,
+    kShaderTileImageNoBuffersOrImages,
+    kShaderTileImageLayout,
+    kShaderTileImageDependencyFlags,
+};
 
 const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error);
 

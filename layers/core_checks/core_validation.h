@@ -143,6 +143,12 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawDynamicState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawDynamicColorAttachmentLocations(const LogObjectList& objlist, const Location& loc,
+                                                     const safe_VkRenderingAttachmentLocationInfoKHR* location_current,
+                                                     const VkRenderingAttachmentLocationInfoKHR* location) const;
+    bool ValidateDrawDynamicInputAttachementIndices(const LogObjectList& objlist, const Location& loc,
+                                                    const safe_VkRenderingInputAttachmentIndexInfoKHR* input_current,
+                                                    const VkRenderingInputAttachmentIndexInfoKHR* input) const;
     bool ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
                                VkPipelineStageFlags2KHR stageMask) const;
@@ -211,17 +217,17 @@ class CoreChecks : public ValidationStateTracker {
                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers) const;
 
+    bool IsShaderTileImageUsageValid(VkImageUsageFlags image_usage) const;
     bool ValidateShaderTileImageBarriers(const LogObjectList& objlist, const Location& outer_loc,
                                          const VkDependencyInfo& dep_info) const;
 
     bool ValidateShaderTileImageBarriers(const LogObjectList& objlist, const Location& outer_loc,
                                          VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
                                          const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
-                                         uint32_t image_barrier_count, VkPipelineStageFlags src_stage_mask,
-                                         VkPipelineStageFlags dst_stage_mask) const;
+                                         uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                         VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const;
 
-    bool ValidateShaderTimeImageCommon(const LogObjectList& objlist, const Location& outer_loc,
-                                       const std::string& barrier_error_vuid, VkDependencyFlags dependency_flags,
+    bool ValidateShaderTileImageCommon(const LogObjectList& objlist, const Location& outer_loc, VkDependencyFlags dependency_flags,
                                        uint32_t buffer_barrier_count, uint32_t image_barrier_count) const;
 
     bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& stage_mask_loc,
@@ -229,7 +235,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePipelineStage(const LogObjectList& objlist, const Location& stage_mask_loc, VkQueueFlags queue_flags,
                                VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidatePipelineStageForShaderTileImage(const LogObjectList& objlist, const Location& loc,
-                                                 VkPipelineStageFlags2KHR stage_mask, const std::string& vuid) const;
+                                                 VkPipelineStageFlags2KHR stage_mask, VkDependencyFlags dependency_flags) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
                             VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateAccessMaskForShaderTileImage(const LogObjectList& objlist, const Location& loc, VkAccessFlags2KHR access_mask,
@@ -2406,6 +2412,18 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                    const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
                                                    uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
+    bool ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& pLocationInfo,
+                                                 const LogObjectList objlist, const Location& loc_info) const;
+    bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                              const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                              const ErrorObject& error_obj) const override;
+
+    bool ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                    const LogObjectList objlist, const Location& loc_info) const;
+    bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                                 const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                                 const ErrorObject& error_obj) const override;
+
     bool PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT

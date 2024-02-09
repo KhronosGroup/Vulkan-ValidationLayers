@@ -380,6 +380,9 @@ class DynamicRenderingTest : public VkLayerTest {
 class NegativeDynamicRendering : public DynamicRenderingTest {};
 class PositiveDynamicRendering : public DynamicRenderingTest {};
 
+class NegativeDynamicRenderingLocalRead : public NegativeDynamicRendering {};
+class PositiveDynamicRenderingLocalRead : public PositiveDynamicRendering {};
+
 class DynamicStateTest : public VkLayerTest {
   public:
     void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state

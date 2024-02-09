@@ -883,6 +883,9 @@
                 },
                 "VkPhysicalDeviceRenderPassStripedFeaturesARM":{
                     "renderPassStriped": true
+                },
+                "VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR": {
+                    "dynamicRenderingLocalRead": true
                 }
             },
             "properties": {
@@ -1992,6 +1995,7 @@
                 "VK_KHR_draw_indirect_count": 1,
                 "VK_KHR_driver_properties": 1,
                 "VK_KHR_dynamic_rendering": 1,
+                "VK_KHR_dynamic_rendering_local_read": 1,
                 "VK_KHR_external_fence": 1,
                 "VK_KHR_external_fence_capabilities": 1,
                 "VK_KHR_external_fence_fd": 1,

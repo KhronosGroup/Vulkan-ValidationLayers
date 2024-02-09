@@ -1090,8 +1090,22 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         bool external_format_resolve = false;
 
         if (cb_state.activeRenderPass->UsesDynamicRendering()) {
-            color_view_state = cb_state.GetActiveAttachmentImageViewState(
-                cb_state.GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment));
+            uint32_t colorAttachment = clear_desc->colorAttachment;
+            const auto *attachment_location_info = cb_state.activeRenderPass->dynamic_rendering_attachment_location_info.get();
+            if (attachment_location_info && attachment_location_info->pColorAttachmentLocations &&
+                colorAttachment < attachment_location_info->colorAttachmentCount) {
+                colorAttachment = attachment_location_info->pColorAttachmentLocations[colorAttachment];
+
+                if (colorAttachment == VK_ATTACHMENT_UNUSED) {
+                    const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->VkHandle());
+                    skip |= LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
+                                     "cannot be cleared due to mapped to VK_ATTACHMENT_UNUSED.");
+
+                    continue;
+                }
+            }
+
+            color_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicColorAttachmentImageIndex(colorAttachment));
             color_attachment_count = cb_state.GetDynamicColorAttachmentCount();
 
             depth_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicDepthAttachmentImageIndex());

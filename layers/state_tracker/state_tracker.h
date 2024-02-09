@@ -1555,6 +1555,13 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                     const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                     const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                             const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                             const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
+                                                                const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                                const RecordObject& record_obj) override;
+
     void PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize,
                                                             const RecordObject& record_obj) override;
 

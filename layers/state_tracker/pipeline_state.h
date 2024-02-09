@@ -749,6 +749,7 @@ struct LastBound {
     bool HasShaderObjects() const;
     bool IsValidShaderBound(ShaderObjectStage stage) const;
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
+    bool IsAnyGraphicsShaderBound() const;
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LastBound &last_bound, const vvl::PipelineLayout &pipeline_layout) {

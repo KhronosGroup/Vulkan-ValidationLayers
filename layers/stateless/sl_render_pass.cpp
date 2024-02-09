@@ -79,6 +79,13 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         attachment_feedback_loop_layout = attachment_feedback_loop_layout_features->attachmentFeedbackLoopLayout;
     }
 
+    VkBool32 dynamic_rendering_local_read = false;
+    const auto *dynamic_rendering_local_read_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR>(device_createinfo_pnext);
+    if (dynamic_rendering_local_read_features) {
+        dynamic_rendering_local_read = dynamic_rendering_local_read_features->dynamicRenderingLocalRead;
+    }
+
     VkBool32 synchronization2 = false;
     const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
     if (vulkan_13_features) {
@@ -169,6 +176,22 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                                : "VUID-VkAttachmentDescription-synchronization2-06909";
                 skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
                                  "is %s but the synchronization2 feature is not enabled.", string_VkImageLayout(final_layout));
+            }
+        }
+        if (!dynamic_rendering_local_read) {
+            if (initial_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09544"
+                               : "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09544";
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
+                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR but the "
+                                 "dynamicRenderingLocalRead feature is not enabled.");
+            }
+            if (final_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09545"
+                               : "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09545";
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
+                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR but the "
+                                 "dynamicRenderingLocalRead feature is not enabled.");
             }
         }
         if (!vkuFormatIsDepthOrStencil(attachment_format)) {  // color format

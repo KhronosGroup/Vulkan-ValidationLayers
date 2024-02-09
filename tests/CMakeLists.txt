@@ -82,6 +82,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/device_queue.cpp
     unit/dynamic_rendering.cpp
     unit/dynamic_rendering_positive.cpp
+    unit/dynamic_rendering_local_read.cpp
+    unit/dynamic_rendering_local_read_positive.cpp
     unit/dynamic_state.cpp
     unit/dynamic_state_positive.cpp
     unit/external_memory_sync.cpp
