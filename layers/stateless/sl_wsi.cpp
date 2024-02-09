@@ -94,34 +94,28 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR c
 
         // Validate VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR
         if ((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) {
-            if (!IsExtEnabled(device_extensions.vk_khr_swapchain_mutable_format)) {
-                skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, loc.dot(Field::flags),
-                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
-                                 "VK_KHR_swapchain_mutable_format extension, which has not been enabled.");
+            if (format_list_info == nullptr) {
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext does not contain "
+                                 "VkImageFormatListCreateInfo.");
+            } else if (format_list_info->viewFormatCount == 0) {
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
+                                 loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
             } else {
-                if (format_list_info == nullptr) {
-                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                                     "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext does not contain "
-                                     "VkImageFormatListCreateInfo.");
-                } else if (format_list_info->viewFormatCount == 0) {
-                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                                     "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
-                                     loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
-                } else {
-                    bool found_base_format = false;
-                    for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
-                        if (format_list_info->pViewFormats[i] == pCreateInfo->imageFormat) {
-                            found_base_format = true;
-                            break;
-                        }
+                bool found_base_format = false;
+                for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
+                    if (format_list_info->pViewFormats[i] == pCreateInfo->imageFormat) {
+                        found_base_format = true;
+                        break;
                     }
-                    if (!found_base_format) {
-                        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                                         "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
-                                         "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
-                                         "imageFormat (%s).",
-                                         string_VkFormat(pCreateInfo->imageFormat));
-                    }
+                }
+                if (!found_base_format) {
+                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                     "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
+                                     "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
+                                     "imageFormat (%s).",
+                                     string_VkFormat(pCreateInfo->imageFormat));
                 }
             }
         }
@@ -158,12 +152,6 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
     if (pPresentInfo && pPresentInfo->pNext) {
         const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
-            // TODO: This and all other pNext extension dependencies should be added to code-generation
-            if (!IsExtEnabled(device_extensions.vk_khr_incremental_present)) {
-                skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, error_obj.location, "%s extension was not enabled.",
-                                 VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
-            }
-
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
                 skip |= LogError("VUID-VkPresentRegionsKHR-swapchainCount-01260", device,
                                  error_obj.location.pNext(Struct::VkPresentRegionsKHR, Field::swapchainCount),

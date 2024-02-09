@@ -22,7 +22,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instan
                                                                const uint32_t promoted_version) const {
     bool skip = false;
     if (api_version < promoted_version) {
-        skip |= LogError(kVUID_PVError_ApiVersionViolation, instance, loc,
+        skip |= LogError("UNASSIGNED-API-Version-Violation", instance, loc,
                          "Attempted to call with an effective API version of %s"
                          "but this API was not promoted until version %s.",
                          StringAPIVersion(api_version).c_str(), StringAPIVersion(promoted_version).c_str());
@@ -38,7 +38,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
         auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);
         if (effective_api_version < promoted_version) {
             skip |= LogError(
-                kVUID_PVError_ApiVersionViolation, instance, loc,
+                "UNASSIGNED-API-Version-Violation", instance, loc,
                 "Attempted to call with an effective API version of %s, "
                 "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
                 "but this API was not promoted until version %s.",
@@ -50,7 +50,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
 }
 
 bool StatelessValidation::OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const {
-    return LogError(kVUID_PVError_ExtensionNotEnabled, instance, loc,
+    return LogError("UNASSIGNED-GeneralParameterError-ExtensionNotEnabled", instance, loc,
                     "function required extension %s which has not been enabled.\n", String(exentsions).c_str());
 }
 

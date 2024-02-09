@@ -847,40 +847,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     }
                 }
 
-                if (has_dynamic_viewport_w_scaling_nv && !IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
-                    skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc,
-                                     "pCreateInfos[%" PRIu32
-                                     "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, but "
-                                     "VK_NV_clip_space_w_scaling extension is not enabled.",
-                                     i);
-                }
-
-                if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) &&
-                    !IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
-                    skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc,
-                                     "pCreateInfos[%" PRIu32
-                                     "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, but "
-                                     "VK_EXT_discard_rectangles extension is not enabled.",
-                                     i);
-                }
-
-                if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
-                    !IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
-                    skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc,
-                                     "pCreateInfos[%" PRIu32
-                                     "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, but "
-                                     "VK_EXT_sample_locations extension is not enabled.",
-                                     i);
-                }
-
-                if (has_dynamic_exclusive_scissor_nv && !IsExtEnabled(device_extensions.vk_nv_scissor_exclusive)) {
-                    skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc,
-                                     "pCreateInfos[%" PRIu32
-                                     "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, but "
-                                     "VK_NV_scissor_exclusive extension is not enabled.",
-                                     i);
-                }
-
                 if (coarse_sample_order_struct) {
                     const Location coarse_sample_loc =
                         viewport_loc.pNext(Struct::VkPipelineViewportCoarseSampleOrderStateCreateInfoNV);

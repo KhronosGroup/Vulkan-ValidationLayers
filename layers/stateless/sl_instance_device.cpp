@@ -511,14 +511,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             "rayTracingPipelineShaderGroupHandleCaptureReplay "
             "must also be VK_TRUE.");
     }
-    auto vertex_attribute_divisor_features = vku::FindStructInPNextChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
-    if (vertex_attribute_divisor_features && (!IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor) &&
-                                              !IsExtEnabled(device_extensions.vk_khr_vertex_attribute_divisor))) {
-        skip |= LogError(
-            kVUID_PVError_ExtensionNotEnabled, physicalDevice, error_obj.location,
-            "pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR "
-            "struct, VK_KHR_vertex_attribute_divisor or VK_EXT_vertex_attribute_divisor must be enabled when it creates a device.");
-    }
 
     const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
     if (vulkan_11_features) {
