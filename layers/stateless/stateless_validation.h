@@ -22,9 +22,6 @@
 #include "sync/sync_utils.h"
 #include "state_tracker/cmd_buffer_state.h"
 
-[[maybe_unused]] static const char *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
-[[maybe_unused]] static const char *kVUID_PVError_ApiVersionViolation = "UNASSIGNED-API-Version-Violation";
-
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
 class StatelessValidation : public ValidationObject {
