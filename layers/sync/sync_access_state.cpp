@@ -972,6 +972,10 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
     result.exec_scope = sync_utils::WithEarlierPipelineStages(result.expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.expanded_mask);
+    // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
+    if (mask_param & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+        result.valid_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+    }
     return result;
 }
 
@@ -981,6 +985,10 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
     result.exec_scope = sync_utils::WithLaterPipelineStages(result.expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.expanded_mask);
+    // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
+    if (mask_param & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+        result.valid_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+    }
     return result;
 }
 
