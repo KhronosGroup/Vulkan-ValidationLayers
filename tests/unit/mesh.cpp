@@ -26,21 +26,19 @@ TEST_F(NegativeMesh, BasicUsage) {
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Create a device that enables mesh_shader
-    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state = vku::InitStructHelper();
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2 = vku::InitStructHelper(&vertex_input_dynamic_state);
-    VkPhysicalDeviceMaintenance4Features maintenance4 = vku::InitStructHelper(&extended_dynamic_state2);
-    VkPhysicalDeviceMultiviewFeatures multiview_feature = vku::InitStructHelper(&maintenance4);
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT xfb_feature = vku::InitStructHelper(&multiview_feature);
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&xfb_feature);
-    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-    features2.features.multiDrawIndirect = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2PatchControlPoints);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    AddDisabledFeature(vkt::Feature::multiDrawIndirect);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static const char vert_shader_text[] = R"glsl(
@@ -218,9 +216,7 @@ TEST_F(NegativeMesh, BasicUsage) {
         for (int i = 0; i < 5; i++) {
             dyn_state.dynamicStateCount = dyn_states[i].size();
             dyn_state.pDynamicStates = dyn_states[i].data();
-            if (!extended_dynamic_state2.extendedDynamicState2PatchControlPoints &&
-                *dyn_state.pDynamicStates == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)
-                continue;
+            if (*dyn_state.pDynamicStates == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) continue;
             const auto break_vp5 = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
                 helper.gp_ci_.pDynamicState = &dyn_state;
@@ -238,9 +234,10 @@ TEST_F(NegativeMesh, BasicUsage) {
         const auto break_vp5 = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pNext = &pipeline_rendering_info;
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp5, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-renderPass-07064"}));
+                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"}));
     }
 }
 
