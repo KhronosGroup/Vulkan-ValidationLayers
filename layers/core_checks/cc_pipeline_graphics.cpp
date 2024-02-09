@@ -1572,6 +1572,11 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                          "is %f, but the depthBiasClamp feature was not enabled", raster_state->depthBiasClamp);
     }
 
+    if (subpass_desc && subpass_desc->viewMask != 0) {
+        skip |= ValidateMultiViewShaders(pipeline, create_info_loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
+                                         subpass_desc->viewMask, false);
+    }
+
     // If rasterization is enabled...
     if (raster_state->rasterizerDiscardEnable == VK_FALSE) {
         // pMultisampleState can be null for graphics library
@@ -1650,28 +1655,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09030", device,
                                  create_info_loc.dot(Field::pColorBlendState),
                                  "is NULL when rasterization is enabled and "
-                                 "subpass uses color attachments.");
-            }
-
-            if (GetBitSetCount(subpass_desc->viewMask) > 1) {
-                if (!enabled_features.multiviewTessellationShader &&
-                    (pipeline.create_info_shaders &
-                     (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06047", device,
-                                     create_info_loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
-                                     "is 0x%" PRIx32
-                                     " and pStages includes tessellation shaders, but the "
-                                     "multiviewTessellationShader features was not enabled.",
-                                     subpass_desc->viewMask);
-                }
-                if (!enabled_features.multiviewGeometryShader && (pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06048", device,
-                                     create_info_loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
-                                     "is 0x%" PRIx32
-                                     " and pStages includes geometry shader, but the "
-                                     "multiviewGeometryShader features was not enabled.",
-                                     subpass_desc->viewMask);
-                }
+                                 "subpass %" PRIu32 " uses color attachments.",
+                                 pipeline.Subpass());
             }
         }
     }
@@ -2642,7 +2627,7 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pip
 bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
-    if (!rendering_struct) {
+    if (!rendering_struct || pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
         return skip;
     }
     const auto color_blend_state = pipeline.ColorBlendState();
@@ -2663,8 +2648,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         }
 
         if (pipeline.fragment_output_state && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
-            !pipeline.IsColorBlendStateDynamic() &&
-            pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            !pipeline.IsColorBlendStateDynamic()) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, create_info_loc.dot(Field::pColorBlendState),
                          "is NULL, but %s is %" PRIu32 ".",
@@ -2673,43 +2657,9 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         }
     }
 
-    if (rendering_struct->viewMask != 0) {
-        const VkShaderStageFlags stages = pipeline.create_info_shaders;
-        if (!enabled_features.multiviewTessellationShader &&
-            (stages & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06057", device,
-                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                         "is %" PRIu32
-                         " and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
-                         rendering_struct->viewMask);
-        }
-
-        if (!enabled_features.multiviewGeometryShader && (stages & VK_SHADER_STAGE_GEOMETRY_BIT)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06058", device,
-                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                             "is %" PRIu32
-                             " and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
-                             rendering_struct->viewMask);
-        }
-
-        if (!enabled_features.multiviewMeshShader && (stages & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07064", device,
-                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                         "is %" PRIu32 " and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
-                         rendering_struct->viewMask);
-        }
-
-        if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && raster_state) {
-            for (const auto &stage : pipeline.stage_states) {
-                if (stage.spirv_state->static_data_.has_builtin_layer) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06059", device,
-                                     create_info_loc.dot(Field::pMultisampleState),
-                                     "is NULL, but pipeline created with fragment shader state and renderPass != VK_NULL_HANDLE.");
-                }
-            }
-        }
+    if (rendering_struct->viewMask != 0 && raster_state) {
+        skip |= ValidateMultiViewShaders(pipeline, create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                                         rendering_struct->viewMask, true);
     }
 
     if (pipeline.OwnsSubState(pipeline.fragment_output_state)) {
@@ -4051,5 +4001,48 @@ bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr
                              "base pipeline does not allow derivatives.");
         }
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const Location &multiview_loc, uint32_t view_mask,
+                                          bool dynamic_rendering) const {
+    bool skip = false;
+    const VkShaderStageFlags stages = pipeline.create_info_shaders;
+    if (!enabled_features.multiviewTessellationShader &&
+        (stages & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
+        const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057"
+                                             : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047";
+        skip |= LogError(vuid, device, multiview_loc,
+                         "is %" PRIu32
+                         " and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
+                         view_mask);
+    }
+
+    if (!enabled_features.multiviewGeometryShader && (stages & VK_SHADER_STAGE_GEOMETRY_BIT)) {
+        const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058"
+                                             : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048";
+        skip |= LogError(vuid, device, multiview_loc,
+                         "is %" PRIu32
+                         " and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
+                         view_mask);
+    }
+
+    if (!enabled_features.multiviewMeshShader && (stages & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"
+                                             : "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064";
+        skip |= LogError(vuid, device, multiview_loc,
+                         "is %" PRIu32 " and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
+                         view_mask);
+    }
+
+    for (const auto &stage : pipeline.stage_states) {
+        if (stage.spirv_state->static_data_.has_builtin_layer) {
+            const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059"
+                                                 : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06050";
+            skip |= LogError(vuid, device, multiview_loc, "is %" PRIu32 " but %s stage contains a Layer decorated OpVariable.",
+                             view_mask, string_VkShaderStageFlagBits(stage.GetStage()));
+        }
+    }
+
     return skip;
 }

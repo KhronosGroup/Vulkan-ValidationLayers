@@ -248,6 +248,8 @@ class CoreChecks : public ValidationStateTracker {
                                       const char* vuid) const;
     bool ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<vvl::Pipeline>> const& pipelines, uint32_t pipe_index,
                                              const Location& loc) const;
+    bool ValidateMultiViewShaders(const vvl::Pipeline& pipeline, const Location& multiview_loc, uint32_t view_mask,
+                                  bool dynamic_rendering) const;
     bool ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidImageBufferQueue(const vvl::CommandBuffer& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices, const Location& loc) const;
