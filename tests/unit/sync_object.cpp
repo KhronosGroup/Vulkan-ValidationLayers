@@ -713,12 +713,12 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test.buffer_barrier_.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     conc_test.buffer_barrier_.offset = 0;
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
-    conc_test("", "VUID-vkCmdPipelineBarrier-srcAccessMask-02815");
+    conc_test("", "VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-02817");
 
     // Attempt barrier where dstAccessMask is not supported by dstStageMask
     conc_test.buffer_barrier_.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     conc_test.buffer_barrier_.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    conc_test("", "VUID-vkCmdPipelineBarrier-dstAccessMask-02816");
+    conc_test("", "VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-02818");
 
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
