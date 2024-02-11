@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -305,10 +305,14 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
             if (queue_family_prop.queueFlags & VK_QUEUE_TRANSFER_BIT) {
                 queues_[DMA].push_back(queue_storage.back().get());
             }
+
+            if (queue_family_prop.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+                queues_[SPARSE].push_back(queue_storage.back().get());
+            }
         }
     }
 
-    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[DMA].empty());
+    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[DMA].empty() || !queues_[SPARSE].empty());
 }
 
 const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {

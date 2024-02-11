@@ -2561,7 +2561,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
 
     auto index = m_device->graphics_queue_node_index_;
     if ((m_device->phy().queue_properties_[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == 0) {
-        GTEST_SKIP() << "Sparse binding not supported, skipping test";
+        GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
 
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
