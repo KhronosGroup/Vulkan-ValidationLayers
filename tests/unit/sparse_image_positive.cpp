@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Collabora, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Collabora, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -336,9 +336,8 @@ TEST_F(PositiveSparseImage, BindImage) {
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
-    if (!sparse_index) {
-        GTEST_SKIP() << "Required queue families not present";
+    if (m_device->sparse_queues().empty()) {
+        GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -368,5 +367,7 @@ TEST_F(PositiveSparseImage, BindImage) {
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
-    vk::QueueBindSparse(m_device->graphics_queues()[*sparse_index]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+    vkt::Queue *sparse_queue = m_device->sparse_queues()[0];
+    vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
+    sparse_queue->wait();
 }

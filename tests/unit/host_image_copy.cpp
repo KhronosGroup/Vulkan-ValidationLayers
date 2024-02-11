@@ -1651,9 +1651,8 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
-    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
-    if (!sparse_index) {
-        GTEST_SKIP() << "Required queue families not present";
+    if (m_device->sparse_queues().empty()) {
+        GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
     VkImageObj image(m_device);

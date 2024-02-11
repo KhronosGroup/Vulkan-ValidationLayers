@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016, 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020-2023 Valve Corporation
- * Copyright (c) 2015-2016, 2020-2023 LunarG, Inc.
+ * Copyright (c) 2015-2016, 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2020-2024 Valve Corporation
+ * Copyright (c) 2015-2016, 2020-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -225,6 +225,7 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &graphics_queues() const { return queues_[GRAPHICS]; }
     const std::vector<Queue *> &compute_queues() { return queues_[COMPUTE]; }
     const std::vector<Queue *> &dma_queues() { return queues_[DMA]; }
+    const std::vector<Queue *> &sparse_queues() { return queues_[SPARSE]; }
 
     typedef std::vector<std::unique_ptr<Queue>> QueueFamilyQueues;
     typedef std::vector<QueueFamilyQueues> QueueFamilies;
@@ -284,10 +285,11 @@ class Device : public internal::Handle<VkDevice> {
 
   private:
     enum QueueIndex {
-        GRAPHICS,
-        COMPUTE,
-        DMA,
-        QUEUE_COUNT,
+        GRAPHICS = 0,
+        COMPUTE = 1,
+        DMA = 2,
+        SPARSE = 3,
+        QUEUE_COUNT = 4,
     };
 
     void init_queues(const VkDeviceCreateInfo &info);
