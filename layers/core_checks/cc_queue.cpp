@@ -146,8 +146,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 
     auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(this, queue_state.get());
-    SemaphoreSubmitState sem_submit_state(this, queue,
-                                          physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
+    SemaphoreSubmitState sem_submit_state(this, queue, queue_state->queueFamilyProperties.queueFlags);
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -278,8 +277,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
     auto queue_state = Get<vvl::Queue>(queue);
     CommandBufferSubmitState cb_submit_state(this, queue_state.get());
-    SemaphoreSubmitState sem_submit_state(this, queue,
-                                          physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
+    SemaphoreSubmitState sem_submit_state(this, queue, queue_state->queueFamilyProperties.queueFlags);
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -609,15 +607,15 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         return skip;
     }
 
-    auto queue_data = Get<vvl::Queue>(queue);
-    const auto queue_flags = physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
+    auto queue_state = Get<vvl::Queue>(queue);
+    const VkQueueFlags queue_flags = queue_state->queueFamilyProperties.queueFlags;
     if (!(queue_flags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, error_obj.location,
-                         "a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
+                         "queueFamilyIndex %" PRIu32 " queueFlags are %s.", queue_state->queueFamilyIndex,
+                         string_VkQueueFlags(queue_flags).c_str());
     }
 
-    SemaphoreSubmitState sem_submit_state(this, queue,
-                                          physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags);
+    SemaphoreSubmitState sem_submit_state(this, queue, queue_flags);
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const Location bind_info_loc = error_obj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
@@ -671,8 +669,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 }
 
                 if (!image_state->sparse_residency) {
-                    skip |= LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),
-                                     "must have been created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set.");
+                    skip |=
+                        LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),
+                                 "was created with flags %s.", string_VkImageCreateFlags(image_state->createInfo.flags).c_str());
                 }
 
                 for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
