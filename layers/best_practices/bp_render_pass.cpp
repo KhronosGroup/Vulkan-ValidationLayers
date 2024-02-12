@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
+#include "error_message/error_strings.h"
 
 static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
@@ -206,11 +207,10 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
                                           "%s %s: Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
                                           "Submitting this renderpass will cause the driver to inject a readback of the attachment "
                                           "which will copy in total %u pixels (renderArea = "
-                                          "{ %" PRId32 ", %" PRId32 ", %" PRIu32 ", %" PRIu32 " }) to the tile buffer.",
+                                          "{ %s }) to the tile buffer.",
                                           VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), att,
                                           pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
-                                          pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
-                                          pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
+                                          string_VkRect2D(pRenderPassBegin->renderArea).c_str());
             }
         }
 

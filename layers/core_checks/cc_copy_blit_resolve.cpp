@@ -50,8 +50,8 @@ struct ImageRegionIntersection {
         std::stringstream ss;
         ss << "{ subresource { aspectMask: " << string_VkImageAspectFlags(subresource.aspectMask)
            << ", mipLevel: " << subresource.mipLevel << ", baseArrayLayer: " << subresource.baseArrayLayer
-           << ", layerCount: " << subresource.layerCount << " }, offset {" << offset.x << ", " << offset.y << ", " << offset.z
-           << "}, extent {" << extent.width << ", " << extent.height << ", " << extent.depth << "} }";
+           << ", layerCount: " << subresource.layerCount << " }, offset {" << string_VkOffset3D(offset) << "}, extent {"
+           << string_VkExtent3D(extent) << "} }";
         return ss.str();
     }
 };
@@ -3065,9 +3065,8 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(VkDevice device, const vvl::Im
     }
     if ((src_info.extent.width != dst_info.extent.width) || (src_info.extent.height != dst_info.extent.height) ||
         (src_info.extent.depth != dst_info.extent.depth)) {
-        mismatch_stream << "srcImage extent.width = " << src_info.extent.width << " extent.height = " << src_info.extent.height
-                        << " extent.depth = " << src_info.extent.depth << " but dstImage extent.width = " << dst_info.extent.width
-                        << " extent.height = " << dst_info.extent.height << " extent.depth = " << dst_info.extent.depth << "\n";
+        mismatch_stream << "srcImage extent = (" << string_VkExtent3D(src_info.extent) << ") but dstImage exten = ("
+                        << string_VkExtent3D(dst_info.extent) << ")\n";
     }
     if (src_info.mipLevels != dst_info.mipLevels) {
         mismatch_stream << "srcImage mipLevels = " << src_info.mipLevels << "and dstImage mipLevels = " << dst_info.mipLevels
