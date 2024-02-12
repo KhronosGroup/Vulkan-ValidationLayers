@@ -266,16 +266,32 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
 bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                               const Location& loc) const {
     bool skip = false;
+    const Location rendering_info = loc.dot(Field::pRenderingInfo);
 
-    auto cb_state = Get<bp_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
+    for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+        const auto& color_attachment = pRenderingInfo->pColorAttachments[i];
+        const Location color_attachment_info = rendering_info.dot(Field::pColorAttachments, i);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
-            const auto& color_attachment = pRenderingInfo->pColorAttachments[i];
+        auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+        if (VendorCheckEnabled(kBPVendorNVIDIA)) {
             if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                const VkFormat format = Get<vvl::ImageView>(color_attachment.imageView)->create_info.format;
-                skip |= ValidateClearColor(commandBuffer, format, color_attachment.clearValue.color, loc);
+                const VkFormat format = image_view_state->create_info.format;
+                skip |= ValidateClearColor(commandBuffer, format, color_attachment.clearValue.color, color_attachment_info);
+            }
+        }
+
+        // Check if accidently set resolve mode to none since everything else looks like it should be resolving
+        if (color_attachment.resolveMode == VK_RESOLVE_MODE_NONE && color_attachment.resolveImageView != VK_NULL_HANDLE) {
+            auto resolve_image_view_state = Get<vvl::ImageView>(color_attachment.resolveImageView);
+            if (resolve_image_view_state && resolve_image_view_state->image_state->createInfo.samples == VK_SAMPLE_COUNT_1_BIT &&
+                image_view_state->image_state->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
+                const LogObjectList objlist(commandBuffer, resolve_image_view_state->Handle(), image_view_state->Handle());
+                skip |= LogWarning(kVUID_BestPractices_RenderingInfo_ResolveModeNone, commandBuffer,
+                                   color_attachment_info.dot(Field::resolveMode),
+                                   "is VK_RESOLVE_MODE_NONE but resolveImageView is pointed to a valid VkImageView with "
+                                   "VK_SAMPLE_COUNT_1_BIT and imageView is pointed to a VkImageView with %s. If "
+                                   "VK_RESOLVE_MODE_NONE is set, the resolveImageView value is ignored.",
+                                   string_VkSampleCountFlagBits(image_view_state->image_state->createInfo.samples));
             }
         }
     }
