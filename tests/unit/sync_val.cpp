@@ -6372,3 +6372,292 @@ TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
+    TEST_DESCRIPTION("Write to the same image from different queues");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const std::optional<uint32_t> transfer_family =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
+    if (!transfer_family) {
+        GTEST_SKIP() << "Transfer-only queue family is not present";
+    }
+    vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
+
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    // Submit from Graphics queue: perform image layout transition (WRITE access).
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    cb0.begin();
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &image_barrier;
+    vk::CmdPipelineBarrier2(cb0, &dep_info);
+    cb0.end();
+
+    VkCommandBufferSubmitInfo cbuf_info0 = vku::InitStructHelper();
+    cbuf_info0.commandBuffer = cb0;
+    VkSubmitInfo2 submit0 = vku::InitStructHelper();
+    submit0.commandBufferInfoCount = 1;
+    submit0.pCommandBufferInfos = &cbuf_info0;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit0, VK_NULL_HANDLE);
+
+    // Submit from Transfer queue: write image data (racing WRITE access)
+    vkt::CommandPool transfer_pool(*m_device, transfer_family.value());
+    vkt::CommandBuffer cb1(*m_device, &transfer_pool);
+    cb1.begin();
+    vk::CmdCopyBufferToImage(cb1, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    cb1.end();
+
+    VkCommandBufferSubmitInfo cbuf_info1 = vku::InitStructHelper();
+    cbuf_info1.commandBuffer = cb1;
+    VkSubmitInfo2 submit1 = vku::InitStructHelper();
+    submit1.commandBufferInfoCount = 1;
+    submit1.pCommandBufferInfos = &cbuf_info1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
+    vk::QueueSubmit2(*transfer_queue, 1, &submit1, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->wait();
+}
+
+TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
+    TEST_DESCRIPTION("Transfer queue synchronizes with graphics queue and after that both queues initiate image write");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const std::optional<uint32_t> transfer_family =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
+    if (!transfer_family) {
+        GTEST_SKIP() << "Transfer-only queue family is not present";
+    }
+    vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
+
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // Submit on Graphics queue: empty batch just so Transfer queue can synchronize with.
+    VkSemaphoreSubmitInfo signal_info0 = vku::InitStructHelper();
+    signal_info0.semaphore = semaphore;
+    signal_info0.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit0 = vku::InitStructHelper();
+    submit0.signalSemaphoreInfoCount = 1;
+    submit0.pSignalSemaphoreInfos = &signal_info0;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit0, VK_NULL_HANDLE);
+
+    // Submit on Graphics queue: image layout transition (WRITE access).
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    cb1.begin();
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &image_barrier;
+    vk::CmdPipelineBarrier2(cb1, &dep_info);
+    cb1.end();
+
+    VkCommandBufferSubmitInfo cbuf_info1 = vku::InitStructHelper();
+    cbuf_info1.commandBuffer = cb1;
+    VkSubmitInfo2 submit1 = vku::InitStructHelper();
+    submit1.commandBufferInfoCount = 1;
+    submit1.pCommandBufferInfos = &cbuf_info1;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit1, VK_NULL_HANDLE);
+
+    // Submit on Transfer queue: write image data (racing WRITE access)
+    vkt::CommandPool transfer_pool(*m_device, transfer_family.value());
+    vkt::CommandBuffer cb2(*m_device, &transfer_pool);
+    cb2.begin();
+    vk::CmdCopyBufferToImage(cb2, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    cb2.end();
+
+    VkCommandBufferSubmitInfo cbuf_info2 = vku::InitStructHelper();
+    cbuf_info2.commandBuffer = cb2;
+    VkSemaphoreSubmitInfo wait_info2 = vku::InitStructHelper();
+    wait_info2.semaphore = semaphore;
+    wait_info2.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit2 = vku::InitStructHelper();
+    submit2.waitSemaphoreInfoCount = 1;
+    submit2.pWaitSemaphoreInfos = &wait_info2;
+    submit2.commandBufferInfoCount = 1;
+    submit2.pCommandBufferInfos = &cbuf_info2;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
+    vk::QueueSubmit2(*transfer_queue, 1, &submit2, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->wait();
+}
+
+// Gfx      :   Submit 0: [Read A, signal sem]  Submit 1: [Read A]
+// Compute  :   Submit 1: [Unrelated access, signal sem2]
+// Transfer :   Submit 3: [wait sem+sem2, Write A]
+//
+// Write in Submit 3 races with read in Sumbit 1.
+// Compute submit is needed to generate tags in such a ways that reproduces regression
+// with incorrect async tag tracking. This generates compute tags that have larger values
+// than the tags from the second gfx queue submission.
+TEST_F(NegativeSyncVal, QSWriteRacingRead) {
+    TEST_DESCRIPTION("Write-racing-read scenario that involves three queues");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const std::optional<uint32_t> gfx_family = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0);
+    if (!gfx_family) {
+        GTEST_SKIP() << "Graphics-only queue family is not present";
+    }
+    vkt::Queue* gfx_queue = m_device->queue_family_queues(gfx_family.value())[0].get();
+    vkt::CommandPool gfx_pool(*m_device, gfx_queue->get_family_index());
+
+    const std::optional<uint32_t> compute_family = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!compute_family) {
+        GTEST_SKIP() << "Compute-only queue family is not present";
+    }
+    vkt::Queue* compute_queue = m_device->queue_family_queues(compute_family.value())[0].get();
+    vkt::CommandPool compute_pool(*m_device, compute_queue->get_family_index());
+
+    const std::optional<uint32_t> transfer_family =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+    if (!transfer_family) {
+        GTEST_SKIP() << "Transfer-only queue family is not present";
+    }
+    vkt::Queue* transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
+    vkt::CommandPool transfer_pool(*m_device, transfer_queue->get_family_index());
+
+    constexpr VkDeviceSize size = 1024;
+    vkt::Buffer buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer gfx_src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer gfx_dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer gfx_dst_buffer2(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer compute_src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer compute_dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy region{};
+    region.size = size;
+
+    vkt::CommandBuffer gfx_cb(*m_device, &gfx_pool);
+    vkt::CommandBuffer gfx_cb2(*m_device, &gfx_pool);
+    vkt::CommandBuffer compute_cb(*m_device, &compute_pool);
+    vkt::CommandBuffer transfer_cb(*m_device, &transfer_pool);
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore2(*m_device);
+
+    // Submit 0 (gfx queue): buffer read
+    {
+        gfx_cb.begin();
+        vk::CmdCopyBuffer(gfx_cb, buffer, gfx_dst_buffer, 1, &region);
+        gfx_cb.end();
+
+        VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+        cbuf_info.commandBuffer = gfx_cb;
+        VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+        signal_info.semaphore = semaphore;
+        signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cbuf_info;
+        submit.signalSemaphoreInfoCount = 1;
+        submit.pSignalSemaphoreInfos = &signal_info;
+        vk::QueueSubmit2(*gfx_queue, 1, &submit, VK_NULL_HANDLE);
+    }
+
+    // Submit 1 (gfx queue): another read from the same buffer
+    {
+        gfx_cb2.begin();
+        vk::CmdCopyBuffer(gfx_cb2, buffer, gfx_dst_buffer2, 1, &region);
+        gfx_cb2.end();
+
+        VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+        cbuf_info.commandBuffer = gfx_cb2;
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cbuf_info;
+        vk::QueueSubmit2(*gfx_queue, 1, &submit, VK_NULL_HANDLE);
+    }
+
+    // Submit 2 (compute queue): compute buffer copy (does not interract with other buffers)
+    {
+        compute_cb.begin();
+        vk::CmdCopyBuffer(compute_cb, compute_src_buffer, compute_dst_buffer, 1, &region);
+        compute_cb.end();
+
+        VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+        cbuf_info.commandBuffer = compute_cb;
+        VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+        signal_info.semaphore = semaphore2;
+        signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cbuf_info;
+        submit.signalSemaphoreInfoCount = 1;
+        submit.pSignalSemaphoreInfos = &signal_info;
+        vk::QueueSubmit2(*compute_queue, 1, &submit, VK_NULL_HANDLE);
+    }
+
+    // Submit 3 (transfer queue): wait for gfx/compute semaphores
+    {
+        transfer_cb.begin();
+        vk::CmdCopyBuffer(transfer_cb, gfx_src_buffer, buffer, 1, &region);
+        transfer_cb.end();
+
+        VkSemaphoreSubmitInfo wait_infos[2];
+        wait_infos[0] = vku::InitStructHelper();
+        wait_infos[0].semaphore = semaphore;
+        wait_infos[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        wait_infos[1] = vku::InitStructHelper();
+        wait_infos[1].semaphore = semaphore2;
+        wait_infos[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+        cbuf_info.commandBuffer = transfer_cb;
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.waitSemaphoreInfoCount = 2;
+        submit.pWaitSemaphoreInfos = wait_infos;
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cbuf_info;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
+        vk::QueueSubmit2(*transfer_queue, 1, &submit, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
+
+    gfx_queue->wait();
+    compute_queue->wait();
+    transfer_queue->wait();
+}
