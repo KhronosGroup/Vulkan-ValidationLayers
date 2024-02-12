@@ -164,7 +164,7 @@ class BatchAccessLog {
         const BatchRecord *batch;
         const ResourceUsageRecord *record;
         const DebugNameProvider *debug_name_provider;
-        bool IsValid() const { return batch && record && debug_name_provider; }
+        bool IsValid() const { return batch && record; }
     };
 
     struct CBSubmitLog : DebugNameProvider {

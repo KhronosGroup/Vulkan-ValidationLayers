@@ -1675,7 +1675,14 @@ void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &lab
     }
 }
 
-std::string CommandBuffer::GetDebugRegionNameForLabelStack(const std::vector<std::string> &label_stack) {
+std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
+                                              const std::vector<std::string> &initial_label_stack) {
+    assert(label_command_index < label_commands.size());
+
+    auto commands_to_replay = vvl::make_span(label_commands.data(), label_command_index + 1);
+    auto label_stack = initial_label_stack;
+    vvl::CommandBuffer::ReplayLabelCommands(commands_to_replay, label_stack);
+
     std::string debug_region;
     for (const std::string &label_name : label_stack) {
         if (!debug_region.empty()) {
