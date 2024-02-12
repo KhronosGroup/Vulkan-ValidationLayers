@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,23 +186,11 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.AddLibrary(rt_pipe_lib);
     rt_pipe.Build();
 
-    VkBufferCreateInfo buf_info = vku::InitStructHelper();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buf_info.size = 4096;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
-
-    VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = 4096;
-    vkt::DeviceMemory mem(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
-
     // dataSize must be at least groupCount * VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 0, 3,
-                                                        3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize, &buffer);
+    const size_t buffer_size = (3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
+    void* out_buffer = malloc(buffer_size);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
+    free(out_buffer);
 }
