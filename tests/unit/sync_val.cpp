@@ -6116,6 +6116,40 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     m_default_queue->wait();
 }
 
+// Regression test for part 1 of https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7502
+TEST_F(NegativeSyncVal, QSDebugRegion7) {
+    TEST_DESCRIPTION("Prior access debug region reporting: command buffer has labels but hazardous command is not in debug region");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    cb0.begin();
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    label.pLabelName = "RegionA";
+    vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
+    vk::CmdEndDebugUtilsLabelEXT(cb0);
+    cb0.end();
+    m_default_queue->submit(cb0);
+
+    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    cb1.begin();
+    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    cb1.end();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->submit(cb1, vkt::Fence{}, false);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->wait();
+}
+
 TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     TEST_DESCRIPTION("Prior access debug region reporting: secondary command buffer");
 
