@@ -913,12 +913,7 @@ ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(vvl::Func com
 std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRecord &record) const {
     const bool use_proxy = !proxy_label_commands_.empty();
     const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
-    assert(record.label_command_index < label_commands.size());
-    auto command_to_replay = vvl::make_span(label_commands.data(), record.label_command_index + 1);
-    std::vector<std::string> label_stack;
-    vvl::CommandBuffer::ReplayLabelCommands(command_to_replay, label_stack);
-    const auto debug_region = vvl::CommandBuffer::GetDebugRegionNameForLabelStack(label_stack);
-    return debug_region;
+    return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index);
 }
 
 void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {

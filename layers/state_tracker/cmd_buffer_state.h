@@ -699,8 +699,9 @@ class CommandBuffer : public RefcountedStateObject {
     // Applies label commands to the label_stack: for "begin label" command it pushes
     // a label on the stack, and for the "end label" command it removes the top label.
     static void ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands, std::vector<std::string> &label_stack);
-    // Forms a debug  region name which is a concatenation of all nested labels (label_stack) separated by a delimiter.
-    static std::string GetDebugRegionNameForLabelStack(const std::vector<std::string> &label_stack);
+    // Computes debug region by replaying given commands on top initial label stack.
+    static std::string GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
+                                          const std::vector<std::string> &initial_label_stack = {});
 
   private:
     void ResetCBState();
