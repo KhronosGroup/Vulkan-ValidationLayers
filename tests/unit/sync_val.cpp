@@ -6191,6 +6191,83 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     m_default_queue->wait();
 }
 
+// TODO: this test should be removed after timeline semaphore support is added to sync validation
+TEST_F(NegativeSyncVal, QSDebugRegion_TimelineStability) {
+    TEST_DESCRIPTION("Timeline semaphores are not supported yet but they should not crash the app");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_features = vku::InitStructHelper();
+    timeline_features.timelineSemaphore = VK_TRUE;
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper(&timeline_features);
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
+    VkBufferCopy region = {0, 0, 256};
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+
+    m_commandBuffer->begin();
+    // Issue a bunch of label commands
+    label.pLabelName = "RegionA";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+    label.pLabelName = "RegionB";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+    // At this point 4 label commands were recorded.
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
+    m_commandBuffer->end();
+
+    VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+    cbuf_info.commandBuffer = *m_commandBuffer;
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = semaphore;
+    signal_info.value = 1;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.commandBufferInfoCount = 1;
+    submit.pCommandBufferInfos = &cbuf_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit, VK_NULL_HANDLE);
+
+    const uint64_t wait_value = 1;
+    VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &semaphore.handle();
+    wait_info.pValues = &wait_value;
+
+    // This command will retire the previous submission in Core Validation.
+    // But not in Sync Validation... because it's not supported yet.
+    // Still usage of timeline semaphores should not cause crashes.
+    vk::WaitSemaphores(*m_device, &wait_info, kWaitTimeout);
+
+    // We are free to re-use command buffer after we waited on the semaphore.
+    // Because sync validation does not support timelines yet, it will
+    // detect false hazard of the following write with the previous read.
+    // During error reporting debug label information says that prior read
+    // occured after the 4th label command. Attempt to access those
+    // label commands lead to crash because buffer was reset after timeline
+    // wait. This scenario should not cause crash, even though syncval does
+    // not behave correctly.
+    m_commandBuffer->begin();
+    vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
+    m_commandBuffer->end();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->submit(*m_commandBuffer, vkt::Fence{}, false);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->wait();
+}
+
 TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     TEST_DESCRIPTION("SHADER_READ_BIT barrier cannot protect UNIFORM_READ_BIT accesses");
     SetTargetApiVersion(VK_API_VERSION_1_3);
