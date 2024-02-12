@@ -2360,8 +2360,8 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
         "Test that a warning is produced for a shader consuming an input attachment with a format having a different fundamental "
         "type");
 
-    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
 
     char const *fsSource = R"glsl(
         #version 450
@@ -2375,7 +2375,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitRenderTarget();
 
     vkt::DescriptorSetLayout dsl(*m_device);
 
@@ -2407,4 +2407,52 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-Shader-MissingInputAttachment");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7495
+TEST_F(VkBestPracticesLayerTest, IgnoreResolveImageView) {
+    TEST_DESCRIPTION("Help warn user when they might have resolveMode set to NONE by accident");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageObj image(m_device);
+    image.Init(image_create_info);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    VkImageObj resolve_image(m_device);
+    resolve_image.Init(image_create_info);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveImageView = resolve_image_view;
+
+    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_RenderingInfo_ResolveModeNone);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
