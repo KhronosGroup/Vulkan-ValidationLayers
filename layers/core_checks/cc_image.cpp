@@ -25,6 +25,7 @@
 #include "core_validation.h"
 #include "generated/chassis.h"
 #include "generated/pnext_chain_extraction.h"
+#include "error_message/error_strings.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInfo, const Location &loc) const {
     bool skip = false;
@@ -1024,13 +1025,6 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
         return false;
     }
     return true;
-}
-
-static std::string string_VkRect2D(VkRect2D rect) {
-    std::stringstream ss;
-    ss << "offset.x: " << rect.offset.x << ", offset.y: " << rect.offset.y << ", extent.width: " << rect.extent.width
-       << ", extent.height: " << rect.extent.height;
-    return ss.str();
 }
 
 bool CoreChecks::ValidateClearAttachmentExtent(const vvl::CommandBuffer &cb_state, const VkRect2D &render_area,

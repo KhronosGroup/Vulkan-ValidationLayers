@@ -25,6 +25,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 #include "core_validation.h"
+#include "error_message/error_strings.h"
 
 static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) {
     if ((extent.width < min.width) || (extent.width > max.width) || (extent.height < min.height) || (extent.height > max.height)) {
@@ -129,15 +130,12 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
     auto pres_scale_ci = vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info->pNext);
     if ((!pres_scale_ci) || (pres_scale_ci && (pres_scale_ci->scalingBehavior == 0))) {
         if (!IsExtentInsideBounds(create_info->imageExtent, capabilities->minImageExtent, capabilities->maxImageExtent)) {
-            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
-                             "(%" PRIu32 ",%" PRIu32
-                             "), which is outside the bounds returned by "
-                             "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%" PRIu32 ",%" PRIu32
-                             "), minImageExtent = (%" PRIu32 ",%" PRIu32 "), maxImageExtent = (%" PRIu32 ",%" PRIu32 ").",
-                             create_info->imageExtent.width, create_info->imageExtent.height, capabilities->currentExtent.width,
-                             capabilities->currentExtent.height, capabilities->minImageExtent.width,
-                             capabilities->minImageExtent.height, capabilities->maxImageExtent.width,
-                             capabilities->maxImageExtent.height);
+            skip |= LogError(
+                "VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
+                "(%s), which is outside the bounds returned by "
+                "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%s), minImageExtent = (%s), maxImageExtent = (%s).",
+                string_VkExtent2D(create_info->imageExtent).c_str(), string_VkExtent2D(capabilities->currentExtent).c_str(),
+                string_VkExtent2D(capabilities->minImageExtent).c_str(), string_VkExtent2D(capabilities->maxImageExtent).c_str());
         }
     }
 
@@ -231,12 +229,12 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             (!IsExtentInsideBounds(create_info->imageExtent, scaling_caps.minScaledImageExtent,
                                    scaling_caps.maxScaledImageExtent))) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07782", device, create_info_loc.dot(Field::imageExtent),
-                         "(%" PRIu32 ",%" PRIu32 "), which is outside the bounds returned in "
-                         "VkSurfacePresentScalingCapabilitiesEXT minScaledImageExtent = (%" PRIu32 ",%" PRIu32 "), "
-                         "maxScaledImageExtent = (%" PRIu32 ",%" PRIu32 ").",
-                         create_info->imageExtent.width, create_info->imageExtent.height, scaling_caps.minScaledImageExtent.width,
-                         scaling_caps.minScaledImageExtent.height, scaling_caps.maxScaledImageExtent.width,
-                         scaling_caps.maxScaledImageExtent.height)) {
+                         "(%s), which is outside the bounds returned in "
+                         "VkSurfacePresentScalingCapabilitiesEXT minScaledImageExtent = (%s), "
+                         "maxScaledImageExtent = (%s).",
+                         string_VkExtent2D(create_info->imageExtent).c_str(),
+                         string_VkExtent2D(scaling_caps.minScaledImageExtent).c_str(),
+                         string_VkExtent2D(scaling_caps.maxScaledImageExtent).c_str())) {
                 skip |= true;
             }
         }
@@ -330,7 +328,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     if ((pCreateInfo->imageExtent.width == 0) || (pCreateInfo->imageExtent.height == 0)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageExtent-01689", device, create_info_loc.dot(Field::imageExtent),
-                     "width (%d) and height (%d) is invalid.", pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height)) {
+                     "(%s) is invalid.", string_VkExtent2D(pCreateInfo->imageExtent).c_str())) {
             return true;
         }
     }
@@ -544,17 +542,14 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             if (!IsExtentInsideBounds(pCreateInfo->imageExtent, cached_capabilities.surfaceCapabilities.minImageExtent,
                                       cached_capabilities.surfaceCapabilities.maxImageExtent)) {
                 // TODO - Combine VUs with other same VUID
-                skip |= LogError(
-                    "VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
-                    "(%" PRIu32 ", %" PRIu32
-                    "), which is outside the bounds returned by "
-                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%" PRIu32 ",%" PRIu32
-                    "), minImageExtent = (%" PRIu32 ",%" PRIu32 "), maxImageExtent = (%" PRIu32 ",%" PRIu32 ").",
-                    pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
-                    surface_caps2.surfaceCapabilities.currentExtent.width, surface_caps2.surfaceCapabilities.currentExtent.height,
-                    surface_caps2.surfaceCapabilities.minImageExtent.width, surface_caps2.surfaceCapabilities.minImageExtent.height,
-                    surface_caps2.surfaceCapabilities.maxImageExtent.width,
-                    surface_caps2.surfaceCapabilities.maxImageExtent.height);
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
+                                 "(%s), which is outside the bounds returned by "
+                                 "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%s), minImageExtent = (%s), "
+                                 "maxImageExtent = (%s).",
+                                 string_VkExtent2D(pCreateInfo->imageExtent).c_str(),
+                                 string_VkExtent2D(surface_caps2.surfaceCapabilities.currentExtent).c_str(),
+                                 string_VkExtent2D(surface_caps2.surfaceCapabilities.minImageExtent).c_str(),
+                                 string_VkExtent2D(surface_caps2.surfaceCapabilities.maxImageExtent).c_str());
             }
         }
     } else {
@@ -681,11 +676,11 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     if ((pCreateInfo->imageExtent.width > image_properties.maxExtent.width) ||
         (pCreateInfo->imageExtent.height > image_properties.maxExtent.height)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageExtent),
-                     "(%d,%d), which is bigger than max extent (%d,%d)"
+                     "(%s), which is bigger than max extent (%s)"
                      "returned by vkGetPhysicalDeviceImageFormatProperties(): "
                      "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
-                     pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, image_properties.maxExtent.width,
-                     image_properties.maxExtent.height, string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkExtent2D(pCreateInfo->imageExtent).c_str(), string_VkExtent3D(image_properties.maxExtent).c_str(),
+                     string_VkFormat(pCreateInfo->imageFormat))) {
             return true;
         }
     }
@@ -886,14 +881,11 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                             image_state->createInfo.extent.width ||
                         display_present_info->srcRect.offset.y + display_present_info->srcRect.extent.height >
                             image_state->createInfo.extent.height) {
-                        skip |= LogError("VUID-VkDisplayPresentInfoKHR-srcRect-01257", queue, swapchain_loc,
-                                         "vkQueuePresentKHR(): VkDisplayPresentInfoKHR::srcRect (offset (%" PRIu32 ", %" PRIu32
-                                         "), extent (%" PRIu32 ", %" PRIu32
-                                         ")) in the pNext chain of VkPresentInfoKHR is not a subset of the image begin presented "
-                                         "(extent (%" PRIu32 ", %" PRIu32 ")).",
-                                         display_present_info->srcRect.offset.x, display_present_info->srcRect.offset.y,
-                                         display_present_info->srcRect.extent.width, display_present_info->srcRect.extent.height,
-                                         image_state->createInfo.extent.width, image_state->createInfo.extent.height);
+                        skip |= LogError("VUID-VkDisplayPresentInfoKHR-srcRect-01257", queue,
+                                         present_info_loc.pNext(Struct::VkDisplayPresentInfoKHR, Field::srcRect),
+                                         "(%s) is not a subset of the image begin presented extent (%s).",
+                                         string_VkRect2D(display_present_info->srcRect).c_str(),
+                                         string_VkExtent3D(image_state->createInfo.extent).c_str());
                     }
                 }
 

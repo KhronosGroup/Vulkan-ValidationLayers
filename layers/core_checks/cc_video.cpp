@@ -20,6 +20,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 #include "core_validation.h"
+#include "error_message/error_strings.h"
 
 // Flags validation error if the associated call is made inside a video coding block.
 // The apiName routine should ONLY be called outside a video coding block.
@@ -575,21 +576,20 @@ bool CoreChecks::ValidateVideoPictureResource(const vvl::VideoPictureResource &p
 
         if (!IsIntegerMultipleOf(picture_resource.coded_offset, offset_granularity)) {
             const LogObjectList objlist(cmdbuf, vs_state.Handle());
-            skip |= LogError(coded_offset_vuid, objlist, loc.dot(Field::codedExtent),
-                             "(%u,%u) is not an integer multiple of the codedOffsetGranularity (%u,%u).",
-                             picture_resource.coded_offset.x, picture_resource.coded_offset.y, offset_granularity.x,
-                             offset_granularity.y);
+            skip |=
+                LogError(coded_offset_vuid, objlist, loc.dot(Field::codedExtent),
+                         "(%s) is not an integer multiple of the codedOffsetGranularity (%s).",
+                         string_VkOffset2D(picture_resource.coded_offset).c_str(), string_VkOffset2D(offset_granularity).c_str());
         }
     }
 
     if (coded_extent_vuid &&
         !IsBetweenInclusive(picture_resource.coded_extent, profile_caps.base.minCodedExtent, vs_state.create_info.maxCodedExtent)) {
         const LogObjectList objlist(cmdbuf, vs_state.Handle());
-        skip |= LogError(coded_extent_vuid, objlist, loc.dot(Field::codedExtent),
-                         "(%u,%u) is outside of the range (%u,%u)-(%u,%u) supported by %s.", picture_resource.coded_extent.width,
-                         picture_resource.coded_extent.height, profile_caps.base.minCodedExtent.width,
-                         profile_caps.base.minCodedExtent.height, vs_state.create_info.maxCodedExtent.width,
-                         vs_state.create_info.maxCodedExtent.height, FormatHandle(vs_state).c_str());
+        skip |= LogError(
+            coded_extent_vuid, objlist, loc.dot(Field::codedExtent), "(%s) is outside of the range (%s)-(%s) supported by %s.",
+            string_VkExtent2D(picture_resource.coded_extent).c_str(), string_VkExtent2D(profile_caps.base.minCodedExtent).c_str(),
+            string_VkExtent2D(vs_state.create_info.maxCodedExtent).c_str(), FormatHandle(vs_state).c_str());
     }
 
     if (picture_resource.base_array_layer >= picture_resource.image_view_state->create_info.subresourceRange.layerCount) {
@@ -1565,23 +1565,21 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer &cb_state,
         };
         if (profile_caps.encode_h264.flags & VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR) {
             if (picture_info->naluSliceEntryCount > min_coding_block_extent.width * min_coding_block_extent.height) {
-                skip |=
-                    LogError("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08302", cb_state.Handle(), slice_count_loc,
-                             "(%u) is greater than the number of MBs (minCodingBlockExtent = {%u, %u}) "
-                             "that can be coded for the encode input picture specified in "
-                             "pEncodeInfo->srcPictureResource (codedExtent = {%u, %u}).",
-                             picture_info->naluSliceEntryCount, min_coding_block_extent.width, min_coding_block_extent.height,
-                             encode_info.srcPictureResource.codedExtent.width, encode_info.srcPictureResource.codedExtent.height);
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08302", cb_state.Handle(), slice_count_loc,
+                                 "(%u) is greater than the number of MBs (minCodingBlockExtent = {%s}) "
+                                 "that can be coded for the encode input picture specified in "
+                                 "pEncodeInfo->srcPictureResource (codedExtent = {%s}).",
+                                 picture_info->naluSliceEntryCount, string_VkExtent2D(min_coding_block_extent).c_str(),
+                                 string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str());
             }
         } else {
             if (picture_info->naluSliceEntryCount > min_coding_block_extent.height) {
-                skip |=
-                    LogError("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08312", cb_state.Handle(), slice_count_loc,
-                             "(%u) is greater than the number of MB rows (minCodingBlockExtent.height = %u) "
-                             "that can be coded for the encode input picture specified in "
-                             "pEncodeInfo->srcPictureResource (codedExtent = {%u, %u}).",
-                             picture_info->naluSliceEntryCount, min_coding_block_extent.height,
-                             encode_info.srcPictureResource.codedExtent.width, encode_info.srcPictureResource.codedExtent.height);
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08312", cb_state.Handle(), slice_count_loc,
+                                 "(%u) is greater than the number of MB rows (minCodingBlockExtent.height = %u) "
+                                 "that can be coded for the encode input picture specified in "
+                                 "pEncodeInfo->srcPictureResource (codedExtent = {%s}).",
+                                 picture_info->naluSliceEntryCount, min_coding_block_extent.height,
+                                 string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str());
             }
         }
 
@@ -1893,27 +1891,25 @@ bool CoreChecks::ValidateVideoEncodeInfoH265(const vvl::CommandBuffer &cb_state,
             if (picture_info->naluSliceSegmentEntryCount > min_coding_block_extent.width * min_coding_block_extent.height) {
                 const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
                 skip |= LogError("VUID-vkCmdEncodeVideoKHR-naluSliceSegmentEntryCount-08307", objlist, slice_seg_count_loc,
-                                 "(%u) is greater than the number of CTBs (minCodingBlockExtent = {%u, %u}) that can "
+                                 "(%u) is greater than the number of CTBs (minCodingBlockExtent = {%s}) that can "
                                  "be coded for the encode input picture specified in pEncodeInfo->srcPictureResource "
-                                 "(codedExtent = {%u, %u}) assuming the maximum CTB size (%ux%u) supported by the "
+                                 "(codedExtent = {%s}) assuming the maximum CTB size (%s) supported by the "
                                  "H.265 encode profile %s was created with.",
-                                 picture_info->naluSliceSegmentEntryCount, min_coding_block_extent.width,
-                                 min_coding_block_extent.height, encode_info.srcPictureResource.codedExtent.width,
-                                 encode_info.srcPictureResource.codedExtent.height, max_coding_block_size.width,
-                                 max_coding_block_size.height, FormatHandle(vs_state).c_str());
+                                 picture_info->naluSliceSegmentEntryCount, string_VkExtent2D(min_coding_block_extent).c_str(),
+                                 string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str(),
+                                 string_VkExtent2D(max_coding_block_size).c_str(), FormatHandle(vs_state).c_str());
             }
         } else {
             if (picture_info->naluSliceSegmentEntryCount > min_coding_block_extent.height) {
                 const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
-                skip |=
-                    LogError("VUID-vkCmdEncodeVideoKHR-naluSliceSegmentEntryCount-08313", objlist, slice_seg_count_loc,
-                             "(%u) is greater than the number of CTB rows (minCodingBlockExtent.height = %u) that can "
-                             "be coded for the encode input picture specified in pEncodeInfo->srcPictureResource "
-                             "(codedExtent = {%u, %u}) assuming the maximum CTB size (%ux%u) supported by the "
-                             "H.265 encode profile %s was created with.",
-                             picture_info->naluSliceSegmentEntryCount, min_coding_block_extent.height,
-                             encode_info.srcPictureResource.codedExtent.width, encode_info.srcPictureResource.codedExtent.height,
-                             max_coding_block_size.width, max_coding_block_size.height, FormatHandle(vs_state).c_str());
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-naluSliceSegmentEntryCount-08313", objlist, slice_seg_count_loc,
+                                 "(%u) is greater than the number of CTB rows (minCodingBlockExtent.height = %u) that can "
+                                 "be coded for the encode input picture specified in pEncodeInfo->srcPictureResource "
+                                 "(codedExtent = {%s}) assuming the maximum CTB size (%s) supported by the "
+                                 "H.265 encode profile %s was created with.",
+                                 picture_info->naluSliceSegmentEntryCount, min_coding_block_extent.height,
+                                 string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str(),
+                                 string_VkExtent2D(max_coding_block_size).c_str(), FormatHandle(vs_state).c_str());
             }
         }
 
@@ -2481,13 +2477,12 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
         }
 
         if (!IsBetweenInclusive(pCreateInfo->maxCodedExtent, profile_caps.base.minCodedExtent, profile_caps.base.maxCodedExtent)) {
-            skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-maxCodedExtent-04851", device,
-                             create_info_loc.dot(Field::maxCodedExtent),
-                             "(%u,%u) is outside of the "
-                             "range (%u,%u)-(%u,%u) supported by the video profile.",
-                             pCreateInfo->maxCodedExtent.width, pCreateInfo->maxCodedExtent.height,
-                             profile_caps.base.minCodedExtent.width, profile_caps.base.minCodedExtent.height,
-                             profile_caps.base.maxCodedExtent.width, profile_caps.base.maxCodedExtent.height);
+            skip |= LogError(
+                "VUID-VkVideoSessionCreateInfoKHR-maxCodedExtent-04851", device, create_info_loc.dot(Field::maxCodedExtent),
+                "(%s) is outside of the "
+                "range (%s)-(%s) supported by the video profile.",
+                string_VkExtent2D(pCreateInfo->maxCodedExtent).c_str(), string_VkExtent2D(profile_caps.base.minCodedExtent).c_str(),
+                string_VkExtent2D(profile_caps.base.maxCodedExtent).c_str());
         }
 
         if (pCreateInfo->maxDpbSlots > profile_caps.base.maxDpbSlots) {
@@ -3574,12 +3569,12 @@ void CoreChecks::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuff
                     } else if (slot.resource && !dev_state.IsSlotPicture(slot.index, slot.resource)) {
                         skip |= dev_data->LogError("VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265", vs_state->Handle(), loc,
                                                    "DPB slot index %d of %s is not currently associated with the specified "
-                                                   "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u).",
+                                                   "video picture resource: %s, layer %u, offset (%s), extent (%s).",
                                                    slot.index, dev_data->FormatHandle(*vs_state).c_str(),
                                                    dev_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
-                                                   slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x,
-                                                   slot.resource.coded_offset.y, slot.resource.coded_extent.width,
-                                                   slot.resource.coded_extent.height);
+                                                   slot.resource.range.baseArrayLayer,
+                                                   string_VkOffset2D(slot.resource.coded_offset).c_str(),
+                                                   string_VkExtent2D(slot.resource.coded_extent).c_str());
                     }
                 }
                 return skip;
@@ -4080,12 +4075,12 @@ void CoreChecks::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, c
                                                         const char *picture_kind) -> bool {
                     return dev_data->LogError(vuid, vs_state->Handle(), loc,
                                               "DPB slot index %d of %s does not currently contain a %s with the specified "
-                                              "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u).",
+                                              "video picture resource: %s, layer %u, offset (%s), extent (%s).",
                                               slot.index, dev_data->FormatHandle(*vs_state).c_str(), picture_kind,
                                               dev_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
-                                              slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x,
-                                              slot.resource.coded_offset.y, slot.resource.coded_extent.width,
-                                              slot.resource.coded_extent.height);
+                                              slot.resource.range.baseArrayLayer,
+                                              string_VkOffset2D(slot.resource.coded_offset).c_str(),
+                                              string_VkExtent2D(slot.resource.coded_extent).c_str());
                 };
                 for (const auto &slot : reference_slots) {
                     if (slot.picture_id.IsFrame() &&

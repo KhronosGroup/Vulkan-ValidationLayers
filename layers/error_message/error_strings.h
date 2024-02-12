@@ -28,13 +28,13 @@
 
 [[maybe_unused]] static std::string string_VkExtent2D(VkExtent2D extent) {
     std::stringstream ss;
-    ss << "Width = " << extent.width << ", Height = " << extent.height;
+    ss << "width = " << extent.width << ", height = " << extent.height;
     return ss.str();
 }
 
 [[maybe_unused]] static std::string string_VkExtent3D(VkExtent3D extent) {
     std::stringstream ss;
-    ss << "Width = " << extent.width << ", Height = " << extent.height << ", Depth = " << extent.depth;
+    ss << "width = " << extent.width << ", height = " << extent.height << ", depth = " << extent.depth;
     return ss.str();
 }
 
@@ -47,5 +47,12 @@
 [[maybe_unused]] static std::string string_VkOffset3D(VkOffset3D offset) {
     std::stringstream ss;
     ss << "x = " << offset.x << ", y = " << offset.y << ", z = " << offset.z;
+    return ss.str();
+}
+
+[[maybe_unused]] static std::string string_VkRect2D(VkRect2D rect) {
+    std::stringstream ss;
+    ss << "offset.x = " << rect.offset.x << ", offset.y = " << rect.offset.y << ", extent.width = " << rect.extent.width
+       << ", extent.height = " << rect.extent.height;
     return ss.str();
 }
