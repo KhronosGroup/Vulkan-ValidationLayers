@@ -1344,3 +1344,86 @@ TEST_F(PositiveSyncVal, UpdateBuffer) {
     vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
+    TEST_DESCRIPTION(
+        "Graphics queue: Image transition and subsequent image write are synchronized using a pipeline barrier. Transfer queue: "
+        "waits for the image layout transition using a semaphore. This should not affect pipeline barrier on the graphics queue");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const std::optional<uint32_t> transfer_family =
+        m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
+    if (!transfer_family) {
+        GTEST_SKIP() << "Transfer-only queue family is not present";
+    }
+    vkt::Queue *transfer_queue = m_device->queue_family_queues(transfer_family.value())[0].get();
+
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // Submit 0: perform image layout transition on Graphics queue.
+    // Image barrier synchronizes with COPY-WRITE access from Submit 2.
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    cb0.begin();
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &image_barrier;
+    vk::CmdPipelineBarrier2(cb0, &dep_info);
+    cb0.end();
+
+    VkCommandBufferSubmitInfo cbuf_info0 = vku::InitStructHelper();
+    cbuf_info0.commandBuffer = cb0;
+    VkSemaphoreSubmitInfo signal_info0 = vku::InitStructHelper();
+    signal_info0.semaphore = semaphore;
+    signal_info0.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit0 = vku::InitStructHelper();
+    submit0.commandBufferInfoCount = 1;
+    submit0.pCommandBufferInfos = &cbuf_info0;
+    submit0.signalSemaphoreInfoCount = 1;
+    submit0.pSignalSemaphoreInfos = &signal_info0;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit0, VK_NULL_HANDLE);
+
+    // Submit 1: empty submit on Transfer queue that waits for Submit 0.
+    VkSemaphoreSubmitInfo wait_info1 = vku::InitStructHelper();
+    wait_info1.semaphore = semaphore;
+    wait_info1.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSubmitInfo2 submit1 = vku::InitStructHelper();
+    submit1.waitSemaphoreInfoCount = 1;
+    submit1.pWaitSemaphoreInfos = &wait_info1;
+    vk::QueueSubmit2(*transfer_queue, 1, &submit1, VK_NULL_HANDLE);
+
+    // Submit 2: copy to image on Graphics queue. No synchronization is needed because of COPY+WRITE barrier from Submit 0.
+    vkt::CommandBuffer cb2(*m_device, m_commandPool);
+    cb2.begin();
+    vk::CmdCopyBufferToImage(cb2, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    cb2.end();
+
+    VkCommandBufferSubmitInfo cbuf_info2 = vku::InitStructHelper();
+    cbuf_info2.commandBuffer = cb2;
+    VkSubmitInfo2 submit2 = vku::InitStructHelper();
+    submit2.commandBufferInfoCount = 1;
+    submit2.pCommandBufferInfos = &cbuf_info2;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
+
+    m_default_queue->wait();
+}
