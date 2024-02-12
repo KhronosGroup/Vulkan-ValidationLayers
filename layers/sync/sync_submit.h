@@ -190,6 +190,16 @@ class BatchAccessLog {
         std::shared_ptr<const CommandExecutionContext::AccessLog> log_;
         // label stack at the point when command buffer is submitted to the queue
         std::vector<std::string> initial_label_stack_;
+
+        // TODO: remove this field and use (*cbs_)[0]->GetLabelCommands() directly
+        // when timeline semaphore support is implemented.
+        //
+        // Until then, there is no guarantee command buffers stored in cbs_ are what
+        // they are supposed to be when timeline semaphores are used (they can be reused
+        // after wait on timeline semaphore). When this happens, validation might report
+        // false positives (which is okay for unsupported feeature), but label code can crash.
+        // Make a copy of label commands as a temporary protection measure.
+        std::vector<vvl::CommandBuffer::LabelCommand> label_commands_;
     };
 
     ResourceUsageTag Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access,
