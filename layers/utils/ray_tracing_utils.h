@@ -21,14 +21,19 @@
 #include <functional>
 
 namespace rt {
+
+enum class BuildType { Device, Host };
+
 // Compute scratch buffer size the idiomatic way.
 // Note: range_infos must be an array of build_info.geometryCount elements
-VkDeviceSize ComputeScratchSize(const VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
+VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
+                                const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
                                 const VkAccelerationStructureBuildRangeInfoKHR *range_infos);
 
 // Compute acceleration structure size the idiomatic way.
 // Note: range_infos must be an array of build_info.geometryCount elements
-VkDeviceSize ComputeAccelerationStructureSize(const VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
+VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevice device,
+                                              const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
                                               const VkAccelerationStructureBuildRangeInfoKHR *range_infos);
 
 inline const VkAccelerationStructureGeometryKHR &GetGeometry(const VkAccelerationStructureBuildGeometryInfoKHR &info,

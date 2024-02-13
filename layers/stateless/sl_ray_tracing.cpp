@@ -1513,6 +1513,10 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
         skip |= ValidateRangedEnum(info_loc.dot(Field::mode), vvl::Enum::VkBuildAccelerationStructureModeKHR, info->mode,
                                    "VUID-vkBuildAccelerationStructuresKHR-mode-04628");
 
+        skip |= ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
+                              info->geometryCount, &ppBuildRangeInfos[info_i], false, true, kVUIDUndefined,
+                              "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-03676");
+
         if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
             if (info->scratchData.hostAddress == nullptr) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03725", device,
