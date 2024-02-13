@@ -1807,12 +1807,12 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     }
     // Scratch data buffer is missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag
     {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+        const VkDeviceSize scratch_size = blas.GetSizeInfo().buildScratchSize;
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, scratch_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
-
-        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas.SetScratchBuffer(std::move(bad_scratch));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674");
         blas.BuildCmdBuffer(m_commandBuffer->handle());
@@ -3475,22 +3475,23 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+
+    VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
+    scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    scratch_buffer_ci.size = blas.GetSizeInfo().buildScratchSize;
+    scratch_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
+
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 4096;
+    alloc_info.allocationSize = scratch_buffer->memory_requirements().size;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
-    VkBufferCreateInfo small_buffer_ci = vku::InitStructHelper();
-    small_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    small_buffer_ci.size = 4096;
-    small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
     scratch_buffer->bind_memory(buffer_memory, 0);
 
-    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     m_commandBuffer->begin();
     blas.SetScratchBuffer(scratch_buffer);
     blas.SetupBuild(*m_device, true);

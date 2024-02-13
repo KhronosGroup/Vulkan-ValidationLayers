@@ -466,7 +466,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 8192 * blas_count;
+    alloc_info.allocationSize = (1u << 18) * blas_count;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test using non overlapping memory chunks from the same buffer in multiple builds
@@ -474,17 +474,20 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     {
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 8192 * blas_count;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
         vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+        VkDeviceSize consumed_buffer_size = 0;
         for (size_t i = 0; i < blas_count; ++i) {
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             blas.SetScratchBuffer(scratch_buffer);
-            blas.SetDeviceScratchOffset(i * 8192);
+            blas.SetDeviceScratchOffset(consumed_buffer_size);
+            consumed_buffer_size = blas.GetSizeInfo().buildScratchSize;
+            consumed_buffer_size = Align<VkDeviceSize>(consumed_buffer_size, 4096);
             blas_vec.emplace_back(std::move(blas));
         }
 
@@ -512,7 +515,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 8192;
+    alloc_info.allocationSize = 1u << 18;
     vkt::DeviceMemory common_scratch_memory(*m_device, alloc_info);
 
     vkt::CommandBuffer cmd_buffer_frame_0(m_device, m_commandPool);
@@ -538,7 +541,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         // Create scratch buffer
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 8192;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         scratch_buffer_frame_0->init_no_mem(*m_device, scratch_buffer_ci);
@@ -572,7 +575,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         // Create scratch buffer
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 8192;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         scratch_buffer_frame_1->init_no_mem(*m_device, scratch_buffer_ci);
@@ -621,7 +624,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         // Create scratch buffer
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 8192;
+        scratch_buffer_ci.size = alloc_info.allocationSize;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         scratch_buffer_frame_2->init_no_mem(*m_device, scratch_buffer_ci);
