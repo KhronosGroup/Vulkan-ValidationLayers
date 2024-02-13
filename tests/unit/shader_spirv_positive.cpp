@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1908,4 +1908,36 @@ TEST_F(PositiveShaderSpirv, DescriptorCountSpecConstant) {
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderSpirv, PhysicalStorageBufferGlslang6) {
+    TEST_DESCRIPTION("Taken from glslang spv.bufferhandle6.frag test");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &features12));
+
+    char const *fsSource = R"glsl(
+        #version 450 core
+        #extension GL_EXT_buffer_reference : enable
+        layout (push_constant, std430) uniform Block { int identity[32]; } pc;
+        layout(r32ui, set = 3, binding = 0) uniform uimage2D image0_0;
+        layout(buffer_reference) buffer T1;
+        layout(set = 3, binding = 1, buffer_reference) buffer T1 {
+        layout(offset = 0) int a[2]; // stride = 4 for std430, 16 for std140
+        layout(offset = 32) int b;
+        layout(offset = 48) T1  c[2]; // stride = 8 for std430, 16 for std140
+        layout(offset = 80) T1  d;
+        } x;
+        void main() {}
+    )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 }

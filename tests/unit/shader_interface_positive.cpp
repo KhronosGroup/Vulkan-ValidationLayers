@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1331,135 +1331,6 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
         layout(location = 1, component = 2) flat in int z;
         layout(location=0) out float color;
         void main(){}
-    )glsl";
-
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-}
-
-TEST_F(PositiveShaderInterface, PhysicalStorageBufferGlslang3) {
-    TEST_DESCRIPTION("Taken from glslang spv.bufferhandle3.frag test");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (VK_TRUE != features12.bufferDeviceAddress) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
-
-    char const *fsSource = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
-
-        layout(buffer_reference, std430) buffer t3 {
-            int h;
-        };
-
-        layout(set = 1, binding = 2, buffer_reference, std430) buffer t4 {
-            layout(offset = 0)  int j;
-            t3 k;
-        } x;
-
-        layout(set = 0, binding = 0, std430) buffer t5 {
-            t4 m;
-        } s5;
-
-        layout(location = 0) flat in t4 k;
-
-        t4 foo(t4 y) { return y; }
-        void main() {}
-    )glsl";
-
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-}
-
-TEST_F(PositiveShaderInterface, PhysicalStorageBufferGlslang6) {
-    TEST_DESCRIPTION("Taken from glslang spv.bufferhandle6.frag test");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (VK_TRUE != features12.bufferDeviceAddress) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
-
-    char const *fsSource = R"glsl(
-        #version 450 core
-        #extension GL_EXT_buffer_reference : enable
-        layout (push_constant, std430) uniform Block { int identity[32]; } pc;
-        layout(r32ui, set = 3, binding = 0) uniform uimage2D image0_0;
-        layout(buffer_reference) buffer T1;
-        layout(set = 3, binding = 1, buffer_reference) buffer T1 {
-        layout(offset = 0) int a[2]; // stride = 4 for std430, 16 for std140
-        layout(offset = 32) int b;
-        layout(offset = 48) T1  c[2]; // stride = 8 for std430, 16 for std140
-        layout(offset = 80) T1  d;
-        } x;
-        void main() {}
-    )glsl";
-
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-}
-
-TEST_F(PositiveShaderInterface, PhysicalStorageBuffer) {
-    TEST_DESCRIPTION("Regression shaders from https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/5349");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (VK_TRUE != features12.bufferDeviceAddress) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
-
-    InitRenderTarget();
-
-    char const *vsSource = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference_uvec2 : enable
-
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            highp int value1;
-            highp int value2;
-        };
-
-        layout(location=0) out dataBuffer outgoingPtr;
-        void main() {
-            outgoingPtr = dataBuffer(uvec2(2.0));
-        }
-    )glsl";
-
-    char const *fsSource = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference_uvec2 : enable
-
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            highp int value1;
-            highp int value2;
-        };
-
-        layout(location=0) in dataBuffer incomingPtr;
-        layout(location=0) out highp vec4 fragColor;
-        void main() {
-            highp ivec2 v = ivec2(incomingPtr.value1, incomingPtr.value2);
-            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
-        }
     )glsl";
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
