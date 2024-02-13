@@ -1556,7 +1556,9 @@ class CoreChecks : public ValidationStateTracker {
                                      const VkAccelerationStructureBuildGeometryInfoKHR& info,
                                      const VkAccelerationStructureBuildRangeInfoKHR* geometry_build_ranges,
                                      const Location& info_loc) const;
-    bool ValidateAccelerationStructuresMemoryAlisasing(VkCommandBuffer commandBuffer, uint32_t infoCount,
+    bool CommonBuildAccelerationStructureValidation(uint32_t info_i, const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                    const Location& info_loc, LogObjectList object_list) const;
+    bool ValidateAccelerationStructuresMemoryAlisasing(const LogObjectList& objlist, uint32_t infoCount,
                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, uint32_t info_i,
                                                        const ErrorObject& error_obj) const;
     bool PreCallValidateCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
