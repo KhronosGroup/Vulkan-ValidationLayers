@@ -933,10 +933,10 @@ class DescriptorSet : public StateObject {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
-    virtual bool SkipBinding(const DescriptorBinding &binding) const {
-        // core validation case: do not handle descriptor arrays since we don't have a way to determine
-        // which array elements are statically or dynamically used.
-        return binding.IsBindless() || binding.count > 1;
+    virtual bool SkipBinding(const DescriptorBinding &binding, bool is_dynamic_accessed) const {
+        // core validation case: We check if all parts of the descriptor are statically known, from here spirv-val should have
+        // caught any OOB values.
+        return binding.IsBindless() || is_dynamic_accessed;
     }
 
   protected:

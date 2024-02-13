@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2023 The Khronos Group Inc.
+/* Copyright (c) 2021-2024 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,6 +215,9 @@ struct ImageAccess {
 // <Image OpVariable Result ID, [ImageAccess, ImageAccess, etc] > - used for faster lookup
 // Many ImageAccess can point to a single Image Variable
 using ImageAccessMap = vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<const ImageAccess>>>;
+// < Variable ID, [ OpAccessChain ] >
+// Allows for grouping the access chains by which variables they are actually accessing
+using AccessChainVariableMap = std::unordered_map<uint32_t, std::vector<const Instruction *>>;
 
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
@@ -317,7 +320,6 @@ struct StageInteraceVariable : public VariableBase {
 struct ResourceInterfaceVariable : public VariableBase {
     // If the type is a OpTypeArray save the length
     uint32_t array_length;
-    bool runtime_array;  // OpTypeRuntimeArray - can't validate length until run time
 
     bool is_sampled_image;  // OpTypeSampledImage
 
@@ -335,6 +337,11 @@ struct ResourceInterfaceVariable : public VariableBase {
     // Type once array/pointer are stripped
     // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;
+
+    // This is true if either:
+    // - The descriptor is made up of an OpRuntimeArray
+    // - Not all OpAccessChains pointing to this descriptor or easily determined constant
+    bool is_dynamic_accessed;
 
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
     const uint32_t image_sampled_type_width;
@@ -381,10 +388,12 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_input_attachment{false};
 
     ResourceInterfaceVariable(const Module &module_state, const EntryPoint &entrypoint, const Instruction &insn,
-                              const ImageAccessMap &image_access_map);
+                              const ImageAccessMap &image_access_map, const AccessChainVariableMap &access_chain_map);
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
+    static bool IsDynamicAccessed(ResourceInterfaceVariable &variable, const Module &module_state,
+                                  const AccessChainVariableMap &access_chain_map);
     static uint32_t FindImageSampledTypeWidth(const Module &module_state, const Instruction &base_type);
     static NumericType FindImageFormatType(const Module &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
@@ -457,13 +466,15 @@ struct EntryPoint {
     bool has_passthrough{false};
     bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
 
-    EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map);
+    EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map,
+               const AccessChainVariableMap &access_chain_map);
 
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
     static std::vector<StageInteraceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
-                                                                                const ImageAccessMap &image_access_map);
+                                                                                const ImageAccessMap &image_access_map,
+                                                                                const AccessChainVariableMap &access_chain_map);
 };
 
 // Represents a SPIR-V Module
@@ -634,6 +645,8 @@ struct Module {
     NumericType GetNumericType(uint32_t type) const;
 
     bool IsBuiltInWritten(const Instruction *builtin_insn, const EntryPoint &entrypoint) const;
+
+    bool HasRuntimeArray(uint32_t type_id) const;
 
     // Instruction helpers that need the knowledge of the whole SPIR-V module
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
