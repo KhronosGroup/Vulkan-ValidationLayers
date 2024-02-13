@@ -2527,7 +2527,8 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state,
                          local_size_x, local_size_y, local_size_z, requiredSubgroupSize,
                          phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups);
     }
-    if ((stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) > 0) {
+    if (stage_state.pipeline_create_info &&
+        (stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) > 0) {
         if (SafeModulo(local_size_x, requiredSubgroupSize) != 0) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02757", module_state.handle(), loc,
                              "SPIR-V Local workgroup size x (%" PRIu32
