@@ -193,6 +193,26 @@ class SafeStructOutputGenerator(BaseGenerator):
                     ''')
             out.append('};\n')
         out.extend(guard_helper.add_guard(None))
+
+        out.append('''
+                // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
+                // It is a safe_VkRayTracingPipelineCreateInfoKHR and supports construction from
+                // a VkRayTracingPipelineCreateInfoNV.
+                class safe_VkRayTracingPipelineCreateInfoCommon : public safe_VkRayTracingPipelineCreateInfoKHR {
+                public:
+                    safe_VkRayTracingPipelineCreateInfoCommon() : safe_VkRayTracingPipelineCreateInfoKHR() {}
+                    safe_VkRayTracingPipelineCreateInfoCommon(const VkRayTracingPipelineCreateInfoNV *pCreateInfo)
+                        : safe_VkRayTracingPipelineCreateInfoKHR() {
+                        initialize(pCreateInfo);
+                    }
+                    safe_VkRayTracingPipelineCreateInfoCommon(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo)
+                        : safe_VkRayTracingPipelineCreateInfoKHR(pCreateInfo) {}
+
+                    void initialize(const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
+                    void initialize(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo);
+                    uint32_t maxRecursionDepth = 0;  // NV specific
+                };
+                ''')
         self.write("".join(out))
 
     def generateUtil(self):
@@ -1181,4 +1201,49 @@ void FreePnextChain(const void *pNext) {
                 ''')
         out.extend(guard_helper.add_guard(None))
 
+        if self.filename.endswith('_khr.cpp'):
+            out.append('''
+                void safe_VkRayTracingPipelineCreateInfoCommon::initialize(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
+                    safe_VkRayTracingPipelineCreateInfoNV nvStruct;
+                    nvStruct.initialize(pCreateInfo);
+
+                    sType = nvStruct.sType;
+
+                    // Take ownership of the pointer and null it out in nvStruct
+                    pNext = nvStruct.pNext;
+                    nvStruct.pNext = nullptr;
+
+                    flags = nvStruct.flags;
+                    stageCount = nvStruct.stageCount;
+
+                    pStages = nvStruct.pStages;
+                    nvStruct.pStages = nullptr;
+
+                    groupCount = nvStruct.groupCount;
+                    maxRecursionDepth = nvStruct.maxRecursionDepth;
+                    layout = nvStruct.layout;
+                    basePipelineHandle = nvStruct.basePipelineHandle;
+                    basePipelineIndex = nvStruct.basePipelineIndex;
+
+                    assert(pGroups == nullptr);
+                    if (nvStruct.groupCount && nvStruct.pGroups) {
+                        pGroups = new safe_VkRayTracingShaderGroupCreateInfoKHR[groupCount];
+                        for (uint32_t i = 0; i < groupCount; ++i) {
+                            pGroups[i].sType = nvStruct.pGroups[i].sType;
+                            pGroups[i].pNext = nvStruct.pGroups[i].pNext;
+                            pGroups[i].type = nvStruct.pGroups[i].type;
+                            pGroups[i].generalShader = nvStruct.pGroups[i].generalShader;
+                            pGroups[i].closestHitShader = nvStruct.pGroups[i].closestHitShader;
+                            pGroups[i].anyHitShader = nvStruct.pGroups[i].anyHitShader;
+                            pGroups[i].intersectionShader = nvStruct.pGroups[i].intersectionShader;
+                            pGroups[i].intersectionShader = nvStruct.pGroups[i].intersectionShader;
+                            pGroups[i].pShaderGroupCaptureReplayHandle = nullptr;
+                        }
+                    }
+                }
+
+                void safe_VkRayTracingPipelineCreateInfoCommon::initialize(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo) {
+                    safe_VkRayTracingPipelineCreateInfoKHR::initialize(pCreateInfo);
+                }
+                ''')
         self.write("".join(out))

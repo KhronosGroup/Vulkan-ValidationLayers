@@ -32,6 +32,7 @@ class CoreChecks;
 class ValidationStateTracker;
 
 namespace vvl {
+class Bindable;
 class Buffer;
 class Framebuffer;
 class RenderPass;

@@ -788,7 +788,7 @@ std::optional<VkPrimitiveTopology> Module::GetTopology(const EntryPoint& entrypo
     return result;
 }
 
-Module::StaticData::StaticData(const Module& module_state) {
+Module::StaticData::StaticData(const Module& module_state, StatelessData* stateless_data) {
     // Parse the words first so we have instruction class objects to use
     {
         std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
@@ -799,9 +799,11 @@ Module::StaticData::StaticData(const Module& module_state) {
 
             // Check for opcodes that would require reparsing of the words
             if (opcode == spv::OpGroupDecorate || opcode == spv::OpDecorationGroup || opcode == spv::OpGroupMemberDecorate) {
-                assert(has_group_decoration == false);  // if assert, spirv-opt didn't flatten it
-                has_group_decoration = true;
-                return;  // no need to continue parsing
+                if (stateless_data) {
+                    assert(stateless_data->has_group_decoration == false);  // if assert, spirv-opt didn't flatten it
+                    stateless_data->has_group_decoration = true;
+                    return;  // no need to continue parsing
+                }
             }
 
             instructions.push_back(insn);
@@ -876,7 +878,9 @@ Module::StaticData::StaticData(const Module& module_state) {
 
             case spv::OpEmitStreamVertex:
             case spv::OpEndStreamPrimitive:
-                transform_feedback_stream_inst.push_back(&insn);
+                if (stateless_data) {
+                    stateless_data->transform_feedback_stream_inst.push_back(&insn);
+                }
                 break;
 
             case spv::OpString:
@@ -893,7 +897,9 @@ Module::StaticData::StaticData(const Module& module_state) {
             case spv::OpTraceRayMotionNV:
             case spv::OpReportIntersectionKHR:
             case spv::OpExecuteCallableKHR:
-                has_invocation_repack_instruction = true;
+                if (stateless_data) {
+                    stateless_data->has_invocation_repack_instruction = true;
+                }
                 break;
 
             // Entry points
@@ -989,7 +995,9 @@ Module::StaticData::StaticData(const Module& module_state) {
                 break;
             }
             case spv::OpReadClockKHR: {
-                read_clock_inst.push_back(&insn);
+                if (stateless_data) {
+                    stateless_data->read_clock_inst.push_back(&insn);
+                }
                 break;
             }
             case spv::OpTypeCooperativeMatrixNV:
@@ -1020,7 +1028,9 @@ Module::StaticData::StaticData(const Module& module_state) {
 
             default:
                 if (AtomicOperation(insn.Opcode())) {
-                    atomic_inst.push_back(&insn);
+                    if (stateless_data) {
+                        stateless_data->atomic_inst.push_back(&insn);
+                    }
                     if (insn.Opcode() == spv::OpAtomicStore) {
                         atomic_store_pointer_ids.emplace_back(insn.Word(1));
                         atomic_pointer_ids.emplace_back(insn.Word(1));
@@ -1029,7 +1039,9 @@ Module::StaticData::StaticData(const Module& module_state) {
                     }
                 }
                 if (GroupOperation(insn.Opcode())) {
-                    group_inst.push_back(&insn);
+                    if (stateless_data) {
+                        stateless_data->group_inst.push_back(&insn);
+                    }
                 }
                 // We don't care about any other defs for now.
                 break;
@@ -1057,7 +1069,9 @@ Module::StaticData::StaticData(const Module& module_state) {
         if (decoration_inst->GetBuiltIn() == spv::BuiltInLayer) {
             has_builtin_layer = true;
         } else if (decoration_inst->GetBuiltIn() == spv::BuiltInFullyCoveredEXT) {
-            has_builtin_fully_covered = true;
+            if (stateless_data) {
+                stateless_data->has_builtin_fully_covered = true;
+            }
         } else if (decoration_inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
             has_builtin_workgroup_size = true;
             builtin_workgroup_size_id = decoration_inst->Word(1);

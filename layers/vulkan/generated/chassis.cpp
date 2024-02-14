@@ -31,6 +31,7 @@
 #include "chassis.h"
 #include "layer_options.h"
 #include "layer_chassis_dispatch.h"
+#include "state_tracker/chassis_modification_state.h"
 
 thread_local WriteLockGuard* ValidationObject::record_guard{};
 
@@ -867,7 +868,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     }
 
     // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
-    if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
+    if (csm_state.skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = DispatchCreateShaderModule(device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
     record_obj.result = result;
@@ -906,7 +907,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     }
 
     // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
-    if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
+    if (csm_state.skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = DispatchCreateShadersEXT(device, createInfoCount, new_shader_create_infos.data(), pAllocator, pShaders);
     record_obj.result = result;

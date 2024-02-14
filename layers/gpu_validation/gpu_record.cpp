@@ -28,6 +28,7 @@
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
 #include "generated/layer_chassis_dispatch.h"
+#include "state_tracker/chassis_modification_state.h"
 
 // Generated shaders
 #include "generated/gpu_inst_shader_hash.h"

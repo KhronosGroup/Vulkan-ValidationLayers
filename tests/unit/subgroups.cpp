@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,10 +68,12 @@ TEST_F(NegativeSubgroup, Properties) {
     const char *quad_vuid = "VUID-RuntimeSpirv-None-06342";
 
     // Same pipeline creation for each subgroup test
-    auto info_override = [&](CreatePipelineHelper &info) {
-        info.vs_ = std::make_unique<VkShaderObj>(this, vsSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
-        info.shader_stages_ = {info.vs_->GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
-        info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    auto subgroup_test = [this](std::string source, const std::vector<const char *> &errors) {
+        for (const auto &error : errors) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error);
+        VkShaderObj vs(this, source.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
+        if (!errors.empty()) {
+            m_errorMonitor->VerifyFound();
+        }
     };
 
     // Basic
@@ -89,7 +91,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Vote
@@ -110,7 +112,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Arithmetic
@@ -131,7 +133,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Ballot
@@ -152,7 +154,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Shuffle
@@ -173,7 +175,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Shuffle Relative
@@ -194,7 +196,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Clustered
@@ -215,7 +217,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Quad
@@ -239,7 +241,7 @@ TEST_F(NegativeSubgroup, Properties) {
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 
     // Partitoned
@@ -255,14 +257,14 @@ TEST_F(NegativeSubgroup, Properties) {
         )glsl";
         errors.clear();
         // Extension not enabled on purpose if supported
-        errors.push_back("VUID-VkShaderModuleCreateInfo-pCode-08742");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08742");
         if (feature_support_partitioned == false) {
             // errors.push_back(operation_vuid);
         }
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
         }
-        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors);
+        subgroup_test(vsSource, errors);
     }
 }
 
@@ -362,11 +364,8 @@ TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
         }
     )glsl";
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-None-06275");
-    pipe.CreateComputePipeline();
+    VkShaderObj const cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     m_errorMonitor->VerifyFound();
 }
 
@@ -708,12 +707,8 @@ TEST_F(NegativeSubgroup, SubgroupUniformControlFlow) {
                OpFunctionEnd
         )";
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    pipe.InitState();
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379");
-    pipe.CreateComputePipeline();
+    VkShaderObj::CreateFromASM(this, source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
 

@@ -233,6 +233,7 @@ target_sources(vvl PRIVATE
     object_tracker/object_tracker_utils.cpp
     state_tracker/buffer_state.cpp
     state_tracker/buffer_state.h
+    state_tracker/chassis_modification_state.h
     state_tracker/cmd_buffer_state.cpp
     state_tracker/cmd_buffer_state.h
     state_tracker/descriptor_sets.cpp

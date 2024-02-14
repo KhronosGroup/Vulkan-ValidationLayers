@@ -82,16 +82,12 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
         "    color = vec4(1);\n"
         "}\n";
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
     VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-
+    m_errorMonitor->VerifyFound();
     // maxFragmentInputComponents is not reached because GLSL should not be including any input fragment stage built-ins by default
     // only maxVertexOutputComponents is reached
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 }
 
 TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
@@ -149,16 +145,13 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
         "    color = vec4(1) * gl_PointCoord.x;\n"
         "}\n";
 
-    VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-
     // maxVertexOutputComponents is not reached because GLSL should not be including any output vertex stage built-ins
     // only maxFragmentInputComponents is reached
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
@@ -198,34 +191,23 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
             "void main(){\n"
             "}\n";
 
-        std::string fsSourceStr = R"glsl(
-            #version 450
-            layout(location=0) out vec4 color;
-            void main(){
-                color = vec4(1);
-            }
-        )glsl";
-
-        VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-
         switch (overflow) {
             case 0: {
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
                 break;
             }
             case 1: {
                 // component and location limit (maxVertexOutputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             case 2: {
                 // just component limit (maxVertexOutputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             default: {
@@ -280,16 +262,15 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
         "    color = vec4(1);\n"
         "}\n";
 
+    // maxVertexOutputComponents
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
     VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+
+    // maxFragmentInputComponents
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
     VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-
-    // 1 for maxVertexOutputComponents and 1 for maxFragmentInputComponents
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
@@ -331,26 +312,26 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
             "void main(){\n"
             "    color = vec4(1);\n"
             "}\n";
-        VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpEntryPoint-08743");
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
         switch (overflow) {
             case 0: {
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
             }
             case 1: {
                 // (maxFragmentInputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
-            case 2:
+            case 2: {
                 // (maxFragmentInputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
+            }
             default: {
                 assert(0);
             }

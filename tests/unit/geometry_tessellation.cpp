@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,6 +80,7 @@ TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
     }
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
@@ -87,8 +88,7 @@ TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
 
-    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00704", "VUID-VkShaderModuleCreateInfo-pCode-08740"};
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-00704");
 }
 
 TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
@@ -125,7 +125,9 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
         }
     )glsl";
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj tcs(this, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj tes(this, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
@@ -140,8 +142,7 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
         helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
         helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
     };
-    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-VkShaderModuleCreateInfo-pCode-08740",
-                                  "VUID-VkShaderModuleCreateInfo-pCode-08740",
+    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-RuntimeSpirv-OpVariable-08746",
                                   "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"};
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 }
@@ -456,42 +457,26 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
             "void main(){\n"
             "}\n";
 
-        VkShaderObj tcs(this, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = vku::InitStructHelper();
-        inputAssemblyInfo.flags = 0;
-        inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
-
-        VkPipelineTessellationStateCreateInfo tessInfo = vku::InitStructHelper();
-        tessInfo.flags = 0;
-        tessInfo.patchControlPoints = 3;
-
-        m_errorMonitor->SetUnexpectedError("Undefined-Value-ShaderInputNotProduced");
-
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
-                                     helper.fs_->GetStageCreateInfo()};
-            helper.gp_ci_.pTessellationState = &tessInfo;
-            helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
-        };
         // maxTessellationControlPerVertexInputComponents and maxTessellationControlPerVertexOutputComponents
         switch (overflow) {
             case 0: {
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                VkShaderObj tcs(this, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
                 break;
             }
             case 1: {
                 // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj tcs(this, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             case 2: {
                 // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj tcs(this, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             default: {
@@ -576,43 +561,26 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
             "void main(){\n"
             "}\n";
 
-        VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        VkShaderObj tes(this, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = vku::InitStructHelper();
-        inputAssemblyInfo.flags = 0;
-        inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
-
-        VkPipelineTessellationStateCreateInfo tessInfo = vku::InitStructHelper();
-        tessInfo.flags = 0;
-        tessInfo.patchControlPoints = 3;
-
-        m_errorMonitor->SetUnexpectedError("Undefined-Value-ShaderInputNotProduced");
-
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
-                                     helper.fs_->GetStageCreateInfo()};
-            helper.gp_ci_.pTessellationState = &tessInfo;
-            helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
-        };
-
         // maxTessellationEvaluationInputComponents and maxTessellationEvaluationOutputComponents
         switch (overflow) {
             case 0: {
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                VkShaderObj tes(this, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
                 break;
             }
             case 1: {
                 // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj tes(this, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             case 2: {
                 // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj tes(this, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             default: {
@@ -699,29 +667,26 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
                        "void main(){\n"
                        "}\n";
 
-        VkShaderObj gs(this, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
-
-        m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpEntryPoint-08743");
-
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-        };
         // maxGeometryInputComponents and maxGeometryOutputComponents
         switch (overflow) {
             case 0: {
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                VkShaderObj gs(this, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
                 break;
             }
             case 1: {
                 // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj gs(this, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             case 2: {
                 // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                VkShaderObj gs(this, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
+                m_errorMonitor->VerifyFound();
                 break;
             }
             default: {
@@ -1231,7 +1196,9 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
         }
     )glsl";
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj tes(this, tess_src, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
@@ -1243,7 +1210,6 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
                            pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
     pipe.tess_ci_ = tess_ci;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1340,13 +1306,13 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
                OpFunctionEnd
     )glsl";
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-geometryStreams-02321");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

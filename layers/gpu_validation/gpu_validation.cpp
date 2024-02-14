@@ -31,6 +31,7 @@
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
 #include "spirv/module.h"
+#include "state_tracker/chassis_modification_state.h"
 // Generated shaders
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"

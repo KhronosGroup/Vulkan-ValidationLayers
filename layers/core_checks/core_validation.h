@@ -457,16 +457,9 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objlist, const Location& stage_mask_loc,
                                                     VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const;
-    template <typename HandleT>
-    bool ValidateMemoryIsBoundToBuffer(HandleT handle, const vvl::Buffer& buffer_state, const Location& buffer_loc,
-                                       const char* vuid) const {
-        bool result = false;
-        if (!buffer_state.sparse) {
-            const LogObjectList objlist(handle, buffer_state.Handle());
-            result |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
-        }
-        return result;
-    }
+
+    bool ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl::Buffer& buffer_state, const Location& buffer_loc,
+                                       const char* vuid) const;
     bool ValidateAccelStructsMemoryDoNotOverlap(const Location& function_loc, LogObjectList objlist,
                                                 const vvl::AccelerationStructureKHR& accel_struct_a, const Location& loc_a,
                                                 const vvl::AccelerationStructureKHR& accel_struct_b, const Location& loc_b,
@@ -750,6 +743,8 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, void* csm_state_data) override;
     bool RunSpirvValidation(spv_const_binary_t& binary, const Location& loc) const;
+    bool ValidateSpirvStateless(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                const Location& loc) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                            const ErrorObject& error_obj) const override;
@@ -766,14 +761,14 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction& insn, const bool pipeline, const Location& loc) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
-    bool ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, VkShaderStageFlagBits stage,
-                                              const spirv::EntryPoint& entrypoint, const Location& loc) const;
+    bool ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                              const spirv::StatelessData& stateless_data, const Location& loc) const;
     bool ValidateShaderStorageImageFormatsVariables(const spirv::Module& module_state, const spirv::Instruction* insn,
                                                     const Location& loc) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const StageCreateInfo& create_info,
                                          const Location& loc) const;
-    bool ValidateShaderStageGroupNonUniform(const spirv::Module& module_state, VkShaderStageFlagBits stage,
-                                            const Location& loc) const;
+    bool ValidateShaderStageGroupNonUniform(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                            VkShaderStageFlagBits stage, const Location& loc) const;
     bool ValidateMemoryScope(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc) const;
     bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const PipelineStageState& stage_state, const uint32_t local_size_x, const Location& loc) const;
@@ -785,9 +780,12 @@ class CoreChecks : public ValidationStateTracker {
                                        uint32_t total_workgroup_shared_memory, const Location& loc) const;
     bool ValidateShaderTileImage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                  const StageCreateInfo& create_info, const VkShaderStageFlagBits stage, const Location& loc) const;
-    bool ValidateAtomicsTypes(const spirv::Module& module_state, const Location& loc) const;
-    bool ValidateExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint, VkShaderStageFlagBits stage,
-                                const StageCreateInfo& create_info, const Location& loc) const;
+    bool ValidateAtomicsTypes(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                              const Location& loc) const;
+    bool ValidateExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                const spirv::StatelessData& stateless_data, const Location& loc) const;
+    bool ValidatePipelineExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                        VkShaderStageFlagBits stage, const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
                                       const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
     bool ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
@@ -795,7 +793,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderInputAttachment(const spirv::Module& module_state, const vvl::Pipeline& pipeline,
                                        const spirv::ResourceInterfaceVariable& variable, const Location& loc) const;
     bool ValidateConservativeRasterization(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                           const StageCreateInfo& stage_create_info, const Location& loc) const;
+                                           const spirv::StatelessData& stateless_data, const Location& loc) const;
     bool ValidatePushConstantUsage(const StageCreateInfo& create_info, const spirv::Module& module_state,
                                    const spirv::EntryPoint& entrypoint, const Location& loc) const;
     bool ValidateBuiltinLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -818,12 +816,14 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVariables(const spirv::Module& module_state, const Location& loc) const;
     bool ValidateShaderDescriptorVariable(const spirv::Module& module_state, const StageCreateInfo& stage_create_info,
                                           const spirv::EntryPoint& entrypoint, const Location& loc) const;
-    bool ValidateTransformFeedback(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const StageCreateInfo& create_info, const Location& loc) const;
-    bool ValidateTransformFeedbackDecorations(const spirv::Module& module_state, const StageCreateInfo& create_info,
-                                              const Location& loc) const;
+    bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                           const StageCreateInfo& create_info, const Location& loc) const;
+    bool ValidateTransformFeedbackDecorations(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateTransformFeedbackEmitStreams(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                              const spirv::StatelessData& stateless_data, const Location& loc) const;
     virtual bool ValidateShaderModuleId(const vvl::Pipeline& pipeline, const Location& loc) const;
-    bool ValidateShaderClock(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateShaderClock(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                             const Location& loc) const;
     bool ValidateImageWrite(const spirv::Module& module_state, const Location& loc) const;
 
     template <typename RegionType>

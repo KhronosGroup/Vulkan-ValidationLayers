@@ -198,6 +198,7 @@ vvl_sources = [
   "layers/object_tracker/object_tracker_utils.cpp",
   "layers/state_tracker/buffer_state.cpp",
   "layers/state_tracker/buffer_state.h",
+  "layers/state_tracker/chassis_modification_state.h",
   "layers/state_tracker/cmd_buffer_state.cpp",
   "layers/state_tracker/cmd_buffer_state.h",
   "layers/state_tracker/descriptor_sets.cpp",

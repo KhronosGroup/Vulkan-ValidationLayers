@@ -23,6 +23,7 @@
 #include "sync/sync_validation.h"
 #include "sync/sync_image.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/buffer_state.h"
 
 ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const {
     ResourceUsageRange reserve;

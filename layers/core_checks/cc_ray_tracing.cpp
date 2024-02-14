@@ -27,6 +27,7 @@
 #include "core_validation.h"
 #include "cc_buffer_address.h"
 #include "utils/ray_tracing_utils.h"
+#include "state_tracker/ray_tracing_state.h"
 
 bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory *mem_info,
                                                                 VkDeviceSize mem_offset, const Location &loc) const {

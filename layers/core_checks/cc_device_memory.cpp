@@ -24,6 +24,8 @@
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/ray_tracing_state.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
@@ -2177,4 +2179,14 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice 
                                                                        const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo,
                                                                        const ErrorObject &error_obj) const {
     return PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, error_obj);
+}
+
+bool CoreChecks::ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl::Buffer &buffer_state, const Location &buffer_loc,
+                                               const char *vuid) const {
+    bool result = false;
+    if (!buffer_state.sparse) {
+        objlist.add(buffer_state.Handle());
+        result |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
+    }
+    return result;
 }

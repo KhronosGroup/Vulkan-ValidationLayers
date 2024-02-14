@@ -694,12 +694,9 @@ TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
         }
     )glsl";
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
     VkShaderObj miss_shader(this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
                             "foo");
-
-    auto set_info = [&](nv::rt::RayTracingPipelineHelper &helper) {
-        helper.shader_stages_ = {helper.rgs_->GetStageCreateInfo(), helper.chs_->GetStageCreateInfo(),
-                                 miss_shader.GetStageCreateInfo()};
-    };
-    nv::rt::RayTracingPipelineHelper::OneshotTest(*this, set_info, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    m_errorMonitor->VerifyFound();
 }
