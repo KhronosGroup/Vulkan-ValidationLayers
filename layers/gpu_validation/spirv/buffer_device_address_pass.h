@@ -56,13 +56,11 @@ struct Intruction;
 class BufferDeviceAddressPass : public Pass {
   public:
     BufferDeviceAddressPass(Module& module) : Pass(module) {}
-    void Run() override;
 
   private:
+    bool AnalyzeInstruction(const Function& function, const Instruction& inst) override;
     uint32_t CreateFunctionCall(BasicBlock& block) override;
     void Reset() override;
-
-    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
