@@ -51,12 +51,12 @@ class CommandResources {
     CommandResources(const CommandResources &) = default;
     CommandResources &operator=(const CommandResources &) = default;
 
-    void LogErrorIfAny(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
-    void LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *output_buffer_begin,
+    bool LogErrorIfAny(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
+    bool LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *output_buffer_begin,
                               const uint32_t operation_index, const LogObjectList &objlist);
-    virtual void LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+    virtual bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
                                             const uint32_t *debug_record, const uint32_t operation_index,
-                                            const LogObjectList &objlist) {}
+                                            const LogObjectList &objlist) { return false; }
 
     DeviceMemoryBlock output_mem_block{};
 
@@ -89,7 +89,7 @@ class PreDrawResources : public CommandResources {
     bool emit_task_error = false;  // Used to decide between mesh error and task error
 
     void Destroy(Validator &validator) final;
-    void LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
                                     const uint32_t *debug_record, const uint32_t operation_index,
                                     const LogObjectList &objlist) final;
 
@@ -115,7 +115,7 @@ class PreDispatchResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 4;
 
     void Destroy(Validator &validator) final;
-    void LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
                                     const uint32_t *debug_record, const uint32_t operation_index,
                                     const LogObjectList &objlist) final;
 
@@ -139,7 +139,7 @@ class PreTraceRaysResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 5;
 
     void Destroy(Validator &validator) final;
-    void LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
                                     const uint32_t *debug_record, const uint32_t operation_index,
                                     const LogObjectList &objlist) final;
 
@@ -170,7 +170,7 @@ class PreCopyBufferToImageResources : public CommandResources {
     VmaAllocation copy_src_regions_allocation = VK_NULL_HANDLE;
 
     void Destroy(Validator &validator) final;
-    void LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
                                     const uint32_t *debug_record, const uint32_t operation_index,
                                     const LogObjectList &objlist) final;
 
