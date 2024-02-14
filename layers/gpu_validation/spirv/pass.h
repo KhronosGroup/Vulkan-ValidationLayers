@@ -28,7 +28,7 @@ struct BasicBlock;
 // Common helpers for all passes
 class Pass {
   public:
-    virtual void Run() = 0;
+    void Run();
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
     const Variable& GetBuiltinVariable(uint32_t built_in);
@@ -50,6 +50,8 @@ class Pass {
 
     BasicBlockIt InjectFunctionCheck(Function* function, BasicBlockIt block_it, InstructionIt inst_it);
 
+    // Each pass decides if the instruction should needs to have its function check injected
+    virtual bool AnalyzeInstruction(const Function& function, const Instruction& inst) = 0;
     // A callback from the function injection logic.
     // Each pass creates a OpFunctionCall and returns its result id.
     virtual uint32_t CreateFunctionCall(BasicBlock& block) = 0;

@@ -429,21 +429,5 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
     return true;
 }
 
-void BindlessDescriptorPass::Run() {
-    for (const auto& function : module_.functions_) {
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            for (auto inst_it = (*block_it)->instructions_.begin(); inst_it != (*block_it)->instructions_.end(); ++inst_it) {
-                if (AnalyzeInstruction(*(function.get()), *(inst_it->get()))) {
-                    block_it = InjectFunctionCheck(function.get(), block_it, inst_it);
-
-                    // will start searching again from newly split merge block
-                    block_it--;
-                    break;
-                }
-            }
-        }
-    }
-}
-
 }  // namespace spirv
 }  // namespace gpuav

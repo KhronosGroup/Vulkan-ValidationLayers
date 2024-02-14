@@ -34,15 +34,14 @@ struct Type;
 class BindlessDescriptorPass : public Pass {
   public:
     BindlessDescriptorPass(Module& module) : Pass(module) {}
-    void Run() override;
 
   private:
+    bool AnalyzeInstruction(const Function& function, const Instruction& inst) override;
     uint32_t CreateFunctionCall(BasicBlock& block) override;
     void Reset() override;
 
     uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false);
     uint32_t GetLastByte(BasicBlock& block);
-    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();

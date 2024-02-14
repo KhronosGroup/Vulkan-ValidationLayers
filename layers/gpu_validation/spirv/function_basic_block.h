@@ -41,7 +41,7 @@ struct BasicBlock {
 
     void ToBinary(std::vector<uint32_t>& out);
 
-    const Instruction& GetLabel() { return *instructions_[0].get(); }
+    uint32_t GetLabelId();
 
     // Creates instruction and inserts it before the Instruction, updates poistion after new instruciton.
     // If no InstructionIt is provided, it will add it to the end of the block.

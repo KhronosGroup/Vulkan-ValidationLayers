@@ -48,6 +48,8 @@ BasicBlock::BasicBlock(Module& module, Function& function) : function_(function)
     CreateInstruction(spv::OpLabel, {new_label_id});
 }
 
+uint32_t BasicBlock::GetLabelId() { return (*(instructions_[0])).ResultId(); }
+
 void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it) {
     const bool add_to_end = inst_it == nullptr;
     InstructionIt last_inst = instructions_.end();

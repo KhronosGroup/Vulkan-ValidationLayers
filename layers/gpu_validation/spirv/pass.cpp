@@ -270,10 +270,10 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
     // All the remaining block instructions after targeted instruction
     BasicBlock& merge_block = **block_it;
 
-    const uint32_t original_label = original_block.GetLabel().ResultId();
-    const uint32_t valid_block_label = valid_block.GetLabel().ResultId();
-    const uint32_t invalid_block_label = invalid_block.GetLabel().ResultId();
-    const uint32_t merge_block_label = merge_block.GetLabel().ResultId();
+    const uint32_t original_label = original_block.GetLabelId();
+    const uint32_t valid_block_label = valid_block.GetLabelId();
+    const uint32_t invalid_block_label = invalid_block.GetLabelId();
+    const uint32_t merge_block_label = merge_block.GetLabelId();
 
     // need to preserve the control-flow of how things, like a OpPhi, are accessed from a predecessor block
     function->ReplaceAllUsesWith(original_label, merge_block_label);
@@ -337,6 +337,22 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
     Reset();
 
     return block_it;
+}
+
+void Pass::Run() {
+    for (const auto& function : module_.functions_) {
+        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+            for (auto inst_it = (*block_it)->instructions_.begin(); inst_it != (*block_it)->instructions_.end(); ++inst_it) {
+                if (AnalyzeInstruction(*(function.get()), *(inst_it->get()))) {
+                    block_it = InjectFunctionCheck(function.get(), block_it, inst_it);
+
+                    // will start searching again from newly split merge block
+                    block_it--;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 }  // namespace spirv
