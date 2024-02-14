@@ -21,6 +21,7 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
 
 static bool CanSemaphoreExportFromImported(VkPhysicalDevice physical_device, VkExternalSemaphoreHandleTypeFlagBits export_type,
                                            VkExternalSemaphoreHandleTypeFlagBits imported_type) {

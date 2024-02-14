@@ -512,7 +512,6 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08419");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08740");
 
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
 
@@ -530,7 +529,6 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-stage-08420");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pCode-08740");
 
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
 

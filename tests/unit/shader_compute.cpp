@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -503,15 +503,11 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
                OpReturn
                OpFunctionEnd
         )";
-
-        const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_ =
-                std::make_unique<VkShaderObj>(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-        };
         // Both missing enabling the extension and capability feature
-        CreateComputePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742"});
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
+        VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+        m_errorMonitor->VerifyFound();
     }
 
     // WorkgroupMemoryExplicitLayout8BitAccessKHR
@@ -544,14 +540,10 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
                OpFunctionEnd
         )";
 
-        const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_ =
-                std::make_unique<VkShaderObj>(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-        };
-        // Both missing enabling the extension and capability feature
-        CreateComputePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742"});
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
+        VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+        m_errorMonitor->VerifyFound();
     }
 
     // WorkgroupMemoryExplicitLayout16BitAccessKHR
@@ -592,14 +584,10 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
                OpFunctionEnd
         )";
 
-        const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_ =
-                std::make_unique<VkShaderObj>(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-        };
-        // Both missing enabling the extension and capability feature
-        CreateComputePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742"});
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08742");
+        VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+        m_errorMonitor->VerifyFound();
     }
 
     // workgroupMemoryExplicitLayoutScalarBlockLayout feature
@@ -668,12 +656,9 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
                OpFunctionEnd
         )";
 
-    auto cs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
-    if (cs) {
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                                 "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372");
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372");
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
@@ -701,13 +686,8 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
                OpReturn
                OpFunctionEnd
         )";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_UNIVERSAL_1_6, SPV_SOURCE_ASM);
-    pipe.InitState();
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-LocalSizeId-06434");
-    pipe.CreateComputePipeline();
+    VkShaderObj::CreateFromASM(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_UNIVERSAL_1_6);
     m_errorMonitor->VerifyFound();
 }
 

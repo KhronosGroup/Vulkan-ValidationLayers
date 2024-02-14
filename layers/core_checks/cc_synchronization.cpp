@@ -28,6 +28,7 @@
 #include "sync/sync_vuid_maps.h"
 #include "generated/enum_flag_bits.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
 
 using sync_utils::BufferBarrier;

@@ -32,10 +32,13 @@
 #include "utils/shader_utils.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/chassis_modification_state.h"
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
@@ -4695,8 +4698,9 @@ void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, co
     }
 
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
-    csm_state->module_state = std::make_shared<spirv::Module>(pCreateInfo->codeSize, pCreateInfo->pCode);
-    if (csm_state->module_state && csm_state->module_state->static_data_.has_group_decoration) {
+    csm_state->module_state =
+        std::make_shared<spirv::Module>(pCreateInfo->codeSize, pCreateInfo->pCode, &csm_state->stateless_data);
+    if (csm_state->module_state && csm_state->stateless_data.has_group_decoration) {
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
@@ -4709,8 +4713,8 @@ void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, co
             // Easier to just re-create the ShaderModule as StaticData uses itself when building itself up
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
             // raised an issue for a bug that would crash the layers that was around for many releases
-            csm_state->module_state =
-                std::make_shared<spirv::Module>(optimized_binary.size() * sizeof(uint32_t), optimized_binary.data());
+            csm_state->module_state = std::make_shared<spirv::Module>(optimized_binary.size() * sizeof(uint32_t),
+                                                                      optimized_binary.data(), &csm_state->stateless_data);
         }
     }
 }
@@ -4726,8 +4730,8 @@ void ValidationStateTracker::PreCallRecordCreateShadersEXT(VkDevice device, uint
         }
         // don't need to worry about GroupDecoration with VK_EXT_shader_object
         if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
-            csm_state->module_states[i] =
-                std::make_shared<spirv::Module>(pCreateInfos[i].codeSize, static_cast<const uint32_t *>(pCreateInfos[i].pCode));
+            csm_state->module_states[i] = std::make_shared<spirv::Module>(
+                pCreateInfos[i].codeSize, static_cast<const uint32_t *>(pCreateInfos[i].pCode), &csm_state->stateless_data[i]);
         }
     }
 }

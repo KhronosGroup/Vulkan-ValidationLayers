@@ -28,6 +28,7 @@
 #include <memory>
 
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+struct create_shader_object_api_state;
 
 namespace gpuav {
 class AccelerationStructureNV;

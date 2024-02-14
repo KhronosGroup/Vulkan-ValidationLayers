@@ -19,6 +19,8 @@
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/ray_tracing_state.h"
 
 template <typename T>
 bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding) const {

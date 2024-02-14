@@ -259,8 +259,9 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &module_state, VkShaderStageFlagBits stage,
-                                                      const spirv::EntryPoint &entrypoint, const Location &loc) const {
+bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                                      const spirv::StatelessData &stateless_data, const Location &loc) const {
+    const VkShaderStageFlagBits stage = entrypoint.stage;
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }

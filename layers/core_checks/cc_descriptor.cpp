@@ -21,6 +21,8 @@
 #include "core_validation.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/ray_tracing_state.h"
 #include "cc_buffer_address.h"
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/descriptor_validator.h"

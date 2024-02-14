@@ -22,7 +22,6 @@
 #include "generated/chassis.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/query_state.h"
-#include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/video_session_state.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "generated/state_tracker_helper.h"
@@ -65,94 +64,18 @@ struct SwapchainImage;
 class CommandPool;
 class CommandBuffer;
 class Pipeline;
+class DeviceMemory;
+class AccelerationStructureNV;
+class AccelerationStructureKHR;
+struct DedicatedBinding;
 struct ShaderModule;
 struct ShaderObject;
 }  // namespace vvl
 
-namespace spirv {
-struct Module;
-}  // namespace spirv
-
-struct PipelineStageState;
-
-// This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
-struct create_shader_module_api_state {
-    // We build a spirv::Module at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers
-    // if passed in the Dispatch). It is then passed to PostCallRecord to save in state tracking so it can be used at Pipeline
-    // creation time where the rest of the information is needed to do the remaining SPIR-V validation.
-    std::shared_ptr<spirv::Module> module_state;  // contains SPIR-V to validate
-    uint32_t unique_shader_id = 0;
-    bool valid_spirv = true;
-
-    // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
-    VkShaderModuleCreateInfo instrumented_create_info;
-    std::vector<uint32_t> instrumented_spirv;
-};
-
-// same idea as create_shader_module_api_state but for VkShaderEXT (VK_EXT_shader_object)
-struct create_shader_object_api_state {
-    std::vector<std::shared_ptr<spirv::Module>> module_states;  // contains SPIR-V to validate
-    std::vector<uint32_t> unique_shader_ids;
-    bool valid_spirv = true;
-
-    // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
-    VkShaderCreateInfoEXT* instrumented_create_info;
-    std::vector<std::vector<uint32_t>> instrumented_spirv;
-
-    std::vector<VkDescriptorSetLayout> new_layouts;
-
-    create_shader_object_api_state(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos) {
-        instrumented_create_info = const_cast<VkShaderCreateInfoEXT*>(pCreateInfos);
-        module_states.resize(createInfoCount);
-        unique_shader_ids.resize(createInfoCount);
-        instrumented_spirv.resize(createInfoCount);
-    }
-};
-
-// This structure is used to save data across the CreateGraphicsPipelines down-chain API call
-// CreateShaderModuleStates[i] = ith shader state
+// This is duplicated here because Best Practice pipeline is a derivative of vvl::Pipeline and we have a virtual function that needs
+// to know this. Idealy this will probably never need to change often, so likely won't cause issues
+struct create_shader_module_api_state;
 using CreateShaderModuleStates = std::array<create_shader_module_api_state, 32>;
-struct create_graphics_pipeline_api_state {
-    std::vector<safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
-    std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
-    const VkGraphicsPipelineCreateInfo* pCreateInfos;
-};
-
-// This structure is used to save data across the CreateComputePipelines down-chain API call
-struct create_compute_pipeline_api_state {
-    std::vector<safe_VkComputePipelineCreateInfo> modified_create_infos;
-    std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
-    const VkComputePipelineCreateInfo* pCreateInfos;
-};
-
-// This structure is used to save data across the CreateRayTracingPipelinesNV down-chain API call.
-struct create_ray_tracing_pipeline_api_state {
-    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
-    std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
-    const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
-};
-
-// This structure is used to save data across the CreateRayTracingPipelinesKHR down-chain API call.
-struct create_ray_tracing_pipeline_khr_api_state {
-    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
-    std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
-    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
-};
-
-// This structure is used modify parameters for the CreatePipelineLayout down-chain API call
-struct create_pipeline_layout_api_state {
-    std::vector<VkDescriptorSetLayout> new_layouts;
-    VkPipelineLayoutCreateInfo modified_create_info;
-};
-
-// This structure is used modify parameters for the CreateBuffer down-chain API call
-struct create_buffer_api_state {
-    VkBufferCreateInfo modified_create_info;
-};
 
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
     vl_concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;                 \
@@ -825,6 +748,7 @@ class ValidationStateTracker : public ValidationObject {
                                                                        std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                        std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                        CreateShaderModuleStates* csm_states) const;
+
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,

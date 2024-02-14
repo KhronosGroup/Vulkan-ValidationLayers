@@ -1757,6 +1757,7 @@ void main() {
 
 TEST_F(PositiveShaderSpirv, SpecConstantTextureArrayTessellation) {
     TEST_DESCRIPTION("Reproduces https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6370");
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     const char *source = R"glsl(
 #version 440

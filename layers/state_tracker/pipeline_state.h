@@ -40,6 +40,7 @@ struct ShaderModule;
 }  // namespace vvl
 
 class ValidationStateTracker;
+struct create_shader_module_api_state;
 
 struct StageCreateInfo {
     const vvl::Pipeline *pipeline;
@@ -189,6 +190,7 @@ class Pipeline : public StateObject {
     const bool uses_pipeline_robustness;
     bool ignore_color_attachments;
 
+    using CreateShaderModuleStates = std::array<create_shader_module_api_state, 32>;
     CreateShaderModuleStates *csm_states = nullptr;
 
     // Executable or legacy pipeline
