@@ -323,10 +323,9 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
     invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});
 
     // move all remaining instructions to the newly created merge block
-    while (inst_it != original_block.instructions_.end()) {
-        merge_block.instructions_.emplace_back(std::move(*inst_it));
-        inst_it = original_block.instructions_.erase(inst_it);
-    }
+    merge_block.instructions_.insert(merge_block.instructions_.end(), std::make_move_iterator(inst_it),
+                                     std::make_move_iterator(original_block.instructions_.end()));
+    original_block.instructions_.erase(inst_it, original_block.instructions_.end());
 
     // Go back to original Block and add function call and branch from the bool result
     const uint32_t function_result = CreateFunctionCall(original_block);
