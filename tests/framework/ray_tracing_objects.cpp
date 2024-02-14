@@ -559,8 +559,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
     }
 }
 
-void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer,
-                                                               bool use_ppGeometries /*= true*/) {
+void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
@@ -730,8 +729,7 @@ std::vector<VkAccelerationStructureBuildRangeInfoKHR> BuildGeometryInfoKHR::GetD
     return range_infos;
 }
 
-void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer,
-                                    std::vector<BuildGeometryInfoKHR> &infos) {
+void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR> &infos) {
     size_t total_geomertry_count = 0;
 
     for (auto &build_info : infos) {
@@ -1145,19 +1143,33 @@ void Pipeline::InitLibraryInfo() {
     vk_info_.pLibraryInterface = &rt_pipeline_interface_info_;
 }
 
-void Pipeline::AddBinding(VkDescriptorSetLayoutBinding binding) { bindings_.emplace_back(binding); }
-
-std::shared_ptr<vkt::as::BuildGeometryInfoKHR> Pipeline::AddTopLevelAccelStructBinding(
-    std::shared_ptr<vkt::as::BuildGeometryInfoKHR> top_level_accel_struct, uint32_t bind_point) {
+void Pipeline::AddTopLevelAccelStructBinding(std::shared_ptr<as::BuildGeometryInfoKHR> tlas, uint32_t bind_point) {
     VkDescriptorSetLayoutBinding accel_struct_binding = {};
     accel_struct_binding.binding = bind_point;
     accel_struct_binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     accel_struct_binding.descriptorCount = 1;
-    accel_struct_binding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-    AddBinding(accel_struct_binding);
+    accel_struct_binding.stageFlags =
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+    bindings_.emplace_back(accel_struct_binding);
 
-    top_level_accel_structs_.emplace_back(top_level_accel_struct);
-    return top_level_accel_struct;
+    tlas_vec_.emplace_back(tlas);
+}
+
+void Pipeline::SetUniformBufferBinding(std::shared_ptr<vkt::Buffer> uniform_buffer, uint32_t bind_point) {
+    if (uniform_buffer_) {
+        // For now, no need to handle multiple calls to this function
+        assert(false);
+    }
+
+    uniform_buffer_ = uniform_buffer;
+
+    VkDescriptorSetLayoutBinding uniform_buffer_binding{};
+    uniform_buffer_binding.binding = bind_point;
+    uniform_buffer_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uniform_buffer_binding.descriptorCount = 1;
+    uniform_buffer_binding.stageFlags =
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+    bindings_.emplace_back(uniform_buffer_binding);
 }
 
 void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
@@ -1168,6 +1180,11 @@ void Pipeline::SetRayGenShader(const char *glsl) {
 
 void Pipeline::AddMissShader(const char *glsl) {
     miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2));
+}
+
+void Pipeline::AddClosestHitShader(const char *glsl) {
+    closest_hit_shaders_.emplace_back(
+        std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2));
 }
 
 void Pipeline::AddLibrary(const Pipeline &library) {
@@ -1192,8 +1209,11 @@ void Pipeline::BuildPipeline() {
     size_t top_level_accel_struct_i = 0;
     for (const auto &binding : bindings_) {
         if (binding.descriptorType & VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-            desc_set_->WriteDescriptorAccelStruct(binding.binding, 1,
-                                                  &top_level_accel_structs_[top_level_accel_struct_i]->GetDstAS()->handle());
+            desc_set_->WriteDescriptorAccelStruct(binding.binding, 1, &tlas_vec_[top_level_accel_struct_i++]->GetDstAS()->handle());
+        } else if (binding.descriptorType & VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+            desc_set_->WriteDescriptorBufferInfo(binding.binding, *uniform_buffer_, 0, uniform_buffer_->create_info().size);
+        } else {
+            assert(false);
         }
     }
 
@@ -1227,26 +1247,41 @@ void Pipeline::BuildPipeline() {
 
         VkRayTracingShaderGroupCreateInfoKHR raygen_group_ci = vku::InitStructHelper();
         raygen_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        raygen_group_ci.generalShader = 0;
+        raygen_group_ci.generalShader = pipeline_stage_cis.size() - 1;
         raygen_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
         raygen_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
         raygen_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group_cis_.emplace_back(raygen_group_ci);
     }
     for (const auto [miss_shader_i, miss_shader] : vvl::enumerate(miss_shaders_)) {
-        VkPipelineShaderStageCreateInfo raygen_stage_ci = vku::InitStructHelper();
-        raygen_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
-        raygen_stage_ci.module = *miss_shader->get();
-        raygen_stage_ci.pName = "main";
-        pipeline_stage_cis.emplace_back(raygen_stage_ci);
+        VkPipelineShaderStageCreateInfo miss_stage_ci = vku::InitStructHelper();
+        miss_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
+        miss_stage_ci.module = *miss_shader->get();
+        miss_stage_ci.pName = "main";
+        pipeline_stage_cis.emplace_back(miss_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR miss_group_ci = vku::InitStructHelper();
         miss_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        miss_group_ci.generalShader = miss_shader_i + 1;
+        miss_group_ci.generalShader = pipeline_stage_cis.size() - 1;
         miss_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
         miss_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
         miss_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group_cis_.emplace_back(miss_group_ci);
+    }
+    for (const auto [closest_hit_i, closest_hit] : vvl::enumerate(closest_hit_shaders_)) {
+        VkPipelineShaderStageCreateInfo closest_hit_stage_ci = vku::InitStructHelper();
+        closest_hit_stage_ci.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        closest_hit_stage_ci.module = *closest_hit->get();
+        closest_hit_stage_ci.pName = "main";
+        pipeline_stage_cis.emplace_back(closest_hit_stage_ci);
+
+        VkRayTracingShaderGroupCreateInfoKHR closest_hit_group_ci = vku::InitStructHelper();
+        closest_hit_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+        closest_hit_group_ci.generalShader = VK_SHADER_UNUSED_KHR;
+        closest_hit_group_ci.closestHitShader = pipeline_stage_cis.size() - 1;
+        closest_hit_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
+        closest_hit_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
+        shader_group_cis_.emplace_back(closest_hit_group_ci);
     }
 
     // Dynamic states
@@ -1269,18 +1304,57 @@ void Pipeline::BuildPipeline() {
 void Pipeline::BuildSbt() {
     std::vector<uint8_t> sbt_host_storage = GetRayTracingShaderGroupHandles();
 
-    // Allocate buffer to store ray gen SBT, and fill it with sbt_host_storage
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+    test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
+    
+    // Allocate buffer to store SBT, and fill it with sbt_host_storage
     VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
-    sbt_buffer_info.size = Align<VkDeviceSize>(sbt_host_storage.size(), 4096);
+    sbt_buffer_info.size = Align<VkDeviceSize>(sbt_host_storage.size() + 2 * rt_pipeline_props.shaderGroupBaseAlignment, 4096);
     sbt_buffer_info.usage =
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VkMemoryPropertyFlags sbt_buffer_mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    sbt_buffer.init(*device_, sbt_buffer_info, sbt_buffer_mem_props, &alloc_flags);
-    auto sbt_buffer_ptr = static_cast<uint8_t *>(sbt_buffer.memory().map());
-    std::memcpy(sbt_buffer_ptr, sbt_host_storage.data(), sbt_host_storage.size());
-    sbt_buffer.memory().unmap();
+    sbt_buffer_.init(*device_, sbt_buffer_info, sbt_buffer_mem_props, &alloc_flags);
+
+    void * sbt_buffer_offseted_ptr = sbt_buffer_.memory().map();
+    size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
+    uint8_t* sbt_host_storage_offseted_ptr = sbt_host_storage.data();
+
+    const uint32_t handle_size_aligned =
+        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
+
+    // Fill SBT with ray gen shader
+    void *ray_gen_sbt = sbt_buffer_offseted_ptr;
+    std::memcpy(ray_gen_sbt, sbt_host_storage_offseted_ptr, handle_size_aligned);
+    sbt_buffer_offseted_ptr = (uint8_t *)sbt_buffer_offseted_ptr + handle_size_aligned;
+    sbt_buffer_space_left -= handle_size_aligned;
+    sbt_host_storage_offseted_ptr += handle_size_aligned;
+
+    // Fill SBT with miss shaders
+    if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, miss_shaders_.size() * handle_size_aligned, sbt_buffer_offseted_ptr,
+                    sbt_buffer_space_left)) {
+        assert(false);
+    }
+    void* miss_shaders_sbt = sbt_buffer_offseted_ptr;
+    std::memcpy(miss_shaders_sbt, sbt_host_storage.data() + handle_size_aligned, miss_shaders_.size() * handle_size_aligned);
+    sbt_buffer_offseted_ptr = (uint8_t*)sbt_buffer_offseted_ptr + miss_shaders_.size() * handle_size_aligned;
+    sbt_buffer_space_left -= miss_shaders_.size() * handle_size_aligned;
+    sbt_host_storage_offseted_ptr += miss_shaders_.size() * handle_size_aligned;
+
+    // Fill SBT with closest hit shaders
+    if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, closest_hit_shaders_.size() * handle_size_aligned, sbt_buffer_offseted_ptr,
+                    sbt_buffer_space_left)) {
+        assert(false);
+    }
+
+    void* closest_hit_shaders_sbt = sbt_buffer_offseted_ptr;
+    std::memcpy(closest_hit_shaders_sbt, sbt_host_storage_offseted_ptr, closest_hit_shaders_.size() * handle_size_aligned);
+    sbt_buffer_offseted_ptr = (uint8_t*)sbt_buffer_offseted_ptr + closest_hit_shaders_.size() * handle_size_aligned;
+    sbt_buffer_space_left -= closest_hit_shaders_.size() * handle_size_aligned;
+    sbt_host_storage_offseted_ptr += closest_hit_shaders_.size() * handle_size_aligned;
+
+    sbt_buffer_.memory().unmap();
 }
 
 vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt() {
@@ -1288,25 +1362,38 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt() {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
     vk::GetPhysicalDeviceProperties2(device_->phy(), &props2);
 
-    const VkDeviceAddress ray_gen_sbt_address = sbt_buffer.address();
     const uint32_t handle_size_aligned =
         Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
 
+    VkDeviceAddress sbt_offseted_address = sbt_buffer_.address();
+
     VkStridedDeviceAddressRegionKHR ray_gen_sbt{};
-    ray_gen_sbt.deviceAddress = ray_gen_sbt_address;
+    ray_gen_sbt.deviceAddress = sbt_offseted_address;
     ray_gen_sbt.stride = handle_size_aligned;
     ray_gen_sbt.size = handle_size_aligned;
+    sbt_offseted_address += ray_gen_sbt.size;
 
     VkStridedDeviceAddressRegionKHR miss_sbt{};
     if (!miss_shaders_.empty()) {
-        miss_sbt.deviceAddress = sbt_buffer.address() + handle_size_aligned;
+        sbt_offseted_address = Align<VkDeviceAddress>(sbt_offseted_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        miss_sbt.deviceAddress = sbt_offseted_address;
         miss_sbt.stride = handle_size_aligned;
         miss_sbt.size = miss_shaders_.size() * handle_size_aligned;
+        sbt_offseted_address += miss_sbt.size;
+    }
+
+    VkStridedDeviceAddressRegionKHR closest_hit_sbt{};
+    if (!closest_hit_shaders_.empty()) {
+        sbt_offseted_address = Align<VkDeviceAddress>(sbt_offseted_address, rt_pipeline_props.shaderGroupBaseAlignment);        
+        closest_hit_sbt.deviceAddress = sbt_offseted_address;
+        closest_hit_sbt.stride = handle_size_aligned;
+        closest_hit_sbt.size = closest_hit_shaders_.size() * handle_size_aligned;
+        sbt_offseted_address += closest_hit_sbt.size;
     }
 
     VkStridedDeviceAddressRegionKHR empty_sbt{};
 
-    TraceRaysSbt out{ray_gen_sbt, miss_sbt, empty_sbt, empty_sbt};
+    TraceRaysSbt out{ray_gen_sbt, miss_sbt, closest_hit_sbt, empty_sbt};
     return out;
 }
 
@@ -1314,6 +1401,7 @@ uint32_t Pipeline::GetShaderGroupsCount() {
     uint32_t shader_groups_count = 0;
     if (ray_gen_) ++shader_groups_count;
     shader_groups_count += size32(miss_shaders_);
+    shader_groups_count += size32(closest_hit_shaders_);
     return shader_groups_count;
 }
 
@@ -1321,13 +1409,18 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
 
-    // Get shader group handles to fill ray gen shader binding table (SBT)
-    const uint32_t handle_size_aligned =
-        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
+    // Get shader group handles to fill shader binding tables (SBT)
+    // Consider that handles are stored aligned to shaderGroupHandleSize
+    const uint32_t handle_size_aligned = Align(
+        rt_pipeline_props.shaderGroupHandleSize,
+        rt_pipeline_props.shaderGroupHandleAlignment);
     const uint32_t sbt_size = shader_group_cis_.size() * handle_size_aligned;
     std::vector<uint8_t> sbt_host_storage(sbt_size);
 
-    /*VkResult result =*/vk::GetRayTracingShaderGroupHandlesKHR(*device_, Handle(), 0, 1, sbt_size, sbt_host_storage.data());
+    const VkResult result = vk::GetRayTracingShaderGroupHandlesKHR(*device_, Handle(), 0, 1, sbt_size, sbt_host_storage.data());
+    if (IsValueIn(result, {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY})) {
+        assert(false);
+    }
     return sbt_host_storage;
 }
 
@@ -1341,8 +1434,11 @@ std::vector<uint8_t> Pipeline::GetRayTracingCaptureReplayShaderGroupHandles() {
     const uint32_t sbt_size = shader_group_cis_.size() * handle_size_aligned;
     std::vector<uint8_t> sbt_host_storage(sbt_size);
 
-    /*VkResult result =*/vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*device_, Handle(), 0, 1, sbt_size,
-                                                                             sbt_host_storage.data());
+    const VkResult result =
+        vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*device_, Handle(), 0, 1, sbt_size, sbt_host_storage.data());
+    if (IsValueIn(result, {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY})) {
+        assert(false);
+    }
     return sbt_host_storage;
 }
 

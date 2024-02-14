@@ -298,12 +298,12 @@ class Pipeline {
     // --------------
     void AddCreateInfoFlags(VkPipelineCreateFlags flags);
     void InitLibraryInfo();
-    void AddBinding(VkDescriptorSetLayoutBinding binding);
-    std::shared_ptr<as::BuildGeometryInfoKHR> AddTopLevelAccelStructBinding(
-        std::shared_ptr<vkt::as::BuildGeometryInfoKHR> top_level_accel_struct, uint32_t bind_point);
+    void AddTopLevelAccelStructBinding(std::shared_ptr<as::BuildGeometryInfoKHR> tlas, uint32_t bind_point);
+    void SetUniformBufferBinding(std::shared_ptr<vkt::Buffer> uniform_buffer, uint32_t bind_point);
     void SetPushConstantRangeSize(uint32_t byte_size);
     void SetRayGenShader(const char* glsl);
     void AddMissShader(const char* glsl);
+    void AddClosestHitShader(const char* glsl);
     void AddLibrary(const Pipeline& library);
     void AddDynamicState(VkDynamicState dynamic_state);
 
@@ -328,16 +328,18 @@ class Pipeline {
     vkt::Device* device_;
     VkRayTracingPipelineCreateInfoKHR vk_info_{};
     uint32_t push_constant_range_size_ = 0;
-    std::vector<std::shared_ptr<as::BuildGeometryInfoKHR>> top_level_accel_structs_;
-    std::vector<VkDescriptorSetLayoutBinding> bindings_;
+    std::vector<std::shared_ptr<as::BuildGeometryInfoKHR>> tlas_vec_{};
+    std::shared_ptr<vkt::Buffer> uniform_buffer_{};
+    std::vector<VkDescriptorSetLayoutBinding> bindings_{};
     std::unique_ptr<OneOffDescriptorSet> desc_set_{};
     vkt::PipelineLayout pipeline_layout_{};
     std::vector<VkDynamicState> dynamic_states{};
     std::unique_ptr<VkShaderObj> ray_gen_{};
     std::vector<std::unique_ptr<VkShaderObj>> miss_shaders_{};
+    std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_ {};
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
     vkt::Pipeline rt_pipeline_{};
-    vkt::Buffer sbt_buffer{};
+    vkt::Buffer sbt_buffer_{};
     VkRayTracingPipelineInterfaceCreateInfoKHR rt_pipeline_interface_info_{};
     VkPipelineLibraryCreateInfoKHR pipeline_lib_info_{};
     std::vector<VkPipeline> libraries_{};
