@@ -1624,7 +1624,9 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirv) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, PhysicalStorageBufferGlslang3) {
+// TODO - Disabled until https://github.com/KhronosGroup/glslang/issues/3505
+// is resolved in the WG.
+TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferGlslang3) {
     TEST_DESCRIPTION("Taken from glslang spv.bufferhandle3.frag test");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
@@ -1666,7 +1668,9 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBufferGlslang3) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, PhysicalStorageBuffer) {
+// TODO - Disabled until https://github.com/KhronosGroup/glslang/issues/3505
+// is resolved in the WG.
+TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
     TEST_DESCRIPTION("Regression shaders from https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/5349");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
