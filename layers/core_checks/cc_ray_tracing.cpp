@@ -247,11 +247,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
     auto buffer_check = [this](uint32_t gi, const VkDeviceOrHostAddressConstKHR address, const Location &geom_loc) -> bool {
         const auto buffer_states = GetBuffersByAddress(address.deviceAddress);
         const bool no_valid_buffer_found =
-            !buffer_states.empty() &&
-            std::none_of(buffer_states.begin(), buffer_states.end(),
-                         [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
-                             return buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-                         });
+            !buffer_states.empty() && std::none_of(buffer_states.begin(), buffer_states.end(), [](const vvl::Buffer *buffer_state) {
+                return buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            });
         if (no_valid_buffer_found) {
             LogObjectList objlist(device);
             for (const auto &buffer_state : buffer_states) {
@@ -289,10 +287,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
                                      geom_data.geometry.triangles.vertexData.deviceAddress);
                 } else {
-                    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                     BufferAddressValidation<1> buffer_address_validator = {
                         {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03805",
-                           [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                           [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                                return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
                            },
                            []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
@@ -312,10 +309,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          p_geom_geom_triangles_loc.dot(Field::indexType).Fields().c_str(),
                                          string_VkIndexType(geom_data.geometry.triangles.indexType));
                     } else {
-                        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                         BufferAddressValidation<1> buffer_address_validator = {
                             {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03807",
-                               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                               [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                                    return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
                                                                                                   out_error_msg);
                                },
@@ -399,10 +395,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
                                          geom_data.geometry.triangles.transformData.deviceAddress);
                     } else {
-                        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                         BufferAddressValidation<1> buffer_address_validator = {
                             {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809",
-                               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                               [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                                    return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state,
                                                                                                   out_error_msg);
                                },
@@ -429,10 +424,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      "(%" PRIu64 ") is not an address belonging to an existing buffer.",
                                      geom_data.geometry.instances.data.deviceAddress);
                 } else {
-                    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                     BufferAddressValidation<1> buffer_address_validator = {
                         {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814",
-                           [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                           [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                                return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
                            },
                            []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
@@ -455,10 +449,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      "(0x%" PRIx64 ") is not an address belonging to an existing buffer.",
                                      geom_data.geometry.aabbs.data.deviceAddress);
                 } else {
-                    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
                     BufferAddressValidation<1> buffer_address_validator = {
                         {{{"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03812",
-                           [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                           [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                                return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
                            },
                            []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
@@ -501,10 +494,9 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                                      ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671"
                                                      : "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672";
 
-        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<3> buffer_address_validator = {{{
             {"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803",
-             [this, info_loc, cmd_buffer](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [this, info_loc, cmd_buffer](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  if (!out_error_msg) {
                      return !buffer_state->sparse && buffer_state->IsMemoryBound();
                  } else {
@@ -515,7 +507,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
              }},
 
             {"VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
-             [](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  if (!(buffer_state->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer usage is " + string_VkBufferUsageFlags2KHR(buffer_state->usage) + '\n';
@@ -527,7 +519,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
              []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag:"; }},
 
             {scratch_address_range_vuid,
-             [scratch_address_range](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [scratch_address_range](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  const sparse_container::range<VkDeviceSize> buffer_address_range = buffer_state->DeviceAddressRange();
 
                  if (!buffer_address_range.includes(scratch_address_range)) {
@@ -1496,10 +1488,9 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
                          error_obj.location.dot(Field::pInfo).dot(Field::dst).dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") is not a valid buffer address.", dst_address);
     } else {
-        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<1> buffer_address_validator = {
             {{{"VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03741",
-               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+               [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                    return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
                },
                []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
@@ -1554,10 +1545,9 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
                          error_obj.location.dot(Field::pInfo).dot(Field::src).dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") is not a valid buffer address.", src_address);
     } else {
-        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<1> buffer_address_validator = {
             {{{"VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-03744",
-               [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+               [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                    return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
                },
                []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }}}}};
@@ -1826,16 +1816,16 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
     } else {
         const sparse_container::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
                                                                     binding_table.deviceAddress + binding_table.size - 1);
-        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+
         BufferAddressValidation<4> buffer_address_validator = {{{
             {vuid_single_device_memory,
-             [this](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [this](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
              },
              []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
 
             {vuid_binding_table_flag,
-             [](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  if (!(static_cast<uint32_t>(buffer_state->usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
@@ -1850,7 +1840,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              }},
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04631",
-             [&requested_range](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [&requested_range](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  const auto buffer_address_range = buffer_state->DeviceAddressRange();
                  if (!buffer_address_range.includes(requested_range)) {
                      if (out_error_msg) {
@@ -1868,7 +1858,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              }},
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
-             [&binding_table](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+             [&binding_table](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                  if (binding_table.stride > buffer_state->createInfo.size) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer size is " + std::to_string(buffer_state->createInfo.size);

@@ -64,30 +64,26 @@ template <size_t N = 1>
 class BufferAddressValidation {
   public:
     // Return true if and only if VU is verified
-    using ValidationFunction = std::function<bool(const ValidationStateTracker::BUFFER_STATE_PTR&, std::string* out_error_msg)>;
+    using ValidationFunction = std::function<bool(vvl::Buffer* const, std::string* out_error_msg)>;
     using ErrorMsgHeaderSuffixFunction = std::function<std::string()>;
 
     struct VuidAndValidation {
         std::string_view vuid{};
-        ValidationFunction validation_func = [](const ValidationStateTracker::BUFFER_STATE_PTR&, std::string* out_error_msg) {
-            return true;
-        };
+        ValidationFunction validation_func = [](vvl::Buffer* const, std::string* out_error_msg) { return true; };
         ErrorMsgHeaderSuffixFunction error_msg_header_suffix_func = []() { return "\n"; };  // text appended to error message header
     };
 
     // Look for a buffer that satisfies all VUIDs
-    [[nodiscard]] bool HasValidBuffer(vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept;
+    [[nodiscard]] bool HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept;
     // Look for a buffer that does not satisfy one of the VUIDs
-    [[nodiscard]] bool HasInvalidBuffer(vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept;
+    [[nodiscard]] bool HasInvalidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept;
     // For every vuid, build an error mentioning every buffer from buffer_list that violates it, then log this error
     // using details provided by the other parameters.
-    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker,
-                                         vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
+    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
                                          const Location& device_address_loc, const LogObjectList& objlist,
                                          VkDeviceAddress device_address) const noexcept;
 
-    [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker,
-                                                vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
+    [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
                                                 const Location& device_address_loc, const LogObjectList& objlist,
                                                 VkDeviceAddress device_address) const noexcept {
         bool skip = false;
@@ -116,8 +112,7 @@ class BufferAddressValidation {
         return false;
     }
 
-    static bool ValidateMemoryBoundToBuffer(const CoreChecks& validator,
-                                            const ValidationStateTracker::BUFFER_STATE_PTR& buffer_state,
+    static bool ValidateMemoryBoundToBuffer(const CoreChecks& validator, vvl::Buffer const* const buffer_state,
                                             std::string* out_error_msg) {
         if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
             if (out_error_msg) {
@@ -150,8 +145,7 @@ class BufferAddressValidation {
 };
 
 template <size_t N>
-bool BufferAddressValidation<N>::HasValidBuffer(
-    vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept {
+bool BufferAddressValidation<N>::HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept {
     for (const auto& buffer : buffer_list) {
         assert(buffer);
 
@@ -169,8 +163,7 @@ bool BufferAddressValidation<N>::HasValidBuffer(
 }
 
 template <size_t N>
-bool BufferAddressValidation<N>::HasInvalidBuffer(
-    vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept {
+bool BufferAddressValidation<N>::HasInvalidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept {
     for (const auto& buffer : buffer_list) {
         assert(buffer);
 
@@ -185,8 +178,7 @@ bool BufferAddressValidation<N>::HasInvalidBuffer(
 }
 
 template <size_t N>
-bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
-                                                   vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
+bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
                                                    const Location& device_address_loc, const LogObjectList& objlist,
                                                    VkDeviceAddress device_address) const noexcept {
     std::array<Error, N> errors;
