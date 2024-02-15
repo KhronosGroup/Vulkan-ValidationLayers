@@ -295,6 +295,8 @@ class NegativeGpuAVOOB : public GpuAVOOBTest {
 };
 class PositiveGpuAVOOB : public GpuAVOOBTest {};
 
+class PositiveGpuAVRayQuery : public PositiveGpuAV {};
+
 class NegativeDebugPrintf : public VkLayerTest {
   public:
     void InitDebugPrintfFramework();

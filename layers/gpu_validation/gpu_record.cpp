@@ -533,7 +533,9 @@ void gpuav::Validator::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCo
             PreRecordCommandBuffer(submit->pCommandBuffers[i]);
         }
     }
-    UpdateBDABuffer(app_buffer_device_addresses);
+    if (buffer_device_address_enabled) {
+        UpdateBDABuffer(app_buffer_device_addresses);
+    }
 }
 
 void gpuav::Validator::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
@@ -550,7 +552,9 @@ void gpuav::Validator::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitC
             PreRecordCommandBuffer(submit->pCommandBufferInfos[i].commandBuffer);
         }
     }
-    UpdateBDABuffer(app_buffer_device_addresses);
+    if (buffer_device_address_enabled) {
+        UpdateBDABuffer(app_buffer_device_addresses);
+    }
 }
 
 void gpuav::Validator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
