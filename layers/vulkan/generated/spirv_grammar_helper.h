@@ -290,6 +290,10 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpImageBoxFilterQCOM:
         case spv::OpImageBlockMatchSSDQCOM:
         case spv::OpImageBlockMatchSADQCOM:
+        case spv::OpImageBlockMatchWindowSSDQCOM:
+        case spv::OpImageBlockMatchWindowSADQCOM:
+        case spv::OpImageBlockMatchGatherSSDQCOM:
+        case spv::OpImageBlockMatchGatherSADQCOM:
         case spv::OpGroupIAddNonUniformAMD:
         case spv::OpGroupFAddNonUniformAMD:
         case spv::OpGroupFMinNonUniformAMD:
@@ -683,6 +687,10 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpImageBoxFilterQCOM:
         case spv::OpImageBlockMatchSSDQCOM:
         case spv::OpImageBlockMatchSADQCOM:
+        case spv::OpImageBlockMatchWindowSSDQCOM:
+        case spv::OpImageBlockMatchWindowSADQCOM:
+        case spv::OpImageBlockMatchGatherSSDQCOM:
+        case spv::OpImageBlockMatchGatherSADQCOM:
         case spv::OpGroupIAddNonUniformAMD:
         case spv::OpGroupFAddNonUniformAMD:
         case spv::OpGroupFMinNonUniformAMD:
@@ -923,6 +931,8 @@ static constexpr bool ImageGatherOperation(uint32_t opcode) {
         case spv::OpImageDrefGather:
         case spv::OpImageSparseGather:
         case spv::OpImageSparseDrefGather:
+        case spv::OpImageBlockMatchGatherSSDQCOM:
+        case spv::OpImageBlockMatchGatherSADQCOM:
             return true;
         default:
             return false;
