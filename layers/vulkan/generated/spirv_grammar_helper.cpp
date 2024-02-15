@@ -673,6 +673,14 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpImageBlockMatchSSDQCOM";
         case spv::OpImageBlockMatchSADQCOM:
             return "OpImageBlockMatchSADQCOM";
+        case spv::OpImageBlockMatchWindowSSDQCOM:
+            return "OpImageBlockMatchWindowSSDQCOM";
+        case spv::OpImageBlockMatchWindowSADQCOM:
+            return "OpImageBlockMatchWindowSADQCOM";
+        case spv::OpImageBlockMatchGatherSSDQCOM:
+            return "OpImageBlockMatchGatherSSDQCOM";
+        case spv::OpImageBlockMatchGatherSADQCOM:
+            return "OpImageBlockMatchGatherSADQCOM";
         case spv::OpGroupIAddNonUniformAMD:
             return "OpGroupIAddNonUniformAMD";
         case spv::OpGroupFAddNonUniformAMD:
@@ -1405,6 +1413,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "WeightTextureQCOM";
         case spv::DecorationBlockMatchTextureQCOM:
             return "BlockMatchTextureQCOM";
+        case spv::DecorationBlockMatchSamplerQCOM:
+            return "BlockMatchSamplerQCOM";
         case spv::DecorationExplicitInterpAMD:
             return "ExplicitInterpAMD";
         case spv::DecorationNodeSharesPayloadLimitsWithAMDX:
@@ -2205,6 +2215,10 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpImageBoxFilterQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpImageBlockMatchWindowSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpImageBlockMatchWindowSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpImageBlockMatchGatherSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpImageBlockMatchGatherSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupIAddNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFAddNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMinNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
