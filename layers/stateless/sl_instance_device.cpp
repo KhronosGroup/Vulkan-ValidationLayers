@@ -17,6 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
+#include "generated/layer_chassis_dispatch.h"
 
 template <typename ExtensionState>
 bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,

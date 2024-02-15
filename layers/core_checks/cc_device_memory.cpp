@@ -23,6 +23,7 @@
 #include "generated/chassis.h"
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
+#include "state_tracker/image_state.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,

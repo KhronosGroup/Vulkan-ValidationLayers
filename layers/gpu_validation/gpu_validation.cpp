@@ -23,6 +23,7 @@
 #include "utils/cast_utils.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
+#include "gpu_validation/gpu_subclasses.h"
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"

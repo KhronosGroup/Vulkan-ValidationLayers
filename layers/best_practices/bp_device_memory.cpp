@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
+#include "best_practices/bp_state.h"
 
 void BestPractices::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
@@ -297,4 +298,11 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
     }
 
     return skip;
+}
+
+std::shared_ptr<vvl::DeviceMemory> BestPractices::CreateDeviceMemoryState(
+    VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address, const VkMemoryType& memory_type,
+    const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count) {
+    return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
+        mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
 }

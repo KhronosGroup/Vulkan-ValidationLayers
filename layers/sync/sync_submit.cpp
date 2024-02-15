@@ -17,9 +17,12 @@
 
 #include "sync/sync_submit.h"
 #include "sync/sync_validation.h"
+#include "sync/sync_image.h"
 
 AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag acq_tag)
     : image(presented.image), generator(presented.range_gen), present_tag(presented.tag), acquire_tag(acq_tag) {}
+
+bool AcquiredImage::Invalid() const { return vvl::StateObject::Invalid(image); }
 
 // This is a const method, force the returned value to be const
 std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::GetPrev(VkSemaphore sem) const {
@@ -949,6 +952,8 @@ PresentedImage::PresentedImage(std::shared_ptr<const syncval_state::Swapchain> s
     tag = kInvalidTag;
     SetImage(at_index);
 }
+
+bool PresentedImage::Invalid() const { return vvl::StateObject::Invalid(image); }
 
 // Export uses move semantics...
 void PresentedImage::ExportToSwapchain(SyncValidator&) {  // Include this argument to prove the const cast is safe

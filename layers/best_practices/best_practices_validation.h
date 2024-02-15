@@ -21,7 +21,6 @@
 
 #include "generated/chassis.h"
 #include "state_tracker/state_tracker.h"
-#include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include <string>
 #include <chrono>
@@ -161,201 +160,19 @@ enum IMAGE_SUBRESOURCE_USAGE_BP {
     COPY_WRITE
 };
 
-class BestPractices;
+enum class ZcullDirection {
+    Unknown,
+    Less,
+    Greater,
+};
 
 namespace bp_state {
-class Image : public vvl::Image {
-  public:
-    Image(const ValidationStateTracker* dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo,
-          VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, features) {
-        SetupUsages();
-    }
-
-    Image(const ValidationStateTracker* dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
-          uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, swapchain, swapchain_index, features) {
-        SetupUsages();
-    }
-
-    struct Usage {
-        IMAGE_SUBRESOURCE_USAGE_BP type;
-        uint32_t queue_family_index;
-    };
-
-    Usage UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family) {
-        auto last_usage = usages_[array_layer][mip_level];
-        usages_[array_layer][mip_level].type = usage;
-        usages_[array_layer][mip_level].queue_family_index = queue_family;
-        return last_usage;
-    }
-
-    Usage GetUsage(uint32_t array_layer, uint32_t mip_level) const { return usages_[array_layer][mip_level]; }
-
-    IMAGE_SUBRESOURCE_USAGE_BP GetUsageType(uint32_t array_layer, uint32_t mip_level) const {
-        return GetUsage(array_layer, mip_level).type;
-    }
-
-    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) const {
-        return GetUsage(array_layer, mip_level).queue_family_index;
-    }
-
-  private:
-    void SetupUsages() {
-        usages_.resize(createInfo.arrayLayers);
-        for (auto& mip_vec : usages_) {
-            mip_vec.resize(createInfo.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
-        }
-    }
-    // A 2d vector for all the array layers and mip levels.
-    // This does not split usages per aspect.
-    // Aspects are generally read and written together,
-    // and tracking them independently could be misleading.
-    // second/uint32_t is last queue family usage
-    std::vector<std::vector<Usage>> usages_;
-};
-
-class PhysicalDevice : public vvl::PhysicalDevice {
-  public:
-    PhysicalDevice(VkPhysicalDevice phys_dev) : vvl::PhysicalDevice(phys_dev) {}
-
-    // Track the call state and array sizes for various query functions
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2State = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2KHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceLayerPropertiesState = UNCALLED;      // Currently unused
-    CALL_STATE vkGetPhysicalDeviceExtensionPropertiesState = UNCALLED;  // Currently unused
-    CALL_STATE vkGetPhysicalDeviceFeaturesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfaceFormatsKHRState = UNCALLED;
-    uint32_t surface_formats_count = 0;
-    CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
-};
-
-class Swapchain : public vvl::Swapchain {
-  public:
-    Swapchain(ValidationStateTracker* dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR swapchain)
-        : vvl::Swapchain(dev_data, pCreateInfo, swapchain) {}
-
-    CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
-};
-
-class DeviceMemory : public vvl::DeviceMemory {
-  public:
-    DeviceMemory(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address,
-                 const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
-                 std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
-        : vvl::DeviceMemory(mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
-                            physical_device_count) {}
-
-    std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
-};
-
-struct AttachmentInfo {
-    uint32_t framebufferAttachment;
-    VkImageAspectFlags aspects;
-};
-
-// used to track state regarding render pass heuristic checks
-struct RenderPassState {
-    bool depthAttachment = false;
-    bool colorAttachment = false;
-    bool depthOnly = false;
-    bool depthEqualComparison = false;
-    uint32_t numDrawCallsDepthOnly = 0;
-    uint32_t numDrawCallsDepthEqualCompare = 0;
-
-    // For secondaries, we need to keep this around for execute commands.
-    struct ClearInfo {
-        uint32_t framebufferAttachment;
-        uint32_t colorAttachment;
-        VkImageAspectFlags aspects;
-        std::vector<VkClearRect> rects;
-    };
-
-    std::vector<ClearInfo> earlyClearAttachments;
-    std::vector<AttachmentInfo> touchesAttachments;
-    std::vector<AttachmentInfo> nextDrawTouchesAttachments;
-    bool drawTouchAttachments = false;
-};
-
-struct CommandBufferStateNV {
-    struct TessGeometryMesh {
-        enum class State {
-            Unknown,
-            Disabled,
-            Enabled,
-        };
-
-        uint32_t num_switches = 0;
-        State state = State::Unknown;
-        bool threshold_signaled = false;
-    };
-    enum class ZcullDirection {
-        Unknown,
-        Less,
-        Greater,
-    };
-    struct ZcullResourceState {
-        ZcullDirection direction = ZcullDirection::Unknown;
-        uint64_t num_less_draws = 0;
-        uint64_t num_greater_draws = 0;
-    };
-    struct ZcullTree {
-        std::vector<ZcullResourceState> states;
-        uint32_t mip_levels = 0;
-        uint32_t array_layers = 0;
-
-        const ZcullResourceState& GetState(uint32_t layer, uint32_t level) const { return states[layer * mip_levels + level]; }
-
-        ZcullResourceState& GetState(uint32_t layer, uint32_t level) { return states[layer * mip_levels + level]; }
-    };
-    struct ZcullScope {
-        VkImage image = VK_NULL_HANDLE;
-        VkImageSubresourceRange range{};
-        ZcullTree* tree = nullptr;
-    };
-
-    TessGeometryMesh tess_geometry_mesh;
-
-    std::unordered_map<VkImage, ZcullTree> zcull_per_image;
-    ZcullScope zcull_scope;
-    ZcullDirection zcull_direction = ZcullDirection::Unknown;
-
-    VkCompareOp depth_compare_op = VK_COMPARE_OP_NEVER;
-    bool depth_test_enable = false;
-};
-
-class CommandBuffer : public vvl::CommandBuffer {
-  public:
-    CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                  const vvl::CommandPool* pool);
-
-    RenderPassState render_pass_state;
-    CommandBufferStateNV nv;
-    uint64_t num_submits = 0;
-
-    std::vector<uint8_t> push_constant_data_set;
-    void UnbindResources() { push_constant_data_set.clear(); }
-};
-
-class DescriptorPool : public vvl::DescriptorPool {
-  public:
-    DescriptorPool(ValidationStateTracker* dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo* pCreateInfo)
-        : vvl::DescriptorPool(dev, pool, pCreateInfo) {}
-
-    uint32_t freed_count{0};
-};
-
-class Pipeline : public vvl::Pipeline {
-  public:
-    Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
-             std::shared_ptr<const vvl::PipelineLayout>&& layout, CreateShaderModuleStates* csm_states);
-
-    const std::vector<AttachmentInfo> access_framebuffer_attachments;
-};
+class PhysicalDevice;
+class CommandBuffer;
+class Swapchain;
+class Image;
+class DescriptorPool;
+class Pipeline;
 }  // namespace bp_state
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkPhysicalDevice, bp_state::PhysicalDevice, vvl::PhysicalDevice)
@@ -1002,36 +819,24 @@ class BestPractices : public ValidationStateTracker {
                                                              const vvl::CommandPool* pool) final;
 
     std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
-                                                         VkSwapchainKHR swapchain) final {
-        return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<bp_state::Swapchain>(this, create_info, swapchain));
-    }
+                                                         VkSwapchainKHR swapchain) final;
 
-    std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) final {
-        return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(phys_dev));
-    }
+    std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) final;
+
     std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
-                                                 VkFormatFeatureFlags2KHR features) final {
-        return std::make_shared<bp_state::Image>(this, img, pCreateInfo, features);
-    }
+                                                 VkFormatFeatureFlags2KHR features) final;
 
     std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
-                                                 uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final {
-        return std::make_shared<bp_state::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
-    }
+                                                 uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final;
 
     std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool pool,
-                                                                     const VkDescriptorPoolCreateInfo* pCreateInfo) final {
-        return std::static_pointer_cast<vvl::DescriptorPool>(std::make_shared<bp_state::DescriptorPool>(this, pool, pCreateInfo));
-    }
+                                                                   const VkDescriptorPoolCreateInfo* pCreateInfo) final;
 
     std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,
                                                                uint64_t fake_address, const VkMemoryType& memory_type,
                                                                const VkMemoryHeap& memory_heap,
                                                                std::optional<vvl::DedicatedBinding>&& dedicated_binding,
-                                                               uint32_t physical_device_count) final {
-        return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
-            mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
-    }
+                                                               uint32_t physical_device_count) final;
 
     std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
                                                                std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
@@ -1068,10 +873,8 @@ class BestPractices : public ValidationStateTracker {
     void RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cb_state);
 
     // Get BestPractices-specific for the current instance
-    bp_state::PhysicalDevice* GetPhysicalDeviceState() { return static_cast<bp_state::PhysicalDevice*>(physical_device_state); }
-    const bp_state::PhysicalDevice* GetPhysicalDeviceState() const {
-        return static_cast<const bp_state::PhysicalDevice*>(physical_device_state);
-    }
+    bp_state::PhysicalDevice* GetPhysicalDeviceState();
+    const bp_state::PhysicalDevice* GetPhysicalDeviceState() const;
 
     void RecordAttachmentClearAttachments(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment, uint32_t color_attachment,
                                           VkImageAspectFlags aspects, uint32_t rectCount, const VkClearRect* pRects);
@@ -1099,10 +902,9 @@ class BestPractices : public ValidationStateTracker {
     void RecordResetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
                                    const VkImageSubresourceRange& subresource_range);
 
-    void RecordSetScopeZcullDirection(bp_state::CommandBuffer& cb_state, bp_state::CommandBufferStateNV::ZcullDirection mode);
+    void RecordSetScopeZcullDirection(bp_state::CommandBuffer& cb_state, ZcullDirection mode);
     void RecordSetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
-                                 const VkImageSubresourceRange& subresource_range,
-                                 bp_state::CommandBufferStateNV::ZcullDirection mode);
+                                 const VkImageSubresourceRange& subresource_range, ZcullDirection mode);
 
     void RecordZcullDraw(bp_state::CommandBuffer& cb_state);
 

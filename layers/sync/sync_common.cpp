@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "sync/sync_common.h"
 

@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
+#include "best_practices/bp_state.h"
 
 bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkImage* pImage,
@@ -291,4 +292,15 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
         ValidateImageInQueueArmImg(command, state, last_usage.type, usage, array_layer, mip_level);
     }
+}
+
+std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                            VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<bp_state::Image>(this, img, pCreateInfo, features);
+}
+
+std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+                                                            VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                            VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<bp_state::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
 }

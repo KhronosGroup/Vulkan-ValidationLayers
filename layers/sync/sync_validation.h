@@ -22,11 +22,6 @@
 #include <set>
 #include <vulkan/vulkan.h>
 
-#include "state_tracker/state_tracker.h"
-#include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/render_pass_state.h"
-#include "state_tracker/video_session_state.h"
-
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_renderpass.h"

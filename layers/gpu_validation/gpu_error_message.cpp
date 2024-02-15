@@ -17,6 +17,7 @@
 
 #include "gpu_validation/gpu_error_message.h"
 #include "gpu_validation/gpu_validation.h"
+#include "gpu_validation/gpu_subclasses.h"
 #include "gpu_validation/gpu_vuids.h"
 #include "spirv-tools/instrument.hpp"
 #include "state_tracker/shader_module.h"

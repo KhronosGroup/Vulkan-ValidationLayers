@@ -19,7 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
-
+#include "best_practices/bp_state.h"
 #include <bitset>
 
 // Generic function to handle validation for all CmdDraw* type functions
@@ -119,7 +119,7 @@ void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_state, uint
 void BestPractices::RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    if (cmd_state.nv.depth_test_enable && cmd_state.nv.zcull_direction != bp_state::CommandBufferStateNV::ZcullDirection::Unknown) {
+    if (cmd_state.nv.depth_test_enable && cmd_state.nv.zcull_direction != ZcullDirection::Unknown) {
         RecordSetScopeZcullDirection(cmd_state, cmd_state.nv.zcull_direction);
         RecordZcullDraw(cmd_state);
     }

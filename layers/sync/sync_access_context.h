@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,17 @@
 
 #pragma once
 
-#include "state_tracker/render_pass_state.h"
 #include "sync/sync_common.h"
 #include "sync/sync_access_state.h"
+
+struct SubpassDependencyGraphNode;
 
 namespace vvl {
 class Buffer;
 class VideoSession;
 class VideoPictureResource;
+class Bindable;
+class Event;
 }  // namespace vvl
 
 namespace syncval_state {

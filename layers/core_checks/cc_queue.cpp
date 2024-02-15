@@ -24,6 +24,8 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 #include "core_validation.h"
+#include "state_tracker/image_state.h"
+#include "sync/sync_vuid_maps.h"
 
 struct CommandBufferSubmitState {
     const CoreChecks *core;

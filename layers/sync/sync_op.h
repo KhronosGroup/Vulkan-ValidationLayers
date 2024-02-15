@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,19 @@
  */
 #pragma once
 
-#include "state_tracker/buffer_state.h"
-#include "state_tracker/cmd_buffer_state.h"
-
 #include "sync/sync_access_context.h"
+#include "generated/vk_safe_struct.h"
 
 class CommandBufferAccessContext;
 class CommandExecutionContext;
 class RenderPassAccessContext;
 class ReplayState;
+
+namespace vvl {
+class ImageView;
+class RenderPass;
+class CommandBuffer;
+}  // namespace vvl
 
 using SyncMemoryBarrier = SyncBarrier;
 
@@ -54,10 +58,7 @@ struct SyncEventState {
     SyncEventState(const SyncEventState &) = default;
     SyncEventState(SyncEventState &&) = default;
 
-    SyncEventState(const SyncEventState::EventPointer &event_state) : SyncEventState() {
-        event = event_state;
-        destroyed = (event.get() == nullptr) || event_state->Destroyed();
-    }
+    SyncEventState(const SyncEventState::EventPointer &event_state);
 
     void ResetFirstScope();
     const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessStateMap(); }

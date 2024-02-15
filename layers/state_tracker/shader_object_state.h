@@ -24,7 +24,7 @@
 
 #include "state_tracker/state_object.h"
 #include "utils/shader_utils.h"
-#include "descriptor_sets.h"
+#include "state_tracker/pipeline_layout_state.h"
 
 namespace vvl {
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle

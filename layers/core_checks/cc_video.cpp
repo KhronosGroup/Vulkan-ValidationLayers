@@ -21,6 +21,7 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "error_message/error_strings.h"
+#include "state_tracker/image_state.h"
 
 // Flags validation error if the associated call is made inside a video coding block.
 // The apiName routine should ONLY be called outside a video coding block.

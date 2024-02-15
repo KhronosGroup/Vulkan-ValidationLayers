@@ -18,6 +18,9 @@
 #include "sync/sync_commandbuffer.h"
 #include "sync/sync_op.h"
 #include "sync/sync_validation.h"
+#include "sync/sync_image.h"
+#include "state_tracker/descriptor_sets.h"
+#include "state_tracker/image_state.h"
 
 SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
                                                              const spirv::ResourceInterfaceVariable &variable,

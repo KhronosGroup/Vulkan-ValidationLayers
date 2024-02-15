@@ -24,6 +24,8 @@
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
 #include "gpu_validation/gpu_validation.h"
+#include "gpu_validation/gpu_subclasses.h"
+#include "state_tracker/device_state.h"
 #include "spirv-tools/instrument.hpp"
 #include "spirv-tools/linker.hpp"
 #include "generated/layer_chassis_dispatch.h"

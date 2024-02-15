@@ -134,6 +134,7 @@ target_sources(vvl PRIVATE
     best_practices/bp_pipeline.cpp
     best_practices/bp_ray_tracing.cpp
     best_practices/bp_render_pass.cpp
+    best_practices/bp_state.h
     best_practices/bp_synchronization.cpp
     best_practices/bp_video.cpp
     best_practices/bp_wsi.cpp
@@ -220,6 +221,7 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_subclasses.cpp
     gpu_validation/gpu_subclasses.h
     gpu_validation/gpu_record.cpp
+    gpu_validation/gpu_resources.h
     gpu_validation/gpu_settings.h
     gpu_validation/gpu_setup.cpp
     gpu_validation/gpu_validation.cpp
@@ -269,6 +271,8 @@ target_sources(vvl PRIVATE
     state_tracker/shader_object_state.h
     state_tracker/state_tracker.cpp
     state_tracker/state_tracker.h
+    state_tracker/vertex_index_buffer_state.cpp
+    state_tracker/vertex_index_buffer_state.h
     state_tracker/video_session_state.cpp
     state_tracker/video_session_state.h
     stateless/sl_buffer.cpp
@@ -296,6 +300,7 @@ target_sources(vvl PRIVATE
     sync/sync_commandbuffer.h
     sync/sync_common.cpp
     sync/sync_common.h
+    sync/sync_image.h
     sync/sync_op.cpp
     sync/sync_op.h
     sync/sync_renderpass.cpp

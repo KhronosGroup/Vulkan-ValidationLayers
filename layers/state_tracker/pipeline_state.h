@@ -20,7 +20,6 @@
 #include "utils/hash_vk_types.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/sampler_state.h"
-#include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/pipeline_layout_state.h"
@@ -880,19 +879,4 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
             return static_cast<LvlBindPoint>(stage);
     }
     return BindPoint_Count;
-}
-
-static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
-    if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
-    if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) return ShaderObjectStage::TESSELLATION_CONTROL;
-    if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) return ShaderObjectStage::TESSELLATION_EVALUATION;
-    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT) return ShaderObjectStage::GEOMETRY;
-    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) return ShaderObjectStage::FRAGMENT;
-    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) return ShaderObjectStage::COMPUTE;
-    if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) return ShaderObjectStage::TASK;
-    if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) return ShaderObjectStage::MESH;
-
-    assert(false);
-
-    return ShaderObjectStage::LAST;
 }

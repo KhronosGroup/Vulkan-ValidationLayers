@@ -27,12 +27,6 @@
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
 #include "containers/qfo_transfer.h"
-#include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/render_pass_state.h"
-#include "state_tracker/video_session_state.h"
-#include "state_tracker/shader_object_state.h"
-#include "sync/sync_utils.h"
-#include "sync/sync_vuid_maps.h"
 
 struct ValidateBeginQueryVuids {
     const char* vuid_queue_feedback = kVUIDUndefined;

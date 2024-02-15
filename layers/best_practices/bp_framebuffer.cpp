@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
+#include "best_practices/bp_state.h"
 
 bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachmentCount,
                                         const VkImageView* image_views, const Location& loc) const {

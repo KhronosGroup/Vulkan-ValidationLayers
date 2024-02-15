@@ -20,6 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "best_practices/best_practices_error_enums.h"
+#include "best_practices/bp_state.h"
 
 bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
     bool skip = false;
@@ -504,4 +505,15 @@ void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t subm
                                                     VkFence fence, const RecordObject& record_obj) {
     // AMD best practice
     num_queue_submissions_ += submitCount;
+}
+
+std::shared_ptr<vvl::PhysicalDevice> BestPractices::CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) {
+    return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(phys_dev));
+}
+
+bp_state::PhysicalDevice* BestPractices::GetPhysicalDeviceState() {
+    return static_cast<bp_state::PhysicalDevice*>(physical_device_state);
+}
+const bp_state::PhysicalDevice* BestPractices::GetPhysicalDeviceState() const {
+    return static_cast<const bp_state::PhysicalDevice*>(physical_device_state);
 }

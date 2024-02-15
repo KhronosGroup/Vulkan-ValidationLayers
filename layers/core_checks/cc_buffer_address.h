@@ -18,8 +18,6 @@
 #pragma once
 
 #include "state_tracker/buffer_state.h"
-#include "core_validation.h"
-#include "state_tracker/state_tracker.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
 
