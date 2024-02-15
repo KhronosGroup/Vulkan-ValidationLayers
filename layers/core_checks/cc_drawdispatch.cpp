@@ -20,6 +20,8 @@
 #include "generated/chassis.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/shader_object_state.h"
 
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;

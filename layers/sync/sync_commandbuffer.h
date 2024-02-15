@@ -17,6 +17,7 @@
 #pragma once
 
 #include "sync/sync_renderpass.h"
+#include "state_tracker/cmd_buffer_state.h"
 
 class SyncValidator;
 

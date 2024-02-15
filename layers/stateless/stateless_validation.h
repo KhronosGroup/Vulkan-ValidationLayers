@@ -20,7 +20,8 @@
 
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "sync/sync_utils.h"
-#include "state_tracker/cmd_buffer_state.h"
+#include "utils/vk_layer_utils.h"
+#include "generated/chassis.h"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 

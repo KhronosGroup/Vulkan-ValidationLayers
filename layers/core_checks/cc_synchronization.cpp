@@ -25,7 +25,10 @@
 #include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
+#include "sync/sync_vuid_maps.h"
 #include "generated/enum_flag_bits.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/device_state.h"
 
 using sync_utils::BufferBarrier;
 using sync_utils::ImageBarrier;

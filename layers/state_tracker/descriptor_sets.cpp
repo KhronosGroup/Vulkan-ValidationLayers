@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  */
 
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPoolCreateInfo *create_info) {
@@ -649,6 +651,28 @@ void vvl::SamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
     }
 }
 
+VkSampler vvl::SamplerDescriptor::GetSampler() const { return sampler_state_ ? sampler_state_->VkHandle() : VK_NULL_HANDLE; }
+
+void vvl::SamplerDescriptor::SetSamplerState(std::shared_ptr<vvl::Sampler> &&state) {
+    sampler_state_ = std::move(state);
+    // currently this method is only used to initialize immutable samplers during DescriptorSet creation
+    immutable_ = true;
+}
+
+bool vvl::SamplerDescriptor::AddParent(StateObject *state_object) {
+    bool result = false;
+    if (sampler_state_) {
+        result = sampler_state_->AddParent(state_object);
+    }
+    return result;
+}
+void vvl::SamplerDescriptor::RemoveParent(StateObject *state_object) {
+    if (sampler_state_) {
+        sampler_state_->RemoveParent(state_object);
+    }
+}
+bool vvl::SamplerDescriptor::Invalid() const { return !sampler_state_ || sampler_state_->Invalid(); }
+
 void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                           const VkWriteDescriptorSet &update, const uint32_t index,
                                                           bool is_bindless) {
@@ -676,6 +700,32 @@ void vvl::ImageSamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const Val
         ReplaceStatePtr(set_state, sampler_state_, image_src.sampler_state_, is_bindless);
     }
     ImageDescriptor::CopyUpdate(set_state, dev_data, src, is_bindless, src_type);
+}
+
+VkSampler vvl::ImageSamplerDescriptor::GetSampler() const { return sampler_state_ ? sampler_state_->VkHandle() : VK_NULL_HANDLE; }
+
+void vvl::ImageSamplerDescriptor::SetSamplerState(std::shared_ptr<vvl::Sampler> &&state) {
+    sampler_state_ = std::move(state);
+    // currently this method is only used to initialize immutable samplers during DescriptorSet creation
+    immutable_ = true;
+}
+
+bool vvl::ImageSamplerDescriptor::AddParent(StateObject *state_object) {
+    bool result = ImageDescriptor::AddParent(state_object);
+    if (sampler_state_) {
+        result |= sampler_state_->AddParent(state_object);
+    }
+    return result;
+}
+void vvl::ImageSamplerDescriptor::RemoveParent(StateObject *state_object) {
+    ImageDescriptor::RemoveParent(state_object);
+    if (sampler_state_) {
+        sampler_state_->RemoveParent(state_object);
+    }
+}
+
+bool vvl::ImageSamplerDescriptor::Invalid() const {
+    return ImageDescriptor::Invalid() || !sampler_state_ || sampler_state_->Invalid();
 }
 
 void vvl::ImageDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
@@ -711,6 +761,35 @@ void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl
     }
 }
 
+VkImageView vvl::ImageDescriptor::GetImageView() const {
+    return image_view_state_ ? image_view_state_->VkHandle() : VK_NULL_HANDLE;
+}
+
+bool vvl::ImageDescriptor::AddParent(StateObject *state_object) {
+    bool result = false;
+    if (image_view_state_) {
+        result = image_view_state_->AddParent(state_object);
+    }
+    return result;
+}
+void vvl::ImageDescriptor::RemoveParent(StateObject *state_object) {
+    if (image_view_state_) {
+        image_view_state_->RemoveParent(state_object);
+    }
+}
+void vvl::ImageDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+    if (invalid_node == image_view_state_) {
+        known_valid_view_ = false;
+        if (unlink) {
+            image_view_state_.reset();
+        }
+    }
+}
+
+bool vvl::ImageDescriptor::Invalid() const { return !known_valid_view_ && ComputeInvalid(); }
+bool vvl::ImageDescriptor::ComputeInvalid() const { return !image_view_state_ || image_view_state_->Invalid(); }
+void vvl::ImageDescriptor::UpdateKnownValidView(bool is_bindless) { known_valid_view_ = !is_bindless && !ComputeInvalid(); }
+
 void vvl::BufferDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                     const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
     const auto &buffer_info = update.pBufferInfo[index];
@@ -735,6 +814,22 @@ void vvl::BufferDescriptor::CopyUpdate(DescriptorSet &set_state, const Validatio
     ReplaceStatePtr(set_state, buffer_state_, buff_desc.buffer_state_, is_bindless);
 }
 
+VkBuffer vvl::BufferDescriptor::GetBuffer() const { return buffer_state_ ? buffer_state_->VkHandle() : VK_NULL_HANDLE; }
+
+bool vvl::BufferDescriptor::AddParent(StateObject *state_object) {
+    bool result = false;
+    if (buffer_state_) {
+        result = buffer_state_->AddParent(state_object);
+    }
+    return result;
+}
+void vvl::BufferDescriptor::RemoveParent(StateObject *state_object) {
+    if (buffer_state_) {
+        buffer_state_->RemoveParent(state_object);
+    }
+}
+bool vvl::BufferDescriptor::Invalid() const { return !buffer_state_ || buffer_state_->Invalid(); }
+
 void vvl::TexelDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
     auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
@@ -750,6 +845,25 @@ void vvl::TexelDescriptor::CopyUpdate(DescriptorSet &set_state, const Validation
     }
     ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor &>(src).buffer_view_state_, is_bindless);
 }
+
+VkBufferView vvl::TexelDescriptor::GetBufferView() const {
+    return buffer_view_state_ ? buffer_view_state_->VkHandle() : VK_NULL_HANDLE;
+}
+
+bool vvl::TexelDescriptor::AddParent(StateObject *state_object) {
+    bool result = false;
+    if (buffer_view_state_) {
+        result = buffer_view_state_->AddParent(state_object);
+    }
+    return result;
+}
+void vvl::TexelDescriptor::RemoveParent(StateObject *state_object) {
+    if (buffer_view_state_) {
+        buffer_view_state_->RemoveParent(state_object);
+    }
+}
+
+bool vvl::TexelDescriptor::Invalid() const { return !buffer_view_state_ || buffer_view_state_->Invalid(); }
 
 void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                                    const VkWriteDescriptorSet &update, const uint32_t index,
@@ -791,6 +905,32 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet &set_state, 
     } else {
         acc_nv_ = acc_desc.acc_nv_;
         ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
+    }
+}
+
+bool vvl::AccelerationStructureDescriptor::AddParent(StateObject *state_object) {
+    bool result = false;
+    if (acc_state_) {
+        result |= acc_state_->AddParent(state_object);
+    }
+    if (acc_state_nv_) {
+        result |= acc_state_nv_->AddParent(state_object);
+    }
+    return result;
+}
+void vvl::AccelerationStructureDescriptor::RemoveParent(StateObject *state_object) {
+    if (acc_state_) {
+        acc_state_->RemoveParent(state_object);
+    }
+    if (acc_state_nv_) {
+        acc_state_nv_->RemoveParent(state_object);
+    }
+}
+bool vvl::AccelerationStructureDescriptor::Invalid() const {
+    if (is_khr_) {
+        return !acc_state_ || acc_state_->Invalid();
+    } else {
+        return !acc_state_nv_ || acc_state_nv_->Invalid();
     }
 }
 
@@ -962,6 +1102,36 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
         src_size = mutable_src.GetBufferSize();
     }
     SetDescriptorType(src_type, src_size);
+}
+
+void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size) {
+    active_descriptor_type_ = type;
+    buffer_size_ = buffer_size;
+}
+void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType src_type, const Descriptor *src) {
+    active_descriptor_type_ = src_type;
+    if (src->GetClass() == vvl::DescriptorClass::GeneralBuffer) {
+        auto buffer = static_cast<const vvl::BufferDescriptor *>(src)->GetBuffer();
+        if (buffer == VK_NULL_HANDLE) {
+            buffer_size_ = vvl::kU32Max;
+        } else {
+            auto buffer_state = static_cast<const vvl::BufferDescriptor *>(src)->GetBufferState();
+            buffer_size_ = static_cast<uint32_t>(buffer_state->createInfo.size);
+        }
+    } else if (src->GetClass() == vvl::DescriptorClass::TexelBuffer) {
+        auto buffer_view = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferView();
+        if (buffer_view == VK_NULL_HANDLE) {
+            buffer_size_ = vvl::kU32Max;
+        } else {
+            auto buffer_view_state = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferViewState();
+            buffer_size_ = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
+        }
+    } else if (src->GetClass() == vvl::DescriptorClass::Mutable) {
+        auto descriptor = static_cast<const vvl::MutableDescriptor *>(src);
+        buffer_size_ = descriptor->GetBufferSize();
+    } else {
+        buffer_size_ = 0;
+    }
 }
 
 void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer *cb_state) {

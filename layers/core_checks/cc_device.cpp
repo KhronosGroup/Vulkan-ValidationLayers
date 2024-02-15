@@ -30,6 +30,8 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "utils/shader_utils.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/device_state.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location &loc, const char *vuid,
                                            bool optional = false) const {

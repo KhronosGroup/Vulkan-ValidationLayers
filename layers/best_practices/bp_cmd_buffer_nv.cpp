@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
+#include "best_practices/bp_state.h"
 
 static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearColorValue& clear_value) {
     std::array<uint32_t, 4> raw_color{};
@@ -60,11 +61,11 @@ void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cmd_state, 
         switch (new_depth_compare_op) {
             case VK_COMPARE_OP_LESS:
             case VK_COMPARE_OP_LESS_OR_EQUAL:
-                cmd_state.nv.zcull_direction = bp_state::CommandBufferStateNV::ZcullDirection::Less;
+                cmd_state.nv.zcull_direction = ZcullDirection::Less;
                 break;
             case VK_COMPARE_OP_GREATER:
             case VK_COMPARE_OP_GREATER_OR_EQUAL:
-                cmd_state.nv.zcull_direction = bp_state::CommandBufferStateNV::ZcullDirection::Greater;
+                cmd_state.nv.zcull_direction = ZcullDirection::Greater;
                 break;
             default:
                 // The other ops carry over the previous state.
@@ -137,7 +138,7 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
                                               const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    RecordSetZcullDirection(cmd_state, depth_image, subresource_range, bp_state::CommandBufferStateNV::ZcullDirection::Unknown);
+    RecordSetZcullDirection(cmd_state, depth_image, subresource_range, ZcullDirection::Unknown);
 
     const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
     if (image_it == cmd_state.nv.zcull_per_image.end()) {
@@ -155,8 +156,7 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
     });
 }
 
-void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state,
-                                                 bp_state::CommandBufferStateNV::ZcullDirection mode) {
+void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state, ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     auto& scope = cmd_state.nv.zcull_scope;
@@ -164,8 +164,7 @@ void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_st
 }
 
 void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
-                                            const VkImageSubresourceRange& subresource_range,
-                                            bp_state::CommandBufferStateNV::ZcullDirection mode) {
+                                            const VkImageSubresourceRange& subresource_range, ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
@@ -195,14 +194,14 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
         auto& subresource = scope.tree->GetState(layer, level);
 
         switch (subresource.direction) {
-            case bp_state::CommandBufferStateNV::ZcullDirection::Unknown:
+            case ZcullDirection::Unknown:
                 // Unreachable
                 assert(0);
                 break;
-            case bp_state::CommandBufferStateNV::ZcullDirection::Less:
+            case ZcullDirection::Less:
                 ++subresource.num_less_draws;
                 break;
-            case bp_state::CommandBufferStateNV::ZcullDirection::Greater:
+            case ZcullDirection::Greater:
                 ++subresource.num_greater_draws;
                 break;
         }

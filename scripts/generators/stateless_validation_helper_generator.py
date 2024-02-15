@@ -343,7 +343,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             #include "chassis.h"
 
             #include "stateless/stateless_validation.h"
-            #include "enum_flag_bits.h"
+            #include "generated/enum_flag_bits.h"
+            #include "generated/layer_chassis_dispatch.h"
 
             bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,

@@ -18,6 +18,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "generated/layer_chassis_dispatch.h"
 
 bool StatelessValidation::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                                const ErrorObject &error_obj) const {

@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-#include "gpu_validation.h"
+#include "gpu_validation/gpu_validation.h"
+#include "gpu_validation/gpu_subclasses.h"
 #include "generated/spirv_grammar_helper.h"
 #include "utils/image_layout_utils.h"
 

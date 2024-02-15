@@ -20,7 +20,6 @@
 
 #pragma once
 #include "generated/chassis.h"
-#include "state_tracker/device_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/ray_tracing_state.h"
@@ -55,13 +54,14 @@ class Framebuffer;
 class RenderPass;
 class PipelineCache;
 class Surface;
+class PhysicalDevice;
 class DisplayMode;
 class Event;
 class PipelineLayout;
 class Image;
 class ImageView;
 class Swapchain;
-class Swapchain;
+struct SwapchainImage;
 class CommandPool;
 class CommandBuffer;
 class Pipeline;

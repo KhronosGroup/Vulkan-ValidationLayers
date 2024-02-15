@@ -20,6 +20,7 @@
 #include "utils/vk_layer_utils.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
+#include "state_tracker/image_state.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 // Android-specific validation that uses types defined only on Android and only for NDK versions

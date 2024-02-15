@@ -31,6 +31,9 @@
 #include "state_tracker/state_tracker.h"
 #include "utils/shader_utils.h"
 #include "sync/sync_utils.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/device_state.h"
+#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/shader_object_state.h"
 

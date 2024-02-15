@@ -26,6 +26,8 @@
 #include "error_message/error_strings.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/device_state.h"
 
 // Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
 static sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {

@@ -28,6 +28,7 @@
 #include "sync/sync_utils.h"
 #include "utils/convert_utils.h"
 #include "error_message/error_strings.h"
+#include "state_tracker/image_state.h"
 
 bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
                                                  const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,

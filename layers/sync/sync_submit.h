@@ -23,12 +23,16 @@ class QueueBatchContext;
 struct QueueSubmitCmdState;
 class QueueSyncState;
 
+namespace vvl {
+class Semaphore;
+}  // namespace vvl
+
 struct AcquiredImage {
     std::shared_ptr<const syncval_state::ImageState> image;
     subresource_adapter::ImageRangeGenerator generator;
     ResourceUsageTag present_tag;
     ResourceUsageTag acquire_tag;
-    bool Invalid() const { return vvl::StateObject::Invalid(image); }
+    bool Invalid() const;
 
     AcquiredImage() = default;
     AcquiredImage(const PresentedImage &presented, ResourceUsageTag acq_tag);
@@ -122,26 +126,11 @@ struct PresentedImage : public PresentedImageRecord {
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
     PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index);
-    bool Invalid() const { return vvl::StateObject::Invalid(image); }
+    bool Invalid() const;
     void ExportToSwapchain(SyncValidator &);
     void SetImage(uint32_t at_index);
 };
 using PresentedImages = std::vector<PresentedImage>;
-
-namespace syncval_state {
-class Swapchain : public vvl::Swapchain {
-  public:
-    Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
-    ~Swapchain() { Destroy(); }
-    void RecordPresentedImage(PresentedImage &&presented_images);
-    PresentedImage MovePresentedImage(uint32_t image_index);
-    std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
-    std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
-
-  private:
-    PresentedImages presented;  // Build this on demand
-};
-}  // namespace syncval_state
 
 // Store references to ResourceUsageRecords with global tag range within a batch
 class BatchAccessLog {

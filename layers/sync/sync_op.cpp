@@ -19,6 +19,10 @@
 #include "sync/sync_renderpass.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_commandbuffer.h"
+#include "sync/sync_image.h"
+
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 
 #include "sync/sync_validation.h"
 
@@ -1341,6 +1345,12 @@ void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet &referenced) const
         }
     }
 }
+
+SyncEventState::SyncEventState(const SyncEventState::EventPointer &event_state) : SyncEventState() {
+    event = event_state;
+    destroyed = (event.get() == nullptr) || event_state->Destroyed();
+}
+
 void SyncEventState::ResetFirstScope() {
     first_scope.reset();
     scope = SyncExecScope();

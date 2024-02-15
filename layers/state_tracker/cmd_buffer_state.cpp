@@ -18,8 +18,26 @@
  * limitations under the License.
  */
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/descriptor_sets.h"
+#include "state_tracker/render_pass_state.h"
+#include "state_tracker/pipeline_state.h"
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/image_state.h"
 
-#include "generated/dynamic_state_helper.h"
+static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
+    if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
+    if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) return ShaderObjectStage::TESSELLATION_CONTROL;
+    if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) return ShaderObjectStage::TESSELLATION_EVALUATION;
+    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT) return ShaderObjectStage::GEOMETRY;
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) return ShaderObjectStage::FRAGMENT;
+    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) return ShaderObjectStage::COMPUTE;
+    if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) return ShaderObjectStage::TASK;
+    if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) return ShaderObjectStage::MESH;
+
+    assert(false);
+
+    return ShaderObjectStage::LAST;
+}
 
 namespace vvl {
 
@@ -1560,6 +1578,72 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
             }
         }
     }
+}
+
+uint32_t CommandBuffer::GetDynamicColorAttachmentCount() const {
+    if (activeRenderPass) {
+        if (activeRenderPass->use_dynamic_rendering_inherited) {
+            return activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
+        }
+        if (activeRenderPass->use_dynamic_rendering) {
+            return activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
+        }
+    }
+    return 0;
+}
+
+bool CommandBuffer::HasValidDynamicDepthAttachment() const {
+    if (activeRenderPass) {
+        if (activeRenderPass->use_dynamic_rendering_inherited) {
+            return activeRenderPass->inheritance_rendering_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED;
+        }
+        if (activeRenderPass->use_dynamic_rendering) {
+            return activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
+        }
+    }
+    return false;
+}
+bool CommandBuffer::HasValidDynamicStencilAttachment() const {
+    if (activeRenderPass) {
+        if (activeRenderPass->use_dynamic_rendering_inherited) {
+            return activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED;
+        }
+        if (activeRenderPass->use_dynamic_rendering) {
+            return activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
+        }
+    }
+    return false;
+}
+bool CommandBuffer::HasExternalFormatResolveAttachment() const {
+    if (activeRenderPass && activeRenderPass->use_dynamic_rendering &&
+        activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
+        return activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments->resolveMode ==
+               VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
+    }
+    return false;
+}
+bool CommandBuffer::HasDynamicDualSourceBlend(uint32_t attachmentCount) const {
+    if (dynamic_state_value.color_blend_enabled.any()) {
+        if (dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT]) {
+            for (uint32_t i = 0; i < dynamic_state_value.color_blend_equations.size() && i < attachmentCount; ++i) {
+                const auto &color_blend_equation = dynamic_state_value.color_blend_equations[i];
+                if (IsSecondaryColorInputBlendFactor(color_blend_equation.srcColorBlendFactor) ||
+                    IsSecondaryColorInputBlendFactor(color_blend_equation.dstColorBlendFactor) ||
+                    IsSecondaryColorInputBlendFactor(color_blend_equation.srcAlphaBlendFactor) ||
+                    IsSecondaryColorInputBlendFactor(color_blend_equation.dstAlphaBlendFactor)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
+    auto &lastBoundState = lastBound[ConvertToPipelineBindPoint(shader_stage)];
+    const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
+    lastBoundState.shader_object_bound[stage_index] = true;
+    lastBoundState.shader_object_states[stage_index] = shader_object_state;
 }
 
 void CommandBuffer::UnbindResources() {

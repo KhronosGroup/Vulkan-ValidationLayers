@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Nintendo
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2023-2024 Nintendo
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 #include "shader_object_state.h"
-#include "pipeline_layout_state.h"
+#include "shader_module.h"
 
 namespace vvl {
 static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {

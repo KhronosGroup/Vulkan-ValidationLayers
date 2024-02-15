@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
- * Copyright (C) 2019-2023 Google Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (C) 2019-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 
 #include "containers/range_vector.h"
 #include "containers/subresource_adapter.h"
+#include "utils/vk_layer_utils.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
 #include "error_message/logging.h"
@@ -171,3 +172,18 @@ class ImageSubresourceLayoutMap {
     InitialLayoutStates initial_layout_states_;
 };
 }  // namespace image_layout_map
+
+class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
+  public:
+    using RangeGenerator = image_layout_map::RangeGenerator;
+    using RangeType = key_type;
+
+    GlobalImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
+    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
+    bool AnyInRange(RangeGenerator& gen, std::function<bool(const key_type& range, const mapped_type& state)>&& func) const;
+
+  private:
+    mutable std::shared_mutex lock_;
+};

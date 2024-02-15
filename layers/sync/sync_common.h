@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 #include "containers/subresource_adapter.h"
 #include "containers/range_vector.h"
 #include "generated/sync_validation_types.h"
-#include "state_tracker/image_state.h"
 
 namespace vvl {
 class Buffer;
@@ -161,46 +160,8 @@ class SingleRangeGenerator {
 namespace syncval_state {
 class CommandBuffer;
 class Swapchain;
-
-class ImageState : public vvl::Image {
-  public:
-    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
-               VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, features), opaque_base_address_(0U) {}
-
-    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-               uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
-    bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
-    bool IsTiled() const { return !IsLinear(); }
-    bool IsSimplyBound() const;
-
-    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
-
-    VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
-    bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
-    VkDeviceSize GetResourceBaseAddress() const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                    const VkExtent3D &extent, bool is_depth_sliced) const;
-
-  protected:
-    VkDeviceSize opaque_base_address_ = 0U;
-};
-
-class ImageViewState : public vvl::ImageView {
-  public:
-    ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
-    const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
-    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
-    const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
-
-  protected:
-    ImageRangeGen MakeImageRangeGen() const;
-    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this line.
-    const ImageRangeGen view_range_gen;
-};
+class ImageState;
+class ImageViewState;
 
 // Utilities to DRY up Get... calls
 template <typename Map, typename Key = typename Map::key_type, typename RetVal = std::optional<typename Map::mapped_type>>

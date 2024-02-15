@@ -20,7 +20,7 @@
 #include "gpu_validation/gpu_state_tracker.h"
 #include "gpu_validation/gpu_error_message.h"
 #include "gpu_validation/gpu_descriptor_set.h"
-#include "gpu_validation/gpu_subclasses.h"
+#include "gpu_validation/gpu_resources.h"
 #include "state_tracker/pipeline_state.h"
 
 #include <typeinfo>
@@ -30,6 +30,19 @@
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 namespace gpuav {
+class AccelerationStructureNV;
+class AccelerationStructureKHR;
+class Buffer;
+class BufferView;
+class CommandBuffer;
+class ImageView;
+class Sampler;
+
+class DescriptorSet;
+struct DescSetState;
+struct CmdIndirectState;
+struct AccelerationStructureBuildValidationInfo;
+
 struct GpuVuid {
     const char* uniform_access_oob = kVUIDUndefined;
     const char* storage_access_oob = kVUIDUndefined;
