@@ -222,7 +222,8 @@ static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkForma
 
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
 template <typename RegionType>
-static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format, uint32_t image_layout_count) {
+static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format,
+                                                      uint32_t image_layout_count) {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
@@ -266,7 +267,8 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
         }
     } else {
         // size (bytes) of texel or block
-        unit_size = vkuFormatElementSizeWithAspect(image_format, static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
+        unit_size =
+            vkuFormatElementSizeWithAspect(image_format, static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
     }
 
     if (vkuFormatIsBlockedImage(image_format)) {
@@ -476,25 +478,24 @@ class ValidationStateTracker : public ValidationObject {
     // address ranges which overlap. In this case, it is ambiguous which VkBuffer is associated with any given
     // device address. For purposes of valid usage, if multiple VkBuffer objects can be attributed to
     // a device address, a VkBuffer is selected such that valid usage passes, if it exists.
-    // Regarding using raw pointers instead of shared: The reason is performance, because arrays of BUFFER_STATE_PTR are used, it is
+    // Regarding using raw pointers instead of shared: The reason is performance, because arrays of vvl::Buffer* are used, it is
     // more efficient to store them using raw pointers. It is safe to do so (at time of writing) because those raw pointers come
     // from shared ones created when the buffer is first recorded, and they are removed from buffer_address_map_ at BufferDestroy
     // time
-    using BUFFER_STATE_PTR = vvl::Buffer*;
-    vvl::span<BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) {
+    vvl::span<vvl::Buffer*> GetBuffersByAddress(VkDeviceAddress address) {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
         if (found_it == buffer_address_map_.end()) {
-            return vvl::make_span<BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
+            return vvl::make_span<vvl::Buffer*>(nullptr, static_cast<size_t>(0));
         }
         return found_it->second;
     }
 
-    vvl::span<const BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) const {
+    vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
         if (found_it == buffer_address_map_.end()) {
-            return vvl::make_span<const BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
+            return vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0));
         }
         return found_it->second;
     }
@@ -544,7 +545,7 @@ class ValidationStateTracker : public ValidationObject {
                                                             const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::Queue> CreateQueue(VkQueue queue, uint32_t queue_family_index, VkDeviceQueueCreateFlags flags,
-                                                     const VkQueueFamilyProperties& queueFamilyProperties);
+                                                    const VkQueueFamilyProperties& queueFamilyProperties);
 
     void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
                                       const RecordObject& record_obj) override;
@@ -749,10 +750,10 @@ class ValidationStateTracker : public ValidationObject {
                                    const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool pool,
-                                                                             const VkDescriptorPoolCreateInfo* pCreateInfo);
-    virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(
-        VkDescriptorSet, vvl::DescriptorPool*, const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
-        uint32_t variable_count);
+                                                                           const VkDescriptorPoolCreateInfo* pCreateInfo);
+    virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
+                                                                    const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
+                                                                    uint32_t variable_count);
 
     void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
@@ -1906,7 +1907,7 @@ class ValidationStateTracker : public ValidationObject {
 
     mutable vvl::VideoProfileDesc::Cache video_profile_cache_;
 
-    using BufferAddressMapStore = small_vector<BUFFER_STATE_PTR, 1, size_t>;
+    using BufferAddressMapStore = small_vector<vvl::Buffer*, 1, size_t>;
     using BufferAddressRangeMap = sparse_container::range_map<VkDeviceAddress, BufferAddressMapStore>;
 
   protected:
@@ -1998,4 +1999,3 @@ class ValidationStateTracker : public ValidationObject {
     };
     FakeAllocator fake_memory;
 };
-
