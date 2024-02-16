@@ -15268,4 +15268,57 @@ void safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::initialize(
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV(
+    const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
+    bool copy_pnext)
+    : sType(in_struct->sType), shaderFloat16VectorAtomics(in_struct->shaderFloat16VectorAtomics) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV),
+      pNext(nullptr),
+      shaderFloat16VectorAtomics() {}
+
+safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV(
+    const safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV& copy_src) {
+    sType = copy_src.sType;
+    shaderFloat16VectorAtomics = copy_src.shaderFloat16VectorAtomics;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV& safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::operator=(
+    const safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderFloat16VectorAtomics = copy_src.shaderFloat16VectorAtomics;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::~safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::initialize(
+    const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderFloat16VectorAtomics = in_struct->shaderFloat16VectorAtomics;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::initialize(
+    const safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    shaderFloat16VectorAtomics = copy_src->shaderFloat16VectorAtomics;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 // NOLINTEND

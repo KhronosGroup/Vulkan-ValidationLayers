@@ -1730,6 +1730,15 @@ void BestPractices::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryM
     }
 }
 
+void BestPractices::PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo,
+                                                  const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {
@@ -2766,10 +2775,6 @@ void BestPractices::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
     ValidationStateTracker::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize,
                                                                                         record_obj);
 
-    if (record_obj.result > VK_SUCCESS) {
-        LogPositiveSuccessCode(record_obj);
-        return;
-    }
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
     }
@@ -2925,6 +2930,10 @@ void BestPractices::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t cre
     ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                            state_data);
 
+    if (record_obj.result > VK_SUCCESS) {
+        LogPositiveSuccessCode(record_obj);
+        return;
+    }
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
     }

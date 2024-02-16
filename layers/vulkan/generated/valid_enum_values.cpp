@@ -1607,20 +1607,6 @@ ValidValue ValidationObject::IsValidEnumValue(VkPerformanceParameterTypeINTEL va
 }
 
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPerformanceValueTypeINTEL value) const {
-    switch (value) {
-        case VK_PERFORMANCE_VALUE_TYPE_UINT32_INTEL:
-        case VK_PERFORMANCE_VALUE_TYPE_UINT64_INTEL:
-        case VK_PERFORMANCE_VALUE_TYPE_FLOAT_INTEL:
-        case VK_PERFORMANCE_VALUE_TYPE_BOOL_INTEL:
-        case VK_PERFORMANCE_VALUE_TYPE_STRING_INTEL:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
 ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureEnableEXT value) const {
     switch (value) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
@@ -2807,11 +2793,6 @@ vvl::Extensions ValidationObject::GetEnumExtensions(VkPerformanceOverrideTypeINT
 
 template <>
 vvl::Extensions ValidationObject::GetEnumExtensions(VkPerformanceParameterTypeINTEL value) const {
-    return {};
-}
-
-template <>
-vvl::Extensions ValidationObject::GetEnumExtensions(VkPerformanceValueTypeINTEL value) const {
     return {};
 }
 

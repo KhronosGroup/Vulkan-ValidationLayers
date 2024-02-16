@@ -497,6 +497,12 @@ struct DeviceFeatures {
     bool maintenance5;
     // VkPhysicalDeviceMaintenance6FeaturesKHR
     bool maintenance6;
+    // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
+    bool memoryMapPlaced;
+    // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
+    bool memoryMapRangePlaced;
+    // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
+    bool memoryUnmapReserve;
     // VkPhysicalDeviceMemoryDecompressionFeaturesNV
     bool memoryDecompression;
     // VkPhysicalDeviceMemoryPriorityFeaturesEXT
@@ -671,6 +677,8 @@ struct DeviceFeatures {
     bool schedulingControls;
     // VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceVulkan12Features
     bool separateDepthStencilLayouts;
+    // VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV
+    bool shaderFloat16VectorAtomics;
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT
     bool shaderBufferFloat16AtomicAdd;
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT

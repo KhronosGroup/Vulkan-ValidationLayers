@@ -851,6 +851,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->hostImageCopy |= enabled->hostImageCopy == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_FEATURES_EXT: {
+                const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(pNext);
+                features->memoryMapPlaced |= enabled->memoryMapPlaced == VK_TRUE;
+                features->memoryMapRangePlaced |= enabled->memoryMapRangePlaced == VK_TRUE;
+                features->memoryUnmapReserve |= enabled->memoryUnmapReserve == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *>(pNext);
@@ -1480,6 +1488,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *>(pNext);
                 features->descriptorPoolOverallocation |= enabled->descriptorPoolOverallocation == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV: {
+                const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(pNext);
+                features->shaderFloat16VectorAtomics |= enabled->shaderFloat16VectorAtomics == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
