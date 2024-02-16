@@ -99,6 +99,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_oob.cpp
     unit/gpu_av_oob_positive.cpp
     unit/gpu_av_positive.cpp
+    unit/gpu_av_spirv.cpp
     unit/gpu_av_spirv_positive.cpp
     unit/graphics_library.cpp
     unit/graphics_library_positive.cpp

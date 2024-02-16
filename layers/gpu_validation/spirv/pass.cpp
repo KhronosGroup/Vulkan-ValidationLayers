@@ -342,7 +342,11 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
 void Pass::Run() {
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            for (auto inst_it = (*block_it)->instructions_.begin(); inst_it != (*block_it)->instructions_.end(); ++inst_it) {
+            if ((*block_it)->loop_header_) {
+                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
+            }
+            auto& block_instructions = (*block_it)->instructions_;
+            for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 if (AnalyzeInstruction(*(function.get()), *(inst_it->get()))) {
                     block_it = InjectFunctionCheck(function.get(), block_it, inst_it);
 

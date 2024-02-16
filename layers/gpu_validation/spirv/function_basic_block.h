@@ -49,6 +49,8 @@ struct BasicBlock {
 
     InstructionList instructions_;
     Function& function_;
+
+    bool loop_header_ = false;
 };
 
 using BasicBlockList = std::vector<std::unique_ptr<BasicBlock>>;
