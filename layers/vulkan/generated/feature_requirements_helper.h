@@ -492,6 +492,12 @@ enum class Feature {
     maintenance5,
     // VkPhysicalDeviceMaintenance6FeaturesKHR
     maintenance6,
+    // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
+    memoryMapPlaced,
+    // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
+    memoryMapRangePlaced,
+    // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
+    memoryUnmapReserve,
     // VkPhysicalDeviceMemoryDecompressionFeaturesNV
     memoryDecompression,
     // VkPhysicalDeviceMemoryPriorityFeaturesEXT
@@ -666,6 +672,8 @@ enum class Feature {
     schedulingControls,
     // VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceVulkan12Features
     separateDepthStencilLayouts,
+    // VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV
+    shaderFloat16VectorAtomics,
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT
     shaderBufferFloat16AtomicAdd,
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT

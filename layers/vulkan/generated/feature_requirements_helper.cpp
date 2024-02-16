@@ -3170,6 +3170,48 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->maintenance6, "VkPhysicalDeviceMaintenance6FeaturesKHR::maintenance6"};
         }
+        case Feature::memoryMapPlaced: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMapMemoryPlacedFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->memoryMapPlaced, "VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::memoryMapPlaced"};
+        }
+        case Feature::memoryMapRangePlaced: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMapMemoryPlacedFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->memoryMapRangePlaced, "VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::memoryMapRangePlaced"};
+        }
+        case Feature::memoryUnmapReserve: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMapMemoryPlacedFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMapMemoryPlacedFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->memoryUnmapReserve, "VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::memoryUnmapReserve"};
+        }
         case Feature::memoryDecompression: {
             auto vk_struct = const_cast<VkPhysicalDeviceMemoryDecompressionFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceMemoryDecompressionFeaturesNV>(*inout_pnext_chain));
@@ -4591,6 +4633,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 return {&vk_struct->separateDepthStencilLayouts,
                         "VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures::separateDepthStencilLayouts"};
             }
+        case Feature::shaderFloat16VectorAtomics: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderFloat16VectorAtomics,
+                    "VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::shaderFloat16VectorAtomics"};
+        }
         case Feature::shaderBufferFloat16AtomicAdd: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(*inout_pnext_chain));

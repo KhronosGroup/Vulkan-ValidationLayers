@@ -493,6 +493,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_index_type_uint8{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state{kNotEnabled};
     ExtEnabled vk_ext_host_image_copy{kNotEnabled};
+    ExtEnabled vk_ext_map_memory_placed{kNotEnabled};
     ExtEnabled vk_ext_shader_atomic_float2{kNotEnabled};
     ExtEnabled vk_ext_swapchain_maintenance1{kNotEnabled};
     ExtEnabled vk_ext_shader_demote_to_helper_invocation{kNotEnabled};
@@ -603,6 +604,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qnx_external_memory_screen_buffer{kNotEnabled};
     ExtEnabled vk_msft_layered_driver{kNotEnabled};
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
+    ExtEnabled vk_nv_shader_atomic_float16_vector{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -1243,6 +1245,9 @@ struct DeviceExtensions : public InstanceExtensions {
                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                     {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME},
                     {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_map_memory_placed,
+             Info(&DeviceExtensions::vk_ext_map_memory_placed,
+                  {{{&DeviceExtensions::vk_khr_map_memory2, VK_KHR_MAP_MEMORY_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_EXT_shader_atomic_float2,
              Info(&DeviceExtensions::vk_ext_shader_atomic_float2,
                   {{{&DeviceExtensions::vk_ext_shader_atomic_float, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME}}})},
@@ -1632,6 +1637,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_NV_descriptor_pool_overallocation,
              Info(&DeviceExtensions::vk_nv_descriptor_pool_overallocation,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {vvl::Extension::_VK_NV_shader_atomic_float16_vector, Info(&DeviceExtensions::vk_nv_shader_atomic_float16_vector, {})},
             {vvl::Extension::_VK_KHR_acceleration_structure,
              Info(&DeviceExtensions::vk_khr_acceleration_structure,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -1933,6 +1939,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_index_type_uint8:
         case vvl::Extension::_VK_EXT_extended_dynamic_state:
         case vvl::Extension::_VK_EXT_host_image_copy:
+        case vvl::Extension::_VK_EXT_map_memory_placed:
         case vvl::Extension::_VK_EXT_shader_atomic_float2:
         case vvl::Extension::_VK_EXT_swapchain_maintenance1:
         case vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation:
@@ -2043,6 +2050,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_QNX_external_memory_screen_buffer:
         case vvl::Extension::_VK_MSFT_layered_driver:
         case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
+        case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

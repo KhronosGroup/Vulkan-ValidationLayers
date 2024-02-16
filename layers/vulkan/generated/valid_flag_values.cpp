@@ -309,6 +309,13 @@ vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, c
                 }
             }
             return {};
+        case vvl::FlagBitmask::VkMemoryMapFlagBits:
+            if (value & (VK_MEMORY_MAP_PLACED_BIT_EXT)) {
+                if (!IsExtEnabled(device_extensions.vk_ext_map_memory_placed)) {
+                    return {vvl::Extension::_VK_EXT_map_memory_placed};
+                }
+            }
+            return {};
         case vvl::FlagBitmask::VkEventCreateFlagBits:
             if (value & (VK_EVENT_CREATE_DEVICE_ONLY_BIT)) {
                 if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) {
@@ -819,6 +826,13 @@ vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, c
                 (VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR | VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR)) {
                 if (!IsExtEnabled(device_extensions.vk_khr_video_encode_queue)) {
                     return {vvl::Extension::_VK_KHR_video_encode_queue};
+                }
+            }
+            return {};
+        case vvl::FlagBitmask::VkMemoryUnmapFlagBitsKHR:
+            if (value & (VK_MEMORY_UNMAP_RESERVE_BIT_EXT)) {
+                if (!IsExtEnabled(device_extensions.vk_ext_map_memory_placed)) {
+                    return {vvl::Extension::_VK_EXT_map_memory_placed};
                 }
             }
             return {};

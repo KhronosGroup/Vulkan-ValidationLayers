@@ -164,8 +164,6 @@ ValidValue ValidationObject::IsValidEnumValue(VkPerformanceOverrideTypeINTEL val
 template <>
 ValidValue ValidationObject::IsValidEnumValue(VkPerformanceParameterTypeINTEL value) const;
 template <>
-ValidValue ValidationObject::IsValidEnumValue(VkPerformanceValueTypeINTEL value) const;
-template <>
 ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureEnableEXT value) const;
 template <>
 ValidValue ValidationObject::IsValidEnumValue(VkValidationFeatureDisableEXT value) const;

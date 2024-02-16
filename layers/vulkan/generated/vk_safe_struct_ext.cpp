@@ -6410,6 +6410,163 @@ void safe_VkHostImageCopyDevicePerformanceQueryEXT::initialize(const safe_VkHost
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT(
+    const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType),
+      memoryMapPlaced(in_struct->memoryMapPlaced),
+      memoryMapRangePlaced(in_struct->memoryMapRangePlaced),
+      memoryUnmapReserve(in_struct->memoryUnmapReserve) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_FEATURES_EXT),
+      pNext(nullptr),
+      memoryMapPlaced(),
+      memoryMapRangePlaced(),
+      memoryUnmapReserve() {}
+
+safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT(
+    const safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT& copy_src) {
+    sType = copy_src.sType;
+    memoryMapPlaced = copy_src.memoryMapPlaced;
+    memoryMapRangePlaced = copy_src.memoryMapRangePlaced;
+    memoryUnmapReserve = copy_src.memoryUnmapReserve;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT& safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::operator=(
+    const safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memoryMapPlaced = copy_src.memoryMapPlaced;
+    memoryMapRangePlaced = copy_src.memoryMapRangePlaced;
+    memoryUnmapReserve = copy_src.memoryUnmapReserve;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::~safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT() { FreePnextChain(pNext); }
+
+void safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::initialize(const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT* in_struct,
+                                                                 [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memoryMapPlaced = in_struct->memoryMapPlaced;
+    memoryMapRangePlaced = in_struct->memoryMapRangePlaced;
+    memoryUnmapReserve = in_struct->memoryUnmapReserve;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::initialize(const safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT* copy_src,
+                                                                 [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    memoryMapPlaced = copy_src->memoryMapPlaced;
+    memoryMapRangePlaced = copy_src->memoryMapRangePlaced;
+    memoryUnmapReserve = copy_src->memoryUnmapReserve;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT(
+    const VkPhysicalDeviceMapMemoryPlacedPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), minPlacedMemoryMapAlignment(in_struct->minPlacedMemoryMapAlignment) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_PROPERTIES_EXT), pNext(nullptr), minPlacedMemoryMapAlignment() {}
+
+safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT(
+    const safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT& copy_src) {
+    sType = copy_src.sType;
+    minPlacedMemoryMapAlignment = copy_src.minPlacedMemoryMapAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT& safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::operator=(
+    const safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    minPlacedMemoryMapAlignment = copy_src.minPlacedMemoryMapAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::~safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT() { FreePnextChain(pNext); }
+
+void safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::initialize(const VkPhysicalDeviceMapMemoryPlacedPropertiesEXT* in_struct,
+                                                                   [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    minPlacedMemoryMapAlignment = in_struct->minPlacedMemoryMapAlignment;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT::initialize(
+    const safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    minPlacedMemoryMapAlignment = copy_src->minPlacedMemoryMapAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkMemoryMapPlacedInfoEXT::safe_VkMemoryMapPlacedInfoEXT(const VkMemoryMapPlacedInfoEXT* in_struct,
+                                                             [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), pPlacedAddress(in_struct->pPlacedAddress) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkMemoryMapPlacedInfoEXT::safe_VkMemoryMapPlacedInfoEXT()
+    : sType(VK_STRUCTURE_TYPE_MEMORY_MAP_PLACED_INFO_EXT), pNext(nullptr), pPlacedAddress(nullptr) {}
+
+safe_VkMemoryMapPlacedInfoEXT::safe_VkMemoryMapPlacedInfoEXT(const safe_VkMemoryMapPlacedInfoEXT& copy_src) {
+    sType = copy_src.sType;
+    pPlacedAddress = copy_src.pPlacedAddress;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryMapPlacedInfoEXT& safe_VkMemoryMapPlacedInfoEXT::operator=(const safe_VkMemoryMapPlacedInfoEXT& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pPlacedAddress = copy_src.pPlacedAddress;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryMapPlacedInfoEXT::~safe_VkMemoryMapPlacedInfoEXT() { FreePnextChain(pNext); }
+
+void safe_VkMemoryMapPlacedInfoEXT::initialize(const VkMemoryMapPlacedInfoEXT* in_struct,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pPlacedAddress = in_struct->pPlacedAddress;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkMemoryMapPlacedInfoEXT::initialize(const safe_VkMemoryMapPlacedInfoEXT* copy_src,
+                                               [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    pPlacedAddress = copy_src->pPlacedAddress;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT(
     const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
     : sType(in_struct->sType),

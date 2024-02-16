@@ -1143,8 +1143,8 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkP
                                        "VUID-VkComputePipelineCreateInfo-commonparent", error_obj.location);
             if (auto pNext = vku::FindStructInPNextChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkSubpassShadingPipelineCreateInfoHUAWEI);
-                // There should be an explicit VU (if not that is a spec bug)
-                skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false, kVUIDUndefined, kVUIDUndefined,
+                skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false,
+                                       "VUID-VkSubpassShadingPipelineCreateInfoHUAWEI-renderPass-parameter", kVUIDUndefined,
                                        pNext_loc.dot(Field::renderPass));
             }
         }
@@ -3692,8 +3692,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
-                               "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-parameter", kVUIDUndefined,
+        // There should be an explicit VU (if not that is a spec bug)
+        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
                                pSurfaceInfo_loc.dot(Field::surface));
     }
 
@@ -3709,8 +3709,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysi
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-physicalDevice-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
-                               "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-parameter", kVUIDUndefined,
+        // There should be an explicit VU (if not that is a spec bug)
+        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
                                pSurfaceInfo_loc.dot(Field::surface));
     }
 
@@ -5648,8 +5648,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(Vk
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
-                               "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-parameter", kVUIDUndefined,
+        // There should be an explicit VU (if not that is a spec bug)
+        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
                                pSurfaceInfo_loc.dot(Field::surface));
     }
 
@@ -5686,11 +5686,9 @@ bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDev
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-        auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
-        skip |= instance_object_lifetimes->ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
-                                                          "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-parameter", kVUIDUndefined,
-                                                          pSurfaceInfo_loc.dot(Field::surface));
+        // There should be an explicit VU (if not that is a spec bug)
+        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
+                               pSurfaceInfo_loc.dot(Field::surface));
     }
 
     return skip;
@@ -6894,8 +6892,8 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkD
                                    error_obj.location);
         if (auto pNext = vku::FindStructInPNextChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkSubpassShadingPipelineCreateInfoHUAWEI);
-            // There should be an explicit VU (if not that is a spec bug)
-            skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false, kVUIDUndefined, kVUIDUndefined,
+            skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false,
+                                   "VUID-VkSubpassShadingPipelineCreateInfoHUAWEI-renderPass-parameter", kVUIDUndefined,
                                    pNext_loc.dot(Field::renderPass));
         }
     }

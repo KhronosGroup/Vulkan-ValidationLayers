@@ -1149,6 +1149,15 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY_EXT:
                 safe_pNext = new safe_VkHostImageCopyDevicePerformanceQueryEXT(reinterpret_cast<const VkHostImageCopyDevicePerformanceQueryEXT *>(pNext), copy_state, false);
                 break;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_FEATURES_EXT:
+                safe_pNext = new safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_PROPERTIES_EXT:
+                safe_pNext = new safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceMapMemoryPlacedPropertiesEXT *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_MEMORY_MAP_PLACED_INFO_EXT:
+                safe_pNext = new safe_VkMemoryMapPlacedInfoEXT(reinterpret_cast<const VkMemoryMapPlacedInfoEXT *>(pNext), copy_state, false);
+                break;
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT:
                 safe_pNext = new safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *>(pNext), copy_state, false);
                 break;
@@ -1770,6 +1779,9 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
                 break;
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV:
                 safe_pNext = new safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(reinterpret_cast<const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *>(pNext), copy_state, false);
+                break;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV:
+                safe_pNext = new safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV(reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(pNext), copy_state, false);
                 break;
             case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
                 safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext), copy_state, false);
@@ -2924,6 +2936,15 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY_EXT:
             delete reinterpret_cast<const safe_VkHostImageCopyDevicePerformanceQueryEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMapMemoryPlacedPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_MAP_PLACED_INFO_EXT:
+            delete reinterpret_cast<const safe_VkMemoryMapPlacedInfoEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *>(header);
             break;
@@ -3545,6 +3566,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);

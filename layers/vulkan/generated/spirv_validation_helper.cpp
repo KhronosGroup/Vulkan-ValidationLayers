@@ -84,6 +84,8 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &DeviceFeatures::shaderImageFloat32AtomicMinMax, nullptr, ""}},
     {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &DeviceFeatures::shaderBufferFloat64AtomicMinMax, nullptr, ""}},
     {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &DeviceFeatures::shaderSharedFloat64AtomicMinMax, nullptr, ""}},
+    // Not found in current SPIR-V Headers
+    //    {spv::CapabilityAtomicFloat16VectorNV, {0, &DeviceFeatures::shaderFloat16VectorAtomics, nullptr, ""}},
     {spv::CapabilityInt64ImageEXT, {0, &DeviceFeatures::shaderImageInt64Atomics, nullptr, ""}},
     {spv::CapabilityInt16, {0, &DeviceFeatures::shaderInt16, nullptr, ""}},
     {spv::CapabilityTessellationPointSize, {0, &DeviceFeatures::shaderTessellationAndGeometryPointSize, nullptr, ""}},
@@ -242,14 +244,11 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityTileImageDepthReadAccessEXT, {0, &DeviceFeatures::shaderTileImageDepthReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageStencilReadAccessEXT, {0, &DeviceFeatures::shaderTileImageStencilReadAccess, nullptr, ""}},
     {spv::CapabilityCooperativeMatrixKHR, {0, &DeviceFeatures::cooperativeMatrix, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityShaderEnqueueAMDX, {0, &DeviceFeatures::shaderEnqueue, nullptr, ""}},
+    {spv::CapabilityShaderEnqueueAMDX, {0, &DeviceFeatures::shaderEnqueue, nullptr, ""}},
     {spv::CapabilityGroupNonUniformRotateKHR, {0, &DeviceFeatures::shaderSubgroupRotate, nullptr, ""}},
     {spv::CapabilityExpectAssumeKHR, {0, &DeviceFeatures::shaderExpectAssume, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
+    {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
+    {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
     // Not found in current SPIR-V Headers
     //    {spv::CapabilityMaximallyReconvergesKHR, {0, &DeviceFeatures::shaderMaximalReconvergence, nullptr, ""}},
 };
@@ -332,6 +331,7 @@ static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvE
     {"SPV_KHR_subgroup_uniform_control_flow", {0, nullptr, &DeviceExtensions::vk_khr_shader_subgroup_uniform_control_flow, ""}},
     {"SPV_EXT_shader_atomic_float_min_max", {0, nullptr, &DeviceExtensions::vk_ext_shader_atomic_float2, ""}},
     {"SPV_EXT_shader_atomic_float16_add", {0, nullptr, &DeviceExtensions::vk_ext_shader_atomic_float2, ""}},
+    {"SPV_NV_shader_atomic_fp16_vector", {0, nullptr, &DeviceExtensions::vk_nv_shader_atomic_float16_vector, ""}},
     {"SPV_EXT_fragment_fully_covered", {0, nullptr, &DeviceExtensions::vk_ext_conservative_rasterization, ""}},
     {"SPV_KHR_integer_dot_product", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_KHR_integer_dot_product", {0, nullptr, &DeviceExtensions::vk_khr_shader_integer_dot_product, ""}},
@@ -646,10 +646,16 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "TileImageStencilReadAccessEXT";
         case spv::CapabilityCooperativeMatrixKHR:
             return "CooperativeMatrixKHR";
+        case spv::CapabilityShaderEnqueueAMDX:
+            return "ShaderEnqueueAMDX";
         case spv::CapabilityGroupNonUniformRotateKHR:
             return "GroupNonUniformRotateKHR";
         case spv::CapabilityExpectAssumeKHR:
             return "ExpectAssumeKHR";
+        case spv::CapabilityFloatControls2:
+            return "FloatControls2";
+        case spv::CapabilityQuadControlKHR:
+            return "QuadControlKHR";
         default:
             return "Unhandled OpCapability";
     };
@@ -897,8 +903,11 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityTileImageDepthReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess"},
     {spv::CapabilityTileImageStencilReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess"},
     {spv::CapabilityCooperativeMatrixKHR, "VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix"},
+    {spv::CapabilityShaderEnqueueAMDX, "VkPhysicalDeviceShaderEnqueueFeaturesAMDX::shaderEnqueue"},
     {spv::CapabilityGroupNonUniformRotateKHR, "VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR::shaderSubgroupRotate"},
     {spv::CapabilityExpectAssumeKHR, "VkPhysicalDeviceShaderExpectAssumeFeaturesKHR::shaderExpectAssume"},
+    {spv::CapabilityFloatControls2, "VkPhysicalDeviceShaderFloatControls2FeaturesKHR::shaderFloatControls2"},
+    {spv::CapabilityQuadControlKHR, "VkPhysicalDeviceShaderQuadControlFeaturesKHR::shaderQuadControl"},
     };
 
     // VUs before catch unknown capabilities
@@ -970,6 +979,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_subgroup_uniform_control_flow", {{vvl::Version::_VK_VERSION_1_3}, {vvl::Extension::_VK_KHR_shader_subgroup_uniform_control_flow}}},
     {"SPV_EXT_shader_atomic_float_min_max", {{vvl::Extension::_VK_EXT_shader_atomic_float2}}},
     {"SPV_EXT_shader_atomic_float16_add", {{vvl::Extension::_VK_EXT_shader_atomic_float2}}},
+    {"SPV_NV_shader_atomic_fp16_vector", {{vvl::Extension::_VK_NV_shader_atomic_float16_vector}}},
     {"SPV_EXT_fragment_fully_covered", {{vvl::Extension::_VK_EXT_conservative_rasterization}}},
     {"SPV_KHR_integer_dot_product", {{vvl::Version::_VK_VERSION_1_3}, {vvl::Extension::_VK_KHR_shader_integer_dot_product}}},
     {"SPV_INTEL_shader_integer_functions2", {{vvl::Extension::_VK_INTEL_shader_integer_functions2}}},
