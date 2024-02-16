@@ -122,6 +122,10 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
             function_end_found = true;
         }
 
+        if (opcode == spv::OpLoopMerge) {
+            current_block->loop_header_ = true;
+        }
+
         if (opcode == spv::OpLabel) {
             block_found = true;
             auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *current_function);
