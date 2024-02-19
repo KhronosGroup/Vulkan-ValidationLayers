@@ -3692,9 +3692,11 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        // There should be an explicit VU (if not that is a spec bug)
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
-                               pSurfaceInfo_loc.dot(Field::surface));
+        if (!IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
+                                   "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-07919", kVUIDUndefined,
+                                   pSurfaceInfo_loc.dot(Field::surface));
+        }
     }
 
     return skip;
@@ -3709,9 +3711,11 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysi
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-physicalDevice-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        // There should be an explicit VU (if not that is a spec bug)
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
-                               pSurfaceInfo_loc.dot(Field::surface));
+        if (!IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
+                                   "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-07919", kVUIDUndefined,
+                                   pSurfaceInfo_loc.dot(Field::surface));
+        }
     }
 
     return skip;
@@ -5648,9 +5652,11 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(Vk
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        // There should be an explicit VU (if not that is a spec bug)
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
-                               pSurfaceInfo_loc.dot(Field::surface));
+        if (!IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
+                                   "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-07919", kVUIDUndefined,
+                                   pSurfaceInfo_loc.dot(Field::surface));
+        }
     }
 
     return skip;
@@ -5686,9 +5692,11 @@ bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDev
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter"
     if (pSurfaceInfo) {
         [[maybe_unused]] const Location pSurfaceInfo_loc = error_obj.location.dot(Field::pSurfaceInfo);
-        // There should be an explicit VU (if not that is a spec bug)
-        skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true, kVUIDUndefined, kVUIDUndefined,
-                               pSurfaceInfo_loc.dot(Field::surface));
+        if (!IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+            skip |= ValidateObject(pSurfaceInfo->surface, kVulkanObjectTypeSurfaceKHR, true,
+                                   "VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-07919", kVUIDUndefined,
+                                   pSurfaceInfo_loc.dot(Field::surface));
+        }
     }
 
     return skip;
@@ -6607,8 +6615,10 @@ bool ObjectLifetimes::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer comman
         for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pInfos, index0);
             // There should be an explicit VU (if not that is a spec bug)
-            skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
-                                   index0_loc.dot(Field::dstMicromap));
+            {
+                skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined,
+                                       kVUIDUndefined, index0_loc.dot(Field::dstMicromap));
+            }
         }
     }
 
@@ -6627,8 +6637,10 @@ bool ObjectLifetimes::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferr
         for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pInfos, index0);
             // There should be an explicit VU (if not that is a spec bug)
-            skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
-                                   index0_loc.dot(Field::dstMicromap));
+            {
+                skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined,
+                                       kVUIDUndefined, index0_loc.dot(Field::dstMicromap));
+            }
         }
     }
 
@@ -6785,8 +6797,10 @@ bool ObjectLifetimes::PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, V
     if (pBuildInfo) {
         [[maybe_unused]] const Location pBuildInfo_loc = error_obj.location.dot(Field::pBuildInfo);
         // There should be an explicit VU (if not that is a spec bug)
-        skip |= ValidateObject(pBuildInfo->dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
-                               pBuildInfo_loc.dot(Field::dstMicromap));
+        {
+            skip |= ValidateObject(pBuildInfo->dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined,
+                                   pBuildInfo_loc.dot(Field::dstMicromap));
+        }
     }
 
     return skip;

@@ -737,8 +737,14 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     # These cases are 'commonparent' VUs for "non-ignored parameters"
                     if parent_vuid == 'kVUIDUndefined':
                         location = f'{errorLoc}.dot(Field::{member.name})'
-                        pre_call_validate += '// There should be an explicit VU (if not that is a spec bug)\n'
+                        if parentName == 'VkPhysicalDeviceSurfaceInfo2KHR':
+                            param_vuid = '"VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-07919"'
+                            pre_call_validate += 'if (!IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {\n'
+                        else:
+                            pre_call_validate += '// There should be an explicit VU (if not that is a spec bug)\n'
+                            pre_call_validate += '{\n'
                         pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
+                        pre_call_validate += '}\n'
                 else:
                     location = f'{errorLoc}.dot(Field::{member.name})'
                     if self.vk.commands[topCommand].device and self.vk.handles[member.type].instance:
