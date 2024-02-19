@@ -263,9 +263,8 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.size = 32;
 
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -329,9 +328,8 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.size = 32;
 
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -518,9 +516,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     alloc_info.allocationSize = 1u << 18;
     vkt::DeviceMemory common_scratch_memory(*m_device, alloc_info);
 
-    vkt::CommandBuffer cmd_buffer_frame_0(m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_1(m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_2(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_0(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_1(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_2(*m_device, m_commandPool);
 
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_0;
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_1;
@@ -668,9 +666,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    vkt::CommandBuffer cmd_buffer_frame_0(m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_1(m_device, m_commandPool);
-    vkt::CommandBuffer cmd_buffer_frame_2(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_0(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_1(*m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer_frame_2(*m_device, m_commandPool);
 
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_0;
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec_frame_1;
@@ -851,9 +849,9 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     const char* miss = R"glsl(
     #version 460
     #extension GL_EXT_ray_tracing : require
-   
+
     layout(location = 0) rayPayloadInEXT vec3 hit;
-    
+
     void main() {
         hit = vec3(0.1, 0.2, 0.3);
     }
@@ -863,10 +861,10 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     const char* closest_hit = R"glsl(
     #version 460
     #extension GL_EXT_ray_tracing : require
-    
+
     layout(location = 0) rayPayloadInEXT vec3 hit;
     hitAttributeEXT vec2 baryCoord;
-    
+
     void main() {
       const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
       hit = barycentricCoords;
@@ -932,9 +930,9 @@ TEST_F(PositiveRayTracing, BasicTraceRaysMultipleStages) {
     #extension GL_EXT_ray_tracing : require
 
     layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-   
+
     layout(location = 0) rayPayloadInEXT vec3 hit;
-    
+
     void main() {
         hit = vec3(0.1, 0.2, 0.3);
         traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
@@ -947,10 +945,10 @@ TEST_F(PositiveRayTracing, BasicTraceRaysMultipleStages) {
     #extension GL_EXT_ray_tracing : require
 
     layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-    
+
     layout(location = 0) rayPayloadInEXT vec3 hit;
     hitAttributeEXT vec2 baryCoord;
-    
+
     void main() {
       const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
       hit = barycentricCoords;
@@ -1025,9 +1023,9 @@ TEST_F(PositiveRayTracing, DynamicTminTmax) {
       float t_min;
       float t_max;
     } trace_rays_params;
-   
+
     layout(location = 0) rayPayloadInEXT vec3 hit;
-    
+
     void main() {
         hit = vec3(0.1, 0.2, 0.3);
         traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
@@ -1044,10 +1042,10 @@ TEST_F(PositiveRayTracing, DynamicTminTmax) {
       float t_min;
       float t_max;
     } trace_rays_params;
-    
+
     layout(location = 0) rayPayloadInEXT vec3 hit;
     hitAttributeEXT vec2 baryCoord;
-    
+
     void main() {
       const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
       hit = barycentricCoords;
@@ -1133,7 +1131,7 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDynamicRayFlags) {
     } trace_rays_params;
 
     layout(location = 0) rayPayloadInEXT vec3 hit;
-    
+
     void main() {
         hit = vec3(0.1, 0.2, 0.3);
         traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
@@ -1152,7 +1150,7 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDynamicRayFlags) {
 
     layout(location = 0) rayPayloadInEXT vec3 hit;
     hitAttributeEXT vec2 baryCoord;
-    
+
     void main() {
       const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
       hit = barycentricCoords;
@@ -1239,7 +1237,7 @@ TEST_F(PositiveRayTracing, DynamicRayFlagsSkipTriangle) {
     } trace_rays_params;
 
     layout(location = 0) rayPayloadInEXT vec3 hit;
-    
+
     void main() {
         hit = vec3(0.1, 0.2, 0.3);
         traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
@@ -1259,7 +1257,7 @@ TEST_F(PositiveRayTracing, DynamicRayFlagsSkipTriangle) {
 
     layout(location = 0) rayPayloadInEXT vec3 hit;
     hitAttributeEXT vec2 baryCoord;
-    
+
     void main() {
       const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
       hit = barycentricCoords;

@@ -140,9 +140,7 @@ TEST_F(NegativeAndroidHardwareBuffer, FetchUnboundImageInfo) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_LINEAR;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     // attempt to fetch layout from unbound image
     VkImageSubresource sub_rsrc = {};
@@ -254,8 +252,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageColor) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -311,8 +308,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageDS) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -367,8 +363,7 @@ TEST_F(NegativeAndroidHardwareBuffer, MipmapChainComplete) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -418,8 +413,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NoMipmapChain) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -471,8 +465,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImageDimensions) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -515,8 +508,7 @@ TEST_F(NegativeAndroidHardwareBuffer, UnknownFormat) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -578,8 +570,7 @@ TEST_F(NegativeAndroidHardwareBuffer, GpuUsage) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -629,8 +620,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocateImage) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, ici);
+    vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = image.handle();
@@ -1015,7 +1005,6 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportImageNonBound) {
     VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper();
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1028,7 +1017,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportImageNonBound) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();
@@ -1169,7 +1158,6 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, 64, 64);
 
     // Create buffer without VkExternalMemoryImageCreateInfo
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1182,7 +1170,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();

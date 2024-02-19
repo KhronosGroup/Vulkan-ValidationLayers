@@ -23,6 +23,7 @@
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
 TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
     TEST_DESCRIPTION("Require injection in the Loop Header block that contains a Phi");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

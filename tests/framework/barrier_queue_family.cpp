@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, uint32_t
     index = qf_index;
     queue = new vkt::Queue(qf_queue, qf_index);
     command_pool = new vkt::CommandPool(*device, qf_index, cp_flags);
-    command_buffer = new vkt::CommandBuffer(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-    command_buffer2 = new vkt::CommandBuffer(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    command_buffer = new vkt::CommandBuffer(*device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    command_buffer2 = new vkt::CommandBuffer(*device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 }
 
 BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices) : layer_test(test) {
@@ -52,10 +52,14 @@ void BarrierQueueFamilyBase::Context::Reset() {
 void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
-    image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families,
-                image_memory);
-
-    ASSERT_TRUE(image_.initialized());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL, families);
+    if (image_memory) {
+        image_.init(*device_obj, image_ci, 0);
+        image_.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    } else {
+        image_.init_no_mem(*device_obj, image_ci);
+    }
 
     image_barrier_ = image_.image_memory_barrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, image_.Layout(),
                                                  image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
@@ -74,10 +78,14 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
 void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
-    image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families,
-                image_memory);
-
-    ASSERT_TRUE(image_.initialized());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL, families);
+    if (image_memory) {
+        image_.init(*device_obj, image_ci, 0);
+        image_.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    } else {
+        image_.init_no_mem(*device_obj, image_ci);
+    }
 
     image_barrier_ = image_.image_memory_barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                                  VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, image_.Layout(),

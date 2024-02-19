@@ -198,13 +198,10 @@ TEST_F(NegativeProtectedMemory, Memory) {
     }
 
     // Create actual protected and unprotected images
-    VkImageObj image_protected(m_device);
-    VkImageObj image_unprotected(m_device);
-
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
-    image_protected.init_no_mem(*m_device, image_create_info);
+    vkt::Image image_protected(*m_device, image_create_info, vkt::no_mem);
     image_create_info.flags = 0;
-    image_unprotected.init_no_mem(*m_device, image_create_info);
+    vkt::Image image_unprotected(*m_device, image_create_info, vkt::no_mem);
 
     // Create protected and unproteced memory
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
@@ -513,7 +510,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     protected_pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer unprotected_cmdbuf(m_device, &command_pool);
+    vkt::CommandBuffer unprotected_cmdbuf(*m_device, &command_pool);
     unprotected_cmdbuf.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
     vk::CmdBindPipeline(unprotected_cmdbuf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.Handle());
@@ -720,7 +717,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
-    vkt::CommandBuffer protectedCommandBuffer(m_device, &protectedCommandPool);
+    vkt::CommandBuffer protectedCommandBuffer(*m_device, &protectedCommandPool);
 
     // Create actual protected and unprotected buffers
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -738,10 +735,6 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
 
     // Create actual protected and unprotected images
     const VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_protected(m_device);
-    VkImageObj image_unprotected(m_device);
-    VkImageObj image_protected_descriptor(m_device);
-    VkImageObj image_unprotected_descriptor(m_device);
     VkImageView image_views[2];
     VkImageView image_views_descriptor[2];
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -755,12 +748,12 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     image_create_info.arrayLayers = 1;
     image_create_info.mipLevels = 1;
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
-    image_protected.init_no_mem(*m_device, image_create_info);
-    image_protected_descriptor.init_no_mem(*m_device, image_create_info);
 
+    vkt::Image image_protected(*m_device, image_create_info, vkt::no_mem);
+    vkt::Image image_protected_descriptor(*m_device, image_create_info, vkt::no_mem);
     image_create_info.flags = 0;
-    image_unprotected.init_no_mem(*m_device, image_create_info);
-    image_unprotected_descriptor.init_no_mem(*m_device, image_create_info);
+    vkt::Image image_unprotected(*m_device, image_create_info, vkt::no_mem);
+    vkt::Image image_unprotected_descriptor(*m_device, image_create_info, vkt::no_mem);
 
     // Create protected and unproteced memory
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();

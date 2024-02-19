@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,9 +77,7 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, ci);
+    vkt::Image image(*m_device, ci, vkt::no_mem);
 
     // Query layout of 3rd plane
     VkImageSubresource subres = {};
@@ -114,9 +112,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-
-    VkImageObj image(m_device);
-    image.init(&ci);
+    vkt::Image image(*m_device, ci, vkt::set_layout);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -174,9 +170,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, ci);
-
+    vkt::Image image(*m_device, ci, vkt::no_mem);
     vkt::DeviceMemory mem_obj;
     mem_obj.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
 
@@ -240,8 +234,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, ci);
+    vkt::Image image(*m_device, ci, vkt::no_mem);
 
     // Allocate & bind memory
     auto image_plane_req = vku::InitStruct<VkImagePlaneMemoryRequirementsInfo>();
@@ -328,10 +321,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-
-    VkImageObj image(m_device);
-    image.Init(ci);
-
+    vkt::Image image(*m_device, ci, vkt::set_layout);
     vkt::Buffer buffer(*m_device, 128 * 128 * 3, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy copy_region = {};
@@ -430,9 +420,7 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-
-    VkImageObj image(m_device);
-    image.Init(ci);
+    vkt::Image image(*m_device, ci, vkt::set_layout);
 
     vkt::SamplerYcbcrConversion conversion(*m_device, format);
     auto conversion_info = conversion.ConversionInfo();

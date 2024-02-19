@@ -216,7 +216,7 @@ class Device : public internal::Handle<VkDevice> {
     const PhysicalDevice &phy() const { return phy_; }
 
     std::vector<const char *> GetEnabledExtensions() { return enabled_extensions_; }
-    bool IsEnabledExtension(const char *extension);
+    bool IsEnabledExtension(const char *extension) const;
 
     // vkGetDeviceProcAddr()
     PFN_vkVoidFunction get_proc(const char *name) const { return vk::GetDeviceProcAddr(handle(), name); }
@@ -247,9 +247,10 @@ class Device : public internal::Handle<VkDevice> {
         VkImageTiling tiling;
         VkFlags features;
     };
-    // vkGetFormatInfo()
-    VkFormatProperties format_properties(VkFormat format);
-    const std::vector<Format> &formats() const { return formats_; }
+
+    VkFormatFeatureFlags2 FormatFeaturesLinear(VkFormat format) const;
+    VkFormatFeatureFlags2 FormatFeaturesOptimal(VkFormat format) const;
+    VkFormatFeatureFlags2 FormatFeaturesBuffer(VkFormat format) const;
 
     // vkDeviceWaitIdle()
     void wait() const;
@@ -293,13 +294,11 @@ class Device : public internal::Handle<VkDevice> {
     };
 
     void init_queues(const VkDeviceCreateInfo &info);
-    void init_formats();
 
     std::vector<const char *> enabled_extensions_;
 
     QueueFamilies queue_families_;
     std::vector<Queue *> queues_[QUEUE_COUNT];
-    std::vector<Format> formats_;
 };
 
 class Queue : public internal::Handle<VkQueue> {
@@ -347,7 +346,7 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     void unmap() const;
 	const auto &get_memory_allocate_info() { return memory_allocate_info_; }
 
-        static VkMemoryAllocateInfo get_resource_alloc_info(const vkt::Device &dev, const VkMemoryRequirements &reqs,
+        static VkMemoryAllocateInfo get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
                                                             VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
 
       private:
@@ -453,6 +452,8 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
 
 struct NoMemT {};
 static constexpr NoMemT no_mem{};
+struct SetLayoutT {};
+static constexpr SetLayoutT set_layout{};
 
 class Buffer : public internal::NonDispHandle<VkBuffer> {
   public:
@@ -577,21 +578,32 @@ inline VkBufferViewCreateInfo BufferView::createInfo(VkBuffer buffer, VkFormat f
 
 class Image : public internal::NonDispHandle<VkImage> {
   public:
-    explicit Image() : NonDispHandle(), format_features_(0) {}
-    explicit Image(const Device &dev, const VkImageCreateInfo &info) : format_features_(0) { init(dev, info); }
+    explicit Image() : NonDispHandle() {}
+    explicit Image(const Device &dev, const VkImageCreateInfo &info);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props,
                    void *alloc_info_pnext = nullptr);
-    explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : format_features_(0) { init_no_mem(dev, info); }
+    explicit Image(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
+                   VkFlags const usage);
+
+    explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT);
+    explicit Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT);
 
     ~Image() noexcept;
     void destroy() noexcept;
 
-    // vkCreateImage()
     void init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
-    void init(const Device &dev, const VkImageCreateInfo &info) { init(dev, info, 0); }
+    void Init(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
+              VkFlags const usage);
     void init_no_mem(const Device &dev, const VkImageCreateInfo &info);
 
+    static VkImageCreateInfo ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
+                                               uint32_t const layers, VkFormat const format, VkFlags const usage,
+                                               VkImageTiling const requested_tiling = VK_IMAGE_TILING_OPTIMAL,
+                                               const std::vector<uint32_t> *queue_families = nullptr);
+
     VkImage image() const { return handle(); }
+
+    static bool IsCompatible(const Device &dev, VkImageUsageFlags usages, VkFormatFeatureFlags2 features);
 
     // get the internal memory
     const DeviceMemory &memory() const { return internal_mem_; }
@@ -607,23 +619,13 @@ class Image : public internal::NonDispHandle<VkImage> {
     // Bind to existing memory object
     void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
-    // vkGetImageSubresourceLayout()
-    VkSubresourceLayout subresource_layout(const VkImageSubresource &subres) const;
-    VkSubresourceLayout subresource_layout(const VkImageSubresourceLayers &subres) const;
-
-    VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
-
-    VkExtent3D extent() const { return create_info_.extent; }
     uint32_t width() const { return create_info_.extent.width; }
     uint32_t height() const { return create_info_.extent.height; }
     VkFormat format() const { return create_info_.format; }
-    uint32_t mip_levels() const { return create_info_.mipLevels; }
-    uint32_t array_layers() const { return create_info_.arrayLayers; }
     VkImageUsageFlags usage() const { return create_info_.usage; }
+
     VkImageMemoryBarrier image_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkImageLayout old_layout,
-                                              VkImageLayout new_layout, const VkImageSubresourceRange &range,
-                                              uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                              uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
+                                              VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
         VkImageMemoryBarrier barrier = vku::InitStructHelper();
         barrier.srcAccessMask = output_mask;
         barrier.dstAccessMask = input_mask;
@@ -631,17 +633,15 @@ class Image : public internal::NonDispHandle<VkImage> {
         barrier.newLayout = new_layout;
         barrier.image = handle();
         barrier.subresourceRange = range;
-        barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
-        barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         return barrier;
     }
 
     VkImageMemoryBarrier2KHR image_memory_barrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
                                                   VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access,
                                                   VkImageLayout old_layout, VkImageLayout new_layout,
-                                                  const VkImageSubresourceRange &range,
-                                                  uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                                  uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
+                                                  const VkImageSubresourceRange &range) const {
         VkImageMemoryBarrier2KHR barrier = vku::InitStructHelper();
         barrier.srcStageMask = src_stage;
         barrier.dstStageMask = dst_stage;
@@ -651,18 +651,25 @@ class Image : public internal::NonDispHandle<VkImage> {
         barrier.newLayout = new_layout;
         barrier.image = handle();
         barrier.subresourceRange = range;
-        barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
-        barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         return barrier;
     }
 
+    void ImageMemoryBarrier(CommandBuffer *cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
+                            VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
     static VkImageCreateInfo create_info();
+
     static VkImageSubresource subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer);
     static VkImageSubresource subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer);
     static VkImageSubresourceLayers subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
                                                 uint32_t array_size);
     static VkImageSubresourceLayers subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
                                                 uint32_t array_size);
+
+    VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
     static VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect_mask, uint32_t base_mip_level, uint32_t mip_levels,
                                                      uint32_t base_array_layer, uint32_t num_layers);
     static VkImageSubresourceRange subresource_range(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask);
@@ -670,24 +677,27 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     static VkImageAspectFlags aspect_mask(VkFormat format);
 
-    static VkExtent2D extent(int32_t width, int32_t height);
-    static VkExtent2D extent(const VkExtent3D &extent);
+    void Layout(VkImageLayout const layout) { image_layout_ = layout; }
+    VkImageLayout Layout() const { return image_layout_; }
 
-    static VkExtent3D extent(int32_t width, int32_t height, int32_t depth);
+    void SetLayout(CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
+    void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
+    void SetLayout(VkImageLayout image_layout) { SetLayout(aspect_mask(format()), image_layout); };
 
-    static VkImageMemoryBarrier transition_to_present(VkImage swapchain_image, VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED,
-                                                      VkAccessFlags src_access_mask = 0);
-    static VkImageMemoryBarrier2 transition_to_present_2(
-        VkImage swapchain_image, VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED,
-        VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 src_access_mask = 0);
+    VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const;
+    ImageView CreateView(VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) const;
+    ImageView CreateView(VkImageViewType type, uint32_t baseMipLevel = 0, uint32_t levelCount = VK_REMAINING_MIP_LEVELS,
+                         uint32_t baseArrayLayer = 0, uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS,
+                         VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) const;
 
   private:
-    void init_info(const Device &dev, const VkImageCreateInfo &info);
+    // We need this to do ImageView and SetLayout actions
+    const Device *device_ = nullptr;
 
     VkImageCreateInfo create_info_;
-    VkFlags format_features_;
 
     DeviceMemory internal_mem_;
+    VkImageLayout image_layout_ = VK_IMAGE_LAYOUT_GENERAL;
 };
 
 class ImageView : public internal::NonDispHandle<VkImageView> {
@@ -727,8 +737,8 @@ class AccelerationStructureNV : public internal::NonDispHandle<VkAccelerationStr
 
     const VkDevice &dev() const { return device(); }
 
-    [[nodiscard]] vkt::Buffer create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
-                                                    bool buffer_device_address = false) const;
+    [[nodiscard]] Buffer create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
+                                               bool buffer_device_address = false) const;
 
   private:
     VkAccelerationStructureInfoNV info_;
@@ -950,7 +960,7 @@ class CommandPool : public internal::NonDispHandle<VkCommandPool> {
     explicit CommandPool() : NonDispHandle() {}
     explicit CommandPool(const Device &dev, const VkCommandPoolCreateInfo &info) { init(dev, info); }
     explicit CommandPool(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0) {
-        init(dev, vkt::CommandPool::create_info(queue_family_index, flags));
+        init(dev, CommandPool::create_info(queue_family_index, flags));
     }
 
     void init(const Device &dev, const VkCommandPoolCreateInfo &info);
@@ -972,9 +982,9 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     explicit CommandBuffer() : Handle() {}
     explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { init(dev, info); }
-    explicit CommandBuffer(Device *device, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    explicit CommandBuffer(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                            Queue *queue = nullptr) {
-        Init(device, pool, level, queue);
+        Init(dev, pool, level, queue);
     }
     CommandBuffer(CommandBuffer &&rhs) noexcept : Handle(std::move(rhs)) {
         dev_handle_ = rhs.dev_handle_;
@@ -987,7 +997,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     // vkAllocateCommandBuffers()
     void init(const Device &dev, const VkCommandBufferAllocateInfo &info);
-    void Init(Device *device, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    void Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
               Queue *queue = nullptr);
 
     // vkBeginCommandBuffer()
@@ -1211,23 +1221,6 @@ inline VkImageSubresourceRange Image::subresource_range(const VkImageCreateInfo 
 
 inline VkImageSubresourceRange Image::subresource_range(const VkImageSubresource &subres) {
     return subresource_range(subres.aspectMask, subres.mipLevel, 1, subres.arrayLayer, 1);
-}
-
-inline VkExtent2D Image::extent(int32_t width, int32_t height) {
-    VkExtent2D extent = {};
-    extent.width = width;
-    extent.height = height;
-    return extent;
-}
-
-inline VkExtent2D Image::extent(const VkExtent3D &extent) { return Image::extent(extent.width, extent.height); }
-
-inline VkExtent3D Image::extent(int32_t width, int32_t height, int32_t depth) {
-    VkExtent3D extent = {};
-    extent.width = width;
-    extent.height = height;
-    extent.depth = depth;
-    return extent;
 }
 
 inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, const uint32_t *code, VkFlags flags) {

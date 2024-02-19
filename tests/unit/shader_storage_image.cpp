@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -272,8 +272,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
 
-        VkImageObj image(m_device);
-        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+        vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+        image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         vkt::ImageView view = image.CreateView();
 
         VkDescriptorImageInfo image_info = {};
@@ -426,8 +426,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
 
-        VkImageObj image(m_device);
-        image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+        vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+        image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         vkt::ImageView view = image.CreateView();
 
         VkDescriptorImageInfo image_info = {};
@@ -842,8 +842,8 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};
@@ -924,8 +924,8 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     VkDescriptorImageInfo image_info = {};

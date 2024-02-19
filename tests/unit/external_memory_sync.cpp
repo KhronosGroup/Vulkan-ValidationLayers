@@ -190,7 +190,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
 
     // Create an image with one of the handle types
     external_image_info.handleTypes = handle_type;
-    vkt::Image image(*m_device, image_info, vkt::NoMemT{});
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
 
     // Create export memory with a different handle type
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
@@ -423,7 +423,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
 
     // Create a buffer with one of the handle types
     external_info.handleTypes = handle_type;
-    vkt::Buffer buffer(*m_device, buffer_info, vkt::NoMemT{});
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     // Check if dedicated allocation is required
     const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(gpu(), buffer_info, handle_type2);
@@ -1226,8 +1226,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     }
     external_image_info.handleTypes = wrong_image_handle_type;
 
-    VkImageObj image_import(m_device);
-    image_import.init_no_mem(*m_device, image_info);
+    vkt::Image image_import(*m_device, image_info, vkt::no_mem);
 
 #ifdef _WIN32
     // Export memory to handle
@@ -1776,11 +1775,11 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
         }
     }
 
-    VkImageObj image(m_device);
+    vkt::Image image;
     {
         VkExternalMemoryImageCreateInfo external_info = vku::InitStructHelper();
         external_info.handleTypes = handle_type;
-        auto create_info = VkImageObj::create_info();
+        auto create_info = vkt::Image::create_info();
         create_info.pNext = &external_info;
         create_info.imageType = VK_IMAGE_TYPE_2D;
         create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2051,7 +2050,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32ImageNoDedicated) {
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
-    auto image_info = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    auto image_info = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     const auto handle_types = FindSupportedExternalMemoryHandleTypes(
         gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
@@ -2063,8 +2062,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32ImageNoDedicated) {
     external_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     image_info.pNext = &external_image_info;
 
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_info);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
 
     VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper();
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -2442,12 +2440,11 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
-    VkImageObj image(m_device);
-    auto image_info = VkImageObj::create_info();
+    auto image_info = vkt::Image::create_info();
     image_info.extent.width = 1024;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image.init_no_mem(*m_device, image_info);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
 
     if (FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "Need image with no import support";
@@ -2690,8 +2687,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     buff_view_ci.pNext = &metal_object_create_info;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-pNext-06782"});
 
-    VkImageObj image_obj(m_device);
-    image_obj.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image_obj(*m_device, 256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image_obj.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -2748,8 +2744,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     VkExportMetalObjectCreateInfoEXT export_metal_object_create_info = vku::InitStructHelper();
     export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
     ici.pNext = &export_metal_object_create_info;
-    VkImageObj export_image_obj(m_device);
-    export_image_obj.Init(ici);
+    vkt::Image export_image_obj(*m_device, ici);
     vkt::BufferView export_buffer_view;
     buff_view_ci.pNext = &export_metal_object_create_info;
     export_buffer_view.init(*m_device, buff_view_ci);
@@ -2799,8 +2794,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
 
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkImageObj single_plane_export_image_obj(m_device);
-    single_plane_export_image_obj.Init(ici);
+    vkt::Image single_plane_export_image_obj(*m_device, ici);
     metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_1_BIT;
     metal_texture_info.image = single_plane_export_image_obj.handle();
     // metal_texture_info.plane not plane_0 for single plane image
@@ -2862,8 +2856,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
         ici.tiling = VK_IMAGE_TILING_OPTIMAL;
         ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
         ici.pNext = &export_metal_object_create_info;
-        VkImageObj mp_image_obj(m_device);
-        mp_image_obj.init(&ici);
+        vkt::Image mp_image_obj(*m_device, ici);
 
         metal_texture_info.bufferView = VK_NULL_HANDLE;
         metal_texture_info.imageView = VK_NULL_HANDLE;

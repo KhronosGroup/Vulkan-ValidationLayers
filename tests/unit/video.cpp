@@ -3053,7 +3053,7 @@ TEST_F(NegativeVideo, BeginCodingUnsupportedCodecOp) {
     context.CreateAndBindSessionMemory();
 
     vkt::CommandPool pool(*m_device, queue_family_index);
-    vkt::CommandBuffer cb(m_device, &pool);
+    vkt::CommandBuffer cb(*m_device, &pool);
 
     cb.begin();
 
@@ -9836,7 +9836,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryIncompatibleQueueFamily) {
     context.CreateStatusQueryPool();
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(m_device, &cmd_pool);
+    vkt::CommandBuffer cb(*m_device, &cmd_pool);
 
     cb.begin();
 
@@ -10101,7 +10101,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryIncompatibleQueueFamily) {
     context.CreateStatusQueryPool();
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(m_device, &cmd_pool);
+    vkt::CommandBuffer cb(*m_device, &cmd_pool);
 
     cb.begin();
 
@@ -11910,8 +11910,7 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
         image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        vkt::Image image;
-        image.init(*m_device, image_ci);
+        vkt::Image image(*m_device, image_ci);
 
         VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
         image_view_ci.image = image.handle();
@@ -11993,8 +11992,7 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
         image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        vkt::Image image;
-        image.init(*m_device, image_ci);
+        vkt::Image image(*m_device, image_ci);
 
         auto image_usage_ci = vku::InitStruct<VkImageViewUsageCreateInfoKHR>();
         image_usage_ci.usage = test_case.usage;
@@ -12104,7 +12102,7 @@ TEST_F(NegativeVideo, BeginQueryIncompatibleQueueFamily) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
 
     vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer cb(m_device, &cmd_pool);
+    vkt::CommandBuffer cb(*m_device, &cmd_pool);
 
     cb.begin();
 

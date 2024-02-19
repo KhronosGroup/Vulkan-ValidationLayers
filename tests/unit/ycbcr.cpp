@@ -256,9 +256,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     sycci.components = identity;
     vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkSamplerYcbcrConversionInfo conversion_info = vku::InitStructHelper();
     conversion_info.conversion = conversion.handle();
@@ -440,15 +438,11 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
     // Create images
     ci.extent = {64, 64, 1};
-    VkImageObj image_422(m_device);
-    image_422.init(&ci);
-    ASSERT_TRUE(image_422.initialized());
+    vkt::Image image_422(*m_device, ci, vkt::set_layout);
 
     ci.extent = {64, 64, 1};
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_ucmp(m_device);
-    image_ucmp.init(&ci);
-    ASSERT_TRUE(image_ucmp.initialized());
+    vkt::Image image_ucmp(*m_device, ci, vkt::set_layout);
 
     m_commandBuffer->begin();
 
@@ -533,19 +527,13 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     }
 
     // Create images
-    VkImageObj mp3_image(m_device);
-    mp3_image.init(&ci);
-    ASSERT_TRUE(mp3_image.initialized());
+    vkt::Image mp3_image(*m_device, ci, vkt::set_layout);
 
     ci.format = mp2_format;
-    VkImageObj mp2_image(m_device);
-    mp2_image.init(&ci);
-    ASSERT_TRUE(mp2_image.initialized());
+    vkt::Image mp2_image(*m_device, ci, vkt::set_layout);
 
     ci.format = VK_FORMAT_D24_UNORM_S8_UINT;
-    VkImageObj sp_image(m_device);
-    sp_image.init(&ci);
-    ASSERT_TRUE(sp_image.initialized());
+    vkt::Image sp_image(*m_device, ci, vkt::set_layout);
 
     m_commandBuffer->begin();
 
@@ -640,7 +628,6 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     RETURN_IF_SKIP(InitBasicYcbcr());
     InitRenderTarget();
 
-    VkImageObj mp_image(m_device);
     VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -660,7 +647,7 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
-    mp_image.init(&image_create_info);
+    vkt::Image mp_image(*m_device, image_create_info, vkt::set_layout);
     m_commandBuffer->begin();
 
     VkClearColorValue color_clear_value = {};
@@ -699,13 +686,11 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    VkImageObj image_obj(m_device);
     auto image_ci = vku::InitStruct<VkImageCreateInfo>(
         nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT},  // need for multi-planar
         VK_IMAGE_TYPE_2D, mp_format, VkExtent3D{64, 64u, 1u}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
         VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
-    image_obj.init(&image_ci);
-    ASSERT_TRUE(image_obj.initialized());
+    vkt::Image image_obj(*m_device, image_ci, vkt::set_layout);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion.handle();
@@ -953,9 +938,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     }
 
     // Try to bind memory to an object with an invalid memoryOffset
-
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
@@ -1155,9 +1138,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
     }
 
     // Try to bind memory to an object with an invalid memoryOffset
-
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
@@ -1295,9 +1276,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitBasicYcbcr());
 
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkSamplerYcbcrConversionCreateInfo sampler_conversion_ci = vku::InitStructHelper();
     sampler_conversion_ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
@@ -1375,9 +1354,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     if (!supported) {
         printf("Multiplane image format not supported.  Skipping test.\n");
     } else {
-        VkImageObj image_obj(m_device);
-        image_obj.init(&ci);
-        ASSERT_TRUE(image_obj.initialized());
+        vkt::Image image_obj(*m_device, ci, vkt::set_layout);
 
         VkImageViewCreateInfo ivci = vku::InitStructHelper();
         ivci.image = image_obj.image();
@@ -1415,9 +1392,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     if (!supported) {
         printf("Multiplane image format not supported.  Skipping test.\n");
     } else {
-        VkImageObj image_obj(m_device);
-        image_obj.init(&ci);
-        ASSERT_TRUE(image_obj.initialized());
+        vkt::Image image_obj(*m_device, ci, vkt::set_layout);
 
         VkImageViewCreateInfo ivci = vku::InitStructHelper();
         ivci.image = image_obj.image();
@@ -1480,9 +1455,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     // Different formats between VkImage and VkImageView
     {
         ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-        VkImageObj image(m_device);
-        image.init(&ci);
-        ASSERT_TRUE(image.initialized());
+        vkt::Image image(*m_device, ci, vkt::set_layout);
 
         ivci.image = image.image();
         ivci.format = VK_FORMAT_R8_UNORM;
@@ -1494,9 +1467,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     // Without Mutable format
     {
         ci.flags = 0;
-        VkImageObj image(m_device);
-        image.init(&ci);
-        ASSERT_TRUE(image.initialized());
+        vkt::Image image(*m_device, ci, vkt::set_layout);
 
         VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
         ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
@@ -1532,10 +1503,9 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     }
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // commonly supported multi-planar format
-    VkImageObj image_obj(m_device);
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_props);
-    if (!image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, format_props.optimalTilingFeatures)) {
+    if (!vkt::Image::IsCompatible(*m_device, VK_IMAGE_USAGE_SAMPLED_BIT, format_props.optimalTilingFeatures)) {
         GTEST_SKIP() << "multi-planar format cannot be sampled for optimalTiling.";
     }
 
@@ -1543,8 +1513,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
         nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT},  // need for multi-planar
         VK_IMAGE_TYPE_2D, mp_format, VkExtent3D{64, 64, 1}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
         VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
-    image_obj.init(&image_ci);
-    ASSERT_TRUE(image_obj.initialized());
+    vkt::Image image_obj(*m_device, image_ci, vkt::set_layout);
 
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
     ycbcr_create_info.format = mp_format;
@@ -1640,9 +1609,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
     mem_req_info2.image = image;
@@ -1674,9 +1641,7 @@ TEST_F(NegativeYcbcr, DrawFetch) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-
-    VkImageObj image(m_device);
-    image.Init(ci);
+    vkt::Image image(*m_device, ci, vkt::set_layout);
 
     vkt::SamplerYcbcrConversion conversion(*m_device, format);
     auto conversion_info = conversion.ConversionInfo();
@@ -1751,9 +1716,7 @@ TEST_F(NegativeYcbcr, DrawConstOffset) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-
-    VkImageObj image(m_device);
-    image.Init(ci);
+    vkt::Image image(*m_device, ci, vkt::set_layout);
 
     vkt::SamplerYcbcrConversion conversion(*m_device, format);
     auto conversion_info = conversion.ConversionInfo();

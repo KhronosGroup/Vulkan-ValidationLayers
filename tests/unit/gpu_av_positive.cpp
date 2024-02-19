@@ -529,8 +529,8 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -661,9 +661,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageObj copy_dst_image(m_device);
-    copy_dst_image.Init(image_ci);
-
+    vkt::Image copy_dst_image(*m_device, image_ci, vkt::set_layout);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     m_commandBuffer->begin();
@@ -726,9 +724,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageObj copy_dst_image(m_device);
-    copy_dst_image.Init(image_ci);
-
+    vkt::Image copy_dst_image(*m_device, image_ci, vkt::set_layout);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     m_commandBuffer->begin();
@@ -757,13 +753,11 @@ TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::CommandBuffer cb_0(m_device, m_commandPool);
-    vkt::CommandBuffer cb_1(m_device, m_commandPool);
+    vkt::CommandBuffer cb_0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb_1(*m_device, m_commandPool);
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    VkImageObj image(m_device);
-    image.init(&image_ci);
-
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::Buffer buffer(*m_device, 4096, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy region = {};

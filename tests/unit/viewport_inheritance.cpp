@@ -26,7 +26,7 @@ class ViewportInheritanceTestData {
     VkRenderPass m_renderPass{};
 
     // Framebuffer data.
-    VkImageObj m_colorImageObj;
+    vkt::Image m_colorImageObj;
     VkImageView m_colorImageView{};
     VkFramebuffer m_framebuffer{};
 
@@ -102,9 +102,9 @@ class ViewportInheritanceTestData {
         if (result != VK_SUCCESS) m_failureReason = "Could not create render pass.";
     }
 
-    void CreateColorImageObj() noexcept {
+    void CreateColorImageObj(vkt::Device& device_obj) noexcept {
         assert(m_colorFormat != VK_FORMAT_UNDEFINED);
-        m_colorImageObj.Init(128, 128, 1, m_colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        m_colorImageObj.Init(device_obj, 128, 128, 1, m_colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         if (!m_colorImageObj.initialized()) {
             m_failureReason = "Image not initialized";
         }
@@ -246,15 +246,14 @@ class ViewportInheritanceTestData {
         return true;
     }
 
-    ViewportInheritanceTestData(vkt::Device* p_device_obj, VkPhysicalDevice physical_device) noexcept
-        : m_colorImageObj(p_device_obj) {
+    ViewportInheritanceTestData(vkt::Device* p_device_obj, VkPhysicalDevice physical_device) noexcept {
         m_device = p_device_obj->handle();
 
         PickColorFormat(physical_device);
         if (m_failureReason) return;
         CreateRenderPass();
         if (m_failureReason) return;
-        CreateColorImageObj();
+        CreateColorImageObj(*p_device_obj);
         if (m_failureReason) return;
         CreateColorView();
         if (m_failureReason) return;
@@ -947,7 +946,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     InitRenderTarget();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {

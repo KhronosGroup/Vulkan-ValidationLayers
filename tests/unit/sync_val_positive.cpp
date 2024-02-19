@@ -62,12 +62,10 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     const auto transfer_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     const auto rt_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | transfer_usage;
 
-    VkImageObj image(m_device);
-    image.InitNoLayout(width, height, 1, rt_format, transfer_usage);
+    vkt::Image image(*m_device, width, height, 1, rt_format, transfer_usage);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageObj rt(m_device);
-    rt.InitNoLayout(VkImageObj::ImageCreateInfo2D(width, height, 1, layers, rt_format, rt_usage));
+    vkt::Image rt(*m_device, vkt::Image::ImageCreateInfo2D(width, height, 1, layers, rt_format, rt_usage));
     rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     auto attachment_without_load_store = [](VkFormat format) {
@@ -154,8 +152,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     constexpr VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
 
     vkt::Buffer buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    VkImageObj image(m_device);
-    image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -579,10 +576,8 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     constexpr VkDeviceSize buffer_size = 64 * 64 * 4;
     const vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-               VK_IMAGE_TILING_LINEAR);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     m_commandBuffer->begin();
@@ -635,10 +630,10 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     constexpr VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     constexpr VkImageLayout image_layout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkImageObj images[4] = {m_device, m_device, m_device, m_device};
+    vkt::Image images[4];
     vkt::ImageView views[4];
     for (int i = 0; i < 4; i++) {
-        images[i].Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+        images[i].Init(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
         ASSERT_TRUE(images[i].initialized());
         images[i].SetLayout(image_layout);
         views[i] = images[i].CreateView();
@@ -715,9 +710,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     const vkt::ImageView view = image.CreateView();
 
@@ -885,8 +878,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
@@ -911,7 +903,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    vkt::CommandBuffer cb(m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_commandPool);
     cb.begin();
     vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
     vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
@@ -947,7 +939,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
-    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
     vk::CmdPipelineBarrier2(cb2, &dep_info);
     cb2.end();
@@ -975,8 +967,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
 
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     // Submit0: transition image and signal semaphore with ALL_COMMANDS scope
@@ -994,7 +985,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
-    vkt::CommandBuffer cb(m_device, m_commandPool);
+    vkt::CommandBuffer cb(*m_device, m_commandPool);
     cb.begin();
     vk::CmdPipelineBarrier2(cb, &dep_info);
     cb.end();
@@ -1032,7 +1023,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
     vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
     vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
@@ -1069,16 +1060,14 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    auto color_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
+    auto color_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
     color_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferColorSampleCounts
-    VkImageObj color_image(m_device);
-    color_image.Init(color_ci);
+    vkt::Image color_image(*m_device, color_ci, vkt::set_layout);
     color_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView color_image_view = color_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
 
-    auto color_resolved_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
-    VkImageObj color_resolved_image(m_device);
-    color_resolved_image.Init(color_resolved_ci);
+    auto color_resolved_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
+    vkt::Image color_resolved_image(*m_device, color_resolved_ci, vkt::set_layout);
     color_resolved_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView color_resolved_image_view = color_resolved_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
 
@@ -1119,16 +1108,14 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-    auto depth_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
+    auto depth_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
     depth_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferDepthSampleCounts
-    VkImageObj depth_image(m_device);
-    depth_image.Init(depth_ci);
+    vkt::Image depth_image(*m_device, depth_ci, vkt::set_layout);
     depth_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    auto depth_resolved_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
-    VkImageObj depth_resolved_image(m_device);
-    depth_resolved_image.Init(depth_resolved_ci);
+    auto depth_resolved_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
+    vkt::Image depth_resolved_image(*m_device, depth_resolved_ci, vkt::set_layout);
     depth_resolved_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView depth_resolved_image_view = depth_resolved_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 

@@ -406,8 +406,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     image_ci.extent.height = 32;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     const auto mem_reqs = image.memory_requirements();
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
@@ -442,8 +441,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 0;
@@ -502,9 +500,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     // Create an image/buffer, allocate memory, free it, and then try to bind it
     {
-        VkImageObj image(m_device);
-        image.init_no_mem(*m_device, image_create_info);
-
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -536,9 +532,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     // Try to bind memory to an object that already has a memory binding
     {
-        VkImageObj image(m_device);
-        image.init_no_mem(*m_device, image_create_info);
-
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -567,9 +561,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     // Try to bind memory to an object with an invalid memoryOffset
     {
-        VkImageObj image(m_device);
-        image.init_no_mem(*m_device, image_create_info);
-
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
         vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -651,8 +643,7 @@ TEST_F(NegativeMemory, BindMemory) {
             if (image_format_properties.maxExtent.width == 0) {
                 GTEST_SKIP() << "Sparse image format not supported";
             } else {
-                VkImageObj sparse_image(m_device);
-                sparse_image.init_no_mem(*m_device, sparse_image_create_info);
+                vkt::Image sparse_image(*m_device, sparse_image_create_info, vkt::no_mem);
                 VkMemoryRequirements sparse_mem_reqs = {};
                 vk::GetImageMemoryRequirements(m_device->device(), sparse_image.handle(), &sparse_mem_reqs);
                 if (sparse_mem_reqs.memoryTypeBits != 0) {
@@ -696,7 +687,6 @@ TEST_F(NegativeMemory, BindMemory) {
 TEST_F(NegativeMemory, BindMemoryUnsupported) {
     RETURN_IF_SKIP(Init());
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -708,7 +698,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     auto buffer_info = vkt::Buffer::create_info(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
@@ -1325,37 +1315,22 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to copy from a buffer which has not had memory bound to it.");
     RETURN_IF_SKIP(Init());
 
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    ASSERT_TRUE(image.initialized());
-
-    VkBuffer buffer;
-    VkDeviceMemory mem;
-    VkMemoryRequirements mem_reqs;
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 1024;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+    vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 1024;
-    bool pass = false;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    if (!pass) {
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+    if (!m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
         GTEST_SKIP() << "Failed to set memory type";
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_EQ(VK_SUCCESS, err);
 
-    // Introduce failure by not calling vkBindBufferMemory(m_device->device(), buffer, mem, 0);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         " used with no memory bound. Memory should be bound by calling vkBindBufferMemory().");
     VkBufferImageCopy region = {};
     region.bufferRowLength = 16;
     region.bufferImageHeight = 16;
@@ -1366,13 +1341,10 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     region.imageExtent.width = 4;
     region.imageExtent.depth = 1;
     m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    m_commandBuffer->end();
-
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->handle(), mem, NULL);
+    m_commandBuffer->end();
 }
 
 TEST_F(NegativeMemory, DedicatedAllocationBinding) {
@@ -1409,14 +1381,12 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), 0);
 
     // And for images...
-    VkImageObj image(m_device);
-    VkImageObj wrong_image(m_device);
-    auto image_info = VkImageObj::create_info();
+    auto image_info = vkt::Image::create_info();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image.init_no_mem(*m_device, image_info);
-    wrong_image.init_no_mem(*m_device, image_info);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
+    vkt::Image wrong_image(*m_device, image_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image.handle();
@@ -1460,21 +1430,17 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
 
-    std::unique_ptr<VkImageObj> image(new VkImageObj(m_device));  // in a pointer so it can be easily destroyed.
-    VkImageObj identical_image(m_device);
-    VkImageObj post_delete_image(m_device);
-
-    auto image_info = VkImageObj::create_info();
+    auto image_info = vkt::Image::create_info();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image->init_no_mem(*m_device, image_info);
-    identical_image.init_no_mem(*m_device, image_info);
-    post_delete_image.init_no_mem(*m_device, image_info);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
+    vkt::Image identical_image(*m_device, image_info, vkt::no_mem);
+    vkt::Image post_delete_image(*m_device, image_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
-    image_dedicated_info.image = image->handle();
-    auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image->memory_requirements(), mem_flags);
+    image_dedicated_info.image = image.handle();
+    auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
     vkt::DeviceMemory dedicated_image_memory;
     dedicated_image_memory.init(*m_device, image_alloc_info);
@@ -1482,26 +1448,24 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     // Bind with different but identical image
     vk::BindImageMemory(m_device->handle(), identical_image.handle(), dedicated_image_memory.handle(), 0);
 
-    VkImageObj smaller_image(m_device);
-    image_info = VkImageObj::create_info();
+    image_info = vkt::Image::create_info();
     image_info.extent.width = resource_size - 1;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    smaller_image.init_no_mem(*m_device, image_info);
+    vkt::Image smaller_image(*m_device, image_info, vkt::no_mem);
 
     // Bind with a smaller image
     vk::BindImageMemory(m_device->handle(), smaller_image.handle(), dedicated_image_memory.handle(), 0);
 
-    VkImageObj larger_image(m_device);
-    image_info = VkImageObj::create_info();
+    image_info = vkt::Image::create_info();
     image_info.extent.width = resource_size + 1;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    larger_image.init_no_mem(*m_device, image_info);
+    vkt::Image larger_image(*m_device, image_info, vkt::no_mem);
 
     // Bind with a larger image (not supported, and not enough memory)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02629");
-    if (larger_image.memory_requirements().size > image->memory_requirements().size) {
+    if (larger_image.memory_requirements().size > image.memory_requirements().size) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-size-01049");
     }
     vk::BindImageMemory(m_device->handle(), larger_image.handle(), dedicated_image_memory.handle(), 0);
@@ -1512,14 +1476,14 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
                                          "VUID-vkBindImageMemory-memory-02629");  // offset must be zero
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkBindImageMemory-size-01049");  // offset pushes us past size
-    auto image_offset = image->memory_requirements().alignment;
-    vk::BindImageMemory(m_device->handle(), image->handle(), dedicated_image_memory.handle(), image_offset);
+    auto image_offset = image.memory_requirements().alignment;
+    vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), image_offset);
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    vk::BindImageMemory(m_device->handle(), image->handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), 0);
 
-    image.reset();  // destroy the original image
+    image.destroy();  // destroy the original image
     vk::BindImageMemory(m_device->handle(), post_delete_image.handle(), dedicated_image_memory.handle(), 0);
 }
 
@@ -2289,9 +2253,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &image_mem_reqs);
@@ -2366,8 +2328,7 @@ TEST_F(NegativeMemory, BadMemoryBindMemory2) {
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     VkDeviceMemory bad_memory = CastToHandle<VkDeviceMemory, uintptr_t>(0xbaadbeef);
     VkBindImageMemoryInfo image_bind_info = vku::InitStructHelper();

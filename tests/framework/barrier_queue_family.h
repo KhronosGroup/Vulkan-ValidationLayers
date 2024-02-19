@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class BarrierQueueFamilyBase {
         void Reset();
     };
 
-    BarrierQueueFamilyBase(Context *context) : context_(context), image_(context->layer_test->DeviceObj()) {}
+    BarrierQueueFamilyBase(Context *context) : context_(context) {}
 
     QueueFamilyObjs *GetQueueFamilyInfo(Context *context, uint32_t qfi);
 
@@ -46,7 +46,7 @@ class BarrierQueueFamilyBase {
 
     static const uint32_t kInvalidQueueFamily = vvl::kU32Max;
     Context *context_;
-    VkImageObj image_;
+    vkt::Image image_;
     vkt::Buffer buffer_;
 };
 

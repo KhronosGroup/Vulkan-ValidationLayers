@@ -29,8 +29,7 @@ TEST_F(NegativeVertexInput, AttributeFormat) {
 
     // Pick a really bad format for this purpose and make sure it should fail
     input_attribs.format = VK_FORMAT_BC2_UNORM_BLOCK;
-    VkFormatProperties format_props = m_device->format_properties(input_attribs.format);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) != 0) {
+    if ((m_device->FormatFeaturesBuffer(VK_FORMAT_BC2_UNORM_BLOCK) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) != 0) {
         GTEST_SKIP() << "Format unsuitable for test";
     }
 
@@ -1148,8 +1147,7 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
     InitRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64_SFLOAT;
-    VkFormatProperties format_props = m_device->format_properties(format);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
@@ -1184,8 +1182,7 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     InitRenderTarget();
 
     const VkFormat format = VK_FORMAT_R32_SFLOAT;
-    VkFormatProperties format_props = m_device->format_properties(format);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
@@ -1221,8 +1218,7 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
     InitRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64_SFLOAT;
-    VkFormatProperties format_props = m_device->format_properties(format);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 

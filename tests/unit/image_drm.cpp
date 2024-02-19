@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,8 +182,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
         }
     }
 
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, create_info);
+    vkt::Image image(*m_device, create_info, vkt::no_mem);
     if (image.initialized() == false) {
         GTEST_SKIP() << "Failed to create image.";
     }
@@ -238,8 +237,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     vkt::SamplerYcbcrConversion conversion(*m_device, mp_format);
     auto conversion_info = conversion.ConversionInfo();
@@ -462,8 +460,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
         }
     }
 
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, create_info);
+    vkt::Image image(*m_device, create_info, vkt::no_mem);
     if (image.initialized() == false) {
         GTEST_SKIP() << "Failed to create image.";
     }
@@ -522,8 +519,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
         }
     }
 
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, create_info);
+    vkt::Image image(*m_device, create_info, vkt::no_mem);
     if (image.initialized() == false) {
         GTEST_SKIP() << "Failed to create image.";
     }
