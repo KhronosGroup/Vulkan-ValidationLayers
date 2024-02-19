@@ -129,13 +129,11 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
 TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image;
     vkt::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-
-    image.init_no_mem(*m_device, image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
 
@@ -241,7 +239,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     VkDeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -396,8 +394,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
         image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         image_create_info.flags = 0;
-        VkImageObj image(m_device);
-        image.init(&image_create_info);
+        vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
         m_commandBuffer->begin();
         VkClearColorValue ccv;
@@ -448,8 +445,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_ci.flags = 0;
-        VkImageObj image(m_device);
-        image.init(&image_ci);
+        vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
         VkImageViewCreateInfo ivci = {
             VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -512,9 +508,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_ci.flags = 0;
-
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     vkt::DeviceMemory *image_memory = new vkt::DeviceMemory;
     image_memory->init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
@@ -549,9 +543,8 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     InitRenderTarget();
 
     // Create image to update the descriptor with
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkt::ImageView view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -597,21 +590,18 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use framebuffer.");
     RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
-    VkResult err = VK_SUCCESS;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
 
     InitRenderTarget();
 
-    VkImageObj image(m_device);
-    image.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     VkFramebufferCreateInfo fci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1};
     VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
 
     // Just use default renderpass with our framebuffer
     m_renderPassBeginInfo.framebuffer = fb;
@@ -696,8 +686,8 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use image that's child of framebuffer.");
     RETURN_IF_SKIP(Init());
 
-    VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -864,9 +854,8 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkt::ImageView view = image.CreateView();
 
@@ -988,14 +977,10 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
+    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
 
-    VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkt::ImageView view = image.CreateView();
 

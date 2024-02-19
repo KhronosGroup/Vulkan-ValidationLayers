@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,8 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkImageObj image(m_second_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.Init(image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();

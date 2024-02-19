@@ -225,7 +225,8 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -282,13 +283,11 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
 TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     RETURN_IF_SKIP(InitBasicExtendedDynamicState());
 
-    VkImageObj color_image(m_device);
-    color_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto color_view = color_image.CreateView();
 
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    VkImageObj ds_image(m_device);
-    ds_image.Init(m_width, m_height, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, m_width, m_height, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     RenderPassSingleSubpass rp(*this);
@@ -328,13 +327,11 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     TEST_DESCRIPTION("setting vkCmdSetDepthTestEnable to false cancels what ever is written to vkCmdSetDepthWriteEnable.");
     RETURN_IF_SKIP(InitBasicExtendedDynamicState());
 
-    VkImageObj color_image(m_device);
-    color_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto color_view = color_image.CreateView();
 
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    VkImageObj ds_image(m_device);
-    ds_image.Init(m_width, m_height, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, m_width, m_height, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     RenderPassSingleSubpass rp(*this);
@@ -388,7 +385,7 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     pipe_no_dynamic.InitState();
     pipe_no_dynamic.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer command_buffer(m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
     command_buffer.begin();
     vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
     command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -830,8 +827,9 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     // Need to set format framework uses for InitRenderTarget
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
-    m_depthStencil->Init(m_width, m_height, 1, m_depth_stencil_fmt,
+    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -872,8 +870,8 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.CreateGraphicsPipeline();
 
-    vkt::CommandBuffer cmd_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    vkt::CommandBuffer set_state(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer cmd_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer set_state(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkViewport viewports[2] = {{0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 100.0f, 100.0f, 0.0f, 1.0f}};
     const VkRect2D scissors[2] = {{{0, 0}, {100u, 100u}}, {{0, 0}, {100u, 100u}}};

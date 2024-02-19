@@ -805,11 +805,9 @@ TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
-    VkImageObj image_3d(m_device);
-    image_3d.Init(image_ci);
-    ASSERT_TRUE(image_3d.initialized());
+    vkt::Image image_3d(*m_device, image_ci, vkt::set_layout);
 
     // If the sampler is unnormalizedCoordinates, the imageview type shouldn't be 3D, CUBE, 1D_ARRAY, 2D_ARRAY, CUBE_ARRAY.
     // This causes DesiredFailure.

@@ -107,13 +107,13 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer2) {
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "test";
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
     m_default_queue->submit(cb0);
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
@@ -129,12 +129,12 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "test";
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
@@ -146,7 +146,7 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
 TEST_F(PositiveDebugExtensions, DebugLabelSecondaryCommandBuffer) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
     {
         VkDebugUtilsLabelEXT label = vku::InitStructHelper();

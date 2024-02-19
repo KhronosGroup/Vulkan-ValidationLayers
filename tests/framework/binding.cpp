@@ -271,7 +271,6 @@ void Device::init(const VkDeviceCreateInfo &info) {
     Handle::init(dev);
 
     init_queues(info);
-    init_formats();
 }
 
 void Device::init_queues(const VkDeviceCreateInfo &info) {
@@ -331,36 +330,48 @@ std::optional<uint32_t> Device::QueueFamilyMatching(VkQueueFlags with, VkQueueFl
     return {};
 }
 
-void Device::init_formats() {
-    // For each 1.0 core format, undefined = first, 12x12_SRGB_BLOCK = last
-    for (int f = VK_FORMAT_UNDEFINED; f <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; f++) {
-        const VkFormat fmt = static_cast<VkFormat>(f);
-        const VkFormatProperties format_props = format_properties(fmt);
-
-        if (format_props.linearTilingFeatures) {
-            const Format tmp = {fmt, VK_IMAGE_TILING_LINEAR, format_props.linearTilingFeatures};
-            formats_.push_back(tmp);
-        }
-
-        if (format_props.optimalTilingFeatures) {
-            const Format tmp = {fmt, VK_IMAGE_TILING_OPTIMAL, format_props.optimalTilingFeatures};
-            formats_.push_back(tmp);
-        }
-    }
-
-    ASSERT_TRUE(!formats_.empty());
-}
-
-bool Device::IsEnabledExtension(const char *extension) {
+bool Device::IsEnabledExtension(const char *extension) const {
     const auto is_x = [&extension](const char *enabled_extension) { return strcmp(extension, enabled_extension) == 0; };
     return std::any_of(enabled_extensions_.begin(), enabled_extensions_.end(), is_x);
 }
 
-VkFormatProperties Device::format_properties(VkFormat format) {
-    VkFormatProperties data;
-    vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &data);
+VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
+    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
+        vk::GetPhysicalDeviceFormatProperties2(phy().handle(), format, &fmt_props_2);
+        return fmt_props_3.linearTilingFeatures;
+    } else {
+        VkFormatProperties format_properties;
+        vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &format_properties);
+        return format_properties.linearTilingFeatures;
+    }
+}
 
-    return data;
+VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
+    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
+        vk::GetPhysicalDeviceFormatProperties2(phy().handle(), format, &fmt_props_2);
+        return fmt_props_3.optimalTilingFeatures;
+    } else {
+        VkFormatProperties format_properties;
+        vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &format_properties);
+        return format_properties.optimalTilingFeatures;
+    }
+}
+
+VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
+    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
+        vk::GetPhysicalDeviceFormatProperties2(phy().handle(), format, &fmt_props_2);
+        return fmt_props_3.bufferFeatures;
+    } else {
+        VkFormatProperties format_properties;
+        vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &format_properties);
+        return format_properties.bufferFeatures;
+    }
 }
 
 void Device::wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
@@ -681,9 +692,39 @@ void BufferView::init(const Device &dev, const VkBufferViewCreateInfo &info) {
 
 NON_DISPATCHABLE_HANDLE_DTOR(Image, vk::DestroyImage)
 
+Image::Image(const Device &dev, const VkImageCreateInfo &info) : device_(&dev) { init(dev, info, 0); }
+
 Image::Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext)
-    : format_features_(0) {
+    : device_(&dev) {
     init(dev, info, mem_props, alloc_info_pnext);
+}
+
+Image::Image(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
+             VkFlags const usage)
+    : device_(&dev) {
+    Init(dev, width, height, mip_levels, format, usage);
+}
+
+Image::Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : device_(&dev) { init_no_mem(dev, info); }
+
+// If you find yourself wanting to expand this or making another overload, then you might really just want to call
+//     SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+// after you init the image manually
+Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : device_(&dev) {
+    init(*device_, info, 0);
+
+    VkImageLayout newLayout;
+    const auto usage = info.usage;
+    if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    } else if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+        newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    } else {
+        newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    VkImageAspectFlags image_aspect = aspect_mask(info.format);
+    SetLayout(image_aspect, newLayout);
 }
 
 void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
@@ -696,22 +737,89 @@ void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPrope
     }
 }
 
-void Image::init_no_mem(const Device &dev, const VkImageCreateInfo &info) {
-    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateImage, dev, &info);
-    if (initialized()) {
-        init_info(dev, info);
-    }
+void Image::Init(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
+                 VkFlags const usage) {
+    const VkImageCreateInfo info = ImageCreateInfo2D(width, height, mip_levels, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    init(dev, info, 0);
 }
 
-void Image::init_info(const Device &dev, const VkImageCreateInfo &info) {
-    create_info_ = info;
-
-    for (std::vector<Device::Format>::const_iterator it = dev.formats().begin(); it != dev.formats().end(); it++) {
-        if (memcmp(&it->format, &create_info_.format, sizeof(it->format)) == 0 && it->tiling == create_info_.tiling) {
-            format_features_ = it->features;
-            break;
-        }
+// Currently all init call here, so can set things for all path
+void Image::init_no_mem(const Device &dev, const VkImageCreateInfo &info) {
+    if (!device_) {
+        device_ = &dev;
     }
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateImage, dev, &info);
+    create_info_ = info;
+    image_layout_ = info.initialLayout;
+}
+
+bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, const VkFormatFeatureFlags2 features) {
+    VkFormatFeatureFlags2 all_feature_flags =
+        VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+        VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT | VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT |
+        VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT | VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT |
+        VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT | VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
+        VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT |
+        VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT | VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    if (dev.IsEnabledExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME)) {
+        all_feature_flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT;
+    }
+
+    if (dev.IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
+        all_feature_flags |= VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR;
+    }
+
+    if (dev.IsEnabledExtension(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
+        all_feature_flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT;
+    }
+
+    if (dev.IsEnabledExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        all_feature_flags |= VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR | VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT_KHR;
+    }
+
+    if (dev.IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        all_feature_flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR;
+    }
+
+    if ((features & all_feature_flags) == 0) return false;  // whole format unsupported
+
+    if ((usages & VK_IMAGE_USAGE_SAMPLED_BIT) && !(features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)) return false;
+    if ((usages & VK_IMAGE_USAGE_STORAGE_BIT) && !(features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT)) return false;
+    if ((usages & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) return false;
+    if ((usages & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))
+        return false;
+
+    return true;
+}
+
+VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
+                                           uint32_t const layers, VkFormat const format, VkFlags const usage,
+                                           VkImageTiling const requested_tiling, const std::vector<uint32_t> *queue_families) {
+    VkImageCreateInfo imageCreateInfo = create_info();
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = format;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.mipLevels = mip_levels;
+    imageCreateInfo.arrayLayers = layers;
+    imageCreateInfo.tiling = requested_tiling;  // This will be touched up below...
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Automatically set sharing mode etc. based on queue family information
+    if (queue_families && (queue_families->size() > 1)) {
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
+        imageCreateInfo.pQueueFamilyIndices = queue_families->data();
+    }
+    imageCreateInfo.usage = usage;
+    return imageCreateInfo;
 }
 
 VkMemoryRequirements Image::memory_requirements() const {
@@ -735,25 +843,6 @@ void Image::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
-VkSubresourceLayout Image::subresource_layout(const VkImageSubresource &subres) const {
-    VkSubresourceLayout data;
-    size_t size = sizeof(data);
-    vk::GetImageSubresourceLayout(device(), handle(), &subres, &data);
-    if (size != sizeof(data)) memset(&data, 0, sizeof(data));
-
-    return data;
-}
-
-VkSubresourceLayout Image::subresource_layout(const VkImageSubresourceLayers &subrescopy) const {
-    VkSubresourceLayout data;
-    VkImageSubresource subres = subresource(subrescopy.aspectMask, subrescopy.mipLevel, subrescopy.baseArrayLayer);
-    size_t size = sizeof(data);
-    vk::GetImageSubresourceLayout(device(), handle(), &subres, &data);
-    if (size != sizeof(data)) memset(&data, 0, sizeof(data));
-
-    return data;
-}
-
 VkImageAspectFlags Image::aspect_mask(VkFormat format) {
     VkImageAspectFlags image_aspect;
     if (vkuFormatIsDepthAndStencil(format)) {
@@ -768,50 +857,132 @@ VkImageAspectFlags Image::aspect_mask(VkFormat format) {
     return image_aspect;
 }
 
-VkImageMemoryBarrier Image::transition_to_present(VkImage swapchain_image, VkImageLayout old_layout,
-                                                  VkAccessFlags src_access_mask) {
-    VkImageMemoryBarrier transition = vku::InitStructHelper();
-    transition.srcAccessMask = src_access_mask;
+void Image::ImageMemoryBarrier(CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
+                               VkImageLayout image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
+    // clang-format on
+    const VkImageSubresourceRange subresourceRange =
+        subresource_range(aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers);
+    VkImageMemoryBarrier barrier;
+    barrier = image_memory_barrier(output_mask, input_mask, image_layout_, image_layout, subresourceRange);
 
-    // No need to make writes visible. Available writes are automatically become visible to the presentation engine
-    transition.dstAccessMask = 0;
+    VkImageMemoryBarrier *pmemory_barrier = &barrier;
 
-    transition.oldLayout = old_layout;
-    transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    transition.image = swapchain_image;
-    transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    transition.subresourceRange.baseMipLevel = 0;
-    transition.subresourceRange.levelCount = 1;
-    transition.subresourceRange.baseArrayLayer = 0;
-    transition.subresourceRange.layerCount = 1;
-    return transition;
+    // write barrier to the command buffer
+    vk::CmdPipelineBarrier(cmd_buf->handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
+                           pmemory_barrier);
 }
 
-VkImageMemoryBarrier2 Image::transition_to_present_2(VkImage swapchain_image, VkImageLayout old_layout,
-                                                     VkPipelineStageFlags2 src_stage_mask, VkAccessFlags2 src_access_mask) {
-    VkImageMemoryBarrier2 transition = vku::InitStructHelper();
-    transition.srcStageMask = src_stage_mask;
-    transition.srcAccessMask = src_access_mask;
+void Image::SetLayout(CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+    VkFlags src_mask, dst_mask;
+    const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+    const VkFlags all_cache_inputs = VK_ACCESS_HOST_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT |
+                                     VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                     VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                     VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
-    // Spec advice: when transitioning to "present" there is no need to delay subsequent processing
-    transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    const VkFlags shader_read_inputs = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
-    // No need to make writes visible. Available writes are automatically become visible to the presentation engine
-    transition.dstAccessMask = 0;
+    if (image_layout == image_layout_) {
+        return;
+    }
 
-    transition.oldLayout = old_layout;
-    transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    transition.image = swapchain_image;
-    transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    transition.subresourceRange.baseMipLevel = 0;
-    transition.subresourceRange.levelCount = 1;
-    transition.subresourceRange.baseArrayLayer = 0;
-    transition.subresourceRange.layerCount = 1;
-    return transition;
+    // Attempt to narrow the src_mask, by what the image could have validly been used for in it's current layout
+    switch (image_layout_) {
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            src_mask = shader_read_inputs;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            src_mask = VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            src_mask = 0;
+            break;
+        default:
+            src_mask = all_cache_outputs;  // Only need to worry about writes, as the stage mask will protect reads
+    }
+
+    // Narrow the dst mask by the valid accesss for the new layout
+    switch (image_layout) {
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            // NOTE: not sure why shader read is here...
+            dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            dst_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            dst_mask = shader_read_inputs;
+            break;
+
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            dst_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            break;
+
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            dst_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            break;
+
+        default:
+            // Must wait all read and write operations for the completion of the layout tranisition
+            dst_mask = all_cache_inputs | all_cache_outputs;
+            break;
+    }
+
+    ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, image_layout);
+    image_layout_ = image_layout;
+}
+
+void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
+    if (image_layout == image_layout_) {
+        return;
+    }
+
+    CommandPool pool(*device_, device_->graphics_queue_node_index_);
+    CommandBuffer cmd_buf(*device_, &pool);
+
+    /* Build command buffer to set image layout in the driver */
+    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    SetLayout(&cmd_buf, aspect, image_layout);
+    cmd_buf.end();
+
+    cmd_buf.QueueCommandBuffer();
+}
+
+VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {
+    VkImageViewCreateInfo ci = vku::InitStructHelper();
+    ci.image = handle();
+    ci.format = format();
+    ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ci.components.r = VK_COMPONENT_SWIZZLE_R;
+    ci.components.g = VK_COMPONENT_SWIZZLE_G;
+    ci.components.b = VK_COMPONENT_SWIZZLE_B;
+    ci.components.a = VK_COMPONENT_SWIZZLE_A;
+    ci.subresourceRange = {aspect_mask, 0, 1, 0, 1};
+    return ci;
+}
+
+ImageView Image::CreateView(VkImageAspectFlags aspect) const {
+    VkImageViewCreateInfo ci = BasicViewCreatInfo(aspect);
+    ci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    return ImageView(*device_, ci);
+}
+
+ImageView Image::CreateView(VkImageViewType type, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer,
+                            uint32_t layerCount, VkImageAspectFlags aspect) const {
+    VkImageViewCreateInfo ci = BasicViewCreatInfo();
+    ci.viewType = type;
+    ci.subresourceRange = {aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount};
+    return ImageView(*device_, ci);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ImageView, vk::DestroyImageView)
@@ -889,8 +1060,9 @@ void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStruct
         ASSERT_EQ(VK_SUCCESS, vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_));
     }
 }
-vkt::Buffer AccelerationStructureNV::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
-                                                           bool buffer_device_address /*= false*/) const {
+
+Buffer AccelerationStructureNV::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
+                                                      bool buffer_device_address /*= false*/) const {
     VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
     VkBufferCreateInfo create_info = {};
     create_info.size = scratch_buffer_memory_requirements.size;
@@ -910,7 +1082,7 @@ vkt::Buffer AccelerationStructureNV::create_scratch_buffer(const Device &device,
         pNext = &alloc_flags;
     }
 
-    return vkt::Buffer(device, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pNext);
+    return Buffer(device, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pNext);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
@@ -1150,17 +1322,17 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
     cmd_pool_ = info.commandPool;
 }
 
-void CommandBuffer::Init(Device *device, const CommandPool *pool, VkCommandBufferLevel level, Queue *queue) {
+void CommandBuffer::Init(const Device &dev, const CommandPool *pool, VkCommandBufferLevel level, Queue *queue) {
     if (queue) {
         m_queue = queue;
     } else {
-        m_queue = device->graphics_queues()[0];
+        m_queue = dev.graphics_queues()[0];
     }
     assert(m_queue);
 
     auto create_info = CommandBuffer::create_info(pool->handle());
     create_info.level = level;
-    init(*device, create_info);
+    init(dev, create_info);
 }
 
 void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info)); }
@@ -1282,11 +1454,11 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
 }
 
 void CommandBuffer::QueueCommandBuffer(bool check_success) {
-    vkt::Fence null_fence;
+    Fence null_fence;
     QueueCommandBuffer(null_fence, check_success);
 }
 
-void CommandBuffer::QueueCommandBuffer(const vkt::Fence &fence, bool check_success, bool submit_2) {
+void CommandBuffer::QueueCommandBuffer(const Fence &fence, bool check_success, bool submit_2) {
     VkResult err = VK_SUCCESS;
     (void)err;
 

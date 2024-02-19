@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ TEST_F(NegativeShaderImageAccess, FunctionOpImage) {
     )";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    VkImageObj image(m_device);
-    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR);
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -123,8 +123,8 @@ TEST_F(NegativeShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkImageObj image(m_device);
-    image.Init(16, 16, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR);
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -185,9 +185,8 @@ TEST_F(NegativeShaderImageAccess, UnnormalizedCoordinatesFunction) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
-    image.Init(image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView view_pass = image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -227,8 +226,8 @@ TEST_F(NegativeShaderImageAccess, MultisampleMismatchWithPipeline) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkImageObj image(m_device);
-    image.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR);
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -285,9 +284,7 @@ TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipeline) {
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-
-    VkImageObj image(m_device);
-    image.Init(image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -342,14 +339,10 @@ TEST_F(NegativeShaderImageAccess, MultipleFunctionCalls) {
     formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), good_format, formatProps);
 
-    VkImageObj bad_image(m_device);
-    bad_image.Init(128, 128, 1, bad_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(bad_image.initialized());
+    vkt::Image bad_image(*m_device, 128, 128, 1, bad_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView bad_view = bad_image.CreateView();
 
-    VkImageObj good_image(m_device);
-    good_image.Init(128, 128, 1, good_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(good_image.initialized());
+    vkt::Image good_image(*m_device, 128, 128, 1, good_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView good_view = good_image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();

@@ -184,9 +184,7 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
     image_create_info.queueFamilyIndexCount = 0;
     image_create_info.pQueueFamilyIndices = NULL;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkSparseImageMemoryBind image_memory_bind = {};
     image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -285,8 +283,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
         (buffer_mem_alloc.allocationSize + buffer_mem_reqs.alignment - 1) & ~(buffer_mem_reqs.alignment - 1);
     vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
     VkMemoryAllocateInfo image_mem_alloc =
@@ -411,8 +408,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     /// Create image whose memory has an incompatible type
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
@@ -560,9 +556,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
-
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
@@ -691,8 +685,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     const auto image_exportable_types =
         FindSupportedExternalMemoryHandleTypes(gpu(), image_create_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
@@ -892,8 +885,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkImportMemoryFdInfoKHR image_import_memory_fd_info = vku::InitStructHelper();
     image_import_memory_fd_info.handleType = handle_type;
@@ -996,9 +988,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     create_info.extent.height = 1024;
     create_info.extent.depth = 1;
     create_info.arrayLayers = 1;
-
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, create_info);
+    vkt::Image image(*m_device, create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
@@ -1119,9 +1109,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     create_info.extent.height = 1024;
     create_info.extent.depth = 1;
     create_info.arrayLayers = 1;
-
-    VkImageObj image{m_device};
-    image.init_no_mem(*m_device, create_info);
+    vkt::Image image(*m_device, create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);

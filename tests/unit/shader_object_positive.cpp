@@ -389,8 +389,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     imageInfo.queueFamilyIndexCount = 0u;
     imageInfo.pQueueFamilyIndices = nullptr;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageObj image(m_device);
-    image.init(&imageInfo);
+    vkt::Image image(*m_device, imageInfo, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -582,8 +581,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     imageInfo.queueFamilyIndexCount = 0u;
     imageInfo.pQueueFamilyIndices = nullptr;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageObj image(m_device);
-    image.init(&imageInfo);
+    vkt::Image image(*m_device, imageInfo, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -778,8 +776,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     imageInfo.queueFamilyIndexCount = 0u;
     imageInfo.pQueueFamilyIndices = nullptr;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageObj image(m_device);
-    image.init(&imageInfo);
+    vkt::Image image(*m_device, imageInfo, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1117,9 +1114,8 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vert_descriptor_set.UpdateDescriptorSets();
 
-    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    VkImageObj image(m_device);
-    image.Init(image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -1576,7 +1572,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
-    vkt::CommandBuffer command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer command_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     command_buffer.begin();
     command_buffer.BeginRenderingColor(GetDynamicRenderTarget());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
@@ -1615,12 +1611,10 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
 
-    VkImageObj img1(m_device);
-    img1.Init(m_width, m_height, 1, m_render_target_fmt,
-              VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    VkImageObj img2(m_device);
-    img2.Init(m_width, m_height, 1, m_render_target_fmt,
-              VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image img1(*m_device, m_width, m_height, 1, m_render_target_fmt,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image img2(*m_device, m_width, m_height, 1, m_render_target_fmt,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     vkt::ImageView view1 = img1.CreateView();
     vkt::ImageView view2 = img2.CreateView();
@@ -1698,7 +1692,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
-    vkt::CommandBuffer command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer command_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferInheritanceRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachmentFormats = &m_render_target_fmt;

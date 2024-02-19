@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 
 #pragma once
 #include "test_common.h"
-
-class VkImageObj;
 
 struct QSTestContext {
     vkt::Device* dev;
@@ -67,8 +65,7 @@ struct QSTestContext {
     void CopyCToA() { Copy(buffer_c, buffer_a); }
     void CopyCToB() { Copy(buffer_c, buffer_b); }
 
-    void CopyGeneral(const VkImageObj& from, const VkImageObj& to, const VkImageCopy& region);
-    ;
+    void CopyGeneral(const vkt::Image& from, const vkt::Image& to, const VkImageCopy& region);
 
     VkBufferMemoryBarrier InitBufferBarrier(const vkt::Buffer& buffer, VkAccessFlags src, VkAccessFlags dst);
     VkBufferMemoryBarrier InitBufferBarrierRAW(const vkt::Buffer& buffer);

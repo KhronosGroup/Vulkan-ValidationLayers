@@ -18,7 +18,7 @@
 
 void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buf(m_device, &pool);
+    vkt::CommandBuffer cmd_buf(*m_device, &pool);
 
     cmd_buf.begin();
     VkImageMemoryBarrier layout_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -36,6 +36,27 @@ void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
                            0, nullptr, 1, &layout_barrier);
     cmd_buf.end();
     cmd_buf.QueueCommandBuffer();
+}
+
+VkImageMemoryBarrier WsiTest::TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout,
+                                                  VkAccessFlags src_access_mask) {
+    VkImageMemoryBarrier transition = vku::InitStructHelper();
+    transition.srcAccessMask = src_access_mask;
+
+    // No need to make writes visible. Available writes are automatically become visible to the presentation engine
+    transition.dstAccessMask = 0;
+
+    transition.oldLayout = old_layout;
+    transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    transition.image = swapchain_image;
+    transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    transition.subresourceRange.baseMipLevel = 0;
+    transition.subresourceRange.levelCount = 1;
+    transition.subresourceRange.baseArrayLayer = 0;
+    transition.subresourceRange.layerCount = 1;
+    return transition;
 }
 
 TEST_F(PositiveWsi, CreateWaylandSurface) {
@@ -233,9 +254,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageObj srcImage(m_device);
-    srcImage.init(&image_create_info);
+    vkt::Image srcImage(*m_device, image_create_info, vkt::set_layout);
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -324,9 +343,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageObj src_Image(m_device);
-    src_Image.init(&image_create_info);
+    vkt::Image src_Image(*m_device, image_create_info, vkt::set_layout);
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -410,7 +427,8 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
-    const VkImageMemoryBarrier present_transition = vkt::Image::transition_to_present(swapchain_images[image_index]);
+    const VkImageMemoryBarrier present_transition =
+        TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
     m_commandBuffer->begin();
     vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &present_transition);
@@ -538,7 +556,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
     std::vector<vkt::CommandBuffer> command_buffers;
     std::vector<vkt::Semaphore> submit_semaphores;
     for (size_t i = 0; i < swapchain_images.size(); i++) {
-        command_buffers.emplace_back(m_device, m_commandPool);
+        command_buffers.emplace_back(*m_device, m_commandPool);
         submit_semaphores.emplace_back(*m_device);
     }
     const vkt::Fence acquire_fence(*m_device);
@@ -594,7 +612,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     std::vector<vkt::CommandBuffer> command_buffers;
     std::vector<vkt::Semaphore> submit_semaphores;
     for (size_t i = 0; i < swapchain_images.size(); i++) {
-        command_buffers.emplace_back(m_device, m_commandPool);
+        command_buffers.emplace_back(*m_device, m_commandPool);
         submit_semaphores.emplace_back(*m_device);
     }
     const vkt::Fence acquire_fence(*m_device);
@@ -702,7 +720,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     m_commandBuffer->EndRenderPass();
 
     const VkImageMemoryBarrier present_transition =
-        vkt::Image::transition_to_present(swapchainImages[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        TransitionToPresent(swapchainImages[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0);
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
     m_commandBuffer->end();
@@ -982,7 +1000,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     vkt::ImageView image_view(*m_device, ivci);
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle(), 1, 1);
 
-    vkt::CommandBuffer cmdbuff(m_device, m_commandPool);
+    vkt::CommandBuffer cmdbuff(*m_device, m_commandPool);
     cmdbuff.begin();
     cmdbuff.BeginRenderPass(render_pass.handle(), framebuffer.handle());
 
@@ -1195,7 +1213,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
 
     // Create a protected command buffer/pool to use
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
-    vkt::CommandBuffer protectedCommandBuffer(m_device, &protectedCommandPool);
+    vkt::CommandBuffer protectedCommandBuffer(*m_device, &protectedCommandPool);
 
     protectedCommandBuffer.begin();
     VkRect2D render_area = {{0, 0}, swapchain_create_info.imageExtent};

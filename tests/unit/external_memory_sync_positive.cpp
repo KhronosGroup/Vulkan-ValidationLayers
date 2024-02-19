@@ -409,9 +409,7 @@ TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
         ici.samples = VK_SAMPLE_COUNT_1_BIT;
         ici.tiling = VK_IMAGE_TILING_LINEAR;
         ici.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        VkImageObj image(m_device);
-        image.Init(ici);
-        ASSERT_TRUE(image.initialized());
+        vkt::Image image(*m_device, ici, vkt::set_layout);
 
         VkExportMetalIOSurfaceInfoEXT surfaceInfo = vku::InitStructHelper();
         surfaceInfo.image = image.handle();

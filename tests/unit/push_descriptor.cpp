@@ -281,9 +281,8 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-               VK_IMAGE_TILING_LINEAR);
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
@@ -652,7 +651,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
         vkt::CommandPool command_pool(*m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
-        vkt::CommandBuffer command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(*m_device, &command_pool);
         ASSERT_TRUE(command_buffer.initialized());
         command_buffer.begin();
 
@@ -672,7 +671,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
             // Need to test the neither compute/gfx supported case separately.
             vkt::CommandPool tran_command_pool(*m_device, transfer_only_qfi.value());
             ASSERT_TRUE(tran_command_pool.initialized());
-            vkt::CommandBuffer tran_command_buffer(m_device, &tran_command_pool);
+            vkt::CommandBuffer tran_command_buffer(*m_device, &tran_command_pool);
             ASSERT_TRUE(tran_command_buffer.initialized());
             tran_command_buffer.begin();
 
@@ -784,7 +783,7 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     }
 
     vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
-    vkt::CommandBuffer command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 32;

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Google, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     uint32_t width = 32;
     uint32_t height = 32;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
@@ -84,8 +84,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     }
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkImageObj image(m_device);
-    image.Init(image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     std::vector<uint8_t> pixels(width * height * 4);
@@ -136,8 +135,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     ASSERT_EQ(pixels, welcome_back);
 
     // Copy from one image to another
-    VkImageObj image2(m_device);
-    image2.Init(image_ci);
+    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
     image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     VkImageCopy2 image_copy_2 = vku::InitStructHelper();
@@ -172,8 +170,8 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     transition_info.image = image2;
     result = vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     ASSERT_EQ(VK_SUCCESS, result);
-    VkImageSubresource image_sub = VkImageObj::subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
-    VkImageSubresourceRange image_sub_range = VkImageObj::subresource_range(image_sub);
+    VkImageSubresource image_sub = vkt::Image::subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
+    VkImageSubresourceRange image_sub_range = vkt::Image::subresource_range(image_sub);
     VkImageMemoryBarrier image_barrier =
         image2.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
@@ -210,14 +208,13 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     constexpr uint32_t width = 32;
     constexpr uint32_t height = 32;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
         width, height, 4, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
-    VkImageObj image(m_device);
-    image.Init(image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     const uint32_t bufferSize = width * height * 4u;

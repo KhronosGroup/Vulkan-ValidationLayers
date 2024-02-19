@@ -39,7 +39,7 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    vkt::CommandBuffer cmd_buf(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buf(*m_device, m_commandPool);
     cmd_buf.begin();
     // Set Negative height, should give error if Maintenance 1 is not enabled
     VkViewport viewport = {0, 0, 16, -16, 0, 1};

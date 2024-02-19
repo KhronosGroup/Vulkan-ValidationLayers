@@ -167,8 +167,7 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
     RETURN_IF_SKIP(InitState());
 
     // Not sure if anyone actually support buffer texel on atomic
-    VkFormatProperties format_props = m_device->format_properties(VK_FORMAT_R32_SFLOAT);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(VK_FORMAT_R32_SFLOAT) & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT) == 0) {
         GTEST_SKIP() << "No atomic texel buffer support";
     }
 

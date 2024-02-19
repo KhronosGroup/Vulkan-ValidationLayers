@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,8 +246,8 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer primary_buffer(m_device, &command_pool);
-    vkt::CommandBuffer secondary_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer primary_buffer(*m_device, &command_pool);
+    vkt::CommandBuffer secondary_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
@@ -406,7 +406,7 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
@@ -493,7 +493,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
         m_device->wait();
     }
 
-    vkt::CommandBuffer cmd_buffer(m_device, m_commandPool);
+    vkt::CommandBuffer cmd_buffer(*m_device, m_commandPool);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
     acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();

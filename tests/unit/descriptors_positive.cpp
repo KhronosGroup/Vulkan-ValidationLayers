@@ -117,8 +117,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
 
     // Image Case
     {
-        VkImageObj image(m_device);
-        image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+        vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
         vkt::ImageView view = image.CreateView();
 
         OneOffDescriptorSet descriptor_set(m_device, {
@@ -589,9 +588,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     image_create_info.flags = 0;
-
-    VkImageObj image(m_device);
-    image.init(&image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
@@ -683,8 +680,7 @@ TEST_F(PositiveDescriptors, UpdateImageDescriptorSetThatHasImageViewUsage) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkImageViewUsageCreateInfo image_view_usage_ci = vku::InitStructHelper();
     image_view_usage_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -719,10 +715,8 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    VkImageObj image1(m_device);
-    VkImageObj image2(m_device);
-    image1.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image2.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image1(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image2(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     vkt::ImageView view1 = image1.CreateView();
     vkt::ImageView view2 = image2.CreateView();
@@ -794,8 +788,8 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 
-    VkImageObj image_input(m_device);
-    image_input.Init(width, height, 1, format, usage);
+    vkt::Image image_input(*m_device, width, height, 1, format, usage);
+    image_input.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view_input = image_input.CreateView();
 
     // Create render pass with a subpass that has input attachment.
@@ -851,8 +845,8 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
 
     for (int mode = 0; mode < 2; mode++) {
         const bool use_single_command_buffer = (mode == 0);
@@ -1022,9 +1016,9 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     RETURN_IF_SKIP(InitState(nullptr, &afll_features));
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, format,
-               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT);
+    vkt::Image image(
+        *m_device, 32, 32, 1, format,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT);
 
     vkt::ImageView image_view = image.CreateView();
 

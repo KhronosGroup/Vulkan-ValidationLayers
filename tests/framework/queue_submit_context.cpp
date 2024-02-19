@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
 }
 
 VkCommandBuffer QSTestContext::InitFromPool(vkt::CommandBuffer& cb_obj) {
-    cb_obj.Init(dev, &pool);
+    cb_obj.Init(*dev, &pool);
     return cb_obj.handle();
 }
 
@@ -101,7 +101,7 @@ void QSTestContext::Copy(vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy&
     vk::CmdCopyBuffer(current_cb->handle(), from.handle(), to.handle(), 1, &copy_region);
 }
 
-void QSTestContext::CopyGeneral(const VkImageObj& from, const VkImageObj& to, const VkImageCopy& region) {
+void QSTestContext::CopyGeneral(const vkt::Image& from, const vkt::Image& to, const VkImageCopy& region) {
     vk::CmdCopyImage(current_cb->handle(), from.handle(), VK_IMAGE_LAYOUT_GENERAL, to.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region);
 }

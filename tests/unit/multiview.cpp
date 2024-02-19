@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -89,9 +89,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = 0;
-
-    VkImageObj image(m_device);
-    image.Init(image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
@@ -216,9 +214,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = 0;
-
-    VkImageObj image(m_device);
-    image.Init(image_create_info);
+    vkt::Image image(*m_device, image_create_info);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
@@ -645,9 +641,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = 0;
-
-    VkImageObj image(m_device);
-    image.Init(image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     const vkt::ImageView imageView(*m_device, image_view_ci);
@@ -913,9 +907,8 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     }
 
     // Create image view
-    VkImageObj image(m_device);
-    auto ici2d = image.ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.Init(ici2d);
+    auto ici2d = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, ici2d);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -1237,8 +1230,7 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.CreateGraphicsPipeline();
 
-    VkImageObj img(m_device);
-    img.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image img(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = img.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();

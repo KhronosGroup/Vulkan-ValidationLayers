@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -440,8 +440,7 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     InitRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64_SFLOAT;
-    VkFormatProperties format_props = m_device->format_properties(format);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
@@ -538,8 +537,7 @@ TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
     InitRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64G64B64A64_SFLOAT;
-    VkFormatProperties format_props = m_device->format_properties(format);
-    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 

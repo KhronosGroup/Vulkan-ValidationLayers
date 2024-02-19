@@ -272,7 +272,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 
     for (vkt::Queue *queue : queues) {
         vkt::CommandPool compute_pool(*m_device, queue->get_family_index());
-        vkt::CommandBuffer cmd_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+        vkt::CommandBuffer cmd_buffer(*m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 
         cmd_buffer.begin();
 
@@ -612,11 +612,10 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
-    VkImageObj image(m_device);
     // 3 array layers
-    image.Init(image.ImageCreateInfo2D(32, 32, 1, 3, depth_format,
-                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
-    ASSERT_TRUE(image.initialized());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 3, depth_format,
+                                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
     image_view_ci.image = image.handle();
@@ -983,9 +982,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-DrawState-ClearCmdBeforeDraw");
     };
 
-    VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
     image_view_ci.image = image.handle();

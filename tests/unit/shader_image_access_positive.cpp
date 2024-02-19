@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 LunarG, Inc.
- * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -406,8 +406,8 @@ TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkImageObj image(m_device);
-    image.Init(16, 16, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_LINEAR);
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -462,14 +462,10 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
     formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), good_format, formatProps);
 
-    VkImageObj bad_image(m_device);
-    bad_image.Init(128, 128, 1, bad_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(bad_image.initialized());
+    vkt::Image bad_image(*m_device, 128, 128, 1, bad_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView bad_view = bad_image.CreateView();
 
-    VkImageObj good_image(m_device);
-    good_image.Init(128, 128, 1, good_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(good_image.initialized());
+    vkt::Image good_image(*m_device, 128, 128, 1, good_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView good_view = good_image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();

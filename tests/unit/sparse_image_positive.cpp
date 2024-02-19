@@ -26,7 +26,6 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
         GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -39,7 +38,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements memory_reqs;
     vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
@@ -99,7 +98,6 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
         GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
     }
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -112,7 +110,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements memory_reqs;
 
@@ -189,7 +187,6 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     }
 
     // Create a sparse image
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -202,7 +199,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     // Query image memory requirements
     VkMemoryRequirements memory_reqs;
@@ -280,8 +277,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     vkt::ImageView image_view = image.CreateView();
 
@@ -351,8 +347,7 @@ TEST_F(PositiveSparseImage, BindImage) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    VkImageObj image(m_device);
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkSparseImageMemoryBind image_memory_bind = {};
     image_memory_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

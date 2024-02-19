@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,8 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
     rp.CreateRenderPass();
 
     // A compatible framebuffer.
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageViewCreateInfo ivci = {
         VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -126,9 +125,8 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     rp.CreateRenderPass();
 
     // A compatible framebuffer.
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
@@ -185,8 +183,9 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
         GTEST_SKIP() << "Image format max extent is too small";
     }
 
-    m_depthStencil->Init(100, 100, 1, depth_stencil_fmt,
-                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+    m_depthStencil->Init(*m_device, 100, 100, 1, depth_stencil_fmt,
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(depth_stencil_fmt, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -201,9 +200,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &depth_image_view.handle(), 100, 100);
 
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
-    ASSERT_TRUE(fence.initialized());
+    vkt::Fence fence(*m_device, vkt::Fence::create_info());
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 100, 100, 1, &clear);
@@ -211,10 +208,10 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(fence);
 
-    VkImageObj destImage(m_device);
-    destImage.Init(100, 100, 1, depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image destImage(*m_device, 100, 100, 1, depth_stencil_fmt,
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     fence.wait(kWaitTimeout);
-    vkt::CommandBuffer cmdbuf(m_device, m_commandPool);
+    vkt::CommandBuffer cmdbuf(*m_device, m_commandPool);
     cmdbuf.begin();
 
     m_depthStencil->ImageMemoryBarrier(&cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -288,9 +285,8 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     rp.CreateRenderPass();
 
     // A compatible ds image.
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageViewCreateInfo ivci = {
         VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -405,10 +401,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     image_ci.imageType = VK_IMAGE_TYPE_1D;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.format = formats[0];
-
-    VkImageObj image_object(m_device);
-    image_object.init(&image_ci);
-    VkImage image = image_object.image();
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
     image_view_ci.image = image;
@@ -502,13 +495,10 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     rp.CreateRenderPass();
 
     // Create Framebuffer.
-    VkImageObj colorImage(m_device);
-    colorImage.Init(32, 32, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(colorImage.initialized());
+    vkt::Image colorImage(*m_device, 32, 32, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    VkImageObj depthImage(m_device);
-    depthImage.Init(32, 32, 2, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(depthImage.initialized());
+    vkt::Image depthImage(*m_device, 32, 32, 2, VK_FORMAT_D32_SFLOAT,
+                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
     vkt::ImageView color_view = colorImage.CreateView(VK_IMAGE_VIEW_TYPE_2D, /*baseMipLevel*/ 0, /*levelCount*/ 1);
     vkt::ImageView depth_view = depthImage.CreateView(VK_IMAGE_VIEW_TYPE_2D, /*baseMipLevel*/ 0, /*levelCount*/ 1, 0,
@@ -685,9 +675,8 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     // A compatible framebuffer.
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
@@ -762,10 +751,8 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     // Create depth stencil image
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
-    VkImageObj ds_image(m_device);
-    ds_image.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ASSERT_TRUE(ds_image.initialized());
-
+    vkt::Image ds_image(*m_device, 32, 32, 1, ds_format,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkAttachmentDescriptionStencilLayout attachment_desc_stencil_layout = vku::InitStructHelper();
@@ -845,10 +832,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    VkImageObj image(m_device);
-    image.Init(image_ci);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
@@ -911,9 +895,7 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
     rp.AddSubpassDependency();
     rp.CreateRenderPass();
 
-    VkImageObj image(m_device);
-    image.InitNoLayout(32, 32, 1, VK_FORMAT_D32_SFLOAT_S8_UINT, 0x26 /* usage */);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_D32_SFLOAT_S8_UINT, 0x26 /* usage */);
     image.SetLayout(0x6, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -965,8 +947,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageObj image_3d{m_device};
-    image_3d.init(&image_info);
+    vkt::Image image_3d(*m_device, image_info, vkt::set_layout);
     image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // 2D image views to be used as color attchments for framebuffer
@@ -1056,8 +1037,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageObj image_3d{m_device};
-    image_3d.init(&image_info);
+    vkt::Image image_3d(*m_device, image_info, vkt::set_layout);
     image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // 2D image views for each slice of the 3D image
@@ -1143,9 +1123,8 @@ TEST_F(PositiveRenderPass, SubpassWithReadOnlyLayoutWithoutDependency) {
     vkt::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR, 0);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageViewCreateInfo ivci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                                   nullptr,
@@ -1196,8 +1175,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     image_ci.format = ds_format;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    vkt::Image image;
-    image.init(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci);
 
     const auto depth_range = image.subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
     const auto stencil_range = image.subresource_range(VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1354,8 +1332,7 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->phy());
-    VkImageObj depthImage(m_device);
-    depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image depthImage(*m_device, 32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     for (size_t i = 0; i < 2; i++) {
         const vkt::ImageView depth_or_stencil_view(

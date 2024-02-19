@@ -386,8 +386,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         image_create_info.format = VK_FORMAT_D32_SFLOAT;
         image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-        vkt::Image temp_image;
-        temp_image.init(*m_device, image_create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::Image temp_image(*m_device, image_create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         VkImageCaptureDescriptorDataInfoEXT icddi = vku::InitStructHelper();
         icddi.image = temp_image.handle();
@@ -412,8 +411,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         image_create_info.format = VK_FORMAT_D32_SFLOAT;
         image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        vkt::Image temp_image;
-        temp_image.init(*m_device, image_create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::Image temp_image(*m_device, image_create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         VkImageViewCreateInfo dsvci = vku::InitStructHelper();
         // dsvci.flags |= VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
@@ -710,7 +708,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
             if (no_gfx_qfi) {
                 vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
                 ASSERT_TRUE(command_pool.initialized());
-                vkt::CommandBuffer command_buffer(m_device, &command_pool);
+                vkt::CommandBuffer command_buffer(*m_device, &command_pool);
 
                 index = 0;
                 offset = 0;
@@ -964,7 +962,7 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
 
         vkt::CommandPool command_pool(*m_device, no_gfx_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
-        vkt::CommandBuffer command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(*m_device, &command_pool);
 
         command_buffer.begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,

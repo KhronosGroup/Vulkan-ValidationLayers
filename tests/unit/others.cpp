@@ -509,7 +509,7 @@ TEST_F(VkLayerTest, SpecLinks) {
     bool maintenance2_support =
         (IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
 
-    if (!((m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
+    if (!((m_device->FormatFeaturesOptimal(VK_FORMAT_R8_UINT) & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
           (ycbcr_support ^ maintenance2_support))) {
         GTEST_SKIP() << "Device does not support format and extensions required";
     }
@@ -530,9 +530,7 @@ TEST_F(VkLayerTest, SpecLinks) {
                                    nullptr,
                                    VK_IMAGE_LAYOUT_UNDEFINED};
     imageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    VkImageObj mutImage(m_device);
-    mutImage.init(&imageInfo);
-    ASSERT_TRUE(mutImage.initialized());
+    vkt::Image mutImage(*m_device, imageInfo, vkt::set_layout);
 
     VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1131,7 +1129,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
-    // vkt::CommandBuffer cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    // vkt::CommandBuffer cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     // m_commandBuffer->begin();
     // vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &cb.handle());
     // m_commandBuffer->end();
@@ -1258,7 +1256,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     vk::WaitForFences(device(), 0, &fence.handle(), true, 1);
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer command_buffer(m_device, m_commandPool);
+    vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
     command_buffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");

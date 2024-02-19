@@ -247,7 +247,7 @@ class VkBestPracticesLayerTest : public VkLayerTest {
 class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
   public:
-    std::unique_ptr<VkImageObj> CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
+    std::unique_ptr<vkt::Image> CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
                                             VkImageUsageFlags attachment_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VkRenderPass CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
                                   VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE);
@@ -618,6 +618,7 @@ class WsiTest : public VkLayerTest {
   public:
     // most tests need images in VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout
     void SetImageLayoutPresentSrc(VkImage image);
+    VkImageMemoryBarrier TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout, VkAccessFlags src_access_mask);
 };
 class NegativeWsi : public WsiTest {};
 class PositiveWsi : public WsiTest {};

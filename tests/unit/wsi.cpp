@@ -298,9 +298,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageObj src_Image(m_device);
-    src_Image.init(&image_create_info);
+    vkt::Image src_Image(*m_device, image_create_info, vkt::set_layout);
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -2385,7 +2383,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
-    const VkImageMemoryBarrier present_transition = vkt::Image::transition_to_present(swapchain_images[image_index]);
+    const VkImageMemoryBarrier present_transition =
+        TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
     m_commandBuffer->begin();
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);

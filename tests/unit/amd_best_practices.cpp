@@ -381,9 +381,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       0,
                                       nullptr,
                                       VK_IMAGE_LAYOUT_UNDEFINED};
-        VkImageObj image_1D(m_device);
-        image_1D.init(&img_info);
-        ASSERT_TRUE(image_1D.initialized());
+        vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
         m_commandBuffer->begin();
         image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -421,9 +419,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       0,
                                       nullptr,
                                       VK_IMAGE_LAYOUT_UNDEFINED};
-        VkImageObj image_1D(m_device);
-        image_1D.init(&img_info);
-        ASSERT_TRUE(image_1D.initialized());
+        vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
         m_commandBuffer->begin();
         image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -465,15 +461,11 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
                                   0,
                                   nullptr,
                                   VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImageObj image1D_1(m_device);
-    image1D_1.init(&img_info);
-    ASSERT_TRUE(image1D_1.initialized());
+    vkt::Image image1D_1(*m_device, img_info, vkt::set_layout);
 
     img_info.tiling = VK_IMAGE_TILING_LINEAR;
     img_info.usage = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-    VkImageObj image_1D_2(m_device);
-    image_1D_2.init(&img_info);
+    vkt::Image image_1D_2(*m_device, img_info, vkt::set_layout);
     if (!image_1D_2.initialized()) {
         GTEST_SKIP() << "Could not initilize Linear image, skipping image to image copy test";
     }
@@ -500,27 +492,26 @@ TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
     InitRenderTarget();
 
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 0,
-                                 VK_IMAGE_TYPE_2D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1024, 1024, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImageObj image_1D(m_device);
-
+                                  nullptr,
+                                  0,
+                                  VK_IMAGE_TYPE_2D,
+                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                  {1024, 1024, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  0,
+                                  nullptr,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkImage-AvoidGeneral");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
 
     // the init function initializes to general layout
-    image_1D.init(&img_info);
+    vkt::Image image_1D(*m_device, img_info);
+    image_1D.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_errorMonitor->VerifyFound();
 }
@@ -573,9 +564,7 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
         0,
         nullptr,
         VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImageObj image_1D(m_device);
-    image_1D.init(&img_info);
-    ASSERT_TRUE(image_1D.initialized());
+    vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
     m_commandBuffer->begin();
     // check for read-to-read barrier
@@ -627,9 +616,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
                                  0,
                                  nullptr,
                                  VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImageObj image_1D(m_device);
-    image_1D.init(&img_info);
-    ASSERT_TRUE(image_1D.initialized());
+    vkt::Image image_1D(*m_device, img_info);
 
     uint32_t warn_limit = 11;
 
@@ -708,7 +695,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
-    vkt::CommandBuffer secondary_cmd_buf(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cmd_buf(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo iinfo = vku::InitStructHelper();
     iinfo.renderPass = m_renderPassBeginInfo.renderPass;

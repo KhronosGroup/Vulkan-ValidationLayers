@@ -1675,7 +1675,6 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
 
     vkt::RenderPass render_pass(*m_device, rp_ci);
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1687,8 +1686,7 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image.init(&image_ci);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
     iv_ci.image = image.handle();
@@ -1732,7 +1730,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     if (graphics_queue_family_index) {
         vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
 
-        vkt::CommandBuffer command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(*m_device, &command_pool);
         command_buffer.begin();
 
         VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
@@ -1749,7 +1747,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     if (compute_queue_family_index) {
         vkt::CommandPool command_pool(*m_device, compute_queue_family_index.value());
 
-        vkt::CommandBuffer command_buffer(m_device, &command_pool);
+        vkt::CommandBuffer command_buffer(*m_device, &command_pool);
         command_buffer.begin();
 
         VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
@@ -1805,7 +1803,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     }
     vkt::CommandPool command_pool(*m_device, compute_queue_family_index.value());
 
-    vkt::CommandBuffer command_buffer(m_device, &command_pool);
+    vkt::CommandBuffer command_buffer(*m_device, &command_pool);
     command_buffer.begin();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
@@ -1968,7 +1966,7 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
@@ -1999,7 +1997,7 @@ TEST_F(NegativeQuery, CommandBufferInheritanceFlags) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
     cbii.renderPass = m_renderPass;
@@ -2087,7 +2085,6 @@ TEST_F(NegativeQuery, DISABLED_MultiviewEndQuery) {
 
     vkt::RenderPass render_pass(*m_device, rp_ci);
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2099,8 +2096,7 @@ TEST_F(NegativeQuery, DISABLED_MultiviewEndQuery) {
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image.init(&image_ci);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
     iv_ci.image = image.handle();
@@ -2366,7 +2362,7 @@ TEST_F(NegativeQuery, CmdExecuteCommandsActiveQueries) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    vkt::CommandBuffer secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 
@@ -2404,7 +2400,7 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
 
-    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin(&cbbi);
     vk::CmdBeginQuery(secondary.handle(), query_pool.handle(), 1u, 0u);
     vk::CmdEndQuery(secondary.handle(), query_pool.handle(), 1u);
@@ -2482,7 +2478,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
         m_device->wait();
     }
 
-    vkt::CommandBuffer command_buffer(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer command_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     command_buffer.begin();
     vk::CmdBeginQuery(command_buffer.handle(), query_pool, 0u, 0u);
     vk::CmdEndQuery(command_buffer.handle(), query_pool, 0u);
@@ -2590,7 +2586,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
 
-    vkt::CommandBuffer secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin(&cbbi);
     secondary.end();
 
@@ -2776,7 +2772,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vkt::CommandPool command_pool(*m_device, pool_create_info);
 
     vkt::Queue *queue = m_device->queue_family_queues(1)[0].get();
-    vkt::CommandBuffer cb(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
+    vkt::CommandBuffer cb(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
     acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();

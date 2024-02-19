@@ -122,26 +122,26 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_commandBuffer->end();
 
     // Create secondary buffers to use
-    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     vk::CmdCopyBuffer(scb1, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
     secondary_cb1.end();
 
-    vkt::CommandBuffer secondary_cb2(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb2(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb2 = secondary_cb2.handle();
     secondary_cb2.begin();
     vk::CmdCopyBuffer(scb2, buffer_a.handle(), buffer_c.handle(), 1, &front2front);
     secondary_cb2.end();
 
-    vkt::CommandBuffer secondary_cb3(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb3(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb3 = secondary_cb3.handle();
     secondary_cb3.begin();
     vk::CmdPipelineBarrier(secondary_cb3.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
                            nullptr, 0, nullptr);
     secondary_cb3.end();
 
-    vkt::CommandBuffer secondary_cb4(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb4(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb4 = secondary_cb4.handle();
     secondary_cb4.begin();
     vk::CmdCopyBuffer(scb4, buffer_b.handle(), buffer_c.handle(), 1, &front2front);
@@ -303,10 +303,10 @@ struct ClearAttachmentHazardHelper {
     vkt::Device& device;
     vkt::CommandBuffer& command_buffer;
     const VkFormat ds_format;
-    VkImageObj image;
-    VkImageObj image_ds;
-    VkImageObj rt;
-    VkImageObj ds;
+    vkt::Image image;
+    vkt::Image image_ds;
+    vkt::Image rt;
+    vkt::Image ds;
     vkt::ImageView rt_view;
     vkt::ImageView ds_view;
 
@@ -315,21 +315,28 @@ struct ClearAttachmentHazardHelper {
           device(device_),
           command_buffer(cb_),
           ds_format(FindSupportedDepthStencilFormat(test_.gpu())),
-          image(&device),
-          image_ds(&device),
-          rt(&device),
-          ds(&device) {
-        image.InitNoLayout(width, height, 1, rt_format, transfer_usage);
+          image(),
+          image_ds(),
+          rt(),
+          ds() {
+        auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, rt_format, transfer_usage);
+
+        image.init(device, image_ci, 0);
         image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-        image_ds.InitNoLayout(width, height, 1, ds_format, transfer_usage);
+        image_ci.format = ds_format;
+        image_ds.init(device, image_ci, 0);
         image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-        rt.InitNoLayout(width, height, 1, rt_format, rt_usage);
+        image_ci.format = rt_format;
+        image_ci.usage = rt_usage;
+        rt.init(device, image_ci, 0);
         rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         rt_view = rt.CreateView();
 
-        ds.InitNoLayout(width, height, 1, ds_format, ds_usage);
+        image_ci.format = ds_format;
+        image_ci.usage = ds_usage;
+        ds.init(device, image_ci, 0);
         ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         ds_view = ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
@@ -584,22 +591,13 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
-    image_a.Init(image_ci);
-    ASSERT_TRUE(image_a.initialized());
-
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    ASSERT_TRUE(image_b.initialized());
-
-    VkImageObj image_c(m_device);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
     image_ci.flags |= VK_IMAGE_CREATE_ALIAS_BIT;
-    image_c.Init(image_ci);
-    ASSERT_TRUE(image_c.initialized());
+    vkt::Image image_c(*m_device, image_ci);
 
-    VkImageObj image_c_alias(m_device);
-    image_c_alias.init_no_mem(*m_device, image_ci);
+    vkt::Image image_c_alias(*m_device, image_ci, vkt::no_mem);
     image_c_alias.bind_memory(image_c.memory(), 0);
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
@@ -704,7 +702,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
     // Test secondary command buffers
     // Create secondary buffers to use
-    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     vk::CmdCopyImage(scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
@@ -757,13 +755,9 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     if (!(formProps.sampleCounts & VK_SAMPLE_COUNT_2_BIT)) {
         printf("CmdResolveImage Test requires unsupported VK_SAMPLE_COUNT_2_BIT feature. Skipped.\n");
     } else {
-        VkImageObj image_s2_a(m_device), image_s2_b(m_device);
         image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
-        image_s2_a.Init(image_ci);
-        ASSERT_TRUE(image_s2_a.initialized());
-
-        image_s2_b.Init(image_ci);
-        ASSERT_TRUE(image_s2_b.initialized());
+        vkt::Image image_s2_a(*m_device, image_ci);
+        vkt::Image image_s2_b(*m_device, image_ci);
 
         VkImageResolve r_full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
 
@@ -804,18 +798,10 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
-    image_a.Init(image_ci);
-    ASSERT_TRUE(image_a.initialized());
-
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    ASSERT_TRUE(image_b.initialized());
-
-    VkImageObj image_c(m_device);
-    image_c.Init(image_ci);
-    ASSERT_TRUE(image_c.initialized());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
+    vkt::Image image_c(*m_device, image_ci);
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
     VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -918,8 +904,7 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    VkImageObj image_a(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
     // Verify format
     bool supported = ImageFormatIsSupported(instance(), gpu(), image_ci,
                                             VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
@@ -928,11 +913,9 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
-    image_a.Init(image_ci);
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    VkImageObj image_c(m_device);
-    image_c.Init(image_ci);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
+    vkt::Image image_c(*m_device, image_ci);
 
     VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 2};
     VkImageSubresourceLayers layer0_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 1};
@@ -1037,13 +1020,10 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_LINEAR);
-    image_a.Init(image_ci);
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    VkImageObj image_c(m_device);
-    image_c.Init(image_ci);
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_LINEAR);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
+    vkt::Image image_c(*m_device, image_ci);
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -1108,8 +1088,7 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    VkImageObj image_a(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_LINEAR);
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_LINEAR);
     // Verify format
     bool supported = ImageFormatIsSupported(instance(), gpu(), image_ci,
                                             VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
@@ -1118,11 +1097,9 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
-    image_a.Init(image_ci);
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    VkImageObj image_c(m_device);
-    image_c.Init(image_ci);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
+    vkt::Image image_c(*m_device, image_ci);
 
     VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 1};
     VkImageSubresourceLayers layer_all_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT_KHR, 0, 0, 1};
@@ -1228,10 +1205,9 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
-    image_a.Init(image_ci);
-    image_b.Init(image_ci);
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
 
     VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
@@ -1356,10 +1332,9 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
-    image_a.Init(image_ci);
-    image_b.Init(image_ci);
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
 
     VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
@@ -1401,14 +1376,12 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    VkImageObj rt_image_0(m_device);
-    rt_image_0.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image rt_image_0(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto rt_image_view_0 = rt_image_0.CreateView();
 
-    VkImageObj rt_image_1(m_device);
-    rt_image_1.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image rt_image_1(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     auto rt_image_view_1 = rt_image_1.CreateView();
 
     const VkSubpassDependency external_subpass_dependency = {VK_SUBPASS_EXTERNAL,
@@ -1434,10 +1407,9 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     // Other buffers with which to interact
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(m_width, m_height, 1, 1, format, usage);
-    image_a.Init(image_ci);
-    image_b.Init(image_ci);
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(m_width, m_height, 1, 1, format, usage);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
 
     VkOffset3D zero_offset{0, 0, 0};
     VkExtent3D full_extent{m_width, m_height, 1};  // <-- image type is 2D
@@ -1493,9 +1465,8 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    VkImageObj dst_image(m_device);
-    dst_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image dst_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto dst_image_view = dst_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -1508,8 +1479,7 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
     dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageObj src_image(m_device);
-    src_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image src_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1541,9 +1511,8 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     // GENERAL layout is needed to perform a copy. Also,
     // the absence of layout transition after the render pass is needed because the test hazards
     // attachment store operation with subsequent copy (and the transition would happen in between).
-    VkImageObj dst_image(m_device);
-    dst_image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image dst_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto dst_image_view = dst_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -1553,8 +1522,7 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
 
-    VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1593,8 +1561,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     InitRenderTarget();
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1645,8 +1612,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     InitRenderTarget();
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageObj image(m_device);
-    image.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
@@ -1701,18 +1667,16 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_c_a(m_device), image_c_b(m_device);
-    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
-    image_c_a.Init(image_c_ci);
-    image_c_b.Init(image_c_ci);
+    const auto image_c_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
+    vkt::Image image_c_a(*m_device, image_c_ci, vkt::set_layout);
+    vkt::Image image_c_b(*m_device, image_c_ci, vkt::set_layout);
 
     vkt::ImageView imageview_c = image_c_a.CreateView();
     VkImageUsageFlags image_usage_storage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    VkImageObj image_s_a(m_device), image_s_b(m_device);
-    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
-    image_s_a.Init(image_s_ci);
-    image_s_b.Init(image_s_ci);
+    const auto image_s_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
+    vkt::Image image_s_a(*m_device, image_s_ci, vkt::set_layout);
+    vkt::Image image_s_b(*m_device, image_s_ci, vkt::set_layout);
     image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     image_s_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
@@ -2146,10 +2110,9 @@ TEST_F(NegativeSyncVal, CmdClear) {
     // CmdClearColorImage
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device), image_b(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
-    image_a.Init(image_ci);
-    image_b.Init(image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
+    vkt::Image image_a(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkOffset3D zero_offset{0, 0, 0};
@@ -2182,10 +2145,9 @@ TEST_F(NegativeSyncVal, CmdClear) {
 
     // CmdClearDepthStencilImage
     format = FindSupportedDepthStencilFormat(gpu());
-    VkImageObj image_ds_a(m_device), image_ds_b(m_device);
-    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
-    image_ds_a.Init(image_ci);
-    image_ds_b.Init(image_ci);
+    image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
+    vkt::Image image_ds_a(*m_device, image_ci);
+    vkt::Image image_ds_b(*m_device, image_ci);
 
     const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     image_ds_a.SetLayout(ds_aspect, VK_IMAGE_LAYOUT_GENERAL);
@@ -2274,12 +2236,12 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     auto format_dp = format_ds;
     auto format_st = format_ds;
 
-    VkImageObj image_ds(m_device);
-    VkImageObj image_dp(m_device);
-    VkImageObj image_st(m_device);
-    image_ds.Init(16, 16, 1, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image_dp.Init(16, 16, 1, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_st.Init(16, 16, 1, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_ds(*m_device, 16, 16, 1, format_ds,
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image_dp(*m_device, 16, 16, 1, format_dp,
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_st(*m_device, 16, 16, 1, format_st,
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView image_view_ds = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::ImageView image_view_dp = image_dp.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::ImageView image_view_st = image_st.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -2429,11 +2391,10 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     VkImageUsageFlags usage_color = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageUsageFlags usage_input = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_color(m_device), image_input(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, format, usage_color);
-    image_color.Init(image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, usage_color);
+    vkt::Image image_color(*m_device, image_ci);
     image_ci.usage = usage_input;
-    image_input.Init(image_ci);
+    vkt::Image image_input(*m_device, image_ci);
     vkt::ImageView image_color_view = image_color.CreateView();
     vkt::ImageView image_input_view = image_input.CreateView();
     VkImageView attachments[] = {image_color_view, image_input_view};
@@ -2522,12 +2483,11 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
     VkImageUsageFlags usage_color = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageUsageFlags usage_ds = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    VkImageObj image_color(m_device), image_color2(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, color_format, usage_color);
-    image_color.Init(image_ci);
-    image_color2.Init(image_ci);
-    VkImageObj image_ds(m_device);
-    image_ds.Init(32, 32, 1, ds_format, usage_ds, VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, usage_color);
+    vkt::Image image_color(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image_color2(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image_ds(*m_device, 32, 32, 1, ds_format, usage_ds);
+    image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     const VkAttachmentDescription colorAttachmentDescription = {(VkAttachmentDescriptionFlags)0,
                                                                 color_format,
@@ -2673,8 +2633,8 @@ struct CreateRenderPassHelper {
     const static uint32_t kDefaultImageSize = 64;
     uint32_t width = kDefaultImageSize;
     uint32_t height = kDefaultImageSize;
-    std::shared_ptr<VkImageObj> image_color;
-    std::shared_ptr<VkImageObj> image_input;
+    std::shared_ptr<vkt::Image> image_color;
+    std::shared_ptr<vkt::Image> image_input;
     vkt::ImageView view_input;
     vkt::ImageView view_color;
 
@@ -2697,18 +2657,16 @@ struct CreateRenderPassHelper {
 
     CreateRenderPassHelper(vkt::Device* dev_)
         : dev(dev_),
-          image_color(std::make_shared<VkImageObj>(dev)),
-          image_input(std::make_shared<VkImageObj>(dev)),
           color_ref(DefaultColorRef()),
           input_ref(DefaultInputRef()),
           fb_attach_desc(DefaultFbAttachDesc()),
           input_attach_desc(DefaultInputAttachDesc()) {}
 
     void InitImageAndView() {
-        auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, usage_input);
-        image_input->InitNoLayout(image_ci);
+        auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, format, usage_input);
+        image_input = std::make_shared<vkt::Image>(*dev, image_ci, 0);
         image_ci.usage = usage_color;
-        image_color->InitNoLayout(image_ci);
+        image_color = std::make_shared<vkt::Image>(*dev, image_ci, 0);
 
         view_input = image_input->CreateView();
         view_color = image_color->CreateView();
@@ -2772,7 +2730,7 @@ struct CreateRenderPassHelper {
         input_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
     }
 
-    void SetAttachmentLayout(VkImageObj* image, const VkAttachmentDescription& attach_desc) {
+    void SetAttachmentLayout(vkt::Image* image, const VkAttachmentDescription& attach_desc) {
         if (image && image->initialized() && (attach_desc.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
             image->SetLayout(attach_desc.initialLayout);
         }
@@ -3220,13 +3178,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     dst_img_info.pQueueFamilyIndices = nullptr;
     dst_img_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    std::vector<std::unique_ptr<VkImageObj>> images;
-    for (uint32_t i = 0; i < kNumImages; i++) {
-        images.emplace_back(new VkImageObj(m_device));
-    }
-    images[0]->Init(src_img_info);
-    for (uint32_t i = 1; i < images.size(); i++) {
-        images[i]->Init(dst_img_info);
+    std::vector<std::unique_ptr<vkt::Image>> images;
+    images.emplace_back(new vkt::Image(*m_device, src_img_info));
+    for (uint32_t i = 1; i < kNumImages; i++) {
+        images.emplace_back(new vkt::Image(*m_device, dst_img_info));
     }
 
     vkt::ImageView attachment_wrappers[kNumImages];
@@ -3634,18 +3589,10 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_a(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
-    image_a.Init(image_ci);
-    ASSERT_TRUE(image_a.initialized());
-
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    ASSERT_TRUE(image_b.initialized());
-
-    VkImageObj image_c(m_device);
-    image_c.Init(image_ci);
-    ASSERT_TRUE(image_c.initialized());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
+    vkt::Image image_a(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image_c(*m_device, image_ci, vkt::set_layout);
 
     vkt::Event event;
     event.init(*m_device, vkt::Event::create_info(0));
@@ -3668,7 +3615,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     VkImageCopy region_0_q3toq3 = {layers_0, half_offset, layers_0, half_offset, half_extent};
 
     auto cb = m_commandBuffer->handle();
-    auto copy_general = [cb](const VkImageObj &from, const VkImageObj &to, const VkImageCopy &region) {
+    auto copy_general = [cb](const vkt::Image& from, const vkt::Image& to, const VkImageCopy& region) {
         vk::CmdCopyImage(cb, from.handle(), VK_IMAGE_LAYOUT_GENERAL, to.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     };
 
@@ -3827,7 +3774,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     buffer_barrier_front_waw.offset = front2front.dstOffset;
     buffer_barrier_front_waw.size = front2front.size;
 
-    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.begin();
     secondary_cb1.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
@@ -4032,16 +3979,14 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj sampled_image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    sampled_image.Init(image_ci);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image sampled_image(*m_device, image_ci, vkt::set_layout);
     auto sampled_view = std::make_unique<vkt::ImageView>();
     auto imageview_ci = sampled_image.BasicViewCreatInfo();
     sampled_view->init(*m_device, imageview_ci);
 
-    VkImageObj combined_image(m_device);
-    image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    combined_image.Init(image_ci);
+    image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image combined_image(*m_device, image_ci, vkt::set_layout);
     imageview_ci = combined_image.BasicViewCreatInfo();
     auto combined_view = std::make_unique<vkt::ImageView>();
     combined_view->init(*m_device, imageview_ci);
@@ -4223,10 +4168,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-    VkImageObj image1(m_device);
-    image1.init(&image_ci);
-    ASSERT_TRUE(image1.initialized());
+    vkt::Image image1(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
     iv_ci.image = image1.handle();
@@ -4281,10 +4223,8 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
             << "Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
     }
 
-    VkImageObj src_image(m_device);
-    src_image.Init(1, 1, 1, VK_FORMAT_R32G32_UINT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
-    VkImageObj dst_image(m_device);
-    dst_image.Init(12, 4, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_LINEAR);
+    vkt::Image src_image(*m_device, 1, 1, 1, VK_FORMAT_R32G32_UINT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image dst_image(*m_device, 12, 4, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageCopy copy_regions[2] = {};
     copy_regions[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -4385,18 +4325,16 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image_c_a(m_device), image_c_b(m_device);
-    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
-    image_c_a.Init(image_c_ci);
-    image_c_b.Init(image_c_ci);
+    const auto image_c_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
+    vkt::Image image_c_a(*m_device, image_c_ci, vkt::set_layout);
+    vkt::Image image_c_b(*m_device, image_c_ci, vkt::set_layout);
 
     vkt::ImageView imageview_c = image_c_a.CreateView();
     VkImageUsageFlags image_usage_storage =
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    VkImageObj image_s_a(m_device), image_s_b(m_device);
-    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
-    image_s_a.Init(image_s_ci);
-    image_s_b.Init(image_s_ci);
+    const auto image_s_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
+    vkt::Image image_s_a(*m_device, image_s_ci, vkt::set_layout);
+    vkt::Image image_s_b(*m_device, image_s_ci, vkt::set_layout);
     image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     image_s_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
@@ -4837,7 +4775,7 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     test.End();
 
     // Ensure this would work on one queue (sanity check)
-    vkt::CommandBuffer reset(test.dev, &test.pool);
+    vkt::CommandBuffer reset(*test.dev, &test.pool);
     test.Begin(reset);
     test.ResetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
     test.End();
@@ -4917,16 +4855,12 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
 
-    VkImageObj image_a(m_device);
-    image_a.Init(image_ci);
-    ASSERT_TRUE(image_a.initialized());
+    vkt::Image image_a(*m_device, image_ci, vkt::set_layout);
     image_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageObj image_b(m_device);
-    image_b.Init(image_ci);
-    ASSERT_TRUE(image_b.initialized());
+    vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
     image_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageSubresourceLayers all_layers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -4988,8 +4922,8 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     rp_helper.InitFramebuffer();
     rp_helper.InitBeginInfo();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
 
     auto do_clear = [](vkt::CommandBuffer& cb_obj, CreateRenderPassHelper& rp_helper) {
         VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -5446,8 +5380,7 @@ TEST_F(NegativeSyncVal, ImageCopyHazardsLayoutTransition) {
     vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage, VK_IMAGE_TILING_OPTIMAL);
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage);
     image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkBufferImageCopy region{};
@@ -5482,8 +5415,8 @@ TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
     vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage, VK_IMAGE_TILING_OPTIMAL);
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkBufferImageCopy region{};
     region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -5577,8 +5510,7 @@ TEST_F(NegativeSyncVal, WriteOnlyImageWriteHazard) {
 
     vkt::Buffer copy_source(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
@@ -5786,7 +5718,7 @@ TEST_F(NegativeSyncVal, DebugRegion_Secondary) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &label);
@@ -5819,7 +5751,7 @@ TEST_F(NegativeSyncVal, DebugRegion_Secondary2) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer secondary_cb0(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb0(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb0, &label);
@@ -5827,7 +5759,7 @@ TEST_F(NegativeSyncVal, DebugRegion_Secondary2) {
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb0);
     secondary_cb0.end();
 
-    vkt::CommandBuffer secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb1, &label);
@@ -5857,8 +5789,8 @@ TEST_F(NegativeSyncVal, QSDebugRegion) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
 
     label.pLabelName = "RegionA";
     cb0.begin();
@@ -5896,7 +5828,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion2) {
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "RegionA";
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
@@ -5904,7 +5836,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion2) {
     cb0.end();
     m_default_queue->submit(cb0);
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
@@ -5928,8 +5860,8 @@ TEST_F(NegativeSyncVal, QSDebugRegion3) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
 
     vkt::Event event(*m_device);  // events are not used for some specific functionality, only to create additional debug regions
     vkt::Event event2(*m_device);
@@ -5999,14 +5931,14 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
     m_default_queue->submit(cb0);
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -6015,7 +5947,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion4) {
     cb1.end();
     m_default_queue->submit(cb1);
 
-    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
@@ -6040,13 +5972,13 @@ TEST_F(NegativeSyncVal, QSDebugRegion5) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -6058,7 +5990,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion5) {
     std::vector<const vkt::CommandBuffer*> command_buffers = {&cb0, &cb1};
     m_default_queue->submit(command_buffers, vkt::Fence{});
 
-    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
@@ -6082,13 +6014,13 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     cb0.end();
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
@@ -6106,7 +6038,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion6) {
     submit_infos[1].pCommandBuffers = &cb1.handle();
     vk::QueueSubmit(*m_default_queue, 2, submit_infos, VK_NULL_HANDLE);
 
-    vkt::CommandBuffer cb2(m_device, m_commandPool);
+    vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
     vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
     cb2.end();
@@ -6131,7 +6063,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion7) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
     label.pLabelName = "RegionA";
@@ -6140,7 +6072,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion7) {
     cb0.end();
     m_default_queue->submit(cb0);
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();
@@ -6164,7 +6096,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
-    vkt::CommandBuffer secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary_cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &label);
@@ -6172,7 +6104,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
     secondary_cb.end();
 
-    vkt::CommandBuffer cb0(m_device, m_commandPool);
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
     cb0.begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
@@ -6181,7 +6113,7 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     cb0.end();
     m_default_queue->submit(cb0);
 
-    vkt::CommandBuffer cb1(m_device, m_commandPool);
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
     cb1.begin();
     vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
     cb1.end();

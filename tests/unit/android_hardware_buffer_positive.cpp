@@ -75,7 +75,6 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
     }
 
     // Create a Depth/Stencil image
-    VkImageObj ds_image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -88,7 +87,7 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    ds_image.init_no_mem(*m_device, image_create_info);
+    vkt::Image ds_image(*m_device, image_create_info, vkt::no_mem);
     if (ds_image.handle() == VK_NULL_HANDLE) {
         GTEST_SKIP() << "Was not able to create a D16 AHB framebuffer";
     }
@@ -209,7 +208,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper();
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -222,7 +220,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();
@@ -288,7 +286,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper(&ext_format);
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -301,7 +298,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();
@@ -358,7 +355,6 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper(&ext_format);
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -371,7 +367,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.init_no_mem(*m_device, image_create_info);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();

@@ -95,8 +95,7 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     // Use extension to get image memory requirements
     VkImageMemoryRequirementsInfo2KHR image_info = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
@@ -156,8 +155,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     // Allocate image memory
     vkt::DeviceMemory image_memory;
@@ -426,10 +424,7 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
-
-    vkt::Image image;
-    image.init_no_mem(*m_device, image_create_info);
-    ASSERT_TRUE(image.initialized());
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkDeviceImageMemoryRequirements info = vku::InitStructHelper();
     info.pCreateInfo = &image_create_info;
