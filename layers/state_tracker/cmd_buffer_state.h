@@ -288,9 +288,11 @@ class CommandBuffer : public RefcountedStateObject {
             viewports.clear();
             discard_rectangles.reset();
             color_blend_enable_attachments.reset();
+            color_blend_enabled.reset();
             color_blend_equation_attachments.reset();
             color_write_mask_attachments.reset();
             color_blend_advanced_attachments.reset();
+            color_write_enabled.reset();
             color_blend_equations.clear();
             color_write_masks.clear();
             vertex_binding_descriptions.clear();
