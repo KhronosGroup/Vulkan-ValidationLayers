@@ -530,52 +530,59 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
         }
     }
 
+    auto print_properties = [this]() {
+        std::ostringstream ss;
+        for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
+            const auto &prop = cooperative_matrix_properties_khr[i];
+            ss << "[" << i << "] MSize = " << prop.MSize << " | NSize = " << prop.NSize << " | KSize = " << prop.KSize
+               << " | AType = " << string_VkComponentTypeKHR(prop.AType) << " | BType = " << string_VkComponentTypeKHR(prop.BType)
+               << " | CType = " << string_VkComponentTypeKHR(prop.CType)
+               << " | ResultType = " << string_VkComponentTypeKHR(prop.ResultType) << " | scope = " << string_VkScopeKHR(prop.scope)
+               << "\n";
+        }
+        return ss.str();
+    };
+
     for (const spirv::Instruction *cooperative_matrix_inst : module_state.static_data_.cooperative_matrix_inst) {
         const spirv::Instruction &insn = *cooperative_matrix_inst;
         switch (insn.Opcode()) {
             case spv::OpTypeCooperativeMatrixKHR: {
                 CoopMatType m(insn.Word(1), module_state, stage_state);
 
-                if (m.all_constant) {
-                    // Validate that the type parameters are all supported for one of the
-                    // operands of a cooperative matrix khr property.
-                    bool valid = false;
-                    for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
-                        if (cooperative_matrix_properties_khr[i].AType == m.component_type &&
-                            cooperative_matrix_properties_khr[i].MSize == m.rows &&
-                            cooperative_matrix_properties_khr[i].KSize == m.cols &&
-                            cooperative_matrix_properties_khr[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
-                        if (cooperative_matrix_properties_khr[i].BType == m.component_type &&
-                            cooperative_matrix_properties_khr[i].KSize == m.rows &&
-                            cooperative_matrix_properties_khr[i].NSize == m.cols &&
-                            cooperative_matrix_properties_khr[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
-                        if (cooperative_matrix_properties_khr[i].CType == m.component_type &&
-                            cooperative_matrix_properties_khr[i].MSize == m.rows &&
-                            cooperative_matrix_properties_khr[i].NSize == m.cols &&
-                            cooperative_matrix_properties_khr[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
-                        if (cooperative_matrix_properties_khr[i].ResultType == m.component_type &&
-                            cooperative_matrix_properties_khr[i].MSize == m.rows &&
-                            cooperative_matrix_properties_khr[i].NSize == m.cols &&
-                            cooperative_matrix_properties_khr[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
+                if (!m.all_constant) {
+                    break;
+                }
+                // Validate that the type parameters are all supported for one of the
+                // operands of a cooperative matrix khr property.
+                bool valid = false;
+                for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
+                    const auto &property = cooperative_matrix_properties_khr[i];
+                    if (property.AType == m.component_type && property.MSize == m.rows && property.KSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
                     }
-                    if (!valid) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974", module_state.handle(), loc,
-                                         "SPIR-V (%s) has an OpTypeCooperativeMatrixKHR (result id = %" PRIu32
-                                         ") operand that don't match a supported matrix type (%s).",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(1), m.Describe().c_str());
+                    if (property.BType == m.component_type && property.KSize == m.rows && property.NSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
                     }
+                    if (property.CType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
+                    }
+                    if (property.ResultType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974", module_state.handle(), loc,
+                                     "SPIR-V (%s) has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR\n%s.",
+                                     string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(), m.Describe().c_str(),
+                                     print_properties().c_str());
                 }
                 break;
             }
@@ -641,22 +648,15 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     bool valid_r = false;
                     uint32_t i = 0;
                     for (i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
-                        valid_a = cooperative_matrix_properties_khr[i].AType == a.component_type &&
-                                  cooperative_matrix_properties_khr[i].MSize == a.rows &&
-                                  cooperative_matrix_properties_khr[i].KSize == a.cols &&
-                                  cooperative_matrix_properties_khr[i].scope == a.scope;
-                        valid_b = cooperative_matrix_properties_khr[i].BType == b.component_type &&
-                                  cooperative_matrix_properties_khr[i].KSize == b.rows &&
-                                  cooperative_matrix_properties_khr[i].NSize == b.cols &&
-                                  cooperative_matrix_properties_khr[i].scope == b.scope;
-                        valid_c = cooperative_matrix_properties_khr[i].CType == c.component_type &&
-                                  cooperative_matrix_properties_khr[i].MSize == c.rows &&
-                                  cooperative_matrix_properties_khr[i].NSize == c.cols &&
-                                  cooperative_matrix_properties_khr[i].scope == c.scope;
-                        valid_r = cooperative_matrix_properties_khr[i].ResultType == r.component_type &&
-                                  cooperative_matrix_properties_khr[i].MSize == r.rows &&
-                                  cooperative_matrix_properties_khr[i].NSize == r.cols &&
-                                  cooperative_matrix_properties_khr[i].scope == r.scope;
+                        const auto &property = cooperative_matrix_properties_khr[i];
+                        valid_a |= property.AType == a.component_type && property.MSize == a.rows && property.KSize == a.cols &&
+                                   property.scope == a.scope;
+                        valid_b |= property.BType == b.component_type && property.KSize == b.rows && property.NSize == b.cols &&
+                                   property.scope == b.scope;
+                        valid_c |= property.CType == c.component_type && property.MSize == c.rows && property.NSize == c.cols &&
+                                   property.scope == c.scope;
+                        valid_r |= property.ResultType == r.component_type && property.MSize == r.rows &&
+                                   property.NSize == r.cols && property.scope == r.scope;
                         if (valid_a && valid_b && valid_c && valid_r) {
                             break;
                         }
@@ -671,29 +671,29 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                                      string_VkShaderStageFlagBits(entrypoint.stage));
                     }
                     if (!valid_a) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-MSize-08975", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddKHR (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesKHR for A type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), a.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-MSize-08975", module_state.handle(), loc,
+                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesKHR for A type\n%s",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         a.Describe().c_str(), print_properties().c_str());
                     } else if (!valid_b) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-KSize-08977", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddKHR (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesKHR for B type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), b.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-KSize-08977", module_state.handle(), loc,
+                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesKHR for B type\n%s",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         b.Describe().c_str(), print_properties().c_str());
                     } else if (!valid_c) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-MSize-08979", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddKHR (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesKHR for C type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), c.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-MSize-08979", module_state.handle(), loc,
+                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesKHR for C type\n%s",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         c.Describe().c_str(), print_properties().c_str());
                     } else if (!valid_r) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-MSize-08981", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddKHR (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesKHR for Result type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), r.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-MSize-08981", module_state.handle(), loc,
+                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesKHR for Result type\n%s",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         r.Describe().c_str(), print_properties().c_str());
                     }
                 }
                 break;
@@ -701,42 +701,40 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
             case spv::OpTypeCooperativeMatrixNV: {
                 CoopMatType m(insn.Word(1), module_state, stage_state);
 
-                if (m.all_constant) {
-                    // Validate that the type parameters are all supported for one of the
-                    // operands of a cooperative matrix property.
-                    bool valid = false;
-                    for (uint32_t i = 0; i < cooperative_matrix_properties.size(); ++i) {
-                        if (cooperative_matrix_properties[i].AType == m.component_type &&
-                            cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].KSize == m.cols &&
-                            cooperative_matrix_properties[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
-                        if (cooperative_matrix_properties[i].BType == m.component_type &&
-                            cooperative_matrix_properties[i].KSize == m.rows && cooperative_matrix_properties[i].NSize == m.cols &&
-                            cooperative_matrix_properties[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
-                        if (cooperative_matrix_properties[i].CType == m.component_type &&
-                            cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].NSize == m.cols &&
-                            cooperative_matrix_properties[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
-                        if (cooperative_matrix_properties[i].DType == m.component_type &&
-                            cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].NSize == m.cols &&
-                            cooperative_matrix_properties[i].scope == m.scope) {
-                            valid = true;
-                            break;
-                        }
+                if (!m.all_constant) {
+                    break;
+                }
+                // Validate that the type parameters are all supported for one of the
+                // operands of a cooperative matrix property.
+                bool valid = false;
+                for (uint32_t i = 0; i < cooperative_matrix_properties_nv.size(); ++i) {
+                    const auto &property = cooperative_matrix_properties_nv[i];
+                    if (property.AType == m.component_type && property.MSize == m.rows && property.KSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
                     }
-                    if (!valid) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316", module_state.handle(), loc,
-                                         "SPIR-V (%s) has an OpTypeCooperativeMatrixNV (result id = %" PRIu32
-                                         ") operand that don't match a supported matrix type (%s).",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(1), m.Describe().c_str());
+                    if (property.BType == m.component_type && property.KSize == m.rows && property.NSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
                     }
+                    if (property.CType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
+                    }
+                    if (property.DType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
+                        property.scope == m.scope) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316", module_state.handle(), loc,
+                                     "SPIR-V (%s) has an OpTypeCooperativeMatrixNV (result id = %" PRIu32
+                                     ") operand that don't match a supported matrix type (%s).",
+                                     string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(1), m.Describe().c_str());
                 }
                 break;
             }
@@ -753,23 +751,16 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     bool valid_b = false;
                     bool valid_c = false;
                     bool valid_d = false;
-                    for (uint32_t i = 0; i < cooperative_matrix_properties.size(); ++i) {
-                        valid_a = cooperative_matrix_properties[i].AType == a.component_type &&
-                                  cooperative_matrix_properties[i].MSize == a.rows &&
-                                  cooperative_matrix_properties[i].KSize == a.cols &&
-                                  cooperative_matrix_properties[i].scope == a.scope;
-                        valid_b = cooperative_matrix_properties[i].BType == b.component_type &&
-                                  cooperative_matrix_properties[i].KSize == b.rows &&
-                                  cooperative_matrix_properties[i].NSize == b.cols &&
-                                  cooperative_matrix_properties[i].scope == b.scope;
-                        valid_c = cooperative_matrix_properties[i].CType == c.component_type &&
-                                  cooperative_matrix_properties[i].MSize == c.rows &&
-                                  cooperative_matrix_properties[i].NSize == c.cols &&
-                                  cooperative_matrix_properties[i].scope == c.scope;
-                        valid_d = cooperative_matrix_properties[i].DType == d.component_type &&
-                                  cooperative_matrix_properties[i].MSize == d.rows &&
-                                  cooperative_matrix_properties[i].NSize == d.cols &&
-                                  cooperative_matrix_properties[i].scope == d.scope;
+                    for (uint32_t i = 0; i < cooperative_matrix_properties_nv.size(); ++i) {
+                        const auto &property = cooperative_matrix_properties_nv[i];
+                        valid_a |= property.AType == a.component_type && property.MSize == a.rows && property.KSize == a.cols &&
+                                   property.scope == a.scope;
+                        valid_b |= property.BType == b.component_type && property.KSize == b.rows && property.NSize == b.cols &&
+                                   property.scope == b.scope;
+                        valid_c |= property.CType == c.component_type && property.MSize == c.rows && property.NSize == c.cols &&
+                                   property.scope == c.scope;
+                        valid_d |= property.DType == d.component_type && property.MSize == d.rows && property.NSize == d.cols &&
+                                   property.scope == d.scope;
                         if (valid_a && valid_b && valid_c && valid_d) {
                             break;
                         }
