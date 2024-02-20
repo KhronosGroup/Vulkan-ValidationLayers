@@ -559,7 +559,6 @@ void gpuav::Validator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitC
 
     if (record_obj.result != VK_SUCCESS) return;
 
-    GlobalImageLayoutMap overlay_image_layout_map;
     // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
@@ -585,7 +584,6 @@ void gpuav::Validator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submit
     BaseClass::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     if (record_obj.result != VK_SUCCESS) return;
 
-    GlobalImageLayoutMap overlay_image_layout_map;
     // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
