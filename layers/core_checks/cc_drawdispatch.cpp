@@ -315,7 +315,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                                 Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
                                                 Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), drawCount, offset,
-                                                buffer_state.get(), error_obj.location);
+                                                *buffer_state, error_obj.location);
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->createInfo.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer);
@@ -361,7 +361,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                                                 error_obj.location);
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
                                                 Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
-                                                drawCount, offset, buffer_state.get(), error_obj.location);
+                                                drawCount, offset, *buffer_state, error_obj.location);
     } else if (offset & 3) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
@@ -545,7 +545,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
                                                 Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), maxDrawCount, offset,
-                                                buffer_state.get(), error_obj.location);
+                                                *buffer_state, error_obj.location);
     }
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
@@ -595,7 +595,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
                                                 Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
-                                                maxDrawCount, offset, buffer_state.get(), error_obj.location);
+                                                maxDrawCount, offset, *buffer_state, error_obj.location);
     }
 
     skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
@@ -1262,7 +1262,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                drawCount, offset, buffer_state.get(), error_obj.location);
+                                                drawCount, offset, *buffer_state, error_obj.location);
         if (!enabled_features.multiDrawIndirect) {
             skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
                              cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
@@ -1327,7 +1327,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                maxDrawCount, offset, buffer_state.get(), error_obj.location);
+                                                maxDrawCount, offset, *buffer_state, error_obj.location);
     }
     skip |= ValidateMeshShaderStage(cb_state, error_obj.location, true);
     return skip;
@@ -1414,7 +1414,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
                                                 sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
         skip |= ValidateCmdDrawStrideWithBuffer(
             cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride, Struct::VkDrawMeshTasksIndirectCommandEXT,
-            sizeof(VkDrawMeshTasksIndirectCommandEXT), drawCount, offset, buffer_state.get(), error_obj.location);
+            sizeof(VkDrawMeshTasksIndirectCommandEXT), drawCount, offset, *buffer_state, error_obj.location);
     }
     if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->createInfo.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -1469,7 +1469,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
         skip |=
             ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
                                             Struct::VkDrawMeshTasksIndirectCommandEXT, sizeof(VkDrawMeshTasksIndirectCommandEXT),
-                                            maxDrawCount, offset, buffer_state.get(), error_obj.location);
+                                            maxDrawCount, offset, *buffer_state, error_obj.location);
     }
     skip |= ValidateMeshShaderStage(cb_state, error_obj.location, false);
     return skip;
@@ -1791,17 +1791,16 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     return skip;
 }
 
-bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo1,
-                                          const VkSampleLocationsInfoEXT *pSampleLocationsInfo2) const {
-    if (pSampleLocationsInfo1->sampleLocationsPerPixel != pSampleLocationsInfo2->sampleLocationsPerPixel ||
-        pSampleLocationsInfo1->sampleLocationGridSize.width != pSampleLocationsInfo2->sampleLocationGridSize.width ||
-        pSampleLocationsInfo1->sampleLocationGridSize.height != pSampleLocationsInfo2->sampleLocationGridSize.height ||
-        pSampleLocationsInfo1->sampleLocationsCount != pSampleLocationsInfo2->sampleLocationsCount) {
+bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT &info_1, const VkSampleLocationsInfoEXT &info_2) const {
+    if (info_1.sampleLocationsPerPixel != info_2.sampleLocationsPerPixel ||
+        info_1.sampleLocationGridSize.width != info_2.sampleLocationGridSize.width ||
+        info_1.sampleLocationGridSize.height != info_2.sampleLocationGridSize.height ||
+        info_1.sampleLocationsCount != info_2.sampleLocationsCount) {
         return false;
     }
-    for (uint32_t i = 0; i < pSampleLocationsInfo1->sampleLocationsCount; ++i) {
-        if (pSampleLocationsInfo1->pSampleLocations[i].x != pSampleLocationsInfo2->pSampleLocations[i].x ||
-            pSampleLocationsInfo1->pSampleLocations[i].y != pSampleLocationsInfo2->pSampleLocations[i].y) {
+    for (uint32_t i = 0; i < info_1.sampleLocationsCount; ++i) {
+        if (info_1.pSampleLocations[i].x != info_2.pSampleLocations[i].x ||
+            info_1.pSampleLocations[i].y != info_2.pSampleLocations[i].y) {
             return false;
         }
     }

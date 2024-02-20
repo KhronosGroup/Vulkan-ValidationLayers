@@ -170,11 +170,11 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 //
 // AHB-specific validation within non-AHB APIs
 //
-bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *allocate_info, const Location &allocate_info_loc) const {
+bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &allocate_info, const Location &allocate_info_loc) const {
     bool skip = false;
-    auto import_ahb_info = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(allocate_info->pNext);
-    auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info->pNext);
-    auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info->pNext);
+    auto import_ahb_info = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(allocate_info.pNext);
+    auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
+    auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info.pNext);
 
     if ((import_ahb_info) && (NULL != import_ahb_info->buffer)) {
         const Location ahb_loc = allocate_info_loc.dot(Struct::VkImportAndroidHardwareBufferInfoANDROID, Field::buffer);
@@ -254,23 +254,23 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &ahb_props);
 
         // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
-        if (allocate_info->allocationSize != ahb_props.allocationSize) {
-            skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-02383", device, allocate_info_loc.dot(Field::allocationSize),
-                             "(%" PRIu64 ") does not match the %s AHardwareBuffer's allocationSize (%" PRIu64 "). (AHB = %p).",
-                             allocate_info->allocationSize, ahb_loc.Fields().c_str(), ahb_props.allocationSize,
-                             import_ahb_info->buffer);
+        if (allocate_info.allocationSize != ahb_props.allocationSize) {
+            skip |=
+                LogError("VUID-VkMemoryAllocateInfo-allocationSize-02383", device, allocate_info_loc.dot(Field::allocationSize),
+                         "(%" PRIu64 ") does not match the %s AHardwareBuffer's allocationSize (%" PRIu64 "). (AHB = %p).",
+                         allocate_info.allocationSize, ahb_loc.Fields().c_str(), ahb_props.allocationSize, import_ahb_info->buffer);
         }
 
         // memoryTypeIndex must be one of those returned by vkGetAndroidHardwareBufferPropertiesANDROID for the AHardwareBuffer
         // Note: memoryTypeIndex is an index, memoryTypeBits is a bitmask
-        uint32_t mem_type_bitmask = 1 << allocate_info->memoryTypeIndex;
+        uint32_t mem_type_bitmask = 1 << allocate_info.memoryTypeIndex;
         if (0 == (mem_type_bitmask & ahb_props.memoryTypeBits)) {
             skip |= LogError(
                 "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385", device, allocate_info_loc.dot(Field::memoryTypeIndex),
                 "(%" PRIu32
                 ") does not correspond to a bit set in %s "
                 "AHardwareBuffer's memoryTypeBits bitmask (0x%" PRIx32 "). (AHB = %p).",
-                allocate_info->memoryTypeIndex, ahb_loc.Fields().c_str(), ahb_props.memoryTypeBits, import_ahb_info->buffer);
+                allocate_info.memoryTypeIndex, ahb_loc.Fields().c_str(), ahb_props.memoryTypeBits, import_ahb_info->buffer);
         }
 
         // Checks for allocations without a dedicated allocation requirement
@@ -372,24 +372,24 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             }
         }
     } else {  // Not an import
-              // auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info->pNext);
-              // auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info->pNext);
+              // auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
+              // auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info.pNext);
 
         if (exp_mem_alloc_info &&
             (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID & exp_mem_alloc_info->handleTypes)) {
             if (mem_ded_alloc_info) {
-                if (mem_ded_alloc_info->image != VK_NULL_HANDLE && allocate_info->allocationSize != 0) {
+                if (mem_ded_alloc_info->image != VK_NULL_HANDLE && allocate_info.allocationSize != 0) {
                     skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-01874", mem_ded_alloc_info->image,
                                      allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
                                      "is %s but allocationSize is %" PRIu64 ".", FormatHandle(mem_ded_alloc_info->image).c_str(),
-                                     allocate_info->allocationSize);
+                                     allocate_info.allocationSize);
                 }
-                if (mem_ded_alloc_info->buffer != VK_NULL_HANDLE && allocate_info->allocationSize == 0) {
+                if (mem_ded_alloc_info->buffer != VK_NULL_HANDLE && allocate_info.allocationSize == 0) {
                     skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-07901", mem_ded_alloc_info->buffer,
                                      allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
                                      "is %s but allocationSize is 0.", FormatHandle(mem_ded_alloc_info->buffer).c_str());
                 }
-            } else if (0 == allocate_info->allocationSize) {
+            } else if (0 == allocate_info.allocationSize) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-07900", device, allocate_info_loc,
                                  "pNext chain does not include VkMemoryDedicatedAllocateInfo, but allocationSize is 0.");
             }
@@ -470,46 +470,46 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
 }
 
 // Validate creating an image with an external format
-bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
 
-    const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info->pNext);
+    const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info.pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
-        if (VK_FORMAT_UNDEFINED != create_info->format) {
+        if (VK_FORMAT_UNDEFINED != create_info.format) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-01974", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, format is %s.", ext_fmt_android->externalFormat,
-                             string_VkFormat(create_info->format));
+                             string_VkFormat(create_info.format));
         }
 
-        if (0 != (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT & create_info->flags)) {
+        if (0 != (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT & create_info.flags)) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02396", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but flags is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageCreateFlags(create_info->flags).c_str());
+                             string_VkImageCreateFlags(create_info.flags).c_str());
         }
 
         if (0 != (~(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &
-                  create_info->usage)) {
+                  create_info.usage)) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageUsageFlags(create_info->usage).c_str());
+                             string_VkImageUsageFlags(create_info.usage).c_str());
         } else if (!enabled_features.externalFormatResolve &&
-                   ((VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & create_info->usage)) {
+                   ((VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & create_info.usage)) {
             skip |= LogError(
                 "VUID-VkImageCreateInfo-pNext-09457", device,
                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                 "(%" PRIu64
                 ") is non-zero, but usage is %s (without externalFormatResolve, only VK_IMAGE_USAGE_SAMPLED_BIT is allowed).",
-                ext_fmt_android->externalFormat, string_VkImageUsageFlags(create_info->usage).c_str());
+                ext_fmt_android->externalFormat, string_VkImageUsageFlags(create_info.usage).c_str());
         }
 
-        if (VK_IMAGE_TILING_OPTIMAL != create_info->tiling) {
+        if (VK_IMAGE_TILING_OPTIMAL != create_info.tiling) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02398", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but layout is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageTiling(create_info->tiling));
+                             string_VkImageTiling(create_info.tiling));
         }
         if (ahb_ext_formats_map.find(ext_fmt_android->externalFormat) == ahb_ext_formats_map.end()) {
             skip |= LogError("VUID-VkExternalFormatANDROID-externalFormat-01894", device,
@@ -520,7 +520,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
     }
 
     if ((nullptr == ext_fmt_android) || (0 == ext_fmt_android->externalFormat)) {
-        if (VK_FORMAT_UNDEFINED == create_info->format) {
+        if (VK_FORMAT_UNDEFINED == create_info.format) {
             if (ext_fmt_android) {
                 skip |= LogError("VUID-VkImageCreateInfo-pNext-01975", device, create_info_loc.dot(Field::format),
                                  "is VK_FORMAT_UNDEFINED, but the chained VkExternalFormatANDROID has an externalFormat of 0.");
@@ -531,21 +531,21 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
         }
     }
 
-    const VkExternalMemoryImageCreateInfo *emici = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
+    const VkExternalMemoryImageCreateInfo *emici = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info.pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        if (create_info->imageType != VK_IMAGE_TYPE_2D) {
+        if (create_info.imageType != VK_IMAGE_TYPE_2D) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02393", device,
                              create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
                              "includes VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID, but imageType is %s.",
-                             string_VkImageType(create_info->imageType));
+                             string_VkImageType(create_info.imageType));
         }
 
-        if ((create_info->mipLevels != 1) && (create_info->mipLevels != FullMipChainLevels(create_info->extent))) {
+        if ((create_info.mipLevels != 1) && (create_info.mipLevels != FullMipChainLevels(create_info.extent))) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02394", device,
                              create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
                              "includes VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID, "
                              "but mipLevels is %" PRIu32 " (full chain mipLevels are %" PRIu32 ").",
-                             create_info->mipLevels, FullMipChainLevels(create_info->extent));
+                             create_info.mipLevels, FullMipChainLevels(create_info.extent));
         }
     }
 
@@ -553,22 +553,23 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
 }
 
 // Validate creating an image view with an AHB format
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
-    auto image_state = Get<vvl::Image>(create_info->image);
+    auto image_state = Get<vvl::Image>(create_info.image);
 
     if (image_state->HasAHBFormat()) {
-        if (VK_FORMAT_UNDEFINED != create_info->format) {
-            skip |= LogError("VUID-VkImageViewCreateInfo-image-02399", create_info->image, create_info_loc.dot(Field::format),
+        if (VK_FORMAT_UNDEFINED != create_info.format) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-02399", create_info.image, create_info_loc.dot(Field::format),
                              "is %s (not VK_FORMAT_UNDEFINED) but the VkImageViewCreateInfo struct has a chained "
                              "VkExternalFormatANDROID struct.",
-                             string_VkFormat(create_info->format));
+                             string_VkFormat(create_info.format));
         }
 
         // Chain must include a compatible ycbcr conversion
         bool conv_found = false;
         uint64_t external_format = 0;
-        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
+        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info =
+            vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
         if (ycbcr_conv_info != nullptr) {
             auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conv_info->conversion);
             if (ycbcr_state) {
@@ -577,12 +578,12 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
             }
         }
         if (!conv_found) {
-            const LogObjectList objlist(create_info->image);
+            const LogObjectList objlist(create_info.image);
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
                              "is not valid (or forgot to add VkSamplerYcbcrConversionInfo).");
         } else if ((external_format != image_state->ahb_format)) {
-            const LogObjectList objlist(create_info->image, ycbcr_conv_info->conversion);
+            const LogObjectList objlist(create_info.image, ycbcr_conv_info->conversion);
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
                              "(%s) was created with externalFormat (%" PRIu64
@@ -591,14 +592,14 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         }
 
         // Errors in create_info swizzles
-        if (IsIdentitySwizzle(create_info->components) == false) {
+        if (IsIdentitySwizzle(create_info.components) == false) {
             skip |= LogError(
-                "VUID-VkImageViewCreateInfo-image-02401", create_info->image, create_info_loc.dot(Field::image),
+                "VUID-VkImageViewCreateInfo-image-02401", create_info.image, create_info_loc.dot(Field::image),
                 "was chained with a VkExternalFormatANDROID struct, but "
                 "includes one or more non-identity component swizzles, r swizzle = %s, g swizzle = %s, b swizzle = %s, a swizzle "
                 "= %s.",
-                string_VkComponentSwizzle(create_info->components.r), string_VkComponentSwizzle(create_info->components.g),
-                string_VkComponentSwizzle(create_info->components.b), string_VkComponentSwizzle(create_info->components.a));
+                string_VkComponentSwizzle(create_info.components.r), string_VkComponentSwizzle(create_info.components.g),
+                string_VkComponentSwizzle(create_info.components.b), string_VkComponentSwizzle(create_info.components.a));
         }
     }
 
@@ -607,7 +608,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
 
 #else  // !defined(VK_USE_PLATFORM_ANDROID_KHR)
 
-bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *allocate_info, const Location &allocate_info_loc) const {
+bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &allocate_info, const Location &allocate_info_loc) const {
     return false;
 }
 
@@ -629,11 +630,11 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
     return false;
 }
 

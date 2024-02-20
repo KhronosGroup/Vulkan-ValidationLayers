@@ -364,15 +364,15 @@ bool CoreChecks::ValidateMemoryScope(const spirv::Module &module_state, const sp
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const spirv::Module &module_state, const spirv::Instruction *insn,
+bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const spirv::Module &module_state, const spirv::Instruction &insn,
                                                             const Location &loc) const {
     bool skip = false;
     // Go through all variables for images and check decorations
     // Note: Tried to move to ResourceInterfaceVariable but the issue is the variables don't need to be accessed in the entrypoint
     // to trigger the error.
-    assert(insn->Opcode() == spv::OpVariable);
+    assert(insn.Opcode() == spv::OpVariable);
     // spirv-val validates this is an OpTypePointer
-    const spirv::Instruction *pointer_def = module_state.FindDef(insn->Word(1));
+    const spirv::Instruction *pointer_def = module_state.FindDef(insn.Word(1));
     if (pointer_def->Word(2) != spv::StorageClassUniformConstant) {
         return skip;  // Vulkan Spec says storage image must be UniformConstant
     }
@@ -393,7 +393,7 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const spirv::Module 
             return skip;
         }
 
-        const uint32_t var_id = insn->Word(2);
+        const uint32_t var_id = insn.Word(2);
         const auto decorations = module_state.GetDecorationSet(var_id);
 
         if (!enabled_features.shaderStorageImageReadWithoutFormat && !decorations.Has(spirv::DecorationSet::nonreadable_bit)) {
@@ -1608,7 +1608,7 @@ bool CoreChecks::ValidateVariables(const spirv::Module &module_state, const Loca
         // we apply that in the descriptor set matching validation code (see
         // descriptor_sets.cpp).
         if (!has_format_feature2) {
-            skip |= ValidateShaderStorageImageFormatsVariables(module_state, insn, loc);
+            skip |= ValidateShaderStorageImageFormatsVariables(module_state, *insn, loc);
         }
     }
 

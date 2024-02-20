@@ -160,24 +160,24 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_sta
     return skip;
 }
 
-bool CoreChecks::ValidateQueueFamilyIndex(const vvl::PhysicalDevice *pd_state, uint32_t requested_queue_family, const char *vuid,
+bool CoreChecks::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_state, uint32_t requested_queue_family, const char *vuid,
                                           const Location &loc) const {
     bool skip = false;
 
-    if (requested_queue_family >= pd_state->queue_family_known_count) {
+    if (requested_queue_family >= pd_state.queue_family_known_count) {
         const char *conditional_ext_cmd =
             instance_extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
 
-        skip |= LogError(vuid, pd_state->Handle(), loc,
+        skip |= LogError(vuid, pd_state.Handle(), loc,
                          "(%" PRIu32 ") is not less than any previously obtained pQueueFamilyPropertyCount %" PRIu32
                          " from "
                          "vkGetPhysicalDeviceQueueFamilyProperties%s.",
-                         requested_queue_family, pd_state->queue_family_known_count, conditional_ext_cmd);
+                         requested_queue_family, pd_state.queue_family_known_count, conditional_ext_cmd);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_state, uint32_t info_count,
+bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, uint32_t info_count,
                                                 const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
     bool skip = false;
 
@@ -207,7 +207,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
             // Vulkan 1.0 didn't have protected memory so always needed unique info
             create_flags flags = {requested_queue_family, not_used};
             if (queue_family_map.emplace(requested_queue_family, flags).second == false) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state->Handle(),
+                skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state.Handle(),
                                  info_loc.dot(Field::queueFamilyIndex),
                                  "(%" PRIu32 ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%" PRIu32 "].",
                                  requested_queue_family, queue_family_map.at(requested_queue_family).unprocted_index);
@@ -228,7 +228,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
                 // The queue family was seen, so now need to make sure the flags were different
                 if (protected_create_bit) {
                     if (it->second.protected_index != not_used) {
-                        skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state->Handle(),
+                        skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state.Handle(),
                                          info_loc.dot(Field::queueFamilyIndex),
                                          "(%" PRIu32 ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%" PRIu32
                                          "] which both have "
@@ -239,7 +239,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
                     }
                 } else {
                     if (it->second.unprocted_index != not_used) {
-                        skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state->Handle(),
+                        skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state.Handle(),
                                          info_loc.dot(Field::queueFamilyIndex),
                                          "(%" PRIu32 ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%" PRIu32
                                          "].",
@@ -259,7 +259,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
         const auto prev_global_priority = global_priorities.find(infos[i].queueFamilyIndex);
         if (prev_global_priority != global_priorities.end()) {
             if (prev_global_priority->second != global_priority) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654", pd_state->Handle(), info_loc,
+                skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654", pd_state.Handle(), info_loc,
                                  "Multiple queues are created with queueFamilyIndex %" PRIu32
                                  ", but one has global priority %s and another %s.",
                                  infos[i].queueFamilyIndex, string_VkQueueGlobalPriorityKHR(prev_global_priority->second),
@@ -269,20 +269,20 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
             global_priorities.insert({infos[i].queueFamilyIndex, global_priority});
         }
 
-        const VkQueueFamilyProperties requested_queue_family_props = pd_state->queue_family_properties[requested_queue_family];
+        const VkQueueFamilyProperties requested_queue_family_props = pd_state.queue_family_properties[requested_queue_family];
 
         // if using protected flag, make sure queue supports it
         if (protected_create_bit && ((requested_queue_family_props.queueFlags & VK_QUEUE_PROTECTED_BIT) == 0)) {
-            skip |= LogError("VUID-VkDeviceQueueCreateInfo-flags-06449", pd_state->Handle(), info_loc.dot(Field::queueFamilyIndex),
+            skip |= LogError("VUID-VkDeviceQueueCreateInfo-flags-06449", pd_state.Handle(), info_loc.dot(Field::queueFamilyIndex),
                              "(%" PRIu32 ") does not have VK_QUEUE_PROTECTED_BIT supported, but pQueueCreateInfos[%" PRIu32
                              "].flags has VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT.",
                              requested_queue_family, i);
         }
 
         // Verify that requested queue count of queue family is known to be valid at this point in time
-        if (requested_queue_family < pd_state->queue_family_known_count) {
+        if (requested_queue_family < pd_state.queue_family_known_count) {
             const auto requested_queue_count = infos[i].queueCount;
-            const bool queue_family_has_props = requested_queue_family < pd_state->queue_family_properties.size();
+            const bool queue_family_has_props = requested_queue_family < pd_state.queue_family_properties.size();
             // spec guarantees at least one queue for each queue family
             const uint32_t available_queue_count = queue_family_has_props ? requested_queue_family_props.queueCount : 1;
 
@@ -296,7 +296,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
                         : "the pQueueFamilyProperties[" + std::to_string(requested_queue_family) + "] was never obtained";
 
                 skip |= LogError(
-                    "VUID-VkDeviceQueueCreateInfo-queueCount-00382", pd_state->Handle(), info_loc.dot(Field::queueCount),
+                    "VUID-VkDeviceQueueCreateInfo-queueCount-00382", pd_state.Handle(), info_loc.dot(Field::queueCount),
                     " (%" PRIu32
                     ") is not less than or equal to available queue count for this pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "].queueFamilyIndex} (%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
@@ -310,11 +310,11 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice *pd_st
         }
     }
     for (uint32_t i = 0; i < static_cast<uint32_t>(queue_counts.size()); ++i) {
-        if (queue_counts[i] > pd_state->queue_family_properties[i].queueCount) {
-            skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06755", pd_state->Handle(), loc,
+        if (queue_counts[i] > pd_state.queue_family_properties[i].queueCount) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06755", pd_state.Handle(), loc,
                              "Total queue count requested from queue family index %" PRIu32 " is %" PRIu32
                              ", which is greater than queue count available in the queue family (%" PRIu32 ").",
-                             i, queue_counts[i], pd_state->queue_family_properties[i].queueCount);
+                             i, queue_counts[i], pd_state.queue_family_properties[i].queueCount);
         }
     }
 
@@ -333,7 +333,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         skip |= LogError("VUID-vkCreateDevice-physicalDevice-parameter", device, error_obj.location,
                          "Have not called vkEnumeratePhysicalDevices() yet.");
     } else {
-        skip |= ValidateDeviceQueueCreateInfos(pd_state.get(), pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
+        skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
                                                error_obj.location.dot(Field::pCreateInfo));
 
         const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *fragment_shading_rate_features =

@@ -363,14 +363,14 @@ class Validator : public gpu_tracker::Validator {
     // gpu_image_layout.cpp
     // --------------------
 
-    void TransitionAttachmentRefLayout(vvl::CommandBuffer* cb_state, const safe_VkAttachmentReference2& ref);
+    void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const safe_VkAttachmentReference2& ref);
 
-    void TransitionSubpassLayouts(vvl::CommandBuffer* cb_state, const vvl::RenderPass& render_pass_state, const int);
-    void TransitionFinalSubpassLayouts(vvl::CommandBuffer* cb_state);
+    void TransitionSubpassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state, const int);
+    void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
 
-    void TransitionBeginRenderPassLayouts(vvl::CommandBuffer* cb_state, const vvl::RenderPass& render_pass_state);
+    void TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state);
 
-    bool UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer* cb_state, const Location& image_loc,
+    bool UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer& cb_state, const Location& image_loc,
                                            const ImageBarrier& img_barrier, const CommandBufferImageLayoutMap& current_map,
                                            CommandBufferImageLayoutMap& layout_updates) const;
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -462,9 +462,9 @@ class Validator : public gpu_tracker::Validator {
                                           const RecordObject&) override;
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
-    void RecordTransitionImageLayout(vvl::CommandBuffer* cb_state, const ImageBarrier& mem_barrier);
-    void TransitionImageLayouts(vvl::CommandBuffer* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
-    void TransitionImageLayouts(vvl::CommandBuffer* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
+    void RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& mem_barrier);
+    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
+    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
                                 VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
 
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
@@ -512,9 +512,9 @@ struct RestorablePipelineState {
     std::vector<uint8_t> push_constants_data;
     PushConstantRangesId push_constants_ranges;
 
-    RestorablePipelineState(vvl::CommandBuffer* cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
+    RestorablePipelineState(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
 
-    void Create(vvl::CommandBuffer* cb_state, VkPipelineBindPoint bind_point);
+    void Create(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
     void Restore(VkCommandBuffer command_buffer) const;
 };
 

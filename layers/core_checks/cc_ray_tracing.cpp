@@ -29,7 +29,7 @@
 #include "utils/ray_tracing_utils.h"
 #include "state_tracker/ray_tracing_state.h"
 
-bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory *mem_info,
+bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory &mem_info,
                                                                 VkDeviceSize mem_offset, const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, loc);
 }
@@ -101,9 +101,9 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         // Validate bound memory range information
         auto mem_info = Get<vvl::DeviceMemory>(info.memory);
         if (mem_info) {
-            skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info.get(), info.memoryOffset,
+            skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, *mem_info, info.memoryOffset,
                                                                    bind_info_loc.dot(Field::memoryOffset));
-            skip |= ValidateMemoryTypes(mem_info.get(), as_state->memory_requirements.memoryTypeBits,
+            skip |= ValidateMemoryTypes(*mem_info, as_state->memory_requirements.memoryTypeBits,
                                         bind_info_loc.dot(Field::accelerationStructure),
                                         "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-03622");
         }

@@ -694,11 +694,11 @@ void gpuav::AccelerationStructureBuildValidationState::Destroy(VkDevice device, 
     initialized = false;
 }
 
-void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer *cb_state, VkPipelineBindPoint bind_point) {
+void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point = bind_point;
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
 
-    LastBound &last_bound = cb_state->lastBound[lv_bind_point];
+    LastBound &last_bound = cb_state.lastBound[lv_bind_point];
     if (last_bound.pipeline_state) {
         pipeline = last_bound.pipeline_state->VkHandle();
         pipeline_layout = last_bound.pipeline_layout;
@@ -718,8 +718,8 @@ void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer *cb_state, VkPipe
             push_descriptor_set_writes = last_bound.push_descriptor_set->GetWrites();
         }
         const auto &pipeline_layout = last_bound.pipeline_state->PipelineLayoutState();
-        if (pipeline_layout->push_constant_ranges == cb_state->push_constant_data_ranges) {
-            push_constants_data = cb_state->push_constant_data;
+        if (pipeline_layout->push_constant_ranges == cb_state.push_constant_data_ranges) {
+            push_constants_data = cb_state.push_constant_data;
             push_constants_ranges = pipeline_layout->push_constant_ranges;
         }
     }

@@ -194,7 +194,7 @@ void gpuav::Validator::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuf
                                &memory_barrier, 0, nullptr, 0, nullptr);
 
     // Save a copy of the compute pipeline state that needs to be restored.
-    RestorablePipelineState restorable_state(cb_state.get(), VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Switch to and launch the validation compute shader to find, replace, and report invalid acceleration structure handles.
     DispatchCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, as_validation_state.pipeline);
@@ -395,7 +395,7 @@ void gpuav::Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBu
     auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(cb_state.get(), *render_pass_state);
+        TransitionBeginRenderPassLayouts(*cb_state, *render_pass_state);
     }
 }
 
@@ -423,7 +423,7 @@ void gpuav::Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandB
 void gpuav::Validator::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (cb_state) {
-        TransitionFinalSubpassLayouts(cb_state.get());
+        TransitionFinalSubpassLayouts(*cb_state);
     }
 }
 
@@ -446,7 +446,7 @@ void gpuav::Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBu
 
 void gpuav::Validator::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionSubpassLayouts(cb_state.get(), *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
+    TransitionSubpassLayouts(*cb_state, *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
 }
 
 void gpuav::Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
