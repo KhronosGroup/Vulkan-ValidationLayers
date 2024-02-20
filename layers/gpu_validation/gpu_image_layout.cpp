@@ -80,9 +80,12 @@ struct GlobalLayoutUpdater {
 void gpuav::Validator::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
         const auto image = layout_map_entry.first;
-        const auto &subres_map = layout_map_entry.second;
+        const auto subres_map = layout_map_entry.second;
+        if (!subres_map) {
+            continue;
+        }
         auto image_state = Get<vvl::Image>(image);
-        if (image_state && subres_map) {
+        if (image_state) {
             auto guard = image_state->layout_range_map->WriteLock();
             sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
         }
@@ -694,7 +697,7 @@ bool gpuav::Validator::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state
                                               const RangeFactory &range_factory, const Location &loc,
                                               const char *mismatch_layout_vuid, bool *error) const {
     bool skip = false;
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
+    const auto subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
     if (!subresource_map) {
         return skip;
     }

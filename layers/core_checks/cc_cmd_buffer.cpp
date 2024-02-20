@@ -1246,7 +1246,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         for (const auto &sub_layout_map_entry : sub_cb_state.image_layout_map) {
             const auto image = sub_layout_map_entry.first;
 
-            const auto *cb_subres_map = cb_state.GetImageSubresourceLayoutMap(image);
+            const auto cb_subres_map = cb_state.GetImageSubresourceLayoutMap(image);
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 

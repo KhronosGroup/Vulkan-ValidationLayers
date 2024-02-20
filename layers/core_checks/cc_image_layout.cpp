@@ -72,7 +72,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
                                         const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
                                         bool *error) const {
     bool skip = false;
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
+    const auto subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
     if (!subresource_map) return skip;
 
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
@@ -201,7 +201,10 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
         if (!image_state) {
             continue;
         }
-        const auto &subres_map = layout_map_entry.second;
+        const auto subres_map = layout_map_entry.second;
+        if (!subres_map) {
+            continue;
+        }
         const auto &layout_map = subres_map->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
         if (layout_map.empty()) continue;
@@ -272,9 +275,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 void CoreChecks::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
         const auto image = layout_map_entry.first;
-        const auto &subres_map = layout_map_entry.second;
+        const auto subres_map = layout_map_entry.second;
         const auto image_state = Get<vvl::Image>(image);
-        if (image_state) {
+        if (image_state && subres_map) {
             auto guard = image_state->layout_range_map->WriteLock();
             sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
         }
@@ -552,7 +555,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
             attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
         }
 
-        const ImageSubresourceLayoutMap *subresource_map = nullptr;
+        std::shared_ptr<const ImageSubresourceLayoutMap> subresource_map;
         bool has_queried_map = false;
 
         for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
@@ -797,7 +800,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
+    const auto subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
     if (subresource_map) {
         LayoutUseCheckAndMessage layout_check(dest_image_layout);
         auto normalized_isr = image_state.NormalizeSubresourceRange(range);
@@ -828,14 +831,14 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer &cb_
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(img_barrier.image);
-    auto &write_subresource_map = layout_updates[image_state->VkHandle()];
+    auto write_subresource_map = layout_updates[image_state->VkHandle()];
     bool new_write = false;
     if (!write_subresource_map) {
         write_subresource_map = std::make_shared<ImageSubresourceLayoutMap>(*image_state);
         new_write = true;
     }
     const auto &current_subresource_map = current_map.find(image_state->VkHandle());
-    const auto &read_subresource_map =
+    const auto read_subresource_map =
         (new_write && current_subresource_map != current_map.end()) ? (*current_subresource_map).second : write_subresource_map;
     // Validate aspects in isolation.
     // This is required when handling separate depth-stencil layouts.
