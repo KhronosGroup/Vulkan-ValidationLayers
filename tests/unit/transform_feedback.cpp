@@ -648,8 +648,7 @@ TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
     pipe.InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1034,10 +1033,10 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     pipe.InitState();
 
     if (transfer_feedback_props.transformFeedbackRasterizationStreamSelect) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325");
     } else {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326");
     }
     pipe.CreateGraphicsPipeline();

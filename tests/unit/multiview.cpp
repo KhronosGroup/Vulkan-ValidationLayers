@@ -45,7 +45,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
     vk::CmdDraw(m_commandBuffer->handle(), 1, multiview_props.maxMultiviewInstanceIndex + 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

@@ -823,7 +823,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-None-02863");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-None-02863");
 
         m_commandBuffer->reset();
         m_commandBuffer->begin(&command_buffer_begin_info);

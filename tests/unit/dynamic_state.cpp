@@ -3503,7 +3503,7 @@ TEST_F(NegativeDynamicState, SettingCommands) {
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdSetLineWidth(m_commandBuffer->handle(), 1);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08608");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
