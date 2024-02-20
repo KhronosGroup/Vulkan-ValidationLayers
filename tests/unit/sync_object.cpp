@@ -3528,11 +3528,11 @@ TEST_F(NegativeSyncObject, InvalidDeviceOnlyEvent) {
     event_ci.flags = VK_EVENT_CREATE_DEVICE_ONLY_BIT;
     vkt::Event ev(*m_device, event_ci);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetEvent-event-03823");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetEvent-event-03823");
     vk::ResetEvent(*m_device, ev.handle());
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkSetEvent-event-03941");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetEvent-event-03941");
     vk::SetEvent(*m_device, ev.handle());
     m_errorMonitor->VerifyFound();
 }

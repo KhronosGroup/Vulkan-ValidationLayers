@@ -914,7 +914,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();

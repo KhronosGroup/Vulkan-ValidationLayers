@@ -761,8 +761,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
                                   "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
                                   "void main() {}\n",
                                   VK_SHADER_STAGE_COMPUTE_BIT);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                             "BestPractices-LocalWorkgroup-Multiple64");
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-LocalWorkgroup-Multiple64");
         make_pipeline_with_shader(pipe, compute_4_1_1.GetStageCreateInfo());
         m_errorMonitor->VerifyFound();
     }

@@ -1407,7 +1407,7 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
         mix_geometry_types_as_create_info.info.pGeometries = geometries.data();
         mix_geometry_types_as_create_info.info.flags = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-type-02786");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureInfoNV-type-02786");
         vk::CreateAccelerationStructureNV(device(), &mix_geometry_types_as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
