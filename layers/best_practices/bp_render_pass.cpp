@@ -21,6 +21,7 @@
 #include "best_practices/best_practices_error_enums.h"
 #include "error_message/error_strings.h"
 #include "best_practices/bp_state.h"
+#include "state_tracker/render_pass_state.h"
 
 static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {

@@ -19,8 +19,6 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include "utils/hash_vk_types.h"
-#include "utils/vk_layer_utils.h"
 
 enum QueryState {
     QUERYSTATE_UNKNOWN,    // Initial state.

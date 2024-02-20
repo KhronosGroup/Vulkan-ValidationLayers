@@ -19,6 +19,7 @@
 #include "sync/sync_validation.h"
 #include "sync/sync_op.h"
 #include "sync/sync_image.h"
+#include "state_tracker/render_pass_state.h"
 
 // Action for validating resolve operations
 class ValidateResolveAction {

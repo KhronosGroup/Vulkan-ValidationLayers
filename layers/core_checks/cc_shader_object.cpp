@@ -16,6 +16,7 @@
 
 #include "core_validation.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/shader_module.h"
 #include "generated/spirv_grammar_helper.h"
 
 VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {

@@ -22,6 +22,7 @@
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "containers/qfo_transfer.h"
 #include "containers/custom_containers.h"

@@ -20,10 +20,8 @@
 
 #pragma once
 
-#include "state_tracker/state_tracker.h"
 #include "state_tracker/image_layout_map.h"
-#include "gpu_validation/gpu_validation.h"
-#include "drawdispatch/drawdispatch_vuids.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
 #include "containers/qfo_transfer.h"
@@ -84,133 +82,17 @@ class CORE_CMD_BUFFER_STATE : public vvl::CommandBuffer {
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
 
-struct TimelineMaxDiffCheck {
-    TimelineMaxDiffCheck(uint64_t value_, uint64_t max_diff_) : value(value_), max_diff(max_diff_) {}
+namespace vvl {
+struct DrawDispatchVuid;
+}  // namespace vvl
 
-    // compute the differents between 2 timeline values, without rollover if the difference is greater than INT64_MAX
-    uint64_t AbsDiff(uint64_t a, uint64_t b) { return a > b ? a - b : b - a; }
+namespace spirv {
+struct StatelessData;
+}  // namespace spirv
 
-    bool operator()(const vvl::Semaphore::SemOp& op, bool is_pending) { return AbsDiff(value, op.payload) > max_diff; }
-
-    uint64_t value;
-    uint64_t max_diff;
-};
-
-class CoreChecks;
-struct SemaphoreSubmitState {
-    const CoreChecks* core;
-    VkQueue queue;
-    VkQueueFlags queue_flags;
-
-    // This tracks how the payload of a binary semaphore changes **within the current submission**.
-    // Before the first wait or signal no map entry for the semaphore is defined, which means that
-    // semaphore's state is defined by the previous submissions on this queue or by the submissions on other queues.
-    // After the first wait/signal the map starts tracking binary payload value: true - signaled, false - unsignaled.
-    vvl::unordered_map<VkSemaphore, bool> binary_signaling_state;
-
-    vvl::unordered_set<VkSemaphore> internal_semaphores;
-    vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
-    vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
-
-    SemaphoreSubmitState(const CoreChecks* core_, VkQueue q_, VkQueueFlags queue_flags_)
-        : core(core_), queue(q_), queue_flags(queue_flags_) {}
-
-    bool CannotWaitBinary(const vvl::Semaphore& semaphore_state) const {
-        assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-        const auto semaphore = semaphore_state.VkHandle();
-
-        // Check if this submission has signaled or unsignaled the semaphore
-        if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
-            const bool signaled = it->second;
-            return !signaled;  // not signaled => can't wait
-        }
-        // If not, then query semaphore's payload set by other submissions.
-        // This will return either the payload set by the previous submissions on the current queue,
-        // or the payload that is currently being updated by the async running queues.
-        return !semaphore_state.CanBinaryBeWaited();
-    }
-
-    VkQueue AnotherQueueWaits(const vvl::Semaphore& semaphore_state) const {
-        // spec (for 003871 but all submit functions have a similar VUID):
-        // "When a semaphore wait operation for a binary semaphore is **executed**,
-        // as defined by the semaphore member of any element of the pWaitSemaphoreInfos
-        // member of any element of pSubmits, there must be no other queues waiting on the same semaphore"
-        //
-        // For binary semaphores there can be only 1 wait per signal so we just need to check that the
-        // last operation isn't a wait. Prior waits will have been removed by prior signals by the time
-        // this wait executes.
-        auto last_op = semaphore_state.LastOp();
-        if (last_op && !CanWaitBinarySemaphoreAfterOperation(last_op->op_type) && last_op->queue &&
-            last_op->queue->VkHandle() != queue) {
-            return last_op->queue->VkHandle();
-        }
-        return VK_NULL_HANDLE;
-    }
-
-    bool ValidateBinaryWait(const Location& loc, VkQueue queue, const vvl::Semaphore& semaphore_state);
-    bool ValidateWaitSemaphore(const Location& wait_semaphore_loc, VkSemaphore semaphore, uint64_t value);
-    bool ValidateSignalSemaphore(const Location& signal_semaphore_loc, VkSemaphore semaphore, uint64_t value);
-
-    bool CannotSignalBinary(const vvl::Semaphore& semaphore_state, VkQueue& other_queue, vvl::Func& other_command) const {
-        assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-        const auto semaphore = semaphore_state.VkHandle();
-
-        // Check if this submission has signaled or unsignaled the semaphore
-        if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
-            const bool signaled = it->second;
-            if (!signaled) {
-                return false;  // not signaled => can't wait
-            }
-            other_queue = queue;
-            other_command = vvl::Func::Empty;
-            return true;  // signaled => can wait
-        }
-        // If not, get signaling state from the semaphore's last op.
-        // Last op was recorded either by the previous sumbissions on this queue,
-        // or it's a hot state from async running queues (so can get outdated immediately after was read).
-        const auto last_op = semaphore_state.LastOp();
-        if (!last_op || CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
-            return false;
-        }
-        other_queue = last_op->queue ? last_op->queue->VkHandle() : VK_NULL_HANDLE;
-        other_command = last_op->command;
-        return true;
-    }
-
-    bool CheckSemaphoreValue(const vvl::Semaphore& semaphore_state, std::string& where, uint64_t& bad_value,
-                             std::function<bool(const vvl::Semaphore::SemOp&, bool is_pending)> compare_func) {
-        auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
-        // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
-        if (current_signal != timeline_signals.end()) {
-            vvl::Semaphore::SemOp sig_op(vvl::Semaphore::kSignal, nullptr, 0, current_signal->second);
-            if (compare_func(sig_op, false)) {
-                where = "current submit's signal";
-                bad_value = sig_op.payload;
-                return true;
-            }
-        }
-        auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
-        if (current_wait != timeline_waits.end()) {
-            vvl::Semaphore::SemOp wait_op(vvl::Semaphore::kWait, nullptr, 0, current_wait->second);
-            if (compare_func(wait_op, false)) {
-                where = "current submit's wait";
-                bad_value = wait_op.payload;
-                return true;
-            }
-        }
-        auto pending = semaphore_state.LastOp(compare_func);
-        if (pending) {
-            if (pending->payload == semaphore_state.Completed().payload) {
-                where = "current";
-            } else {
-                where = pending->IsSignal() ? "pending signal" : "pending wait";
-            }
-            bad_value = pending->payload;
-            return true;
-        }
-        return false;
-    }
-};
+struct SubpassLayout;
+struct DAGNode;
+struct SemaphoreSubmitState;
 
 class CoreChecks : public ValidationStateTracker {
   public:

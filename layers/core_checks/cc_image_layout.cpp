@@ -26,6 +26,7 @@
 #include "sync/sync_vuid_maps.h"
 #include "utils/image_layout_utils.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/render_pass_state.h"
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format);
 

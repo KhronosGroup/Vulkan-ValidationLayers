@@ -21,6 +21,7 @@
 #include "best_practices/best_practices_error_enums.h"
 #include "sync/sync_utils.h"
 #include "best_practices/bp_state.h"
+#include "state_tracker/queue_state.h"
 
 bool BestPractices::CheckPipelineStageFlags(const Location& loc, VkPipelineStageFlags flags) const {
     bool skip = false;

@@ -23,6 +23,7 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include <string>
+#include <deque>
 #include <chrono>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;

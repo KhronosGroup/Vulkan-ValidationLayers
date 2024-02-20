@@ -18,14 +18,10 @@
  */
 #pragma once
 #include "utils/hash_vk_types.h"
-#include "state_tracker/state_object.h"
-#include "state_tracker/sampler_state.h"
-#include "state_tracker/render_pass_state.h"
-#include "state_tracker/shader_module.h"
-#include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_sub_state.h"
 #include "generated/dynamic_state_helper.h"
 #include "utils/shader_utils.h"
+#include "state_tracker/state_tracker.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {
@@ -36,6 +32,7 @@ class Descriptor;
 class RenderPass;
 class CommandBuffer;
 class Pipeline;
+struct ShaderObject;
 struct ShaderModule;
 }  // namespace vvl
 
@@ -82,29 +79,7 @@ class Pipeline : public StateObject {
         struct Traits {};
 
         CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const vvl::RenderPass> rpstate,
-                   const ValidationStateTracker *state_data)
-            : graphics() {
-            bool use_color = false;
-            bool use_depth_stencil = false;
-
-            if (ci.renderPass == VK_NULL_HANDLE) {
-                auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(ci.pNext);
-                if (dynamic_rendering) {
-                    use_color = (dynamic_rendering->colorAttachmentCount > 0);
-                    use_depth_stencil = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
-                                        (dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
-                }
-            } else if (rpstate) {
-                use_color = rpstate->UsesColorAttachment(ci.subpass);
-                use_depth_stencil = rpstate->UsesDepthStencilAttachment(ci.subpass);
-            }
-
-            PNextCopyState copy_state = {
-                [state_data, &ci](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
-                    return Pipeline::PnextRenderingInfoCustomCopy(state_data, ci, safe_struct, in_struct);
-                }};
-            graphics.initialize(&ci, use_color, use_depth_stencil, &copy_state);
-        }
+                   const ValidationStateTracker *state_data);
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoNV *ci) : raytracing(ci) {}

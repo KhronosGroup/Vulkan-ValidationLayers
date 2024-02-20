@@ -21,6 +21,7 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
+#include "state_tracker/queue_state.h"
 
 bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
     bool skip = false;

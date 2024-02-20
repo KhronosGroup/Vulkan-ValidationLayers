@@ -20,6 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
 #include "best_practices/bp_state.h"
+#include "state_tracker/render_pass_state.h"
 
 void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                      const VkClearAttachment* pClearAttachments, uint32_t rectCount,

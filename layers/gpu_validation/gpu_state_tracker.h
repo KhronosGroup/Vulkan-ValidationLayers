@@ -17,6 +17,7 @@
 #pragma once
 #include "generated/chassis.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/queue_state.h"
 #include "vma/vma.h"
 
 namespace gpu_tracker {

@@ -228,3 +228,36 @@ static inline bool CanWaitBinarySemaphoreAfterOperation(Semaphore::OpType op_typ
 }
 
 }  // namespace vvl
+
+class CoreChecks;
+struct SemaphoreSubmitState {
+    const CoreChecks *core;
+    VkQueue queue;
+    VkQueueFlags queue_flags;
+
+    // This tracks how the payload of a binary semaphore changes **within the current submission**.
+    // Before the first wait or signal no map entry for the semaphore is defined, which means that
+    // semaphore's state is defined by the previous submissions on this queue or by the submissions on other queues.
+    // After the first wait/signal the map starts tracking binary payload value: true - signaled, false - unsignaled.
+    vvl::unordered_map<VkSemaphore, bool> binary_signaling_state;
+
+    vvl::unordered_set<VkSemaphore> internal_semaphores;
+    vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
+    vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
+
+    SemaphoreSubmitState(const CoreChecks *core_, VkQueue q_, VkQueueFlags queue_flags_)
+        : core(core_), queue(q_), queue_flags(queue_flags_) {}
+
+    bool CannotWaitBinary(const vvl::Semaphore &semaphore_state) const;
+
+    VkQueue AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const;
+
+    bool ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state);
+    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, VkSemaphore semaphore, uint64_t value);
+    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, VkSemaphore semaphore, uint64_t value);
+
+    bool CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_command) const;
+
+    bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
+                             std::function<bool(const vvl::Semaphore::SemOp &, bool is_pending)> compare_func);
+};

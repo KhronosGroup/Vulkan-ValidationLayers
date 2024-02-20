@@ -20,6 +20,7 @@
 #include "gpu_validation/gpu_subclasses.h"
 #include "generated/spirv_grammar_helper.h"
 #include "utils/image_layout_utils.h"
+#include "state_tracker/render_pass_state.h"
 
 using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
 using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
