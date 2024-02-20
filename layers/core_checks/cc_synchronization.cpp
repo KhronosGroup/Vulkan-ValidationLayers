@@ -27,9 +27,14 @@
 #include "sync/sync_utils.h"
 #include "sync/sync_vuid_maps.h"
 #include "generated/enum_flag_bits.h"
+#include "state_tracker/queue_state.h"
+#include "state_tracker/fence_state.h"
+#include "state_tracker/semaphore_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/sampler_state.h"
+#include "state_tracker/render_pass_state.h"
 
 using sync_utils::BufferBarrier;
 using sync_utils::ImageBarrier;
@@ -51,6 +56,18 @@ WriteLockGuard CoreChecks::WriteLock() {
         return WriteLockGuard(validation_object_mutex);
     }
 }
+
+struct TimelineMaxDiffCheck {
+    TimelineMaxDiffCheck(uint64_t value_, uint64_t max_diff_) : value(value_), max_diff(max_diff_) {}
+
+    // compute the differents between 2 timeline values, without rollover if the difference is greater than INT64_MAX
+    uint64_t AbsDiff(uint64_t a, uint64_t b) { return a > b ? a - b : b - a; }
+
+    bool operator()(const vvl::Semaphore::SemOp &op, bool is_pending) { return AbsDiff(value, op.payload) > max_diff; }
+
+    uint64_t value;
+    uint64_t max_diff;
+};
 
 bool CoreChecks::ValidateStageMaskHost(const Location &stage_mask_loc, VkPipelineStageFlags2KHR stageMask) const {
     bool skip = false;

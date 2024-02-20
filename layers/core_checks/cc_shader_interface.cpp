@@ -26,6 +26,8 @@
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "utils/shader_utils.h"
+#include "state_tracker/shader_module.h"
+#include "state_tracker/render_pass_state.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
                                               const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {

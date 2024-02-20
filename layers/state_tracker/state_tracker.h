@@ -20,13 +20,11 @@
 
 #pragma once
 #include "generated/chassis.h"
-#include "state_tracker/queue_state.h"
-#include "state_tracker/query_state.h"
+#include "utils/hash_vk_types.h"
 #include "state_tracker/video_session_state.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "generated/state_tracker_helper.h"
 #include "error_message/logging.h"
-#include "vulkan/vk_layer.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
 #include "containers/range_vector.h"
@@ -67,6 +65,7 @@ class Pipeline;
 class DeviceMemory;
 class AccelerationStructureNV;
 class AccelerationStructureKHR;
+class QueryPool;
 struct DedicatedBinding;
 struct ShaderModule;
 struct ShaderObject;

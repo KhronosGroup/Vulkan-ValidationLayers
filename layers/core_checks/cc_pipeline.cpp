@@ -25,6 +25,8 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/descriptor_sets.h"
+#include "state_tracker/render_pass_state.h"
 
 bool CoreChecks::IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t subminor) const {
     // If VK_KHR_driver_properties is not enabled then conformance version will not be set

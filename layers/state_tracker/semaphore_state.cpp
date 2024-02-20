@@ -287,3 +287,96 @@ void vvl::Semaphore::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
         }
     }
 }
+
+bool SemaphoreSubmitState::CannotWaitBinary(const vvl::Semaphore &semaphore_state) const {
+    assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
+    const auto semaphore = semaphore_state.VkHandle();
+
+    // Check if this submission has signaled or unsignaled the semaphore
+    if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
+        const bool signaled = it->second;
+        return !signaled;  // not signaled => can't wait
+    }
+    // If not, then query semaphore's payload set by other submissions.
+    // This will return either the payload set by the previous submissions on the current queue,
+    // or the payload that is currently being updated by the async running queues.
+    return !semaphore_state.CanBinaryBeWaited();
+}
+
+VkQueue SemaphoreSubmitState::AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const {
+    // spec (for 003871 but all submit functions have a similar VUID):
+    // "When a semaphore wait operation for a binary semaphore is **executed**,
+    // as defined by the semaphore member of any element of the pWaitSemaphoreInfos
+    // member of any element of pSubmits, there must be no other queues waiting on the same semaphore"
+    //
+    // For binary semaphores there can be only 1 wait per signal so we just need to check that the
+    // last operation isn't a wait. Prior waits will have been removed by prior signals by the time
+    // this wait executes.
+    auto last_op = semaphore_state.LastOp();
+    if (last_op && !CanWaitBinarySemaphoreAfterOperation(last_op->op_type) && last_op->queue &&
+        last_op->queue->VkHandle() != queue) {
+        return last_op->queue->VkHandle();
+    }
+    return VK_NULL_HANDLE;
+}
+
+bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue,
+                                              vvl::Func &other_command) const {
+    assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
+    const auto semaphore = semaphore_state.VkHandle();
+
+    // Check if this submission has signaled or unsignaled the semaphore
+    if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
+        const bool signaled = it->second;
+        if (!signaled) {
+            return false;  // not signaled => can't wait
+        }
+        other_queue = queue;
+        other_command = vvl::Func::Empty;
+        return true;  // signaled => can wait
+    }
+    // If not, get signaling state from the semaphore's last op.
+    // Last op was recorded either by the previous sumbissions on this queue,
+    // or it's a hot state from async running queues (so can get outdated immediately after was read).
+    const auto last_op = semaphore_state.LastOp();
+    if (!last_op || CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
+        return false;
+    }
+    other_queue = last_op->queue ? last_op->queue->VkHandle() : VK_NULL_HANDLE;
+    other_command = last_op->command;
+    return true;
+}
+
+bool SemaphoreSubmitState::CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
+                                               std::function<bool(const vvl::Semaphore::SemOp &, bool is_pending)> compare_func) {
+    auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
+    // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
+    if (current_signal != timeline_signals.end()) {
+        vvl::Semaphore::SemOp sig_op(vvl::Semaphore::kSignal, nullptr, 0, current_signal->second);
+        if (compare_func(sig_op, false)) {
+            where = "current submit's signal";
+            bad_value = sig_op.payload;
+            return true;
+        }
+    }
+    auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
+    if (current_wait != timeline_waits.end()) {
+        vvl::Semaphore::SemOp wait_op(vvl::Semaphore::kWait, nullptr, 0, current_wait->second);
+        if (compare_func(wait_op, false)) {
+            where = "current submit's wait";
+            bad_value = wait_op.payload;
+            return true;
+        }
+    }
+    auto pending = semaphore_state.LastOp(compare_func);
+    if (pending) {
+        if (pending->payload == semaphore_state.Completed().payload) {
+            where = "current";
+        } else {
+            where = pending->IsSignal() ? "pending signal" : "pending wait";
+        }
+        bad_value = pending->payload;
+        return true;
+    }
+    return false;
+}

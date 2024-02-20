@@ -27,6 +27,9 @@
 #include "core_validation.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/queue_state.h"
+#include "state_tracker/fence_state.h"
+#include "state_tracker/semaphore_state.h"
 #include "state_tracker/device_state.h"
 
 static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) {

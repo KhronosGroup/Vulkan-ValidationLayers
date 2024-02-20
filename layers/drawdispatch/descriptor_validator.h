@@ -16,20 +16,31 @@
  */
 
 #pragma once
-#include <vulkan/vulkan_core.h>
+// TODO - Should only need generated/chassis.h
+// Because of FormatHandle, we need to include all of state_tracker.h
 #include "state_tracker/state_tracker.h"
-#include "state_tracker/descriptor_sets.h"
-#include "utils/shader_utils.h"
-#include "drawdispatch/drawdispatch_vuids.h"
 
+class ValidationStateTracker;
+struct DescriptorRequirement;
 namespace vvl {
+struct DrawDispatchVuid;
+class DescriptorBinding;
+class BufferDescriptor;
+class ImageDescriptor;
+class ImageSamplerDescriptor;
+class TexelDescriptor;
+class AccelerationStructureDescriptor;
+class SamplerDescriptor;
+class CommandBuffer;
+class Sampler;
+class DescriptorSet;
+
 using DescriptorBindingInfo = std::pair<uint32_t, std::vector<DescriptorRequirement>>;
 
 class DescriptorValidator {
  public:
    DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb, vvl::DescriptorSet& set, VkFramebuffer fb,
-                       const Location& l)
-       : dev_state(dev), cb_state(cb), descriptor_set(set), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
+                       const Location& l);
 
    template <typename T>
    std::string FormatHandle(T&& h) const {

@@ -33,6 +33,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/render_pass_state.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location &loc, const char *vuid,
                                            bool optional = false) const {

@@ -19,6 +19,8 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/render_pass_state.h"
+#include "state_tracker/state_object.h"
 #include "generated/enum_flag_bits.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/chassis_modification_state.h"
@@ -36,6 +38,31 @@ StageCreateInfo::StageCreateInfo(const VkShaderCreateInfoEXT &create_info)
       shader_object_const_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)) {}
 
 namespace vvl {
+
+Pipeline::CreateInfo::CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const vvl::RenderPass> rpstate,
+                                 const ValidationStateTracker *state_data)
+    : graphics() {
+    bool use_color = false;
+    bool use_depth_stencil = false;
+
+    if (ci.renderPass == VK_NULL_HANDLE) {
+        auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(ci.pNext);
+        if (dynamic_rendering) {
+            use_color = (dynamic_rendering->colorAttachmentCount > 0);
+            use_depth_stencil = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
+                                (dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
+        }
+    } else if (rpstate) {
+        use_color = rpstate->UsesColorAttachment(ci.subpass);
+        use_depth_stencil = rpstate->UsesDepthStencilAttachment(ci.subpass);
+    }
+
+    PNextCopyState copy_state = {[state_data, &ci](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
+        return Pipeline::PnextRenderingInfoCustomCopy(state_data, ci, safe_struct, in_struct);
+    }};
+    graphics.initialize(&ci, use_color, use_depth_stencil, &copy_state);
+}
+
 // static
 StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
                                        CreateShaderModuleStates *csm_states) {

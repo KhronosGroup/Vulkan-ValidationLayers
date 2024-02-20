@@ -24,7 +24,9 @@
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/shader_module.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(CBDynamicFlags state_status_cb, CBDynamicState dynamic_state,
                                            const LogObjectList& objlist, const Location& loc, const char* vuid) const {

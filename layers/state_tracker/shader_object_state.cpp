@@ -16,6 +16,7 @@
 
 #include "shader_object_state.h"
 #include "shader_module.h"
+#include "state_tracker/state_tracker.h"
 
 namespace vvl {
 static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {

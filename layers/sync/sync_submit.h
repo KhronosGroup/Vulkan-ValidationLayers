@@ -17,6 +17,7 @@
 
 #pragma once
 #include "sync/sync_commandbuffer.h"
+#include "state_tracker/queue_state.h"
 
 struct PresentedImage;
 class QueueBatchContext;

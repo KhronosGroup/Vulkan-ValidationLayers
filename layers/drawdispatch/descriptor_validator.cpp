@@ -17,10 +17,19 @@
 
 #include "descriptor_validator.h"
 #include "generated/spirv_grammar_helper.h"
+#include "utils/shader_utils.h"
+#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/render_pass_state.h"
 #include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/shader_module.h"
+#include "drawdispatch/drawdispatch_vuids.h"
+
+vvl::DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, vvl::CommandBuffer &cb, vvl::DescriptorSet &set,
+                                              VkFramebuffer fb, const Location &l)
+    : dev_state(dev), cb_state(cb), descriptor_set(set), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
 
 template <typename T>
 bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding) const {

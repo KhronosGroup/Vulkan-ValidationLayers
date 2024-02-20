@@ -24,7 +24,6 @@
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
 #include "utils/hash_vk_types.h"
-#include "state_tracker/state_tracker.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {

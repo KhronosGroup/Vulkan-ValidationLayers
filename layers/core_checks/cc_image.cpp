@@ -27,6 +27,8 @@
 #include "generated/pnext_chain_extraction.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/sampler_state.h"
+#include "state_tracker/render_pass_state.h"
 #include "sync/sync_vuid_maps.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInfo, const Location &loc) const {
