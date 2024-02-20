@@ -1754,18 +1754,18 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
     return skip;
 }
 
-bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo, const Location &loc) const {
+bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT &sample_location_info, const Location &loc) const {
     bool skip = false;
-    const VkSampleCountFlagBits sample_count = pSampleLocationsInfo->sampleLocationsPerPixel;
-    const uint32_t sample_total_size = pSampleLocationsInfo->sampleLocationGridSize.width *
-                                       pSampleLocationsInfo->sampleLocationGridSize.height * SampleCountSize(sample_count);
-    if (pSampleLocationsInfo->sampleLocationsCount != sample_total_size) {
+    const VkSampleCountFlagBits sample_count = sample_location_info.sampleLocationsPerPixel;
+    const uint32_t sample_total_size = sample_location_info.sampleLocationGridSize.width *
+                                       sample_location_info.sampleLocationGridSize.height * SampleCountSize(sample_count);
+    if (sample_location_info.sampleLocationsCount != sample_total_size) {
         skip |= LogError("VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527", device, loc.dot(Field::sampleLocationsCount),
                          "(%" PRIu32
                          ") must equal grid width * grid height * pixel "
                          "sample rate which currently is (%" PRIu32 " * %" PRIu32 " * %" PRIu32 ").",
-                         pSampleLocationsInfo->sampleLocationsCount, pSampleLocationsInfo->sampleLocationGridSize.width,
-                         pSampleLocationsInfo->sampleLocationGridSize.height, SampleCountSize(sample_count));
+                         sample_location_info.sampleLocationsCount, sample_location_info.sampleLocationGridSize.width,
+                         sample_location_info.sampleLocationGridSize.height, SampleCountSize(sample_count));
     }
     if ((phys_dev_ext_props.sample_locations_props.sampleLocationSampleCounts & sample_count) == 0) {
         skip |=
@@ -2036,7 +2036,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                 (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) == false)) {
                 const VkSampleLocationsInfoEXT sample_location_info = sample_location_state->sampleLocationsInfo;
                 const Location sample_info_loc = ms_loc.pNext(Struct::VkPipelineSampleLocationsStateCreateInfoEXT, Field::sampleLocationsInfo);
-                skip |= ValidateSampleLocationsInfo(&sample_location_info, sample_info_loc.dot(Field::sampleLocationsInfo));
+                skip |= ValidateSampleLocationsInfo(sample_location_info, sample_info_loc.dot(Field::sampleLocationsInfo));
                 const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
 
                 VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
@@ -2749,18 +2749,18 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer *cb_state, const vvl::Pipeline &pipeline,
+bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
                                                    const Location &loc) const {
     bool skip = false;
 
-    if (cb_state->inheritedViewportDepths.empty()) {
+    if (cb_state.inheritedViewportDepths.empty()) {
         return skip;
     }
 
     bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) || pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
     bool dyn_scissor = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) || pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
     if (!dyn_viewport || !dyn_scissor) {
-        const LogObjectList objlist(cb_state->Handle(), pipeline.Handle());
+        const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
         skip |= LogError("VUID-vkCmdBindPipeline-commandBuffer-04808", objlist, loc,
                          "Graphics pipeline incompatible with viewport/scissor inheritance.");
     }
@@ -2776,7 +2776,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer *cb_
             } else {
                 msg << "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT";
             }
-            const LogObjectList objlist(cb_state->Handle(), pipeline.Handle());
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(
                 "VUID-vkCmdBindPipeline-commandBuffer-04809", objlist, loc.dot(Field::commandBuffer),
                 "is a secondary command buffer with VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D "

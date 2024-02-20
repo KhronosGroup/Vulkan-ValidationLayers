@@ -236,7 +236,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location);
+    skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
 
     auto pPipeline = Get<vvl::Pipeline>(pipeline);
     assert(pPipeline);
@@ -261,7 +261,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
     } else {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            skip |= ValidateGraphicsPipelineBindPoint(cb_state.get(), pipeline_state, error_obj.location);
+            skip |= ValidateGraphicsPipelineBindPoint(*cb_state, pipeline_state, error_obj.location);
 
             if (cb_state->activeRenderPass &&
                 phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {
@@ -320,8 +320,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                             if (sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
                                 cb_state->GetActiveSubpass()) {
                                 if (MatchSampleLocationsInfo(
-                                        &sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
-                                        &sample_locations->sampleLocationsInfo)) {
+                                        sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
+                                        sample_locations->sampleLocationsInfo)) {
                                     found = true;
                                 }
                             }
@@ -425,10 +425,10 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
-bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer *cb_state, VkPipelineBindPoint bind_point,
+bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                            const Location &loc) const {
     bool skip = false;
-    auto pool = cb_state->command_pool;
+    auto pool = cb_state.command_pool;
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
         const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)  ? VK_QUEUE_GRAPHICS_BIT
                                            : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) ? VK_QUEUE_COMPUTE_BIT
@@ -438,7 +438,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer *cb_state, V
 
         const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
         if (0 == (qfp.queueFlags & required_mask)) {
-            const LogObjectList objlist(cb_state->Handle(), cb_state->createInfo.commandPool);
+            const LogObjectList objlist(cb_state.Handle(), cb_state.createInfo.commandPool);
             const char *vuid = kVUIDUndefined;
             switch (loc.function) {
                 case Func::vkCmdBindDescriptorSets:
@@ -484,7 +484,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer *cb_state, V
                     break;
             }
             skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
-                             FormatHandle(cb_state->Handle()).c_str(), FormatHandle(cb_state->createInfo.commandPool).c_str(),
+                             FormatHandle(cb_state.Handle()).c_str(), FormatHandle(cb_state.createInfo.commandPool).c_str(),
                              string_VkPipelineBindPoint(bind_point));
         }
     }

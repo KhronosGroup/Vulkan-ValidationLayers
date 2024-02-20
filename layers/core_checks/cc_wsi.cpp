@@ -1008,11 +1008,13 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             for (uint32_t i = 0; i < swapchain_present_fence_info->swapchainCount; i++) {
                 if (swapchain_present_fence_info->pFences[i]) {
                     const auto fence_state = Get<vvl::Fence>(swapchain_present_fence_info->pFences[i]);
-                    const LogObjectList objlist(queue, swapchain_present_fence_info->pFences[i]);
-                    skip |=
-                        ValidateFenceForSubmit(fence_state.get(), "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
-                                               "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758", objlist,
-                                               present_info_loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT, Field::pFences, i));
+                    if (fence_state) {
+                        const LogObjectList objlist(queue, swapchain_present_fence_info->pFences[i]);
+                        skip |= ValidateFenceForSubmit(
+                            *fence_state, "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
+                            "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758", objlist,
+                            present_info_loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT, Field::pFences, i));
+                    }
                 }
             }
         }
@@ -1134,7 +1136,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
     auto fence_state = Get<vvl::Fence>(fence);
     if (fence_state) {
         const LogObjectList objlist(device, fence);
-        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkAcquireNextImageKHR-fence-01287",
+        skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkAcquireNextImageKHR-fence-01287",
                                        "VUID-vkAcquireNextImageKHR-fence-01287", objlist, loc);
     }
 
@@ -1247,7 +1249,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
                                                                                struct wl_display *display,
                                                                                const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
@@ -1258,7 +1260,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkP
                                                                              uint32_t queueFamilyIndex,
                                                                              const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
@@ -1270,7 +1272,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
                                                                            xcb_visualid_t visual_id,
                                                                            const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
@@ -1281,7 +1283,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPh
                                                                             uint32_t queueFamilyIndex, Display *dpy,
                                                                             VisualID visualID, const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
@@ -1293,7 +1295,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(Vk
                                                                               struct _screen_window *window,
                                                                               const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-queueFamilyIndex-04743",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
@@ -1303,8 +1305,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
                                                                    VkSurfaceKHR surface, VkBool32 *pSupported,
                                                                    const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
-                                    "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
 

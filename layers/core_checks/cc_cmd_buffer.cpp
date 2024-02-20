@@ -1359,18 +1359,18 @@ bool CoreChecks::ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer &cb_st
 
 bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer &cb_state, const std::string &vuid, const uint32_t stride,
                                                  Struct struct_name, const uint32_t struct_size, const uint32_t drawCount,
-                                                 const VkDeviceSize offset, const vvl::Buffer *buffer_state,
+                                                 const VkDeviceSize offset, const vvl::Buffer &buffer_state,
                                                  const Location &loc) const {
     bool skip = false;
     uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
-    if (validation_value > buffer_state->createInfo.size) {
+    if (validation_value > buffer_state.createInfo.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(buffer_state->Handle());
+        objlist.add(buffer_state.Handle());
         skip |=
             LogError(vuid, objlist, loc,
                      "stride (%" PRIu32 ") * [drawCount (%" PRIu32 ") - 1] + offset (%" PRIu64 ") + sizeof(%s) (%" PRIu32
                      ") is %" PRIu64 ", which is greater than the buffer size (%" PRIu64 ").",
-                     stride, drawCount, offset, String(struct_name), struct_size, validation_value, buffer_state->createInfo.size);
+                     stride, drawCount, offset, String(struct_name), struct_size, validation_value, buffer_state.createInfo.size);
     }
     return skip;
 }

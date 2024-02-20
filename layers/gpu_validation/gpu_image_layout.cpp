@@ -88,7 +88,7 @@ void gpuav::Validator::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_sta
     }
 }
 
-void gpuav::Validator::RecordTransitionImageLayout(vvl::CommandBuffer *cb_state, const ImageBarrier &mem_barrier) {
+void gpuav::Validator::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const ImageBarrier &mem_barrier) {
     if (enabled_features.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
@@ -117,14 +117,14 @@ void gpuav::Validator::RecordTransitionImageLayout(vvl::CommandBuffer *cb_state,
     // choose to perform it as part of the acquire operation.
     //
     // However, we still need to record initial layout for the "initial layout" validation
-    if (cb_state->IsReleaseOp(mem_barrier)) {
-        cb_state->SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
+    if (cb_state.IsReleaseOp(mem_barrier)) {
+        cb_state.SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
     } else {
-        cb_state->SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
+        cb_state.SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
     }
 }
 
-void gpuav::Validator::TransitionImageLayouts(vvl::CommandBuffer *cb_state, uint32_t barrier_count,
+void gpuav::Validator::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
                                               const VkImageMemoryBarrier2 *image_barriers) {
     for (uint32_t i = 0; i < barrier_count; i++) {
         const ImageBarrier barrier(image_barriers[i]);
@@ -132,7 +132,7 @@ void gpuav::Validator::TransitionImageLayouts(vvl::CommandBuffer *cb_state, uint
     }
 }
 
-void gpuav::Validator::TransitionImageLayouts(vvl::CommandBuffer *cb_state, uint32_t barrier_count,
+void gpuav::Validator::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
                                               const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
                                               VkPipelineStageFlags dst_stage_mask) {
     for (uint32_t i = 0; i < barrier_count; i++) {
@@ -496,7 +496,7 @@ void gpuav::Validator::PreCallRecordCmdWaitEvents(
                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                           pImageMemoryBarriers, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(cb_state.get(), imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
+    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
 }
 
 void gpuav::Validator::RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -505,7 +505,7 @@ void gpuav::Validator::RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint3
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
-        TransitionImageLayouts(cb_state.get(), dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
+        TransitionImageLayouts(*cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
     }
 }
 
@@ -531,7 +531,7 @@ void gpuav::Validator::PreCallRecordCmdPipelineBarrier(
                                                imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(cb_state.get(), imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
+    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
 }
 
 void gpuav::Validator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
@@ -540,7 +540,7 @@ void gpuav::Validator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer comma
     BaseClass::PreCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
+    TransitionImageLayouts(*cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
 void gpuav::Validator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
@@ -548,12 +548,12 @@ void gpuav::Validator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandB
     BaseClass::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
+    TransitionImageLayouts(*cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
-void gpuav::Validator::TransitionAttachmentRefLayout(vvl::CommandBuffer *cb_state, const safe_VkAttachmentReference2 &ref) {
+void gpuav::Validator::TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        vvl::ImageView *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
+        vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
@@ -561,12 +561,12 @@ void gpuav::Validator::TransitionAttachmentRefLayout(vvl::CommandBuffer *cb_stat
                 stencil_layout = attachment_reference_stencil_layout->stencilLayout;
             }
 
-            cb_state->SetImageViewLayout(*image_view, ref.layout, stencil_layout);
+            cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
         }
     }
 }
 
-void gpuav::Validator::TransitionSubpassLayouts(vvl::CommandBuffer *cb_state, const vvl::RenderPass &render_pass_state,
+void gpuav::Validator::TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state,
                                                 const int subpass_index) {
     auto const &subpass = render_pass_state.createInfo.pSubpasses[subpass_index];
     for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
@@ -583,11 +583,11 @@ void gpuav::Validator::TransitionSubpassLayouts(vvl::CommandBuffer *cb_state, co
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void gpuav::Validator::TransitionBeginRenderPassLayouts(vvl::CommandBuffer *cb_state, const vvl::RenderPass &render_pass_state) {
+void gpuav::Validator::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
     // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state.createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             vvl::Image *image_state = view_state->image_state.get();
             const auto initial_layout = rpci->pAttachments[i].initialLayout;
@@ -597,11 +597,11 @@ void gpuav::Validator::TransitionBeginRenderPassLayouts(vvl::CommandBuffer *cb_s
                 const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
                 VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
                 sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                cb_state->SetImageInitialLayout(*image_state, sub_range, initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
                 sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                cb_state->SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
             } else {
-                cb_state->SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
             }
         }
     }
@@ -609,16 +609,16 @@ void gpuav::Validator::TransitionBeginRenderPassLayouts(vvl::CommandBuffer *cb_s
     TransitionSubpassLayouts(cb_state, render_pass_state, 0);
 }
 
-void gpuav::Validator::TransitionFinalSubpassLayouts(vvl::CommandBuffer *cb_state) {
-    auto render_pass_state = cb_state->activeRenderPass.get();
-    auto framebuffer_state = cb_state->activeFramebuffer.get();
+void gpuav::Validator::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
+    auto render_pass_state = cb_state.activeRenderPass.get();
+    auto framebuffer_state = cb_state.activeFramebuffer.get();
     if (!render_pass_state || !framebuffer_state) {
         return;
     }
 
     const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
-        auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
@@ -626,7 +626,7 @@ void gpuav::Validator::TransitionFinalSubpassLayouts(vvl::CommandBuffer *cb_stat
             if (attachment_description_stencil_layout) {
                 stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
             }
-            cb_state->SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
+            cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
         }
     }
 }

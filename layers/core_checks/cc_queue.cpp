@@ -137,11 +137,10 @@ private:
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                             const ErrorObject &error_obj) const {
     bool skip = false;
-    {
-        auto fence_state = Get<vvl::Fence>(fence);
+    if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(queue, fence);
-        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063",
-                                       objlist, error_obj.location);
+        skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063", objlist,
+                                       error_obj.location);
     }
     if (skip) {
         return skip;
@@ -263,11 +262,10 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                       const ErrorObject &error_obj) const {
     bool skip = false;
-    {
-        auto fence_state = Get<vvl::Fence>(fence);
+    if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(queue, fence);
-        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
-                                       objlist, error_obj.location);
+        skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894", objlist,
+                                       error_obj.location);
     }
     if (skip) {
         return skip;
@@ -377,10 +375,10 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
             if (cb_state) {
                 for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(*secondary_cmd_buffer);
-                    RecordQueuedQFOTransfers(secondary_cmd_buffer);
+                    RecordQueuedQFOTransfers(*secondary_cmd_buffer);
                 }
                 UpdateCmdBufImageLayouts(*cb_state);
-                RecordQueuedQFOTransfers(cb_state.get());
+                RecordQueuedQFOTransfers(*cb_state);
             }
         }
     }
@@ -397,10 +395,10 @@ void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const V
             if (cb_state) {
                 for (auto *secondaryCmdBuffer : cb_state->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(*secondaryCmdBuffer);
-                    RecordQueuedQFOTransfers(secondaryCmdBuffer);
+                    RecordQueuedQFOTransfers(*secondaryCmdBuffer);
                 }
                 UpdateCmdBufImageLayouts(*cb_state);
-                RecordQueuedQFOTransfers(cb_state.get());
+                RecordQueuedQFOTransfers(*cb_state);
             }
         }
     }
@@ -600,11 +598,10 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence, const ErrorObject &error_obj) const {
     bool skip = false;
-    {
-        auto fence_state = Get<vvl::Fence>(fence);
+    if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(queue, fence);
-        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114",
-                                       "VUID-vkQueueBindSparse-fence-01113", objlist, error_obj.location);
+        skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkQueueBindSparse-fence-01114", "VUID-vkQueueBindSparse-fence-01113",
+                                       objlist, error_obj.location);
     }
     if (skip) {
         return skip;

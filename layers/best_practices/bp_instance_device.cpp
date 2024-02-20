@@ -196,27 +196,27 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 }
 
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
-bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice* bp_pd_state,
+bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& bp_pd_state,
                                                                          uint32_t requested_queue_family_property_count,
                                                                          const CALL_STATE call_state, const Location& loc) const {
     bool skip = false;
     // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
     if (UNCALLED == call_state) {
         skip |= LogWarning(
-            kVUID_BestPractices_DevLimit_MissingQueryCount, bp_pd_state->Handle(), loc,
+            kVUID_BestPractices_DevLimit_MissingQueryCount, bp_pd_state.Handle(), loc,
             "is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
             "recommended "
             "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
             loc.StringFunc());
         // Then verify that pCount that is passed in on second call matches what was returned
-    } else if (bp_pd_state->queue_family_known_count != requested_queue_family_property_count) {
-        skip |= LogWarning(kVUID_BestPractices_DevLimit_CountMismatch, bp_pd_state->Handle(), loc,
+    } else if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
+        skip |= LogWarning(kVUID_BestPractices_DevLimit_CountMismatch, bp_pd_state.Handle(), loc,
                            "is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
                            ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
                            ". It is recommended to instead receive all the properties by calling %s with "
                            "pQueueFamilyPropertyCount that was "
                            "previously obtained by calling %s with NULL pQueueFamilyProperties.",
-                           requested_queue_family_property_count, bp_pd_state->queue_family_known_count, loc.StringFunc(),
+                           requested_queue_family_property_count, bp_pd_state.queue_family_known_count, loc.StringFunc(),
                            loc.StringFunc());
     }
 
@@ -229,7 +229,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
                                                                           const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
-        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
                                                                     error_obj.location);
     }
@@ -242,7 +242,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
                                                                            const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
-        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
                                                                     error_obj.location);
     }

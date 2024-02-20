@@ -1768,7 +1768,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     // Minimal validation for command buffer state
     skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
-    skip |= ValidateSampleLocationsInfo(pSampleLocationsInfo, error_obj.location.dot(Field::pSampleLocationsInfo));
+    skip |= ValidateSampleLocationsInfo(*pSampleLocationsInfo, error_obj.location.dot(Field::pSampleLocationsInfo));
 
     return skip;
 }

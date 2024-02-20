@@ -678,7 +678,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     // or DEVICE_LOST resulting from the invalid call will prevent preceeding validation errors from being reported.
 
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(cb_node.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS);
     const bool is_mesh_call =
         (command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
          command == Func::vkCmdDrawMeshTasksIndirectEXT || command == Func::vkCmdDrawMeshTasksIndirectNV);
@@ -850,7 +850,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     DispatchUpdateDescriptorSets(device, buffer_count, desc_writes, 0, nullptr);
 
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(cb_node.get(), VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
     if (use_shader_objects) {
@@ -931,7 +931,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
     }
 
     // Save current ray tracing pipeline state
-    RestorablePipelineState restorable_state(cb_node.get(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
     // Push info needed for validation:
     // - the device address indirect data is read from
@@ -1166,7 +1166,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         DispatchUpdateDescriptorSets(device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(cb_node.get(), VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
     DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, shared_resources->pipeline);

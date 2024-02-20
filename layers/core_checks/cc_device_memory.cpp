@@ -311,7 +311,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateAllocateMemoryANDROID(pAllocateInfo, allocate_info_loc);
+        skip |= ValidateAllocateMemoryANDROID(*pAllocateInfo, allocate_info_loc);
     } else {
         if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-07899", device, allocate_info_loc.dot(Field::allocationSize),
@@ -631,11 +631,11 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memor
     return skip;
 }
 
-bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const vvl::DeviceMemory *mem_info,
+bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const vvl::DeviceMemory &mem_info,
                                            VkDeviceSize memoryOffset, const Location &loc) const {
     bool skip = false;
 
-    if (memoryOffset >= mem_info->alloc_info.allocationSize) {
+    if (memoryOffset >= mem_info.alloc_info.allocationSize) {
         const bool bind_2 = (loc.function != Func::vkBindBufferMemory) && (loc.function != Func::vkBindImageMemory);
         const char *vuid = nullptr;
         if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -648,34 +648,34 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
             assert(false);  // Unsupported object type
         }
 
-        LogObjectList objlist(mem_info->Handle(), typed_handle);
+        LogObjectList objlist(mem_info.Handle(), typed_handle);
         skip |= LogError(vuid, objlist, loc,
                          "attempting to bind %s to %s, memoryOffset (%" PRIu64
                          ") must be less than the memory allocation size (%" PRIu64 ").",
-                         FormatHandle(mem_info->Handle()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
-                         mem_info->alloc_info.allocationSize);
+                         FormatHandle(mem_info.Handle()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
+                         mem_info.alloc_info.allocationSize);
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, const vvl::DeviceMemory *mem_info, VkDeviceSize mem_offset,
+bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, const vvl::DeviceMemory &mem_info, VkDeviceSize mem_offset,
                                                 const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset, loc);
 }
 
-bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const vvl::DeviceMemory *mem_info, VkDeviceSize mem_offset,
+bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const vvl::DeviceMemory &mem_info, VkDeviceSize mem_offset,
                                                  const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, loc);
 }
 
-bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory *mem_info, const uint32_t memory_type_bits,
+bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory &mem_info, const uint32_t memory_type_bits,
                                      const Location &resource_loc, const char *vuid) const {
     bool skip = false;
-    if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
-        skip |= LogError(vuid, mem_info->Handle(), resource_loc,
+    if (((1 << mem_info.alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
+        skip |= LogError(vuid, mem_info.Handle(), resource_loc,
                          "require memoryTypeBits (0x%x) but %s was allocated with memoryTypeIndex (%" PRIu32 ").", memory_type_bits,
-                         FormatHandle(mem_info->Handle()).c_str(), mem_info->alloc_info.memoryTypeIndex);
+                         FormatHandle(mem_info.Handle()).c_str(), mem_info.alloc_info.memoryTypeIndex);
     }
     return skip;
 }
@@ -785,12 +785,11 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         }
 
         // Validate bound memory range information
-        skip |= ValidateInsertBufferMemoryRange(buffer, mem_info.get(), memoryOffset, loc);
+        skip |= ValidateInsertBufferMemoryRange(buffer, *mem_info, memoryOffset, loc);
 
         const char *mem_type_vuid =
             bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
-        skip |=
-            ValidateMemoryTypes(mem_info.get(), buffer_state->requirements.memoryTypeBits, loc.dot(Field::buffer), mem_type_vuid);
+        skip |= ValidateMemoryTypes(*mem_info, buffer_state->requirements.memoryTypeBits, loc.dot(Field::buffer), mem_type_vuid);
 
         // Validate memory requirements size
         if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
@@ -1334,7 +1333,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         {
                             const char *vuid =
                                 bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-vkBindImageMemory-memory-01047";
-                            skip |= ValidateMemoryTypes(mem_info.get(), mem_req.memoryTypeBits, loc.dot(Field::image), vuid);
+                            skip |= ValidateMemoryTypes(*mem_info, mem_req.memoryTypeBits, loc.dot(Field::image), vuid);
                         }
                     }
                 }
@@ -1389,7 +1388,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                         // Validate memory type used
                         {
-                            skip |= ValidateMemoryTypes(mem_info.get(), disjoint_mem_req.memoryTypeBits, loc.dot(Field::image),
+                            skip |= ValidateMemoryTypes(*mem_info, disjoint_mem_req.memoryTypeBits, loc.dot(Field::image),
                                                         "VUID-VkBindImageMemoryInfo-pNext-01619");
                         }
                     }
@@ -1418,7 +1417,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // if memory is exported to an AHB then the mem_info->allocationSize must be zero and this check is not needed
                 if ((mem_info->IsExport() == false) ||
                     ((mem_info->export_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0)) {
-                    skip |= ValidateInsertImageMemoryRange(bind_info.image, mem_info.get(), bind_info.memoryOffset, loc);
+                    skip |= ValidateInsertImageMemoryRange(bind_info.image, *mem_info, bind_info.memoryOffset, loc);
                 }
 
                 // Validate dedicated allocation

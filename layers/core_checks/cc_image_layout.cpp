@@ -137,16 +137,16 @@ bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl
                                   mismatch_layout_vuid, error);
 }
 
-void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer *cb_state) {
-    auto render_pass_state = cb_state->activeRenderPass.get();
-    auto framebuffer_state = cb_state->activeFramebuffer.get();
+void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
+    auto render_pass_state = cb_state.activeRenderPass.get();
+    auto framebuffer_state = cb_state.activeFramebuffer.get();
     if (!render_pass_state || !framebuffer_state) {
         return;
     }
 
     const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
-        auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
@@ -154,7 +154,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer *cb_state) {
             if (attachment_description_stencil_layout) {
                 stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
             }
-            cb_state->SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
+            cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
         }
     }
 }
@@ -337,16 +337,16 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const VkImageLayout first
 }
 
 bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass,
-                                                                     vvl::Image *image_state, VkSampleCountFlagBits msrtss_samples,
+                                                                     vvl::Image &image_state, VkSampleCountFlagBits msrtss_samples,
                                                                      const Location &rasterization_samples_loc) const {
     bool skip = false;
-    const auto image_create_info = image_state->createInfo;
-    if (!image_state->image_format_properties.sampleCounts) {
-        skip |= GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
+    const auto image_create_info = image_state.createInfo;
+    if (!image_state.image_format_properties.sampleCounts) {
+        skip |= GetPhysicalDeviceImageFormatProperties(image_state, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
                                                        rasterization_samples_loc);
     }
-    if (!(image_state->image_format_properties.sampleCounts & msrtss_samples)) {
-        const LogObjectList objlist(renderpass, framebuffer, image_state->Handle());
+    if (!(image_state.image_format_properties.sampleCounts & msrtss_samples)) {
+        const LogObjectList objlist(renderpass, framebuffer, image_state.Handle());
         skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010", objlist, rasterization_samples_loc,
                          "is %s but is not supported with image (%s) created with\n"
                          "format: %s\n"
@@ -354,7 +354,7 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
                          "tiling: %s\n"
                          "usage: %s\n"
                          "flags: %s\n",
-                         string_VkSampleCountFlagBits(msrtss_samples), FormatHandle(*image_state).c_str(),
+                         string_VkSampleCountFlagBits(msrtss_samples), FormatHandle(image_state).c_str(),
                          string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
                          string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
                          string_VkImageCreateFlags(image_create_info.flags).c_str());
@@ -637,8 +637,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
                         skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                            framebuffer, render_pass, view_state->image_state.get(),
-                            ms_rendered_to_single_sampled->rasterizationSamples,
+                            framebuffer, render_pass, *view_state->image_state, ms_rendered_to_single_sampled->rasterizationSamples,
                             subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
                     }
                 }
@@ -665,8 +664,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
                         skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                            framebuffer, render_pass, view_state->image_state.get(),
-                            ms_rendered_to_single_sampled->rasterizationSamples,
+                            framebuffer, render_pass, *view_state->image_state, ms_rendered_to_single_sampled->rasterizationSamples,
                             subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
                     }
                 }
@@ -695,8 +693,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
                         skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                            framebuffer, render_pass, view_state->image_state.get(),
-                            ms_rendered_to_single_sampled->rasterizationSamples,
+                            framebuffer, render_pass, *view_state->image_state, ms_rendered_to_single_sampled->rasterizationSamples,
                             subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
                     }
                 }
@@ -706,9 +703,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
     return skip;
 }
 
-void CoreChecks::TransitionAttachmentRefLayout(vvl::CommandBuffer *cb_state, const safe_VkAttachmentReference2 &ref) {
+void CoreChecks::TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        vvl::ImageView *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
+        vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
@@ -716,12 +713,12 @@ void CoreChecks::TransitionAttachmentRefLayout(vvl::CommandBuffer *cb_state, con
                 stencil_layout = attachment_reference_stencil_layout->stencilLayout;
             }
 
-            cb_state->SetImageViewLayout(*image_view, ref.layout, stencil_layout);
+            cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
         }
     }
 }
 
-void CoreChecks::TransitionSubpassLayouts(vvl::CommandBuffer *cb_state, const vvl::RenderPass &render_pass_state,
+void CoreChecks::TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state,
                                           const int subpass_index) {
     auto const &subpass = render_pass_state.createInfo.pSubpasses[subpass_index];
     for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
@@ -738,11 +735,11 @@ void CoreChecks::TransitionSubpassLayouts(vvl::CommandBuffer *cb_state, const vv
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer *cb_state, const vvl::RenderPass &render_pass_state) {
+void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
     // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state.createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             vvl::Image *image_state = view_state->image_state.get();
             const auto initial_layout = rpci->pAttachments[i].initialLayout;
@@ -752,9 +749,9 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer *cb_state, 
                 const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
                 VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
                 sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                cb_state->SetImageInitialLayout(*image_state, sub_range, initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
                 sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                cb_state->SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
             } else {
                 // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
                 // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
@@ -765,7 +762,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer *cb_state, 
                         subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                     }
                 }
-                cb_state->SetImageInitialLayout(*image_state, subresource_range, initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, subresource_range, initial_layout);
             }
         }
     }
@@ -822,7 +819,7 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     return skip;
 }
 
-bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer *cb_state, const Location &image_loc,
+bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer &cb_state, const Location &image_loc,
                                                    const ImageBarrier &img_barrier, const CommandBufferImageLayoutMap &current_map,
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
@@ -849,13 +846,13 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer *cb_
         auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
         normalized_isr.aspectMask = test_aspect;
         skip |=
-            read_subresource_map->AnyInRange(normalized_isr, [this, read_subresource_map, cb_state, &layout_check, &image_loc,
+            read_subresource_map->AnyInRange(normalized_isr, [this, read_subresource_map, &cb_state, &layout_check, &image_loc,
                                                               &img_barrier](const LayoutRange &range, const LayoutEntry &state) {
                 bool subres_skip = false;
                 if (!layout_check.Check(state)) {
                     const auto &vuid = GetImageBarrierVUID(image_loc, sync_vuid_maps::ImageError::kConflictingLayout);
                     auto subres = read_subresource_map->Decode(range.begin);
-                    const LogObjectList objlist(cb_state->Handle(), img_barrier.image);
+                    const LogObjectList objlist(cb_state.Handle(), img_barrier.image);
                     subres_skip =
                         LogError(vuid, objlist, image_loc,
                                  "(%s) cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32
@@ -867,7 +864,7 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer *cb_
                 }
                 return subres_skip;
             });
-        write_subresource_map->SetSubresourceRangeLayout(*cb_state, normalized_isr, img_barrier.newLayout);
+        write_subresource_map->SetSubresourceRangeLayout(cb_state, normalized_isr, img_barrier.newLayout);
     }
     return skip;
 }
@@ -893,7 +890,7 @@ bool CoreChecks::FindLayouts(const vvl::Image &image_state, std::vector<VkImageL
     return true;
 }
 
-void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer *cb_state, const ImageBarrier &mem_barrier) {
+void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const ImageBarrier &mem_barrier) {
     if (enabled_features.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
@@ -922,14 +919,14 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer *cb_state, const
     // choose to perform it as part of the acquire operation.
     //
     // However, we still need to record initial layout for the "initial layout" validation
-    if (cb_state->IsReleaseOp(mem_barrier)) {
-        cb_state->SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
+    if (cb_state.IsReleaseOp(mem_barrier)) {
+        cb_state.SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
     } else {
-        cb_state->SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
+        cb_state.SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
     }
 }
 
-void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer *cb_state, uint32_t barrier_count,
+void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
                                         const VkImageMemoryBarrier2 *image_barriers) {
     for (uint32_t i = 0; i < barrier_count; i++) {
         const ImageBarrier barrier(image_barriers[i]);
@@ -937,7 +934,7 @@ void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer *cb_state, uint32_t b
     }
 }
 
-void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer *cb_state, uint32_t barrier_count,
+void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
                                         const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
                                         VkPipelineStageFlags dst_stage_mask) {
     for (uint32_t i = 0; i < barrier_count; i++) {
