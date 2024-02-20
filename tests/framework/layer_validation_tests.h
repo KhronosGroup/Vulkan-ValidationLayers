@@ -630,7 +630,12 @@ class YcbcrTest : public VkLayerTest {
 class NegativeYcbcr : public YcbcrTest {};
 class PositiveYcbcr : public YcbcrTest {};
 
-class CooperativeMatrixTest : public VkLayerTest {};
+class CooperativeMatrixTest : public VkLayerTest {
+  public:
+    void InitCooperativeMatrixKHR();
+    bool HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type);
+    std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
+};
 class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 

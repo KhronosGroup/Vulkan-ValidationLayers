@@ -985,13 +985,14 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
-        uint32_t num_cooperative_matrix_properties = 0;
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties,
-                                                                               NULL);
-        cooperative_matrix_properties.resize(num_cooperative_matrix_properties, vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
+        uint32_t num_cooperative_matrix_properties_nv = 0;
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device,
+                                                                               &num_cooperative_matrix_properties_nv, NULL);
+        cooperative_matrix_properties_nv.resize(num_cooperative_matrix_properties_nv,
+                                                vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
 
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties,
-                                                                               cooperative_matrix_properties.data());
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(
+            physical_device, &num_cooperative_matrix_properties_nv, cooperative_matrix_properties_nv.data());
     }
 
     if (IsExtEnabled(dev_ext.vk_khr_cooperative_matrix)) {

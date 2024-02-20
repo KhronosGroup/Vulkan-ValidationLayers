@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,6 +43,43 @@ const char *vkComponentTypeToGLSL(VkComponentTypeKHR type) {
         default:
             return "unknown";
     }
+}
+
+void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
+    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(Init());
+    uint32_t props_count = 0;
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, nullptr);
+    for (uint32_t i = 0; i < props_count; i++) {
+        coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
+    }
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, coop_matrix_props.data());
+}
+
+bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {
+    bool found_a = false;
+    bool found_b = false;
+    bool found_c = false;
+    bool found_r = false;
+    for (const auto &prop : coop_matrix_props) {
+        if (prop.scope == scope && prop.AType == type && prop.MSize == m && prop.KSize == k) {
+            found_a = true;
+        }
+        if (prop.scope == scope && prop.BType == type && prop.KSize == k && prop.NSize == n) {
+            found_b = true;
+        }
+        if (prop.scope == scope && prop.CType == type && prop.MSize == m && prop.NSize == n) {
+            found_c = true;
+        }
+        if (prop.scope == scope && prop.ResultType == type && prop.MSize == m && prop.NSize == n) {
+            found_r = true;
+        }
+    }
+    return found_a && found_b && found_c && found_r;
 }
 
 TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
@@ -115,29 +152,15 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
-    // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
-    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
-    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
-    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    RETURN_IF_SKIP(Init());
-
-    std::vector<VkCooperativeMatrixPropertiesKHR> props;
-    uint32_t props_count = 0;
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, nullptr);
-    for (uint32_t i = 0; i < props_count; i++) {
-        props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
-    }
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, props.data());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
     bool found_scope_subgroup = false;
-    for (const auto &prop : props) {
+    for (const auto &prop : coop_matrix_props) {
         if (prop.scope == VK_SCOPE_SUBGROUP_KHR) {
             found_scope_subgroup = true;
             subgroup_prop = prop;
