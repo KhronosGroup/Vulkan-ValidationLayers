@@ -228,7 +228,7 @@ void CommandBuffer::ResetCBState() {
 void CommandBuffer::Reset() {
     ResetCBState();
     // Remove reverse command buffer links.
-    Invalidate(true);
+    Invalidate();
 }
 
 // Track which resources are in-flight by atomically incrementing their "in_use" count
@@ -279,18 +279,18 @@ void CommandBuffer::Destroy() {
     StateObject::Destroy();
 }
 
-void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+void CommandBuffer::NotifyInvalidate(const StateObjectList &invalid_objs) {
     {
         auto guard = WriteLock();
-        assert(!invalid_nodes.empty());
+        assert(!invalid_objs.empty());
         // Save all of the vulkan handles between the command buffer and the now invalid node
         LogObjectList log_list;
-        for (auto &obj : invalid_nodes) {
+        for (auto &obj : invalid_objs) {
             log_list.add(obj->Handle());
         }
 
         bool found_invalid = false;
-        for (auto &obj : invalid_nodes) {
+        for (auto &obj : invalid_objs) {
             // Only record a broken binding if one of the nodes in the invalid chain is still
             // being tracked by the command buffer. This is to try to avoid race conditions
             // caused by separate CommandBuffer and StateObject::parent_nodes locking.
@@ -300,14 +300,10 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
             }
             switch (obj->Type()) {
                 case kVulkanObjectTypeCommandBuffer:
-                    if (unlink) {
-                        linkedCommandBuffers.erase(static_cast<CommandBuffer *>(obj.get()));
-                    }
+                    linkedCommandBuffers.erase(static_cast<CommandBuffer *>(obj.get()));
                     break;
                 case kVulkanObjectTypeImage:
-                    if (unlink) {
-                        image_layout_map.erase(obj->Handle().Cast<VkImage>());
-                    }
+                    image_layout_map.erase(obj->Handle().Cast<VkImage>());
                     break;
                 default:
                     break;
@@ -319,10 +315,45 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
             } else if (state == CbState::Recorded) {
                 state = CbState::InvalidComplete;
             }
-            broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
+            broken_bindings.emplace(invalid_objs[0]->Handle(), log_list);
         }
     }
-    StateObject::NotifyInvalidate(invalid_nodes, unlink);
+    StateObject::NotifyInvalidate(invalid_objs);
+}
+
+void CommandBuffer::NotifyUpdateDescriptor(const vvl::DescriptorSet &set, const StateObjectList &old_objs,
+                                           bool is_bindless) {
+    {
+        auto guard = WriteLock();
+        // Note that it is possible to update a descriptor without removing any invalid objects, if writing
+        // to previously unused descriptors.
+        for (auto &obj : old_objs) {
+            switch (obj->Type()) {
+                case kVulkanObjectTypeImage:
+                    image_layout_map.erase(obj->Handle().Cast<VkImage>());
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (!is_bindless) {
+            if (state == CbState::Recording) {
+                state = CbState::InvalidIncomplete;
+            } else if (state == CbState::Recorded) {
+                state = CbState::InvalidComplete;
+            }
+        }
+    }
+    auto parent_cbs = ObjectBindings();
+    for (auto &entry : parent_cbs) {
+        auto obj = entry.second.lock();
+        if (!obj) {
+            continue;
+        }
+        assert(obj->Type() == kVulkanObjectTypeCommandBuffer);
+        auto *cb = static_cast<CommandBuffer *>(obj.get());
+        cb->NotifyUpdateDescriptor(set, old_objs, is_bindless);
+    }
 }
 
 const CommandBufferImageLayoutMap &CommandBuffer::GetImageSubresourceLayoutMap() const { return image_layout_map; }

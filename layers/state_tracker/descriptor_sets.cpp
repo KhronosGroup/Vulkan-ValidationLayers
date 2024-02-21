@@ -474,17 +474,39 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool
     }
 }
 
-void vvl::DescriptorSet::LinkChildNodes() {
+void vvl::DescriptorSet::LinkChildObjects() {
     // Connect child node(s), which cannot safely be done in the constructor.
     for (auto &binding : bindings_) {
         binding->AddParent(this);
     }
 }
 
-void vvl::DescriptorSet::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    BaseClass::NotifyInvalidate(invalid_nodes, unlink);
+void vvl::DescriptorSet::NotifyInvalidate(const StateObjectList &invalid_objs) {
+    bool is_bindless = false;
     for (auto &binding : bindings_) {
-        binding->NotifyInvalidate(invalid_nodes, unlink);
+        if (binding->NotifyInvalidate(invalid_objs)) {
+            is_bindless |= binding->IsBindless();
+        }
+    }
+    // Destroying a resource in use in a descriptor isn't an error in bindless, but
+    // the command buffer may need to update cached state when it happens.
+    if (is_bindless) {
+        NotifyUpdateDescriptor(invalid_objs, is_bindless);
+    } else {
+        StateObject::NotifyInvalidate(invalid_objs);
+    }
+}
+
+void vvl::DescriptorSet::NotifyUpdateDescriptor(const StateObjectList &old_objs, bool is_bindless) {
+    auto parent_cbs = ObjectBindings();
+    for (auto &entry : parent_cbs) {
+        auto obj = entry.second.lock();
+        if (!obj) {
+            continue;
+        }
+        assert(obj->Type() == kVulkanObjectTypeCommandBuffer);
+        auto *cb = static_cast<CommandBuffer *>(obj.get());
+        cb->NotifyUpdateDescriptor(*this, old_objs, is_bindless);
     }
 }
 
@@ -516,28 +538,42 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
     assert(!iter.AtEnd());
     auto &orig_binding = iter.CurrentBinding();
 
+    StateObjectList old_objs;
+    if (!IsPushDescriptor()) {
+        old_objs.reserve(update.descriptorCount);
+    }
+
+    bool bindless_update = false;
     // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
     for (uint32_t i = 0; i < descriptors_remaining; ++i, ++iter) {
         if (iter.AtEnd() || !orig_binding.IsConsistent(iter.CurrentBinding())) {
             break;
         }
-        iter->WriteUpdate(*this, *state_data_, update, i, iter.CurrentBinding().IsBindless());
+        iter->WriteUpdate(*this, *state_data_, update, i, iter.CurrentBinding().IsBindless(), old_objs);
         iter.updated(true);
+        bindless_update |= iter.CurrentBinding().IsBindless();
     }
     if (update.descriptorCount) {
         some_update_ = true;
         ++change_count_;
     }
 
-    if (!IsPushDescriptor() && !(orig_binding.binding_flags & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
-                                                               VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
-        Invalidate(false);
+    if (!IsPushDescriptor()) {
+        NotifyUpdateDescriptor(old_objs, bindless_update);
     }
 }
+
 // Perform Copy update
 void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, const DescriptorSet &src_set) {
     auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
     auto dst_iter = FindDescriptor(update.dstBinding, update.dstArrayElement);
+    bool bindless_update = false;
+
+    StateObjectList old_objs;
+    if (!IsPushDescriptor()) {
+        old_objs.reserve(update.descriptorCount);
+    }
+
     // Update parameters all look good so perform update
     for (uint32_t i = 0; i < update.descriptorCount; ++i, ++src_iter, ++dst_iter) {
         auto &src = *src_iter;
@@ -548,18 +584,18 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
                 const auto &mutable_src = static_cast<const MutableDescriptor &>(src);
                 type = mutable_src.ActiveType();
             }
-            dst.CopyUpdate(*this, *state_data_, src, src_iter.CurrentBinding().IsBindless(), type);
+            dst.CopyUpdate(*this, *state_data_, src, dst_iter.CurrentBinding().IsBindless(), type, old_objs);
             some_update_ = true;
             ++change_count_;
             dst_iter.updated(true);
         } else {
+            //TODO: dst.Clear(old_objs);
             dst_iter.updated(false);
         }
+        bindless_update |= dst_iter.CurrentBinding().IsBindless();
     }
-
-    if (!(layout_->GetDescriptorBindingFlagsFromBinding(update.dstBinding) &
-          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
-        Invalidate(false);
+    if (!IsPushDescriptor()) {
+        NotifyUpdateDescriptor(old_objs, bindless_update);
     }
 }
 
@@ -618,38 +654,38 @@ void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, vv
 // correctly managing links to the parent DescriptorSet.
 // src and dst are shared pointers.
 template <typename T>
-static void ReplaceStatePtr(DescriptorSet &set_state, T &dst, const T &src, bool is_bindless) {
-    if (dst && !is_bindless) {
+static void ReplaceStatePtr(DescriptorSet &set_state, T &dst, const T &src, bool is_bindless, vvl::StateObjectList &old_objs) {
+    if (dst) {
         dst->RemoveParent(&set_state);
+        old_objs.emplace_back(dst);
     }
     dst = src;
     // For descriptor bindings with UPDATE_AFTER_BIND or PARTIALLY_BOUND only set the object as a child, but not the descriptor as a
     // parent, so that destroying the object wont invalidate the descriptor
-    if (dst && !is_bindless) {
+    if (dst) {
         dst->AddParent(&set_state);
     }
 }
 
 void vvl::SamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                     const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
+                                                     const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless, StateObjectList &old_objs) {
     if (!immutable_) {
         ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler),
-                        is_bindless);
+                        is_bindless, old_objs);
     }
 }
 
 void vvl::SamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                    const Descriptor &src, bool is_bindless, VkDescriptorType) {
-    if (src.GetClass() == DescriptorClass::Mutable) {
-        auto &sampler_src = static_cast<const MutableDescriptor &>(src);
-        if (!immutable_) {
-            ReplaceStatePtr(set_state, sampler_state_, sampler_src.GetSharedSamplerState(), is_bindless);
-        }
+                                                    const Descriptor &src, bool is_bindless, VkDescriptorType, StateObjectList &old_objs) {
+    if (immutable_) {
         return;
     }
-    auto &sampler_src = static_cast<const SamplerDescriptor &>(src);
-    if (!immutable_) {
-        ReplaceStatePtr(set_state, sampler_state_, sampler_src.sampler_state_, is_bindless);
+    if (src.GetClass() == DescriptorClass::Mutable) {
+        auto &sampler_src = static_cast<const MutableDescriptor &>(src);
+        ReplaceStatePtr(set_state, sampler_state_, sampler_src.GetSharedSamplerState(), is_bindless, old_objs);
+    } else {
+        auto &sampler_src = static_cast<const SamplerDescriptor &>(src);
+        ReplaceStatePtr(set_state, sampler_state_, sampler_src.sampler_state_, is_bindless, old_objs);
     }
 }
 
@@ -668,40 +704,50 @@ bool vvl::SamplerDescriptor::AddParent(StateObject *state_object) {
     }
     return result;
 }
+
 void vvl::SamplerDescriptor::RemoveParent(StateObject *state_object) {
     if (sampler_state_) {
         sampler_state_->RemoveParent(state_object);
     }
 }
-bool vvl::SamplerDescriptor::Invalid() const { return !sampler_state_ || sampler_state_->Invalid(); }
+
+bool vvl::SamplerDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = false;
+    if (invalid_node == sampler_state_) {
+        sampler_state_.reset();
+        result = true;
+    }
+    return result;
+}
+
+bool vvl::SamplerDescriptor::Invalid() const { return !sampler_state_; }
 
 void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                           const VkWriteDescriptorSet &update, const uint32_t index,
-                                                          bool is_bindless) {
+                                                          bool is_bindless, StateObjectList &old_objs) {
     const auto &image_info = update.pImageInfo[index];
     if (!immutable_) {
-        ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless);
+        ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless, old_objs);
     }
     image_layout_ = image_info.imageLayout;
-    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless);
-    UpdateKnownValidView(is_bindless);
+    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless, old_objs);
 }
 
 void vvl::ImageSamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                         const Descriptor &src, bool is_bindless, VkDescriptorType src_type) {
+                                                         const Descriptor &src, bool is_bindless, VkDescriptorType src_type, StateObjectList &old_objs) {
     if (src.GetClass() == DescriptorClass::Mutable) {
         auto &image_src = static_cast<const MutableDescriptor &>(src);
         if (!immutable_) {
-            ReplaceStatePtr(set_state, sampler_state_, image_src.GetSharedSamplerState(), is_bindless);
+            ReplaceStatePtr(set_state, sampler_state_, image_src.GetSharedSamplerState(), is_bindless, old_objs);
         }
-        ImageDescriptor::CopyUpdate(set_state, dev_data, src, is_bindless, src_type);
+        ImageDescriptor::CopyUpdate(set_state, dev_data, src, is_bindless, src_type, old_objs);
         return;
     }
     auto &image_src = static_cast<const ImageSamplerDescriptor &>(src);
     if (!immutable_) {
-        ReplaceStatePtr(set_state, sampler_state_, image_src.sampler_state_, is_bindless);
+        ReplaceStatePtr(set_state, sampler_state_, image_src.sampler_state_, is_bindless, old_objs);
     }
-    ImageDescriptor::CopyUpdate(set_state, dev_data, src, is_bindless, src_type);
+    ImageDescriptor::CopyUpdate(set_state, dev_data, src, is_bindless, src_type, old_objs);
 }
 
 VkSampler vvl::ImageSamplerDescriptor::GetSampler() const { return sampler_state_ ? sampler_state_->VkHandle() : VK_NULL_HANDLE; }
@@ -719,6 +765,7 @@ bool vvl::ImageSamplerDescriptor::AddParent(StateObject *state_object) {
     }
     return result;
 }
+
 void vvl::ImageSamplerDescriptor::RemoveParent(StateObject *state_object) {
     ImageDescriptor::RemoveParent(state_object);
     if (sampler_state_) {
@@ -726,33 +773,39 @@ void vvl::ImageSamplerDescriptor::RemoveParent(StateObject *state_object) {
     }
 }
 
+bool vvl::ImageSamplerDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = ImageDescriptor::Invalidate(invalid_node);
+    if (invalid_node == sampler_state_) {
+        sampler_state_.reset();
+        result = true;
+    }
+    return result;
+}
+
 bool vvl::ImageSamplerDescriptor::Invalid() const {
-    return ImageDescriptor::Invalid() || !sampler_state_ || sampler_state_->Invalid();
+    return ImageDescriptor::Invalid() || !sampler_state_;
 }
 
 void vvl::ImageDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                   const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
+                                                   const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless, StateObjectList &old_objs) {
     const auto &image_info = update.pImageInfo[index];
     image_layout_ = image_info.imageLayout;
-    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless);
-    UpdateKnownValidView(is_bindless);
+    ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless, old_objs);
 }
 
 void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                  const Descriptor &src, bool is_bindless, VkDescriptorType src_type) {
+                                                  const Descriptor &src, bool is_bindless, VkDescriptorType src_type, StateObjectList &old_objs) {
     if (src.GetClass() == DescriptorClass::Mutable) {
         auto &image_src = static_cast<const MutableDescriptor &>(src);
 
         image_layout_ = image_src.GetImageLayout();
-        ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless);
-        UpdateKnownValidView(is_bindless);
+        ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless, old_objs);
         return;
     }
     auto &image_src = static_cast<const ImageDescriptor &>(src);
 
     image_layout_ = image_src.image_layout_;
-    ReplaceStatePtr(set_state, image_view_state_, image_src.image_view_state_, is_bindless);
-    UpdateKnownValidView(is_bindless);
+    ReplaceStatePtr(set_state, image_view_state_, image_src.image_view_state_, is_bindless, old_objs);
 }
 
 void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer *cb_state) {
@@ -779,41 +832,40 @@ void vvl::ImageDescriptor::RemoveParent(StateObject *state_object) {
         image_view_state_->RemoveParent(state_object);
     }
 }
-void vvl::ImageDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+
+bool vvl::ImageDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = false;
     if (invalid_node == image_view_state_) {
-        known_valid_view_ = false;
-        if (unlink) {
-            image_view_state_.reset();
-        }
+        image_view_state_.reset();
+        result = true;
     }
+    return result;
 }
 
-bool vvl::ImageDescriptor::Invalid() const { return !known_valid_view_ && ComputeInvalid(); }
-bool vvl::ImageDescriptor::ComputeInvalid() const { return !image_view_state_ || image_view_state_->Invalid(); }
-void vvl::ImageDescriptor::UpdateKnownValidView(bool is_bindless) { known_valid_view_ = !is_bindless && !ComputeInvalid(); }
+bool vvl::ImageDescriptor::Invalid() const { return !image_view_state_; }
 
 void vvl::BufferDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
+                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless, StateObjectList &old_objs) {
     const auto &buffer_info = update.pBufferInfo[index];
     offset_ = buffer_info.offset;
     range_ = buffer_info.range;
     auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(buffer_info.buffer);
-    ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
+    ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless, old_objs);
 }
 
 void vvl::BufferDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                   const Descriptor &src, bool is_bindless, VkDescriptorType src_type) {
+                                                   const Descriptor &src, bool is_bindless, VkDescriptorType src_type, StateObjectList &old_objs) {
     if (src.GetClass() == DescriptorClass::Mutable) {
         const auto &buff_desc = static_cast<const MutableDescriptor &>(src);
         offset_ = buff_desc.GetOffset();
         range_ = buff_desc.GetRange();
-        ReplaceStatePtr(set_state, buffer_state_, buff_desc.GetSharedBufferState(), is_bindless);
+        ReplaceStatePtr(set_state, buffer_state_, buff_desc.GetSharedBufferState(), is_bindless, old_objs);
         return;
     }
     const auto &buff_desc = static_cast<const BufferDescriptor &>(src);
     offset_ = buff_desc.offset_;
     range_ = buff_desc.range_;
-    ReplaceStatePtr(set_state, buffer_state_, buff_desc.buffer_state_, is_bindless);
+    ReplaceStatePtr(set_state, buffer_state_, buff_desc.buffer_state_, is_bindless, old_objs);
 }
 
 VkBuffer vvl::BufferDescriptor::GetBuffer() const { return buffer_state_ ? buffer_state_->VkHandle() : VK_NULL_HANDLE; }
@@ -830,22 +882,32 @@ void vvl::BufferDescriptor::RemoveParent(StateObject *state_object) {
         buffer_state_->RemoveParent(state_object);
     }
 }
-bool vvl::BufferDescriptor::Invalid() const { return !buffer_state_ || buffer_state_->Invalid(); }
+
+bool vvl::BufferDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = false;
+    if (invalid_node == buffer_state_) {
+        buffer_state_.reset();
+        result = true;
+    }
+    return result;
+}
+
+bool vvl::BufferDescriptor::Invalid() const { return !buffer_state_; }
 
 void vvl::TexelDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                   const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
+                                                   const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless, StateObjectList &old_objs) {
     auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
-    ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
+    ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless, old_objs);
 }
 
 void vvl::TexelDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                  const Descriptor &src, bool is_bindless, VkDescriptorType src_type) {
+                                                  const Descriptor &src, bool is_bindless, VkDescriptorType src_type, StateObjectList &old_objs) {
     if (src.GetClass() == DescriptorClass::Mutable) {
         ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const MutableDescriptor &>(src).GetSharedBufferViewState(),
-                        is_bindless);
+                        is_bindless, old_objs);
         return;
     }
-    ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor &>(src).buffer_view_state_, is_bindless);
+    ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor &>(src).buffer_view_state_, is_bindless, old_objs);
 }
 
 VkBufferView vvl::TexelDescriptor::GetBufferView() const {
@@ -865,37 +927,46 @@ void vvl::TexelDescriptor::RemoveParent(StateObject *state_object) {
     }
 }
 
-bool vvl::TexelDescriptor::Invalid() const { return !buffer_view_state_ || buffer_view_state_->Invalid(); }
+bool vvl::TexelDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = false;
+    if (invalid_node == buffer_view_state_) {
+        buffer_view_state_.reset();
+        result = true;
+    }
+    return result;
+}
+
+bool vvl::TexelDescriptor::Invalid() const { return !buffer_view_state_;  }
 
 void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                                    const VkWriteDescriptorSet &update, const uint32_t index,
-                                                                   bool is_bindless) {
+                                                                   bool is_bindless, StateObjectList &old_objs) {
     const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
     const auto *acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
     assert(acc_info || acc_info_nv);
     is_khr_ = (acc_info != NULL);
     if (is_khr_) {
         acc_ = acc_info->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless, old_objs);
     } else {
         acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless, old_objs);
     }
 }
 
 void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                                   const Descriptor &src, bool is_bindless,
-                                                                  VkDescriptorType src_type) {
+                                                                  VkDescriptorType src_type, StateObjectList &old_objs) {
     if (src.GetClass() == DescriptorClass::Mutable) {
         auto &acc_desc = static_cast<const MutableDescriptor &>(src);
         is_khr_ = acc_desc.IsAccelerationStructureKHR();
         if (is_khr_) {
             acc_ = acc_desc.GetAccelerationStructureKHR();
-            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
+            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless, old_objs);
         } else {
             acc_nv_ = acc_desc.GetAccelerationStructureNV();
             ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
-                            is_bindless);
+                            is_bindless, old_objs);
         }
         return;
     }
@@ -903,10 +974,10 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet &set_state, 
     is_khr_ = acc_desc.is_khr_;
     if (is_khr_) {
         acc_ = acc_desc.acc_;
-        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless, old_objs);
     } else {
         acc_nv_ = acc_desc.acc_nv_;
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless, old_objs);
     }
 }
 
@@ -928,11 +999,28 @@ void vvl::AccelerationStructureDescriptor::RemoveParent(StateObject *state_objec
         acc_state_nv_->RemoveParent(state_object);
     }
 }
+
+bool vvl::AccelerationStructureDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = false;
+    if (is_khr_) {
+        if (invalid_node == acc_state_) {
+            acc_state_.reset();
+            result = true;
+        }
+    } else {
+        if (invalid_node == acc_state_nv_) {
+            acc_state_.reset();
+            result = true;
+        }
+    }
+    return result;
+}
+
 bool vvl::AccelerationStructureDescriptor::Invalid() const {
     if (is_khr_) {
-        return !acc_state_ || acc_state_->Invalid();
+        return !acc_state_;
     } else {
-        return !acc_state_nv_ || acc_state_nv_->Invalid();
+        return !acc_state_nv_;
     }
 }
 
@@ -948,31 +1036,31 @@ vvl::MutableDescriptor::MutableDescriptor()
       acc_(VK_NULL_HANDLE) {}
 
 void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                     const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
+                                                     const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless, StateObjectList &old_objs) {
     VkDeviceSize buffer_size = 0;
     switch (DescriptorTypeToClass(update.descriptorType)) {
         case DescriptorClass::PlainSampler:
             if (!immutable_) {
                 ReplaceStatePtr(set_state, sampler_state_,
-                                dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler), is_bindless);
+                                dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler), is_bindless, old_objs);
             }
             break;
         case DescriptorClass::ImageSampler: {
             const auto &image_info = update.pImageInfo[index];
             if (!immutable_) {
                 ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler),
-                                is_bindless);
+                                is_bindless, old_objs);
             }
             image_layout_ = image_info.imageLayout;
             ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
-                            is_bindless);
+                            is_bindless, old_objs);
             break;
         }
         case DescriptorClass::Image: {
             const auto &image_info = update.pImageInfo[index];
             image_layout_ = image_info.imageLayout;
             ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
-                            is_bindless);
+                            is_bindless, old_objs);
             break;
         }
         case DescriptorClass::GeneralBuffer: {
@@ -983,7 +1071,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             if (buffer_state) {
                 buffer_size = buffer_state->createInfo.size;
             }
-            ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
+            ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless, old_objs);
             break;
         }
         case DescriptorClass::TexelBuffer: {
@@ -991,7 +1079,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             if (buffer_view) {
                 buffer_size = buffer_view->buffer_state->createInfo.size;
             }
-            ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
+            ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless, old_objs);
             break;
         }
         case DescriptorClass::AccelerationStructure: {
@@ -1002,11 +1090,11 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             if (is_khr_) {
                 acc_ = acc_info->pAccelerationStructures[index];
                 ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
-                                is_bindless);
+                                is_bindless, old_objs);
             } else {
                 acc_nv_ = acc_info_nv->pAccelerationStructures[index];
                 ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
-                                is_bindless);
+                                is_bindless, old_objs);
             }
             break;
         }
@@ -1017,45 +1105,45 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
 }
 
 void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
-                                                    const Descriptor &src, bool is_bindless, VkDescriptorType src_type) {
+                                                    const Descriptor &src, bool is_bindless, VkDescriptorType src_type, StateObjectList &old_objs) {
     VkDeviceSize src_size = 0;
     if (src.GetClass() == DescriptorClass::PlainSampler) {
         auto &sampler_src = static_cast<const SamplerDescriptor &>(src);
         if (!immutable_) {
-            ReplaceStatePtr(set_state, sampler_state_, sampler_src.GetSharedSamplerState(), is_bindless);
+            ReplaceStatePtr(set_state, sampler_state_, sampler_src.GetSharedSamplerState(), is_bindless, old_objs);
         }
     } else if (src.GetClass() == DescriptorClass::ImageSampler) {
         auto &image_src = static_cast<const ImageSamplerDescriptor &>(src);
         if (!immutable_) {
-            ReplaceStatePtr(set_state, sampler_state_, image_src.GetSharedSamplerState(), is_bindless);
+            ReplaceStatePtr(set_state, sampler_state_, image_src.GetSharedSamplerState(), is_bindless, old_objs);
         }
 
         image_layout_ = image_src.GetImageLayout();
-        ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless);
+        ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless, old_objs);
     } else if (src.GetClass() == DescriptorClass::Image) {
         auto &image_src = static_cast<const ImageDescriptor &>(src);
 
         image_layout_ = image_src.GetImageLayout();
-        ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless);
+        ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless, old_objs);
     } else if (src.GetClass() == DescriptorClass::TexelBuffer) {
         ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor &>(src).GetSharedBufferViewState(),
-                        is_bindless);
+                        is_bindless, old_objs);
         src_size = buffer_view_state_ ? buffer_view_state_->Size() : vvl::kU32Max;
     } else if (src.GetClass() == DescriptorClass::GeneralBuffer) {
         const auto buff_desc = static_cast<const BufferDescriptor &>(src);
         offset_ = buff_desc.GetOffset();
         range_ = buff_desc.GetRange();
-        ReplaceStatePtr(set_state, buffer_state_, buff_desc.GetSharedBufferState(), is_bindless);
+        ReplaceStatePtr(set_state, buffer_state_, buff_desc.GetSharedBufferState(), is_bindless, old_objs);
         src_size = range_;
     } else if (src.GetClass() == DescriptorClass::AccelerationStructure) {
         auto &acc_desc = static_cast<const AccelerationStructureDescriptor &>(src);
         if (is_khr_) {
             acc_ = acc_desc.GetAccelerationStructure();
-            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
+            ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless, old_objs);
         } else {
             acc_nv_ = acc_desc.GetAccelerationStructureNV();
             ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
-                            is_bindless);
+                            is_bindless, old_objs);
         }
     } else if (src.GetClass() == DescriptorClass::Mutable) {
         const auto &mutable_src = static_cast<const MutableDescriptor &>(src);
@@ -1063,38 +1151,38 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
         switch (active_class) {
             case DescriptorClass::PlainSampler: {
                 if (!immutable_) {
-                    ReplaceStatePtr(set_state, sampler_state_, mutable_src.GetSharedSamplerState(), is_bindless);
+                    ReplaceStatePtr(set_state, sampler_state_, mutable_src.GetSharedSamplerState(), is_bindless, old_objs);
                 }
             } break;
             case DescriptorClass::ImageSampler: {
                 if (!immutable_) {
-                    ReplaceStatePtr(set_state, sampler_state_, mutable_src.GetSharedSamplerState(), is_bindless);
+                    ReplaceStatePtr(set_state, sampler_state_, mutable_src.GetSharedSamplerState(), is_bindless, old_objs);
                 }
 
                 image_layout_ = mutable_src.GetImageLayout();
-                ReplaceStatePtr(set_state, image_view_state_, mutable_src.GetSharedImageViewState(), is_bindless);
+                ReplaceStatePtr(set_state, image_view_state_, mutable_src.GetSharedImageViewState(), is_bindless, old_objs);
             } break;
             case DescriptorClass::Image: {
                 image_layout_ = mutable_src.GetImageLayout();
-                ReplaceStatePtr(set_state, image_view_state_, mutable_src.GetSharedImageViewState(), is_bindless);
+                ReplaceStatePtr(set_state, image_view_state_, mutable_src.GetSharedImageViewState(), is_bindless, old_objs);
             } break;
             case DescriptorClass::GeneralBuffer: {
                 offset_ = mutable_src.GetOffset();
                 range_ = mutable_src.GetRange();
-                ReplaceStatePtr(set_state, buffer_state_, mutable_src.GetSharedBufferState(), is_bindless);
+                ReplaceStatePtr(set_state, buffer_state_, mutable_src.GetSharedBufferState(), is_bindless, old_objs);
             } break;
             case DescriptorClass::TexelBuffer: {
-                ReplaceStatePtr(set_state, buffer_view_state_, mutable_src.GetSharedBufferViewState(), is_bindless);
+                ReplaceStatePtr(set_state, buffer_view_state_, mutable_src.GetSharedBufferViewState(), is_bindless, old_objs);
             } break;
             case DescriptorClass::AccelerationStructure: {
                 if (mutable_src.is_khr()) {
                     acc_ = mutable_src.GetAccelerationStructureKHR();
                     ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
-                                    is_bindless);
+                                    is_bindless, old_objs);
                 } else {
                     acc_nv_ = mutable_src.GetAccelerationStructureNV();
                     ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
-                                    is_bindless);
+                                    is_bindless, old_objs);
                 }
 
             } break;
@@ -1211,28 +1299,57 @@ void vvl::MutableDescriptor::RemoveParent(StateObject *state_object) {
     }
 }
 
+bool vvl::MutableDescriptor::Invalidate(const std::shared_ptr<StateObject> &invalid_node) {
+    bool result = false;
+    if (invalid_node == sampler_state_) {
+        sampler_state_.reset();
+        result = true;
+    }
+    if (invalid_node == image_view_state_) {
+        image_view_state_.reset();
+        result = true;
+    }
+    if (invalid_node == buffer_view_state_) {
+        buffer_view_state_.reset();
+        result = true;
+    }
+    if (invalid_node == buffer_state_) {
+        buffer_state_.reset();
+        result = true;
+    }
+    if (invalid_node == acc_state_) {
+        acc_state_.reset();
+        result = true;
+    }
+    if (invalid_node == acc_state_nv_) {
+        acc_state_nv_.reset();
+        result = true;
+    }
+    return result;
+}
+
 bool vvl::MutableDescriptor::Invalid() const {
     switch (ActiveClass()) {
         case DescriptorClass::PlainSampler:
-            return !sampler_state_ || sampler_state_->Destroyed();
+            return !sampler_state_;
 
         case DescriptorClass::ImageSampler:
-            return !sampler_state_ || sampler_state_->Invalid() || !image_view_state_ || image_view_state_->Invalid();
+            return !sampler_state_ || !image_view_state_;
 
         case DescriptorClass::TexelBuffer:
-            return !buffer_view_state_ || buffer_view_state_->Invalid();
+            return !buffer_view_state_;
 
         case DescriptorClass::Image:
-            return !image_view_state_ || image_view_state_->Invalid();
+            return !image_view_state_;
 
         case DescriptorClass::GeneralBuffer:
-            return !buffer_state_ || buffer_state_->Invalid();
+            return !buffer_state_;
 
         case DescriptorClass::AccelerationStructure:
             if (is_khr_) {
-                return !acc_state_ || acc_state_->Invalid();
+                return !acc_state_;
             } else {
-                return !acc_state_nv_ || acc_state_nv_->Invalid();
+                return !acc_state_nv_;
             }
         default:
             return false;

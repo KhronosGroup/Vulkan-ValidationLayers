@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -53,47 +53,42 @@ void vvl::StateObject::RemoveParent(StateObject* parent_node) {
     parent_nodes_.erase(parent_node->Handle());
 }
 
-// copy the current set of parents so that we don't need to hold the lock
+// clear and return the current set of parents so that we don't need to hold the lock
 // while calling NotifyInvalidate on them, as that would lead to recursive locking.
-vvl::StateObject::NodeMap vvl::StateObject::GetParentsForInvalidate(bool unlink) {
-    NodeMap result;
-    if (unlink) {
-        auto guard = WriteLockTree();
-        result = std::move(parent_nodes_);
-        parent_nodes_.clear();
-    } else {
-        auto guard = ReadLockTree();
-        result = parent_nodes_;
-    }
+vvl::StateObjectMap vvl::StateObject::GetParentsForInvalidate() {
+    StateObjectMap result;
+    auto guard = WriteLockTree();
+    result = std::move(parent_nodes_);
+    parent_nodes_.clear();
     return result;
 }
 
-vvl::StateObject::NodeMap vvl::StateObject::ObjectBindings() const {
+vvl::StateObjectMap vvl::StateObject::ObjectBindings() const {
     auto guard = ReadLockTree();
     return parent_nodes_;
 }
 
-void vvl::StateObject::Invalidate(bool unlink) {
-    NodeList empty;
+void vvl::StateObject::Invalidate() {
+    StateObjectList empty;
     // We do not want to call the virtual method here because any special handling
     // in an overriden NotifyInvalidate() is for when a child node has become invalid.
     // But calling Invalidate() indicates the current node is invalid.
     // Calling the default implementation directly here avoids duplicating it inline.
-    StateObject::NotifyInvalidate(empty, unlink);
+    StateObject::NotifyInvalidate(empty);
 }
 
-void vvl::StateObject::NotifyInvalidate(const NodeList& invalid_nodes, bool unlink) {
-    auto current_parents = GetParentsForInvalidate(unlink);
+void vvl::StateObject::NotifyInvalidate(const StateObjectList& invalid_objs) {
+    auto current_parents = GetParentsForInvalidate();
     if (current_parents.size() == 0) {
         return;
     }
 
-    NodeList up_nodes = invalid_nodes;
+    StateObjectList up_nodes = invalid_objs;
     up_nodes.emplace_back(shared_from_this());
     for (auto& item : current_parents) {
         auto node = item.second.lock();
         if (node && !node->Destroyed()) {
-            node->NotifyInvalidate(up_nodes, unlink);
+            node->NotifyInvalidate(up_nodes);
         }
     }
 }

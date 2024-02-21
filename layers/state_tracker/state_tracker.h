@@ -279,7 +279,7 @@ class ValidationStateTracker : public ValidationObject {
         auto handle = state_object->Handle().template Cast<HandleType>();
         // Finish setting up the object node tree, which cannot be done from the state object contructors
         // due to use of shared_from_this()
-        state_object->LinkChildNodes();
+        state_object->LinkChildObjects();
         map.insert_or_assign(handle, std::move(state_object));
     }
 

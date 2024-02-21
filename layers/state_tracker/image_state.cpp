@@ -266,11 +266,9 @@ void Image::Destroy() {
     Bindable::Destroy();
 }
 
-void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    Bindable::NotifyInvalidate(invalid_nodes, unlink);
-    if (unlink) {
-        bind_swapchain = nullptr;
-    }
+void Image::NotifyInvalidate(const StateObjectList &invalid_objs) {
+    Bindable::NotifyInvalidate(invalid_objs);
+    bind_swapchain = nullptr;
 }
 
 bool Image::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const {
@@ -591,11 +589,9 @@ void Swapchain::Destroy() {
     StateObject::Destroy();
 }
 
-void Swapchain::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    StateObject::NotifyInvalidate(invalid_nodes, unlink);
-    if (unlink) {
-        surface = nullptr;
-    }
+void Swapchain::NotifyInvalidate(const StateObjectList &invalid_objs) {
+    StateObject::NotifyInvalidate(invalid_objs);
+    surface = nullptr;
 }
 
 SwapchainImage Swapchain::GetSwapChainImage(uint32_t index) const {

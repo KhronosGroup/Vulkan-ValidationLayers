@@ -610,6 +610,8 @@ class CommandBuffer : public RefcountedStateObject {
     static std::string GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
                                           const std::vector<std::string> &initial_label_stack = {});
 
+    virtual void NotifyUpdateDescriptor(const vvl::DescriptorSet &set, const StateObjectList &invalid_node, bool is_bindless);
+
   private:
     void ResetCBState();
 
@@ -626,7 +628,7 @@ class CommandBuffer : public RefcountedStateObject {
     std::optional<VkSampleCountFlagBits> active_subpass_sample_count_;
 
   protected:
-    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const StateObjectList &invalid_objs) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
     void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void UnbindResources();

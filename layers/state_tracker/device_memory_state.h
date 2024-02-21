@@ -213,7 +213,10 @@ class Bindable : public StateObject {
   public:
     template <typename Handle>
     Bindable(Handle h, VulkanObjectType t, bool is_sparse, bool is_unprotected, VkExternalMemoryHandleTypeFlags handle_types)
-        : StateObject(h, t), external_memory_handle_types(handle_types), sparse(is_sparse), unprotected(is_unprotected),
+        : StateObject(h, t),
+          external_memory_handle_types(handle_types),
+          sparse(is_sparse),
+          unprotected(is_unprotected),
           memory_tracker_(nullptr) {}
 
     virtual ~Bindable() {
@@ -255,9 +258,9 @@ class Bindable : public StateObject {
         return mem_state && !mem_state->Destroyed();
     }
 
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
+    void NotifyInvalidate(const StateObjectList &invalid_objs) override {
         need_to_recache_invalid_memory_ = true;
-        StateObject::NotifyInvalidate(invalid_nodes, unlink);
+        StateObject::NotifyInvalidate(invalid_objs);
     }
 
     const BindableMemoryTracker::DeviceMemoryState &GetInvalidMemory() const {
@@ -288,9 +291,7 @@ class Bindable : public StateObject {
         return memory_tracker_->GetBoundMemoryRange(range);
     }
 
-    BindableMemoryTracker::DeviceMemoryState GetBoundMemoryStates() const {
-        return memory_tracker_->GetBoundMemoryStates();
-    }
+    BindableMemoryTracker::DeviceMemoryState GetBoundMemoryStates() const { return memory_tracker_->GetBoundMemoryStates(); }
 
     // Kept for compatibility
     const MEM_BINDING *Binding() const { return memory_tracker_->Binding(); }
@@ -303,6 +304,7 @@ class Bindable : public StateObject {
     mutable BindableMemoryTracker::DeviceMemoryState cached_invalid_memory_;
 
     void SetMemoryTracker(BindableMemoryTracker *tracker) { memory_tracker_ = tracker; }
+
   public:
     // Tracks external memory types creating resource
     const VkExternalMemoryHandleTypeFlags external_memory_handle_types;

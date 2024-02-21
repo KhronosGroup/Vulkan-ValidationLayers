@@ -108,7 +108,7 @@ class Buffer : public vvl::Buffer {
     Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) final;
 
     DescriptorHeap &desc_heap;
     const DescriptorId id;
@@ -120,7 +120,7 @@ class BufferView : public vvl::BufferView {
                VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) final;
 
     DescriptorHeap &desc_heap;
     const DescriptorId id;
@@ -133,7 +133,7 @@ class ImageView : public vvl::ImageView {
               DescriptorHeap &desc_heap_);
 
     void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) final;
 
     DescriptorHeap &desc_heap;
     const DescriptorId id;
@@ -144,7 +144,7 @@ class Sampler : public vvl::Sampler {
     Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) final;
 
     DescriptorHeap &desc_heap;
     const DescriptorId id;
@@ -156,7 +156,7 @@ class AccelerationStructureKHR : public vvl::AccelerationStructureKHR {
                              std::shared_ptr<vvl::Buffer> &&buf_state, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) final;
 
     DescriptorHeap &desc_heap;
     const DescriptorId id;
@@ -168,7 +168,7 @@ class AccelerationStructureNV : public vvl::AccelerationStructureNV {
                             DescriptorHeap &desc_heap_);
 
     void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) final;
 
     DescriptorHeap &desc_heap;
     const DescriptorId id;

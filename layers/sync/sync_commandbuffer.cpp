@@ -1202,8 +1202,8 @@ void syncval_state::CommandBuffer::Reset() {
     access_context.Reset();
 }
 
-void syncval_state::CommandBuffer::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &obj : invalid_nodes) {
+void syncval_state::CommandBuffer::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
+    for (auto &obj : invalid_objs) {
         switch (obj->Type()) {
             case kVulkanObjectTypeEvent:
                 access_context.RecordDestroyEvent(static_cast<vvl::Event *>(obj.get()));
@@ -1211,6 +1211,6 @@ void syncval_state::CommandBuffer::NotifyInvalidate(const vvl::StateObject::Node
             default:
                 break;
         }
-        vvl::CommandBuffer::NotifyInvalidate(invalid_nodes, unlink);
     }
+    vvl::CommandBuffer::NotifyInvalidate(invalid_objs);
 }

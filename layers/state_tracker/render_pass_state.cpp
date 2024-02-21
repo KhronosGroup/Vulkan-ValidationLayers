@@ -413,7 +413,7 @@ Framebuffer::Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreat
       rp_state(rpstate),
       attachments_view_state(std::move(attachments)) {}
 
-void Framebuffer::LinkChildNodes() {
+void Framebuffer::LinkChildObjects() {
     // Connect child node(s), which cannot safely be done in the constructor.
     for (auto &a : attachments_view_state) {
         a->AddParent(this);

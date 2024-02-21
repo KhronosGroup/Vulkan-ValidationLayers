@@ -84,7 +84,7 @@ class AccelerationStructureKHR : public StateObject {
 
     VkAccelerationStructureKHR VkHandle() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
 
-    void LinkChildNodes() override {
+    void LinkChildObjects() override {
         // Connect child node(s), which cannot safely be done in the constructor.
         buffer_state->AddParent(this);
     }

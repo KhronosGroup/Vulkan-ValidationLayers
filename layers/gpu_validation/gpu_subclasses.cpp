@@ -31,9 +31,9 @@ void gpuav::Buffer::Destroy() {
     vvl::Buffer::Destroy();
 }
 
-void gpuav::Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::Buffer::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
     desc_heap.DeleteId(id);
-    vvl::Buffer::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::Buffer::NotifyInvalidate(invalid_objs);
 }
 
 gpuav::BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
@@ -47,9 +47,9 @@ void gpuav::BufferView::Destroy() {
     vvl::BufferView::Destroy();
 }
 
-void gpuav::BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::BufferView::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
     desc_heap.DeleteId(id);
-    vvl::BufferView::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::BufferView::NotifyInvalidate(invalid_objs);
 }
 
 gpuav::ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
@@ -64,9 +64,9 @@ void gpuav::ImageView::Destroy() {
     vvl::ImageView::Destroy();
 }
 
-void gpuav::ImageView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::ImageView::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
     desc_heap.DeleteId(id);
-    vvl::ImageView::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::ImageView::NotifyInvalidate(invalid_objs);
 }
 
 gpuav::Sampler::Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_)
@@ -77,9 +77,9 @@ void gpuav::Sampler::Destroy() {
     vvl::Sampler::Destroy();
 }
 
-void gpuav::Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::Sampler::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
     desc_heap.DeleteId(id);
-    vvl::Sampler::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::Sampler::NotifyInvalidate(invalid_objs);
 }
 
 gpuav::AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as,
@@ -94,9 +94,9 @@ void gpuav::AccelerationStructureKHR::Destroy() {
     vvl::AccelerationStructureKHR::Destroy();
 }
 
-void gpuav::AccelerationStructureKHR::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::AccelerationStructureKHR::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
     desc_heap.DeleteId(id);
-    vvl::AccelerationStructureKHR::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::AccelerationStructureKHR::NotifyInvalidate(invalid_objs);
 }
 
 gpuav::AccelerationStructureNV::AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as,
@@ -110,9 +110,9 @@ void gpuav::AccelerationStructureNV::Destroy() {
     vvl::AccelerationStructureNV::Destroy();
 }
 
-void gpuav::AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+void gpuav::AccelerationStructureNV::NotifyInvalidate(const vvl::StateObjectList &invalid_objs) {
     desc_heap.DeleteId(id);
-    vvl::AccelerationStructureNV::NotifyInvalidate(invalid_nodes, unlink);
+    vvl::AccelerationStructureNV::NotifyInvalidate(invalid_objs);
 }
 
 gpuav::CommandBuffer::CommandBuffer(gpuav::Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,

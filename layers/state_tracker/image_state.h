@@ -220,10 +220,10 @@ class Image : public Bindable {
     void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
 
   protected:
-    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const StateObjectList &invalid_objs) override;
 
     template <typename UnaryPredicate>
-    bool AnyAliasBindingOf(const StateObject::NodeMap &bindings, const UnaryPredicate &pred) const {
+    bool AnyAliasBindingOf(const StateObjectMap &bindings, const UnaryPredicate &pred) const {
         for (auto &entry : bindings) {
             if (entry.first.type == kVulkanObjectTypeImage) {
                 auto state_object = entry.second.lock();
@@ -251,11 +251,9 @@ class Image : public Bindable {
     }
 
   private:
-    std::variant<std::monostate,
-                 BindableNoMemoryTracker,
-                 BindableLinearMemoryTracker,
-                 BindableSparseMemoryTracker,
-                 BindableMultiplanarMemoryTracker> tracker_;
+    std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, BindableSparseMemoryTracker,
+                 BindableMultiplanarMemoryTracker>
+        tracker_;
 };
 
 // State for VkImageView objects.
@@ -285,7 +283,7 @@ class ImageView : public StateObject {
     ImageView(const ImageView &rh_obj) = delete;
     VkImageView VkHandle() const { return handle_.Cast<VkImageView>(); }
 
-    void LinkChildNodes() override {
+    void LinkChildObjects() override {
         // Connect child node(s), which cannot safely be done in the constructor.
         image_state->AddParent(this);
     }
@@ -356,7 +354,7 @@ class Swapchain : public StateObject {
     std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
 
   protected:
-    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const StateObjectList &invalid_objs) override;
 };
 
 }  // namespace vvl

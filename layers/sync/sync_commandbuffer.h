@@ -423,7 +423,7 @@ class CommandBuffer : public vvl::CommandBuffer {
                   const vvl::CommandPool *pool);
     ~CommandBuffer() { Destroy(); }
 
-    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const vvl::StateObjectList &invalid_objs) override;
 
     void Destroy() override;
     void Reset() override;

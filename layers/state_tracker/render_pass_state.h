@@ -132,7 +132,7 @@ class Framebuffer : public StateObject {
 
     Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
                 std::vector<std::shared_ptr<vvl::ImageView>> &&attachments);
-    void LinkChildNodes() override;
+    void LinkChildObjects() override;
 
     VkFramebuffer VkHandle() const { return handle_.Cast<VkFramebuffer>(); }
 

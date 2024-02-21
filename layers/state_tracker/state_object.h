@@ -36,17 +36,20 @@ struct hash<VulkanTypedHandle> {
 }  // namespace std
 
 namespace vvl {
+class StateObject;
+
+using StateObjectList = small_vector<std::shared_ptr<StateObject>, 4, uint32_t>;
+// Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
+// Because weak_ptrs cannot safely be used as hash keys, the parents are stored
+// in a map keyed by VulkanTypedHandle. This also allows looking for specific
+// parent types without locking every weak_ptr.
+using StateObjectMap = unordered_map<VulkanTypedHandle, std::weak_ptr<StateObject>>;
+
 // inheriting from enable_shared_from_this<> adds a method, shared_from_this(), which
 // returns a shared_ptr version of the current object. It requires the object to
 // be created with std::make_shared<> and it MUST NOT be used from the constructor
-class StateObject: public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
+class StateObject : public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
   public:
-    // Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
-    // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
-    // in a map keyed by VulkanTypedHandle. This also allows looking for specific
-    // parent types without locking every weak_ptr.
-    using NodeMap = unordered_map<VulkanTypedHandle, std::weak_ptr<StateObject>>;
-    using NodeList = small_vector<std::shared_ptr<StateObject>, 4, uint32_t>;
 
     template <typename Handle>
     StateObject(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false) {}
@@ -54,7 +57,7 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     // because shared_from_this() does not work from the constructor, this 2nd phase
     // constructor is where a state object should call AddParent() on its child nodes.
     // It is called as part of ValidationStateTracker::Add()
-    virtual void LinkChildNodes() {}
+    virtual void LinkChildObjects() {}
 
     virtual ~StateObject();
 
@@ -77,17 +80,17 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     static VulkanTypedHandle Handle(const StateObject *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
     static VulkanTypedHandle Handle(const std::shared_ptr<const StateObject> &node) { return Handle(node.get()); }
 
-    virtual const VulkanTypedHandle* InUse() const;
+    virtual const VulkanTypedHandle *InUse() const;
 
     virtual bool AddParent(StateObject *parent_node);
     virtual void RemoveParent(StateObject *parent_node);
 
     // Invalidate is called on a state object to inform its parents that it
-    // is being destroyed (unlink == true) or otherwise becoming invalid (unlink == false)
-    void Invalidate(bool unlink = true);
+    // is being destroyed or otherwise becoming invalid
+    void Invalidate();
 
     // Helper to let objects examine their immediate parents without holding the tree lock.
-    NodeMap ObjectBindings() const;
+    StateObjectMap ObjectBindings() const;
 
   protected:
     template <typename Derived, typename Shared = std::shared_ptr<Derived>>
@@ -98,11 +101,11 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     }
 
     // Called recursively for every parent object of something that has become invalid
-    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink);
+    virtual void NotifyInvalidate(const StateObjectList &invalid_objs);
 
-    // returns a copy of the current set of parents so that they can be walked
-    // without the tree lock held. If unlink == true, parent_nodes_ is also cleared.
-    NodeMap GetParentsForInvalidate(bool unlink);
+    // clears and returns the current set of parents so that they can be walked
+    // without the tree lock held.
+    StateObjectMap GetParentsForInvalidate();
 
     // Set to true when the API-level object is destroyed, but this object may
     // hang around until its shared_ptr refcount goes to zero.
@@ -114,7 +117,7 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
 
     // Set of immediate parent nodes for this object. For an in-use object, the
     // parent nodes should form a tree with the root being a command buffer.
-    NodeMap parent_nodes_;
+    StateObjectMap parent_nodes_;
     // Lock guarding parent_nodes_, this lock MUST NOT be used for other purposes.
     mutable std::shared_mutex tree_lock_;
 };

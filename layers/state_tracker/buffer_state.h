@@ -84,7 +84,7 @@ class BufferView : public StateObject {
     BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                VkFormatFeatureFlags2KHR buf_ff);
 
-    void LinkChildNodes() override {
+    void LinkChildObjects() override {
         // Connect child node(s), which cannot safely be done in the constructor.
         buffer_state->AddParent(this);
     }
