@@ -1024,8 +1024,10 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
 
 // Returns true if sub_rect is entirely contained within rect
 static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
-    if ((sub_rect.offset.x < rect.offset.x) || (sub_rect.offset.x + sub_rect.extent.width > rect.offset.x + rect.extent.width) ||
-        (sub_rect.offset.y < rect.offset.y) || (sub_rect.offset.y + sub_rect.extent.height > rect.offset.y + rect.extent.height)) {
+    if ((sub_rect.offset.x < rect.offset.x) ||
+        (sub_rect.offset.x + sub_rect.extent.width - 1 > rect.offset.x + rect.extent.width) ||
+        (sub_rect.offset.y < rect.offset.y) ||
+        (sub_rect.offset.y + sub_rect.extent.height - 1 > rect.offset.y + rect.extent.height)) {
         return false;
     }
     return true;
