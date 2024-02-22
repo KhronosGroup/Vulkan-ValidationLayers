@@ -787,3 +787,16 @@ bool gpuav::PreCopyBufferToImageResources::LogCustomValidationMessage(gpuav::Val
     }
     return error_logged;
 }
+
+void gpu_tracker::Validator::ReportSetupProblem(LogObjectList objlist, const Location &loc, const char *const specific_message,
+                                                bool vma_fail) const {
+    std::string logit = specific_message;
+    if (vma_fail) {
+        char *stats_string;
+        vmaBuildStatsString(vmaAllocator, &stats_string, false);
+        logit += " VMA statistics = ";
+        logit += stats_string;
+        vmaFreeStatsString(vmaAllocator, stats_string);
+    }
+    LogError(setup_vuid, objlist, loc, "Setup Error. Detail: (%s)", logit.c_str());
+}

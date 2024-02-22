@@ -692,7 +692,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     // Save local link to this device's physical device state
     device_state->physical_device_state = Get<vvl::PhysicalDevice>(gpu).get();
     // finish setup in the object representing the device
-    device_state->CreateDevice(pCreateInfo);
+    device_state->CreateDevice(pCreateInfo, record_obj.location);
 }
 
 std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
@@ -700,7 +700,7 @@ std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue q, uint3
     return std::make_shared<vvl::Queue>(*this, q, index, flags, queueFamilyProperties);
 }
 
-void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
 
     const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);

@@ -528,9 +528,9 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuff
                                                            *pDependencyInfo);
 }
 
-void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state
-    StateTracker::CreateDevice(pCreateInfo);
+    StateTracker::CreateDevice(pCreateInfo, loc);
 
     ForEachShared<vvl::Queue>([this](const std::shared_ptr<vvl::Queue> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;

@@ -379,8 +379,8 @@ void gpuav::Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer command
     copy_buffer_to_image_info.pRegions = regions_2.data();
 
     auto copy_buffer_to_image =
-        AllocatePreCopyBufferToImageValidationResources(record_obj.location.function, commandBuffer, &copy_buffer_to_image_info);
-    StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image));
+        AllocatePreCopyBufferToImageValidationResources(record_obj.location, commandBuffer, &copy_buffer_to_image_info);
+    StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image), record_obj.location);
 }
 
 void gpuav::Validator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -407,8 +407,8 @@ void gpuav::Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer comman
     }
 
     auto copy_buffer_to_image =
-        AllocatePreCopyBufferToImageValidationResources(record_obj.location.function, commandBuffer, pCopyBufferToImageInfo);
-    StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image));
+        AllocatePreCopyBufferToImageValidationResources(record_obj.location, commandBuffer, pCopyBufferToImageInfo);
+    StoreCommandResources(commandBuffer, std::move(copy_buffer_to_image), record_obj.location);
 }
 
 template <typename RegionType>

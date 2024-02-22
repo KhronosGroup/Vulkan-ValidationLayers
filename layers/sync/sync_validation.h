@@ -112,7 +112,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, Func command);
     bool SupressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
-    void CreateDevice(const VkDeviceCreateInfo *pCreateInfo) override;
+    void CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 
     bool ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                  const VkSubpassBeginInfo *pSubpassBeginInfo, const ErrorObject &error_obj) const;

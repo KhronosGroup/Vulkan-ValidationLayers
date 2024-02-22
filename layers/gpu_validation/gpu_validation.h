@@ -101,7 +101,7 @@ class Validator : public gpu_tracker::Validator {
     // gpu_validation.cpp
     // ------------------
   public:
-    VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer) const;
+    VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer, const Location& loc) const;
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
                           const Location& loc) override;
@@ -109,38 +109,41 @@ class Validator : public gpu_tracker::Validator {
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash,
                                           create_shader_object_api_state* cso_state);
     void UpdateInstrumentationBuffer(CommandBuffer* cb_node);
-    void UpdateBDABuffer(DeviceMemoryBlock buffer_device_addresses);
+    void UpdateBDABuffer(DeviceMemoryBlock buffer_device_addresses, const Location& loc);
 
-    void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
+    void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location& loc);
 
     // Allocate per action (draw, dispatch, trace rays) command validation resources. Should only be used by action commands
     [[nodiscard]] CommandResources AllocateActionCommandResources(const VkCommandBuffer cmd_buffer,
-                                                                  const VkPipelineBindPoint bind_point, Func command,
+                                                                  const VkPipelineBindPoint bind_point, const Location& loc,
                                                                   const CmdIndirectState* indirect_state = nullptr);
     // Allocate memory for the output block that the gpu will use to return any error information
-    [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem);
+    [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem, const Location& loc);
 
     [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDrawIndirectValidationResources(
-        vvl::Func command, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
-        VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
-    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDispatchIndirectValidationResources(vvl::Func command,
+        const Location& loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset,
+        uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride);
+    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreDispatchIndirectValidationResources(const Location& loc,
                                                                                                    VkCommandBuffer cmd_buffer,
                                                                                                    VkBuffer indirect_buffer,
                                                                                                    VkDeviceSize indirect_offset);
-    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreTraceRaysValidationResources(vvl::Func command,
+    [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreTraceRaysValidationResources(const Location& loc,
                                                                                             VkCommandBuffer cmd_buffer,
                                                                                             VkDeviceAddress indirect_data_address);
     [[nodiscard]] std::unique_ptr<CommandResources> AllocatePreCopyBufferToImageValidationResources(
-        vvl::Func cmd, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2* copy_buffer_to_img_info);
+        const Location& loc, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2* copy_buffer_to_img_info);
 
   private:
-    VkPipeline GetDrawValidationPipeline(PreDrawResources::SharedResources& shared_draw_resources, VkRenderPass render_pass);
-    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources(bool use_shader_objects);
-    PreDispatchResources::SharedResources* GetSharedDispatchIndirectValidationResources(bool use_shader_objects);
-    PreTraceRaysResources::SharedResources* GetSharedTraceRaysValidationResources();
-    PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources();
+    VkPipeline GetDrawValidationPipeline(PreDrawResources::SharedResources& shared_draw_resources, VkRenderPass render_pass,
+                                         const Location& loc);
+    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources(bool use_shader_objects, const Location& loc);
+    PreDispatchResources::SharedResources* GetSharedDispatchIndirectValidationResources(bool use_shader_objects,
+                                                                                        const Location& loc);
+    PreTraceRaysResources::SharedResources* GetSharedTraceRaysValidationResources(const Location& loc);
+    PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources(const Location& loc);
 
-    void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources);
+    void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
+                               const Location& loc);
 
     using TypeInfoRef = std::reference_wrapper<const std::type_info>;
     struct Hasher {
@@ -186,8 +189,8 @@ class Validator : public gpu_tracker::Validator {
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;
 
-    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) final;
-    void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo);
+    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
+    void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo, const Location& loc);
 
     void Destroy(AccelerationStructureBuildValidationInfo& as_validation_info);
 
