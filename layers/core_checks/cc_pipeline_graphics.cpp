@@ -448,10 +448,23 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
 // memory was zero-intialized, we need to just do a normal compare on each member
 static bool ComparePipelineMultisampleStateCreateInfo(VkPipelineMultisampleStateCreateInfo a,
                                                       VkPipelineMultisampleStateCreateInfo b) {
+    bool valid_mask = true;
+    if (a.pSampleMask && b.pSampleMask && (a.rasterizationSamples == b.rasterizationSamples)) {
+        uint32_t length = (SampleCountSize(a.rasterizationSamples) + 31) / 32;
+        for (uint32_t i = 0; i < length; i++) {
+            if (a.pSampleMask[i] != b.pSampleMask[i]) {
+                valid_mask = false;
+                break;
+            }
+        }
+    } else if (a.pSampleMask || b.pSampleMask) {
+        valid_mask = false;  // one is not null
+    }
+
     return (a.sType == b.sType) && (a.pNext == b.pNext) && (a.flags == b.flags) &&
            (a.rasterizationSamples == b.rasterizationSamples) && (a.sampleShadingEnable == b.sampleShadingEnable) &&
-           (a.minSampleShading == b.minSampleShading) && (a.pSampleMask == b.pSampleMask) &&
-           (a.alphaToCoverageEnable == b.alphaToCoverageEnable) && (a.alphaToOneEnable == b.alphaToOneEnable);
+           (a.minSampleShading == b.minSampleShading) && (valid_mask) && (a.alphaToCoverageEnable == b.alphaToCoverageEnable) &&
+           (a.alphaToOneEnable == b.alphaToOneEnable);
 }
 
 static bool CompareDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding a, VkDescriptorSetLayoutBinding b) {
