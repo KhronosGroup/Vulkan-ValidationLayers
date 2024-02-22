@@ -1800,7 +1800,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Scratch data buffer is missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag
     {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-        const VkDeviceSize scratch_size = blas.GetSizeInfo().buildScratchSize;
+        const VkDeviceSize scratch_size =
+            blas.GetSizeInfo().buildScratchSize + acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, scratch_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
