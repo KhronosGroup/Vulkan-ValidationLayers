@@ -237,7 +237,6 @@ vvl_sources = [
   "layers/state_tracker/state_object.h",
   "layers/state_tracker/state_tracker.cpp",
   "layers/state_tracker/state_tracker.h",
-  "layers/state_tracker/vertex_index_buffer_state.cpp",
   "layers/state_tracker/vertex_index_buffer_state.h",
   "layers/state_tracker/video_session_state.cpp",
   "layers/state_tracker/video_session_state.h",

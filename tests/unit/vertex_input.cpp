@@ -646,14 +646,103 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vtx_buf.handle(), &offset);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04007");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");  // index 0
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");  // index 2
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
+    TEST_DESCRIPTION("Have Binding not be in a linear order");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription vtx_binding_des[3] = {
+        {3, 0, VK_VERTEX_INPUT_RATE_VERTEX}, {5, 0, VK_VERTEX_INPUT_RATE_VERTEX}, {2, 0, VK_VERTEX_INPUT_RATE_VERTEX}};
+
+    VkVertexInputAttributeDescription vtx_attri_des[3] = {
+        {0, 5, VK_FORMAT_R8G8B8A8_UNORM, 0}, {1, 3, VK_FORMAT_R8G8B8A8_UNORM, 0}, {2, 2, VK_FORMAT_R8G8B8A8_UNORM, 0}};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 3;
+    pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
+    pipe.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    VkDeviceSize offset = 0;
+    // Forget to update binding 2
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 5, 1, &vtx_buf.handle(), &offset);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 3, 1, &vtx_buf.handle(), &offset);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
+    TEST_DESCRIPTION("Test bad binding with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+
+    VkVertexInputBindingDescription2EXT bindings[3] = {vku::InitStructHelper(), vku::InitStructHelper(), vku::InitStructHelper()};
+    bindings[0].binding = 3;
+    bindings[0].divisor = 1;
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[1].binding = 5;
+    bindings[1].divisor = 1;
+    bindings[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[2].binding = 2;
+    bindings[2].divisor = 1;
+    bindings[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attributes[3] = {vku::InitStructHelper(), vku::InitStructHelper(),
+                                                           vku::InitStructHelper()};
+    attributes[0].location = 1;
+    attributes[0].binding = 3;
+    attributes[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attributes[1].location = 2;
+    attributes[1].binding = 5;
+    attributes[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attributes[2].location = 3;
+    attributes[2].binding = 2;
+    attributes[2].format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 5, 1, &buffer.handle(), &offset);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 3, 1, &buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 3, bindings, 3, attributes);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
+    m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
@@ -784,6 +873,206 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
 
     VkDeviceSize offset = 3;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertexStride) {
+    TEST_DESCRIPTION("set the Stride to 3 and use R16");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 3, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attribs = {0, 0, VK_FORMAT_R16_UNORM, 0};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertexStrideDynamicInput) {
+    TEST_DESCRIPTION("set the Stride to 3 in VK_DYNAMIC_STATE_VERTEX_INPUT_EXT and use R16");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
+    binding.binding = 0;
+    binding.divisor = 1;
+    binding.stride = 3;
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attribute = vku::InitStructHelper();
+    attribute.location = 0;
+    attribute.binding = 0;
+    attribute.format = VK_FORMAT_R16_UNORM;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
+    TEST_DESCRIPTION("set the Stride to 3 in vkCmdBindVertexBuffers2 and use R16");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    // valid stride here, but will be ignored
+    VkVertexInputBindingDescription bindings = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attributes = {0, 0, VK_FORMAT_R16_UNORM, 0};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    const VkDeviceSize offset = 0;
+    const VkDeviceSize bad_stride = 3;
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &bad_stride);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertexStrideDynamicStrideArray) {
+    TEST_DESCRIPTION("set the Stride to 3 in vkCmdBindVertexBuffers2 and use R16");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    // valid stride here, but will be ignored
+    VkVertexInputBindingDescription bindings[2] = {{0, 4, VK_VERTEX_INPUT_RATE_VERTEX}, {1, 4, VK_VERTEX_INPUT_RATE_VERTEX}};
+    VkVertexInputAttributeDescription attributes[2] = {{0, 0, VK_FORMAT_R16_UNORM, 0}, {1, 1, VK_FORMAT_R16_UNORM, 0}};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 2;
+    pipe.vi_ci_.pVertexBindingDescriptions = bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.vi_ci_.pVertexAttributeDescriptions = attributes;
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offsets[2] = {0, 0};
+    VkDeviceSize strides[2] = {4, 3};
+    VkBuffer buffers[2] = {buffer.handle(), buffer.handle()};
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 2, buffers, offsets, nullptr, strides);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
+    TEST_DESCRIPTION("set the Stride to invalid, then valid");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
+    binding.binding = 0;
+    binding.divisor = 1;
+    binding.stride = 4;
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attribute = vku::InitStructHelper();
+    attribute.location = 0;
+    attribute.binding = 0;
+    attribute.format = VK_FORMAT_R16_UNORM;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    VkDeviceSize offset = 0;
+
+    const VkDeviceSize bad_stride = 3;
+    const VkDeviceSize good_stride = 4;
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &bad_stride);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // flip order around
+    binding.stride = static_cast<uint32_t>(bad_stride);
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &good_stride);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1413,4 +1702,84 @@ TEST_F(NegativeVertexInput, UnsupportedDynamicStateDivisor) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, BindVertexBufferNull) {
+    TEST_DESCRIPTION("Have null vertex but no nullDescriptor feature");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    VkDeviceSize offsets[2] = {0, 0};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-parameter");
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, VK_NULL_HANDLE, offsets);
+    m_errorMonitor->VerifyFound();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-04001");
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 2, buffers, offsets);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, BindVertexBufferNullDraw) {
+    TEST_DESCRIPTION("Have null vertex but use nullDescriptor feature");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription bindings = {1, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attributes = {0, 1, VK_FORMAT_R8G8B8A8_UNORM, 0};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offsets[2] = {0, 0};
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 2, buffers, offsets);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeVertexInput, VertextBufferDestroyed) {
+    TEST_DESCRIPTION("Verify if VkPipelineVertexInputStateCreateInfo matches vkCmdBindVertexBuffers");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &buffer.handle(), &offset);
+    buffer.destroy();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-recording");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
 }
