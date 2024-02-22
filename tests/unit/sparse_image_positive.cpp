@@ -41,7 +41,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements memory_reqs;
-    vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+    vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
     // Find an image big enough to allow sparse mapping of 2 memory regions
     // Increase the image size until it is at least twice the
     // size of the required alignment, to ensure we can bind both
@@ -51,7 +51,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
         image_create_info.extent.width *= 2;
         image_create_info.extent.height *= 2;
         image.init_no_mem(*m_device, image_create_info);
-        vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+        vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
     }
     // Allocate 2 memory regions of minimum alignment size, bind one at 0, the other
     // at the end of the first
@@ -114,7 +114,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
 
     VkMemoryRequirements memory_reqs;
 
-    vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+    vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = memory_reqs.size;
     bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
@@ -203,13 +203,13 @@ TEST_F(PositiveSparseImage, BindMetadata) {
 
     // Query image memory requirements
     VkMemoryRequirements memory_reqs;
-    vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+    vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
 
     // Query sparse memory requirements
     uint32_t sparse_reqs_count = 0;
-    vk::GetImageSparseMemoryRequirements(m_device->device(), image, &sparse_reqs_count, nullptr);
+    vk::GetImageSparseMemoryRequirements(device(), image, &sparse_reqs_count, nullptr);
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(sparse_reqs_count);
-    vk::GetImageSparseMemoryRequirements(m_device->device(), image, &sparse_reqs_count, sparse_reqs.data());
+    vk::GetImageSparseMemoryRequirements(device(), image, &sparse_reqs_count, sparse_reqs.data());
 
     // Find requirements for metadata aspect
     const VkSparseImageMemoryRequirements *metadata_reqs = nullptr;

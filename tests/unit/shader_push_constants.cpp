@@ -68,57 +68,57 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
 
     // stageFlags of 0
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // offset over limit
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 8};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-offset-00294");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-size-00298");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // offset not multiple of 4
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 1, 8};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-offset-00295");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size of 0
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 0};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-size-00296");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size not multiple of 4
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 7};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-size-00297");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size over limit
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-size-00298");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size over limit of non-zero offset
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 4, maxPushConstantsSize};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-size-00298");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // Sanity check its a valid range before making duplicate
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
-    ASSERT_EQ(VK_SUCCESS, vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout));
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, nullptr);
+    ASSERT_EQ(VK_SUCCESS, vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout));
+    vk::DestroyPipelineLayout(device(), pipeline_layout, nullptr);
 
     // Duplicate ranges
     VkPushConstantRange push_constant_range_duplicate[2] = {push_constant_range, push_constant_range};
     pipeline_layout_info.pushConstantRangeCount = 2;
     pipeline_layout_info.pPushConstantRanges = push_constant_range_duplicate;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, nullptr, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_info, nullptr, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 }
 

@@ -451,7 +451,7 @@ TEST_F(NegativeDeviceQueue, MismatchedQueueFamiliesOnSubmit) {
 
     const uint32_t other_queue_family = queue_families[1];
     VkQueue other_queue;
-    vk::GetDeviceQueue(m_device->device(), other_queue_family, 0, &other_queue);
+    vk::GetDeviceQueue(device(), other_queue_family, 0, &other_queue);
 
     vkt::CommandPool cmd_pool(*m_device, queue_family);
     vkt::CommandBuffer cmd_buff(*m_device, &cmd_pool);

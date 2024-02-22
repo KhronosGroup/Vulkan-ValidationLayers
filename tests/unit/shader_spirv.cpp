@@ -36,7 +36,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         module_create_info.codeSize = 0;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-codeSize-01085");
-        vk::CreateShaderModule(m_device->device(), &module_create_info, nullptr, &module);
+        vk::CreateShaderModule(device(), &module_create_info, nullptr, &module);
         m_errorMonitor->VerifyFound();
     }
 
@@ -49,7 +49,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         module_create_info.codeSize = 4;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid SPIR-V header");
-        vk::CreateShaderModule(m_device->device(), &module_create_info, nullptr, &module);
+        vk::CreateShaderModule(device(), &module_create_info, nullptr, &module);
         m_errorMonitor->VerifyFound();
     }
 
@@ -82,7 +82,7 @@ TEST_F(NegativeShaderSpirv, Magic) {
     module_create_info.codeSize = sizeof(spv);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-07912");
-    vk::CreateShaderModule(m_device->device(), &module_create_info, nullptr, &module);
+    vk::CreateShaderModule(device(), &module_create_info, nullptr, &module);
     m_errorMonitor->VerifyFound();
 }
 

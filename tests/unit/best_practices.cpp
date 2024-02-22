@@ -451,7 +451,7 @@ TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
     pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
 
     m_errorMonitor->VerifyFound();
 }
@@ -493,10 +493,10 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     alloc_info.commandBufferCount = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-vkAllocateCommandBuffers-unusable-secondary");
-    vk::AllocateCommandBuffers(m_device->device(), &alloc_info, &command_buffer);
+    vk::AllocateCommandBuffers(device(), &alloc_info, &command_buffer);
     m_errorMonitor->VerifyFound();
 
-    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
+    vk::FreeCommandBuffers(device(), command_pool.handle(), 1, &command_buffer);
 }
 
 TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
@@ -543,7 +543,7 @@ TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
     alloc_info.memoryTypeIndex = mem_type_index;
 
     VkDeviceMemory memory;
-    vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory);
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
 
     m_errorMonitor->VerifyFound();
 }
@@ -606,7 +606,7 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     rp_info.pSubpasses = &sd;
 
     VkRenderPass rp;
-    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
+    vk::CreateRenderPass(device(), &rp_info, nullptr, &rp);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1488,7 +1488,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-EmptyDescriptorPool");
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
+    vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
     m_errorMonitor->VerifyFound();
 }
 

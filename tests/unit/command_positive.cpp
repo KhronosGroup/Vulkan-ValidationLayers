@@ -216,7 +216,7 @@ TEST_F(PositiveCommand, SecondaryCommandBufferClearColorAttachments) {
     command_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_command_buffer;
-    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &secondary_command_buffer));
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_inheritance_info.renderPass = m_renderPass;
@@ -256,10 +256,10 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     command_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_command_buffer;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &secondary_command_buffer);
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     VkCommandBuffer primary_command_buffer;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &primary_command_buffer);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &primary_command_buffer);
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -310,8 +310,8 @@ TEST_F(PositiveCommand, SecondaryCommandBufferImageLayoutTransitions) {
     submit_info.pCommandBuffers = &primary_command_buffer;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_device->wait();
-    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &secondary_command_buffer);
-    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &primary_command_buffer);
+    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &secondary_command_buffer);
+    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &primary_command_buffer);
 }
 
 TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
@@ -446,12 +446,12 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
 
     VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
     VkFence fence;
-    vk::CreateFence(m_device->device(), &fci, nullptr, &fence);
+    vk::CreateFence(device(), &fci, nullptr, &fence);
 
     VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
     VkSemaphore s1, s2;
-    vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s1);
-    vk::CreateSemaphore(m_device->device(), &sci, nullptr, &s2);
+    vk::CreateSemaphore(device(), &sci, nullptr, &s1);
+    vk::CreateSemaphore(device(), &sci, nullptr, &s2);
 
     // Submit CB once signaling s1, with fence so we can roll forward to its retirement.
     VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &m_commandBuffer->handle(), 1, &s1};
@@ -462,16 +462,16 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
 
     // Wait for fence.
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     // CB is still in flight from second submission, but semaphore s1 is no
     // longer in flight. delete it.
-    vk::DestroySemaphore(m_device->device(), s1, nullptr);
+    vk::DestroySemaphore(device(), s1, nullptr);
 
     // Force device idle and clean up remaining objects
     m_device->wait();
-    vk::DestroySemaphore(m_device->device(), s2, nullptr);
-    vk::DestroyFence(m_device->device(), fence, nullptr);
+    vk::DestroySemaphore(device(), s2, nullptr);
+    vk::DestroyFence(device(), fence, nullptr);
 }
 
 TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
@@ -501,14 +501,14 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
 
     VkCommandBuffer command_buffer;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool;
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &command_buffer);
 
     // Begin our cmd buffer with renderpass using our framebuffer
     VkRenderPassBeginInfo rpbi =
@@ -520,7 +520,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     vk::CmdEndRenderPass(command_buffer);
     vk::EndCommandBuffer(command_buffer);
     // Destroy command pool to implicitly free command buffer
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::DestroyCommandPool(device(), command_pool, NULL);
 }
 
 TEST_F(PositiveCommand, ClearRectWith2DArray) {
@@ -668,14 +668,14 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
         constexpr int iteration_count = 1000;
         for (int frame = 0; frame < iteration_count; frame++) {
             std::array<VkCommandBuffer, command_buffers_per_pool> command_buffers;
-            ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(m_device->device(), &commands_allocate_info, command_buffers.data()));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(device(), &commands_allocate_info, command_buffers.data()));
             for (int i = 0; i < command_buffers_per_pool; i++) {
                 ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(command_buffers[i], &begin_info));
                 // Record debug label. It's a required step to reproduce the original issue
                 vk::CmdInsertDebugUtilsLabelEXT(command_buffers[i], &label);
                 ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(command_buffers[i]));
             }
-            vk::FreeCommandBuffers(m_device->device(), pool.handle(), command_buffers_per_pool, command_buffers.data());
+            vk::FreeCommandBuffers(device(), pool.handle(), command_buffers_per_pool, command_buffers.data());
         }
     };
     std::vector<std::thread> workers;
@@ -840,12 +840,12 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
     copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
     copy_region.dstSubresource = copy_region.srcSubresource;
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_a.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     // layerCount can explicitly list value
     copy_region.dstSubresource.layerCount = 6;
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_a.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_commandBuffer->end();
 }
@@ -891,7 +891,7 @@ TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
     copy_region.dstOffset = {0, 0, 0};
 
     m_commandBuffer->begin();
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_1D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_1D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_commandBuffer->end();
 }

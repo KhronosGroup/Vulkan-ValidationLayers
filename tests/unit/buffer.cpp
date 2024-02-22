@@ -203,7 +203,7 @@ TEST_F(NegativeBuffer, BufferViewObject) {
         bvci.format = VK_FORMAT_R32_SFLOAT;
         bvci.range = VK_WHOLE_SIZE;
 
-        err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+        err = vk::CreateBufferView(device(), &bvci, NULL, &view);
         ASSERT_EQ(VK_SUCCESS, err);
     }
     // First Destroy buffer underlying view which should hit error in CV
@@ -215,13 +215,13 @@ TEST_F(NegativeBuffer, BufferViewObject) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     descriptor_write.pTexelBufferView = &view;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // Now destroy view itself and verify same error, which is hit in PV this time
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(device(), view, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02994");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
 
@@ -660,7 +660,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     const uint32_t buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 

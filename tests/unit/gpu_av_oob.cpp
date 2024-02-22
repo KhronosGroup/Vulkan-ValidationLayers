@@ -196,7 +196,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     descriptor_write.descriptorType = descriptor_type;
     descriptor_write.pBufferInfo = &buffer_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     vkt::Shader *vso = nullptr;
     vkt::Shader *fso = nullptr;

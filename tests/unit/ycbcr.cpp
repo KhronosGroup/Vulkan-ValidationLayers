@@ -460,7 +460,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     copy_region.srcOffset = {3, 4, 0};  // source offset x
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07278");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-01783");
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_422.image(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_422.handle(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset = {0, 0, 0};
@@ -470,7 +470,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07281");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-01784");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00150");
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, image_422.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_ucmp.handle(), VK_IMAGE_LAYOUT_GENERAL, image_422.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.dstOffset = {0, 0, 0};
@@ -479,12 +479,12 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     copy_region.extent = {31, 60, 1};  // 422 source, extent.x
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01728");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-01783");
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_422.image(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_422.handle(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     // 422 dest
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, image_422.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_ucmp.handle(), VK_IMAGE_LAYOUT_GENERAL, image_422.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     copy_region.dstOffset = {0, 0, 0};
 
@@ -551,34 +551,34 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     copy_region.dstOffset = {0, 0, 0};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-08713");
-    vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-08713");
-    vk::CmdCopyImage(m_commandBuffer->handle(), mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), mp3_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-08714");
-    vk::CmdCopyImage(m_commandBuffer->handle(), mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), mp3_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-08714");
-    vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01556");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-None-01549");  // since also non-compatiable
-    vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, sp_image.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.handle(), VK_IMAGE_LAYOUT_GENERAL, sp_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
@@ -586,7 +586,7 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01557");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-None-01549");  // since also non-compatiable
-    vk::CmdCopyImage(m_commandBuffer->handle(), sp_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.image(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), sp_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
@@ -1357,7 +1357,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
         vkt::Image image_obj(*m_device, ci, vkt::set_layout);
 
         VkImageViewCreateInfo ivci = vku::InitStructHelper();
-        ivci.image = image_obj.image();
+        ivci.image = image_obj.handle();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.format = VK_FORMAT_R8G8_UNORM;  // Compat is VK_FORMAT_R8_UNORM
         ivci.subresourceRange.layerCount = 1;
@@ -1395,7 +1395,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
         vkt::Image image_obj(*m_device, ci, vkt::set_layout);
 
         VkImageViewCreateInfo ivci = vku::InitStructHelper();
-        ivci.image = image_obj.image();
+        ivci.image = image_obj.handle();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.subresourceRange.layerCount = 1;
         ivci.subresourceRange.baseMipLevel = 0;
@@ -1457,7 +1457,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
         vkt::Image image(*m_device, ci, vkt::set_layout);
 
-        ivci.image = image.image();
+        ivci.image = image.handle();
         ivci.format = VK_FORMAT_R8_UNORM;
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
 
@@ -1484,7 +1484,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
         ycbcr_info.conversion = conversion;
 
-        ivci.image = image.image();
+        ivci.image = image.handle();
         ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
         ivci.pNext = &ycbcr_info;

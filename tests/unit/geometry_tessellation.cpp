@@ -941,7 +941,7 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     VkDescriptorSet descriptorSet;
-    err = vk::AllocateDescriptorSets(m_device->device(), ds_pool.handle(),
+    err = vk::AllocateDescriptorSets(device(), ds_pool.handle(),
 VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
 
@@ -999,15 +999,15 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     VkPipeline pipeline;
     VkPipelineCache pipelineCache;
 
-    err = vk::CreatePipelineCache(m_device->device(), &pc_ci, NULL,
+    err = vk::CreatePipelineCache(device(), &pc_ci, NULL,
 &pipelineCache);
     ASSERT_EQ(VK_SUCCESS, err);
-    err = vk::CreateGraphicsPipelines(m_device->device(), pipelineCache, 1,
+    err = vk::CreateGraphicsPipelines(device(), pipelineCache, 1,
 &gp_ci, NULL, &pipeline);
 
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyPipelineCache(m_device->device(), pipelineCache, NULL);
+    vk::DestroyPipelineCache(device(), pipelineCache, NULL);
 }
 */
 

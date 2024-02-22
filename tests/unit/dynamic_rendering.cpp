@@ -74,7 +74,7 @@ void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const 
     cmd_buffer_allocate_info.commandBufferCount = 0x1;
 
     VkCommandBuffer secondary_cmd_buffer;
-    VkResult err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
+    VkResult err = vk::AllocateCommandBuffers(device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
     ASSERT_EQ(VK_SUCCESS, err);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-06003");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-colorAttachmentCount-06004");
@@ -1635,7 +1635,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
     cmd_buffer_allocate_info.commandBufferCount = 0x1;
 
     VkCommandBuffer secondary_cmd_buffer;
-    VkResult err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
+    VkResult err = vk::AllocateCommandBuffers(device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
     // Invalid RenderPass
@@ -2647,7 +2647,7 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoStencilAttachmentFormat
     cmd_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_cmd_buffer;
-    vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
+    vk::AllocateCommandBuffers(device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541");
     vk::BeginCommandBuffer(secondary_cmd_buffer, &cmd_buffer_begin_info);

@@ -1083,14 +1083,14 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     validationCacheCreateInfo.pInitialData = NULL;
     validationCacheCreateInfo.flags = 0;
     VkValidationCacheEXT validationCache = VK_NULL_HANDLE;
-    VkResult res = vk::CreateValidationCacheEXT(m_device->device(), &validationCacheCreateInfo, nullptr, &validationCache);
+    VkResult res = vk::CreateValidationCacheEXT(device(), &validationCacheCreateInfo, nullptr, &validationCache);
     ASSERT_EQ(VK_SUCCESS, res);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMergeValidationCachesEXT-dstCache-01536");
-    res = vk::MergeValidationCachesEXT(m_device->device(), validationCache, 1, &validationCache);
+    res = vk::MergeValidationCachesEXT(device(), validationCache, 1, &validationCache);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyValidationCacheEXT(m_device->device(), validationCache, nullptr);
+    vk::DestroyValidationCacheEXT(device(), validationCache, nullptr);
 }
 
 TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
@@ -1099,7 +1099,7 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     RETURN_IF_SKIP(Init());
 
     VkQueue queue = VK_NULL_HANDLE;
-    vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
+    vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 0, &queue);
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 5);
     m_commandBuffer->begin();
@@ -1453,7 +1453,7 @@ TEST_F(VkLayerTest, ZeroBitmask) {
     VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
     semaphore_ci.flags = 1;
     VkSemaphore semaphore = VK_NULL_HANDLE;
-    vk::CreateSemaphore(m_device->device(), &semaphore_ci, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &semaphore_ci, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
 

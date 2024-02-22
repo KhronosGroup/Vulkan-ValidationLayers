@@ -51,23 +51,23 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
+    err = vk::BindBufferMemory(device(), buffer, mem, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_commandBuffer->begin();
@@ -76,7 +76,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     // Destroy buffer dependency prior to submit to cause ERROR
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::DestroyBuffer(device(), buffer, NULL);
 
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
@@ -94,7 +94,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
@@ -105,7 +105,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     vkt::DeviceMemory buffer_mem(*m_device, alloc_info);
     ASSERT_TRUE(buffer_mem.initialized());
 
-    ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
+    ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(device(), buffer.handle(), buffer_mem.handle(), 0));
 
     m_commandBuffer->begin();
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -145,7 +145,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
 
     image_mem.init(*m_device, alloc_info);
 
-    auto err = vk::BindImageMemory(m_device->device(), image.handle(), image_mem.handle(), 0);
+    auto err = vk::BindImageMemory(device(), image.handle(), image_mem.handle(), 0);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_commandBuffer->begin();
@@ -182,23 +182,23 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
+    err = vk::BindBufferMemory(device(), buffer, mem, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
@@ -252,10 +252,10 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &image_mem);
+    err = vk::AllocateMemory(device(), &alloc_info, NULL, &image_mem);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    err = vk::BindImageMemory(m_device->device(), image, image_mem, 0);
+    err = vk::BindImageMemory(device(), image, image_mem, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
@@ -312,7 +312,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         bvci.format = VK_FORMAT_R32_SFLOAT;
         bvci.range = VK_WHOLE_SIZE;
 
-        VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+        VkResult err = vk::CreateBufferView(device(), &bvci, NULL, &view);
         ASSERT_EQ(VK_SUCCESS, err);
 
         descriptor_set.WriteDescriptorBufferView(0, view);
@@ -350,7 +350,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(device(), view, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");  // bufferView
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -358,7 +358,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     vkt::Buffer buffer(*m_device, buffer_create_info);
 
     bvci.buffer = buffer.handle();
-    VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+    VkResult err = vk::CreateBufferView(device(), &bvci, NULL, &view);
     ASSERT_EQ(VK_SUCCESS, err);
     descriptor_set.Clear();
     descriptor_set.WriteDescriptorBufferView(0, view);
@@ -371,7 +371,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     m_commandBuffer->end();
 
     // Delete BufferView in order to invalidate cmd buffer
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(device(), view, NULL);
     // Now attempt submit of cmd buffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->submit(*m_commandBuffer, false);
@@ -457,11 +457,11 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
             {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
             {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
         };
-        err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
+        err = vk::CreateImageView(device(), &ivci, nullptr, &view);
         ASSERT_EQ(VK_SUCCESS, err);
 
         VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 32, 32, 1};
-        err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
+        err = vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
         ASSERT_EQ(VK_SUCCESS, err);
 
         // Just use default renderpass with our framebuffer
@@ -480,8 +480,8 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyImageView(m_device->device(), view, nullptr);
+    vk::DestroyFramebuffer(device(), fb, nullptr);
+    vk::DestroyImageView(device(), view, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
@@ -533,7 +533,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     // Free the attachment image memory, then create framebuffer.
     delete image_memory;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkFramebufferCreateInfo-BoundResourceFreedMemoryAccess");
-    vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
+    vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
     m_errorMonitor->VerifyFound();
 }
 
@@ -576,7 +576,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     m_default_queue->submit(*m_commandBuffer);
     // Destroy pool while in-flight, causing error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
-    vk::DestroyDescriptorPool(m_device->device(), pipe.descriptor_set_->pool_, NULL);
+    vk::DestroyDescriptorPool(device(), pipe.descriptor_set_->pool_, NULL);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 
@@ -601,7 +601,7 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     VkFramebufferCreateInfo fci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1};
     VkFramebuffer fb;
-    vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
+    vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
 
     // Just use default renderpass with our framebuffer
     m_renderPassBeginInfo.framebuffer = fb;
@@ -614,13 +614,13 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     m_default_queue->submit(*m_commandBuffer);
     // Destroy framebuffer while in-flight
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyFramebuffer-framebuffer-00892");
-    vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    vk::DestroyFramebuffer(device(), fb, NULL);
     m_errorMonitor->VerifyFound();
     // Wait for queue to complete so we can safely destroy everything
     m_default_queue->wait();
     m_errorMonitor->SetUnexpectedError("If framebuffer is not VK_NULL_HANDLE, framebuffer must be a valid VkFramebuffer handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Framebuffer obj");
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
+    vk::DestroyFramebuffer(device(), fb, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
@@ -707,7 +707,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     m_default_queue->submit(*m_commandBuffer);
     // Destroy image attached to framebuffer while in-flight
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyImage-image-01000");
-    vk::DestroyImage(m_device->device(), image.handle(), NULL);
+    vk::DestroyImage(device(), image.handle(), NULL);
     m_errorMonitor->VerifyFound();
     // Wait for queue to complete so we can safely destroy image and other objects
     m_default_queue->wait();
@@ -724,11 +724,11 @@ TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
 
     VkEvent event;
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk::CreateEvent(device(), &event_create_info, nullptr, &event);
     vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     m_commandBuffer->end();
-    vk::DestroyEvent(m_device->device(), event, nullptr);
+    vk::DestroyEvent(device(), event, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->submit(*m_commandBuffer, false);
@@ -745,10 +745,10 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
     VkSemaphore semaphore;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore));
     VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     VkFence fence;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateFence(m_device->device(), &fence_create_info, nullptr, &fence));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateFence(device(), &fence_create_info, nullptr, &fence));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
@@ -761,7 +761,7 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
 
     VkEvent event;
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk::CreateEvent(device(), &event_create_info, nullptr, &event);
 
     m_commandBuffer->begin();
 
@@ -781,27 +781,27 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyEvent-event-01145");
-    vk::DestroyEvent(m_device->device(), event, nullptr);
+    vk::DestroyEvent(device(), event, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroySemaphore-semaphore-05149");
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
+    vk::DestroySemaphore(device(), semaphore, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyFence-fence-01120");
-    vk::DestroyFence(m_device->device(), fence, nullptr);
+    vk::DestroyFence(device(), fence, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->wait();
     m_errorMonitor->SetUnexpectedError("If semaphore is not VK_NULL_HANDLE, semaphore must be a valid VkSemaphore handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Semaphore obj");
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
+    vk::DestroySemaphore(device(), semaphore, nullptr);
     m_errorMonitor->SetUnexpectedError("If fence is not VK_NULL_HANDLE, fence must be a valid VkFence handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Fence obj");
-    vk::DestroyFence(m_device->device(), fence, nullptr);
+    vk::DestroyFence(device(), fence, nullptr);
     m_errorMonitor->SetUnexpectedError("If event is not VK_NULL_HANDLE, event must be a valid VkEvent handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Event obj");
-    vk::DestroyEvent(m_device->device(), event, nullptr);
+    vk::DestroyEvent(device(), event, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
@@ -851,7 +851,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     VkSampler sampler;
 
     VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler);
     ASSERT_EQ(VK_SUCCESS, err);
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -889,13 +889,13 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     // Submit cmd buffer and then destroy imageView while in-flight
     m_default_queue->submit(*m_commandBuffer);
 
-    vk::DestroyImageView(m_device->device(), view, nullptr);
+    vk::DestroyImageView(device(), view, nullptr);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
     // Now we can actually destroy imageView
     m_errorMonitor->SetUnexpectedError("If imageView is not VK_NULL_HANDLE, imageView must be a valid VkImageView handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove ImageView obj");
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    vk::DestroySampler(device(), sampler, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
@@ -918,7 +918,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
 
-    VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
+    VkResult err = vk::CreateBufferView(device(), &bvci, NULL, &view);
     ASSERT_EQ(VK_SUCCESS, err);
 
     char const *fsSource = R"glsl(
@@ -960,13 +960,13 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     // Submit cmd buffer and then destroy bufferView while in-flight
     m_default_queue->submit(*m_commandBuffer);
 
-    vk::DestroyBufferView(m_device->device(), view, nullptr);
+    vk::DestroyBufferView(device(), view, nullptr);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
     // Now we can actually destroy bufferView
     m_errorMonitor->SetUnexpectedError("If bufferView is not VK_NULL_HANDLE, bufferView must be a valid VkBufferView handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove BufferView obj");
-    vk::DestroyBufferView(m_device->device(), view, NULL);
+    vk::DestroyBufferView(device(), view, NULL);
 }
 
 TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
@@ -977,7 +977,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
-    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    vk::CreateSampler(device(), &sampler_ci, NULL, &sampler);
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -1014,14 +1014,14 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     // Submit cmd buffer and then destroy sampler while in-flight
     m_default_queue->submit(*m_commandBuffer);
 
-    vk::DestroySampler(m_device->device(), sampler, nullptr);  // Destroyed too soon
+    vk::DestroySampler(device(), sampler, nullptr);  // Destroyed too soon
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 
     // Now we can actually destroy sampler
     m_errorMonitor->SetUnexpectedError("If sampler is not VK_NULL_HANDLE, sampler must be a valid VkSampler handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Sampler obj");
-    vk::DestroySampler(m_device->device(), sampler, NULL);  // Destroyed for real
+    vk::DestroySampler(device(), sampler, NULL);  // Destroyed for real
 }
 
 TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
@@ -1030,7 +1030,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
 
     VkEvent event;
     VkEventCreateInfo evci = vku::InitStructHelper();
-    VkResult result = vk::CreateEvent(m_device->device(), &evci, NULL, &event);
+    VkResult result = vk::CreateEvent(device(), &evci, NULL, &event);
     ASSERT_EQ(VK_SUCCESS, result);
 
     m_commandBuffer->begin();
@@ -1039,7 +1039,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
     // Destroy event dependency prior to submit to cause ERROR
-    vk::DestroyEvent(m_device->device(), event, NULL);
+    vk::DestroyEvent(device(), event, NULL);
 
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
@@ -1209,12 +1209,12 @@ TEST_F(NegativeObjectLifetime, FreeCommandBuffersNull) {
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
-    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, nullptr);
+    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 2, nullptr);
     m_errorMonitor->VerifyFound();
 
     VkCommandBuffer invalid_cb = CastToHandle<VkCommandBuffer, uintptr_t>(0xbaadbeef);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
-    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &invalid_cb);
+    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 1, &invalid_cb);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1231,11 +1231,11 @@ TEST_F(NegativeObjectLifetime, FreeDescriptorSetsNull) {
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
-    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 2, nullptr);
+    vk::FreeDescriptorSets(device(), ds_pool.handle(), 2, nullptr);
     m_errorMonitor->VerifyFound();
 
     VkDescriptorSet invalid_set = CastToHandle<VkDescriptorSet, uintptr_t>(0xbaadbeef);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
-    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &invalid_set);
+    vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &invalid_set);
     m_errorMonitor->VerifyFound();
 }

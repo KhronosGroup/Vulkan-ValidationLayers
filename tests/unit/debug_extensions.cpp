@@ -400,7 +400,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
-    name_info.objectHandle = (uint64_t)second_device.device();
+    name_info.objectHandle = (uint64_t)second_device.handle();
     name_info.pObjectName = object_name;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874");
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);

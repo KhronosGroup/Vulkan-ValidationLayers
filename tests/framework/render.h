@@ -68,7 +68,7 @@ struct SurfaceInformation {
 class VkRenderFramework : public VkTestFramework {
   public:
     VkInstance instance() const { return instance_; }
-    VkDevice device() const { return m_device->device(); }
+    VkDevice device() const { return m_device->handle(); }
     vkt::Device *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu() const;
     VkRenderPass renderPass() const { return m_renderPass; }

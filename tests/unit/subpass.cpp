@@ -403,7 +403,7 @@ TEST_F(NegativeSubpass, SubpassIndices) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-pDependencies-06866");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-pDependencies-06867");
-    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass);
+    vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
     if (rp2_supported) {
@@ -411,7 +411,7 @@ TEST_F(NegativeSubpass, SubpassIndices) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-srcSubpass-02526");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-dstSubpass-02527");
-        vk::CreateRenderPass2KHR(m_device->device(), create_info2.ptr(), nullptr, &render_pass);
+        vk::CreateRenderPass2KHR(device(), create_info2.ptr(), nullptr, &render_pass);
         m_errorMonitor->VerifyFound();
     }
 }

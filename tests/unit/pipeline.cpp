@@ -646,7 +646,7 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = vku::InitStructHelper();
-    VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
+    VkResult err = vk::CreatePipelineLayout(device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -714,7 +714,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = vku::InitStructHelper();
-    VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
+    VkResult err = vk::CreatePipelineLayout(device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info =
@@ -787,7 +787,7 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
     cache_create_info.initialDataSize = 0;
     cache_create_info.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892");
-    vk::CreatePipelineCache(m_device->device(), &cache_create_info, nullptr, &pipeline_cache);
+    vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
     m_errorMonitor->VerifyFound();
 }
 
@@ -983,7 +983,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
         VkComputePipelineCreateInfo create_infos[3] = {pipe_0.cp_ci_, pipe_1.cp_ci_, pipe_0.cp_ci_};
         VkPipeline pipelines[3];
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
-        vk::CreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 3, create_infos, nullptr, pipelines);
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 3, create_infos, nullptr, pipelines);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1638,7 +1638,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     descriptor_writes[1].descriptorCount = 1;  // Write 4 bytes to val
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_writes[1].pBufferInfo = &uniform_buffer_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
 
     char const *csSource = R"glsl(
         #version 450
@@ -1808,16 +1808,16 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278");
-    vk::GetPipelineExecutableInternalRepresentationsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
+    vk::GetPipelineExecutableInternalRepresentationsKHR(device(), &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274");
-    vk::GetPipelineExecutableStatisticsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
+    vk::GetPipelineExecutableStatisticsKHR(device(), &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
-    vk::GetPipelineExecutablePropertiesKHR(m_device->device(), &pipeline_info, &count, nullptr);
+    vk::GetPipelineExecutablePropertiesKHR(device(), &pipeline_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1970,7 +1970,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     descriptor_writes[2].pImageInfo = &seperate_sampler_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, nullptr);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -2008,7 +2008,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     {
         combined_sampler_info.sampler = sampler_mipmap.handle();
         seperate_sampler_info.sampler = sampler_mipmap.handle();
-        vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, nullptr);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0,
                                   1, &combined_descriptor_set.set_, 0, nullptr);
 
@@ -2179,7 +2179,7 @@ TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
     VkPipelineCache srcCaches[2] = {other_pipe.pipeline_cache_, pipe.pipeline_cache_};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMergePipelineCaches-dstCache-00770");
-    vk::MergePipelineCaches(m_device->device(), dstCache, 2, srcCaches);
+    vk::MergePipelineCaches(device(), dstCache, 2, srcCaches);
     m_errorMonitor->VerifyFound();
 }
 

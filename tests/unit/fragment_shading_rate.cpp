@@ -1003,14 +1003,14 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
     rpci.flags = VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderPassCreateInfo2-flags-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-flags-04521");
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     rpci.flags = 0;
     attach_desc.format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     if (attach_desc.format != VK_FORMAT_UNDEFINED) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pAttachments-04586");
-        vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
     }
     attach_desc.format = VK_FORMAT_R8_UINT;
@@ -1018,7 +1018,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
     attach.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524");
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -1038,7 +1038,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
     }
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
@@ -1048,7 +1048,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529");
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
@@ -1058,7 +1058,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
@@ -1068,7 +1068,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
         fsr_attachment.shadingRateAttachmentTexelSize.width = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531");
-        vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
         fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     }
@@ -1079,7 +1079,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
         fsr_attachment.shadingRateAttachmentTexelSize.height = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.height;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532");
-        vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
         fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     }
@@ -1117,7 +1117,7 @@ TEST_F(NegativeFragmentShadingRate, LoadOpClear) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pAttachments-09387");
     VkRenderPass rp;
-    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2542,7 +2542,7 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
         auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, m_renderPass, 1u, &view.handle(), 256u, 256u, 1u);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00891");
         m_errorMonitor->SetUnexpectedError("VUID-VkFramebufferCreateInfo-pAttachments-00880");
-        vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
+        vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
         m_errorMonitor->VerifyFound();
     }
 

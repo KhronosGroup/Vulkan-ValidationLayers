@@ -149,7 +149,7 @@ The few common patterns that will cover 99% of cases are:
 - **By default**, all Vulkan API calls are expected to succeed. In the past, one would have to "wrap" API calls in `ExpectSuccess`/`VerifyNotFound` to ensure an API call did not trigger any errors. This is no longer the case. e.g.,
 ```cpp
 // m_errorMonitor->ExpectSuccess(); <- implicit
-vk::CreateSampler(m_device->device(), &sci, nullptr, &samplers[0]);
+vk::CreateSampler(device(), &sci, nullptr, &samplers[0]);
 // m_errorMonitor->VerifyNoutFound(); <- implicit
 ```
 The `ExpectSuccess` and `VerifyNotFound` calls are now implicit.
@@ -157,11 +157,11 @@ The `ExpectSuccess` and `VerifyNotFound` calls are now implicit.
 ```cpp
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
 // The following API call is expected to trigger 01646 and _only_ 01646
-vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+vk::CreateSampler(device(), &sci, NULL, &BadSampler);
 m_errorMonitor->VerifyFound();
 
 // All calls after m_errorMonitor->VerifyFound() are expected to not trigger any errors. e.g., the following API call should succeed with no validation errors being triggered.
-vk::CreateImage(m_device->device(), &ci, nullptr, &mp_image);
+vk::CreateImage(device(), &ci, nullptr, &mp_image);
 
 ```
 - When it is possible another VUID will be triggered that you are not testing. This usually happens due to making something invalid can cause a chain effect causing other things to be invalid as well.

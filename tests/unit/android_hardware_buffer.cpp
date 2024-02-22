@@ -172,7 +172,7 @@ TEST_F(NegativeAndroidHardwareBuffer, GpuDataBuffer) {
     import_ahb_Info.buffer = ahb.handle();
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
@@ -198,7 +198,7 @@ TEST_F(NegativeAndroidHardwareBuffer, AllocationSize) {
     import_ahb_Info.buffer = ahb.handle();
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
@@ -237,7 +237,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageColor) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkExternalFormatANDROID external_format = vku::InitStructHelper();
     external_format.externalFormat = ahb_fmt_props.externalFormat;
@@ -289,7 +289,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageDS) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     if (ahb_fmt_props.format != VK_FORMAT_S8_UINT) {
         GTEST_SKIP() << "Driver bug: Didn't turn AHB format into VK_FORMAT_S8_UINT";
@@ -351,7 +351,7 @@ TEST_F(NegativeAndroidHardwareBuffer, MipmapChainComplete) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkImageCreateInfo ici = vku::InitStructHelper();
     ici.imageType = VK_IMAGE_TYPE_2D;
@@ -401,7 +401,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NoMipmapChain) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkImageCreateInfo ici = vku::InitStructHelper();
     ici.imageType = VK_IMAGE_TYPE_2D;
@@ -450,7 +450,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImageDimensions) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkExternalFormatANDROID external_format = vku::InitStructHelper();
     external_format.externalFormat = ahb_fmt_props.externalFormat;
@@ -496,7 +496,7 @@ TEST_F(NegativeAndroidHardwareBuffer, UnknownFormat) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkImageCreateInfo ici = vku::InitStructHelper();
     ici.imageType = VK_IMAGE_TYPE_2D;
@@ -544,7 +544,7 @@ TEST_F(NegativeAndroidHardwareBuffer, GpuUsage) {
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
     m_errorMonitor->VerifyFound();
 
     // Since we are creating a invalid AHB for the safe of getting the below AHB, there is a chance the driver will not be forgiving
@@ -605,7 +605,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocateImage) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkExternalFormatANDROID external_format = vku::InitStructHelper();
     external_format.externalFormat = ahb_fmt_props.externalFormat;
@@ -651,7 +651,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocateBuffer) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkExternalMemoryBufferCreateInfo ext_buf_info = vku::InitStructHelper();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -1199,7 +1199,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-size-01049");
-    vk::BindImageMemory(m_device->device(), image.handle(), memory, 0);
+    vk::BindImageMemory(device(), image.handle(), memory, 0);
     m_errorMonitor->VerifyFound();
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
@@ -1210,7 +1210,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
-    vk::BindImageMemory2KHR(m_device->device(), 1, &bind_image_info);
+    vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1226,7 +1226,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DeviceImageMemoryReq) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     // The spec says the driver must not return zero, even if a VkFormat is returned with it, some older drivers do as a driver bug
     if (ahb_fmt_props.externalFormat == 0) {
@@ -1266,10 +1266,10 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBProperties) {
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-parameter");
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), nullptr, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), nullptr, &ahb_props);
     m_errorMonitor->VerifyFound();
 
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 }
 
 TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
@@ -1289,7 +1289,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
-    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb.handle(), &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper();
     import_ahb_Info.buffer = nullptr;  // invalid
