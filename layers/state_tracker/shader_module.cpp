@@ -2310,6 +2310,12 @@ AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
     info.storage_class = pointer->Word(2);
 
     const Instruction* data_type = FindDef(pointer->Word(3));
+
+    if (data_type->Opcode() == spv::OpTypeVector) {
+        info.vector_size = data_type->Word(3);
+        data_type = FindDef(data_type->Word(2));
+    }
+
     info.type = data_type->Opcode();
 
     info.bit_width = data_type->GetBitWidth();
