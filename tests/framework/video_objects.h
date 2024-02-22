@@ -338,20 +338,20 @@ class BitstreamBuffer {
             create_info.usage = usage;
             create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-            ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(device_->device(), &create_info, nullptr, &buffer_));
+            ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(device_->handle(), &create_info, nullptr, &buffer_));
         }
 
         {
             VkMemoryRequirements mem_req;
-            vk::GetBufferMemoryRequirements(device_->device(), buffer_, &mem_req);
+            vk::GetBufferMemoryRequirements(device_->handle(), buffer_, &mem_req);
 
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             VkMemoryPropertyFlags mem_props = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
             ASSERT_TRUE(device_->phy().set_memory_type(mem_req.memoryTypeBits, &alloc_info, mem_props));
             alloc_info.allocationSize = mem_req.size;
 
-            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->device(), &alloc_info, nullptr, &memory_));
-            ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(device_->device(), buffer_, memory_, 0));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory_));
+            ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(device_->handle(), buffer_, memory_, 0));
         }
 
         {
@@ -376,8 +376,8 @@ class BitstreamBuffer {
     }
 
     void Destroy() {
-        vk::DestroyBuffer(device_->device(), buffer_, nullptr);
-        vk::FreeMemory(device_->device(), memory_, nullptr);
+        vk::DestroyBuffer(device_->handle(), buffer_, nullptr);
+        vk::FreeMemory(device_->handle(), memory_, nullptr);
     }
 
     vkt::Device* device_{};
@@ -440,20 +440,20 @@ class VideoPictureResource {
             create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-            ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device_->device(), &create_info, nullptr, &image_));
+            ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device_->handle(), &create_info, nullptr, &image_));
         }
 
         {
             VkMemoryRequirements mem_req;
-            vk::GetImageMemoryRequirements(device_->device(), image_, &mem_req);
+            vk::GetImageMemoryRequirements(device_->handle(), image_, &mem_req);
 
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             VkMemoryPropertyFlags mem_props = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
             ASSERT_TRUE(device_->phy().set_memory_type(mem_req.memoryTypeBits, &alloc_info, mem_props));
             alloc_info.allocationSize = mem_req.size;
 
-            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->device(), &alloc_info, nullptr, &memory_));
-            ASSERT_EQ(VK_SUCCESS, vk::BindImageMemory(device_->device(), image_, memory_, 0));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory_));
+            ASSERT_EQ(VK_SUCCESS, vk::BindImageMemory(device_->handle(), image_, memory_, 0));
         }
 
         {
@@ -464,7 +464,7 @@ class VideoPictureResource {
             create_info.components = format_props.componentMapping;
             create_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, layers};
 
-            ASSERT_EQ(VK_SUCCESS, vk::CreateImageView(device_->device(), &create_info, nullptr, &image_view_));
+            ASSERT_EQ(VK_SUCCESS, vk::CreateImageView(device_->handle(), &create_info, nullptr, &image_view_));
         }
 
         {
@@ -499,9 +499,9 @@ class VideoPictureResource {
     }
 
     void Destroy() {
-        vk::DestroyImageView(device_->device(), image_view_, nullptr);
-        vk::DestroyImage(device_->device(), image_, nullptr);
-        vk::FreeMemory(device_->device(), memory_, nullptr);
+        vk::DestroyImageView(device_->handle(), image_view_, nullptr);
+        vk::DestroyImage(device_->handle(), image_, nullptr);
+        vk::FreeMemory(device_->handle(), memory_, nullptr);
     }
 
   private:
@@ -1950,12 +1950,13 @@ class VideoContext {
         ASSERT_TRUE(session_ != VK_NULL_HANDLE);
 
         uint32_t mem_req_count = 0;
-        ASSERT_EQ(VK_SUCCESS, vk.GetVideoSessionMemoryRequirementsKHR(device_->device(), session_, &mem_req_count, nullptr));
+        ASSERT_EQ(VK_SUCCESS, vk.GetVideoSessionMemoryRequirementsKHR(device_->handle(), session_, &mem_req_count, nullptr));
         if (mem_req_count == 0) return;
 
         std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count,
                                                                   vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
-        ASSERT_EQ(VK_SUCCESS, vk.GetVideoSessionMemoryRequirementsKHR(device_->device(), session_, &mem_req_count, mem_reqs.data()));
+        ASSERT_EQ(VK_SUCCESS,
+                  vk.GetVideoSessionMemoryRequirementsKHR(device_->handle(), session_, &mem_req_count, mem_reqs.data()));
 
         std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
         for (uint32_t i = 0; i < mem_req_count; ++i) {
@@ -1965,7 +1966,7 @@ class VideoContext {
             alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
             VkDeviceMemory memory = VK_NULL_HANDLE;
-            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->device(), &alloc_info, nullptr, &memory));
+            ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory));
             session_memory_.push_back(memory);
 
             bind_info[i].memoryBindIndex = mem_reqs[i].memoryBindIndex;
@@ -1974,7 +1975,8 @@ class VideoContext {
             bind_info[i].memorySize = mem_reqs[i].memoryRequirements.size;
         }
 
-        ASSERT_EQ(VK_SUCCESS, vk.BindVideoSessionMemoryKHR(device_->device(), session_, (uint32_t)bind_info.size(), bind_info.data()));
+        ASSERT_EQ(VK_SUCCESS,
+                  vk.BindVideoSessionMemoryKHR(device_->handle(), session_, (uint32_t)bind_info.size(), bind_info.data()));
     }
 
     void CreateResources(bool protected_bitstream = false, bool protected_dpb = false, bool protected_image = false) {
@@ -2010,7 +2012,7 @@ class VideoContext {
         create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
         create_info.queryCount = query_count;
 
-        ASSERT_EQ(VK_SUCCESS, vk::CreateQueryPool(device_->device(), &create_info, nullptr, &status_query_pool_));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateQueryPool(device_->handle(), &create_info, nullptr, &status_query_pool_));
     }
 
     void CreateEncodeFeedbackQueryPool(uint32_t query_count = 1, VkVideoEncodeFeedbackFlagsKHR encode_feedback_flags =
@@ -2026,7 +2028,7 @@ class VideoContext {
         create_info.queryType = VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR;
         create_info.queryCount = query_count;
 
-        ASSERT_EQ(VK_SUCCESS, vk::CreateQueryPool(device_->device(), &create_info, nullptr, &encode_feedback_query_pool_));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateQueryPool(device_->handle(), &create_info, nullptr, &encode_feedback_query_pool_));
     }
 
     StdVideoH264SequenceParameterSet CreateH264SPS(uint8_t sps_id) const { return config_.CreateH264SPS(sps_id); }
@@ -2159,41 +2161,41 @@ class VideoContext {
     vkt::Queue GetQueue(vkt::Device* device, const VideoConfig& config) const {
         VkQueue queue = VK_NULL_HANDLE;
         assert(config.QueueFamilyIndex() != VK_QUEUE_FAMILY_IGNORED);
-        vk::GetDeviceQueue(device->device(), config.QueueFamilyIndex(), 0, &queue);
+        vk::GetDeviceQueue(device->handle(), config.QueueFamilyIndex(), 0, &queue);
         return vkt::Queue(queue, config.QueueFamilyIndex());
     }
 
     void Init(bool protected_content) {
         vk.GetVideoSessionMemoryRequirementsKHR = (PFN_vkGetVideoSessionMemoryRequirementsKHR)vk::GetDeviceProcAddr(
-            device_->device(), "vkGetVideoSessionMemoryRequirementsKHR");
+            device_->handle(), "vkGetVideoSessionMemoryRequirementsKHR");
         ASSERT_NE(vk.GetVideoSessionMemoryRequirementsKHR, nullptr);
 
         vk.BindVideoSessionMemoryKHR =
-            (PFN_vkBindVideoSessionMemoryKHR)vk::GetDeviceProcAddr(device_->device(), "vkBindVideoSessionMemoryKHR");
+            (PFN_vkBindVideoSessionMemoryKHR)vk::GetDeviceProcAddr(device_->handle(), "vkBindVideoSessionMemoryKHR");
         ASSERT_NE(vk.BindVideoSessionMemoryKHR, nullptr);
 
-        vk.CreateVideoSessionKHR = (PFN_vkCreateVideoSessionKHR)vk::GetDeviceProcAddr(device_->device(), "vkCreateVideoSessionKHR");
+        vk.CreateVideoSessionKHR = (PFN_vkCreateVideoSessionKHR)vk::GetDeviceProcAddr(device_->handle(), "vkCreateVideoSessionKHR");
         ASSERT_NE(vk.CreateVideoSessionKHR, nullptr);
 
         vk.DestroyVideoSessionKHR =
-            (PFN_vkDestroyVideoSessionKHR)vk::GetDeviceProcAddr(device_->device(), "vkDestroyVideoSessionKHR");
+            (PFN_vkDestroyVideoSessionKHR)vk::GetDeviceProcAddr(device_->handle(), "vkDestroyVideoSessionKHR");
         ASSERT_NE(vk.DestroyVideoSessionKHR, nullptr);
 
         vk.CreateVideoSessionParametersKHR =
-            (PFN_vkCreateVideoSessionParametersKHR)vk::GetDeviceProcAddr(device_->device(), "vkCreateVideoSessionParametersKHR");
+            (PFN_vkCreateVideoSessionParametersKHR)vk::GetDeviceProcAddr(device_->handle(), "vkCreateVideoSessionParametersKHR");
         ASSERT_NE(vk.CreateVideoSessionParametersKHR, nullptr);
 
         vk.UpdateVideoSessionParametersKHR =
-            (PFN_vkUpdateVideoSessionParametersKHR)vk::GetDeviceProcAddr(device_->device(), "vkUpdateVideoSessionParametersKHR");
+            (PFN_vkUpdateVideoSessionParametersKHR)vk::GetDeviceProcAddr(device_->handle(), "vkUpdateVideoSessionParametersKHR");
         ASSERT_NE(vk.UpdateVideoSessionParametersKHR, nullptr);
 
         vk.DestroyVideoSessionParametersKHR =
-            (PFN_vkDestroyVideoSessionParametersKHR)vk::GetDeviceProcAddr(device_->device(), "vkDestroyVideoSessionParametersKHR");
+            (PFN_vkDestroyVideoSessionParametersKHR)vk::GetDeviceProcAddr(device_->handle(), "vkDestroyVideoSessionParametersKHR");
         ASSERT_NE(vk.DestroyVideoSessionParametersKHR, nullptr);
 
         if (config_.IsEncode()) {
             vk.GetEncodedVideoSessionParametersKHR = (PFN_vkGetEncodedVideoSessionParametersKHR)vk::GetDeviceProcAddr(
-                device_->device(), "vkGetEncodedVideoSessionParametersKHR");
+                device_->handle(), "vkGetEncodedVideoSessionParametersKHR");
             ASSERT_NE(vk.GetEncodedVideoSessionParametersKHR, nullptr);
         }
 
@@ -2209,26 +2211,26 @@ class VideoContext {
             create_info.pVideoProfile = config_.Profile();
             create_info.pStdHeaderVersion = config_.StdVersion();
 
-            ASSERT_EQ(VK_SUCCESS, vk.CreateVideoSessionKHR(device_->device(), &create_info, nullptr, &session_));
+            ASSERT_EQ(VK_SUCCESS, vk.CreateVideoSessionKHR(device_->handle(), &create_info, nullptr, &session_));
         }
 
         if (config_.NeedsSessionParams()) {
             VkVideoSessionParametersCreateInfoKHR create_info = *config_.SessionParamsCreateInfo();
             create_info.videoSession = session_;
 
-            ASSERT_EQ(VK_SUCCESS, vk.CreateVideoSessionParametersKHR(device_->device(), &create_info, nullptr, &session_params_));
+            ASSERT_EQ(VK_SUCCESS, vk.CreateVideoSessionParametersKHR(device_->handle(), &create_info, nullptr, &session_params_));
         }
     }
 
     void Destroy() {
-        vk.DestroyVideoSessionParametersKHR(device_->device(), session_params_, nullptr);
-        vk.DestroyVideoSessionKHR(device_->device(), session_, nullptr);
+        vk.DestroyVideoSessionParametersKHR(device_->handle(), session_params_, nullptr);
+        vk.DestroyVideoSessionKHR(device_->handle(), session_, nullptr);
 
-        vk::DestroyQueryPool(device_->device(), status_query_pool_, nullptr);
-        vk::DestroyQueryPool(device_->device(), encode_feedback_query_pool_, nullptr);
+        vk::DestroyQueryPool(device_->handle(), status_query_pool_, nullptr);
+        vk::DestroyQueryPool(device_->handle(), encode_feedback_query_pool_, nullptr);
 
         for (auto session_memory : session_memory_) {
-            vk::FreeMemory(device_->device(), session_memory, nullptr);
+            vk::FreeMemory(device_->handle(), session_memory, nullptr);
         }
     }
 

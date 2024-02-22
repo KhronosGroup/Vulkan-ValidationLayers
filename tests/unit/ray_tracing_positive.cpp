@@ -477,7 +477,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
-        vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
         VkDeviceSize consumed_buffer_size = 0;
         for (size_t i = 0; i < blas_count; ++i) {
@@ -545,7 +545,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         scratch_buffer_frame_0->init_no_mem(*m_device, scratch_buffer_ci);
 
         // Bind memory to scratch buffer
-        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_0->handle(), common_scratch_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer_frame_0->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -579,7 +579,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         scratch_buffer_frame_1->init_no_mem(*m_device, scratch_buffer_ci);
 
         // Bind memory to scratch buffer
-        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_1->handle(), common_scratch_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer_frame_1->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -628,7 +628,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         scratch_buffer_frame_2->init_no_mem(*m_device, scratch_buffer_ci);
 
         // Bind memory to scratch buffer
-        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_2->handle(), common_scratch_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer_frame_2->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);

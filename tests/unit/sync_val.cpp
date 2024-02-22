@@ -1352,21 +1352,21 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
 
     auto cb = m_commandBuffer->handle();
 
-    vk::CmdBlitImage(cb, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_0_front_1_front, VK_FILTER_NEAREST);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdBlitImage(cb, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_0_front_1_front, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdBlitImage(cb, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_1_front_0_front, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBlitImage(cb, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_1_back_0_back, VK_FILTER_NEAREST);
 
     m_commandBuffer->end();
@@ -4049,7 +4049,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     descriptor_writes[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[5].pImageInfo = &image_info[2];
 
-    vk::UpdateDescriptorSets(m_device->device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 
     // only descriptor 0 is used, the rest are going to get destroyed
     char const *shader_source = R"glsl(

@@ -33,7 +33,7 @@ TEST_F(PositiveMemory, MapMemory2) {
     ASSERT_TRUE(pass);
 
     VkDeviceMemory memory;
-    VkResult err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    VkResult err = vk::AllocateMemory(device(), &memory_info, NULL, &memory);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
@@ -45,24 +45,24 @@ TEST_F(PositiveMemory, MapMemory2) {
     unmap_info.memory = memory;
 
     uint32_t *pData = NULL;
-    err = vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    err = vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_TRUE(pData != NULL);
 
-    err = vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
+    err = vk::UnmapMemory2KHR(device(), &unmap_info);
     ASSERT_EQ(VK_SUCCESS, err);
 
     map_info.size = VK_WHOLE_SIZE;
 
     pData = NULL;
-    err = vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    err = vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_TRUE(pData != NULL);
 
-    err = vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
+    err = vk::UnmapMemory2KHR(device(), &unmap_info);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    vk::FreeMemory(m_device->device(), memory, NULL);
+    vk::FreeMemory(device(), memory, NULL);
 }
 
 TEST_F(PositiveMemory, GetMemoryRequirements2) {
@@ -80,12 +80,12 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     VkBufferMemoryRequirementsInfo2KHR buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
                                                       buffer.handle()};
     VkMemoryRequirements2KHR buffer_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
-    vk::GetBufferMemoryRequirements2KHR(m_device->device(), &buffer_info, &buffer_reqs);
+    vk::GetBufferMemoryRequirements2KHR(device(), &buffer_info, &buffer_reqs);
 
     // Allocate and bind buffer memory
     vkt::DeviceMemory buffer_memory;
     buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_reqs.memoryRequirements, 0));
-    vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_memory.handle(), 0);
+    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
 
     // Create a test image
     auto image_ci = vkt::Image::create_info();
@@ -101,12 +101,12 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     VkImageMemoryRequirementsInfo2KHR image_info = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
                                                     image.handle()};
     VkMemoryRequirements2KHR image_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
-    vk::GetImageMemoryRequirements2KHR(m_device->device(), &image_info, &image_reqs);
+    vk::GetImageMemoryRequirements2KHR(device(), &image_info, &image_reqs);
 
     // Allocate and bind image memory
     vkt::DeviceMemory image_memory;
     image_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_reqs.memoryRequirements, 0));
-    vk::BindImageMemory(m_device->device(), image.handle(), image_memory.handle(), 0);
+    vk::BindImageMemory(device(), image.handle(), image_memory.handle(), 0);
 
     // Now execute arbitrary commands that use the test buffer and image
     m_commandBuffer->begin();
@@ -145,7 +145,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     // Bind buffer memory with extension
     VkBindBufferMemoryInfoKHR buffer_bind_info = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO_KHR, nullptr, buffer.handle(),
                                                   buffer_memory.handle(), 0};
-    vk::BindBufferMemory2KHR(m_device->device(), 1, &buffer_bind_info);
+    vk::BindBufferMemory2KHR(device(), 1, &buffer_bind_info);
 
     // Create a test image
     auto image_ci = vkt::Image::create_info();
@@ -164,7 +164,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     // Bind image memory with extension
     VkBindImageMemoryInfoKHR image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image.handle(),
                                                 image_memory.handle(), 0};
-    vk::BindImageMemory2KHR(m_device->device(), 1, &image_bind_info);
+    vk::BindImageMemory2KHR(device(), 1, &image_bind_info);
 
     // Now execute arbitrary commands that use the test buffer and image
     m_commandBuffer->begin();
@@ -222,62 +222,62 @@ TEST_F(PositiveMemory, NonCoherentMapping) {
         }
     }
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
     ASSERT_EQ(VK_SUCCESS, err);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and zero offsets and entire mapped range
-    err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
+    err = vk::MapMemory(device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     VkMappedMemoryRange mmr = vku::InitStructHelper();
     mmr.memory = mem;
     mmr.offset = 0;
     mmr.size = VK_WHOLE_SIZE;
-    err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::InvalidateMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::UnmapMemory(m_device->device(), mem);
+    vk::UnmapMemory(device(), mem);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and an offset and entire mapped range
-    err = vk::MapMemory(m_device->device(), mem, 5 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData);
+    err = vk::MapMemory(device(), mem, 5 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     mmr.memory = mem;
     mmr.offset = 6 * atom_size;
     mmr.size = VK_WHOLE_SIZE;
-    err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::InvalidateMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::UnmapMemory(m_device->device(), mem);
+    vk::UnmapMemory(device(), mem);
 
     // Map with offset and size
     // Flush/Invalidate subrange of mapped area with offset and size
-    err = vk::MapMemory(m_device->device(), mem, 3 * atom_size, 9 * atom_size, 0, (void **)&pData);
+    err = vk::MapMemory(device(), mem, 3 * atom_size, 9 * atom_size, 0, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     mmr.memory = mem;
     mmr.offset = 4 * atom_size;
     mmr.size = 2 * atom_size;
-    err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::InvalidateMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::UnmapMemory(m_device->device(), mem);
+    vk::UnmapMemory(device(), mem);
 
     // Map without offset and flush WHOLE_SIZE with two separate offsets
-    err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
+    err = vk::MapMemory(device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     mmr.memory = mem;
     mmr.offset = allocation_size - (4 * atom_size);
     mmr.size = VK_WHOLE_SIZE;
-    err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
     mmr.offset = allocation_size - (6 * atom_size);
     mmr.size = VK_WHOLE_SIZE;
-    err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+    err = vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::UnmapMemory(m_device->device(), mem);
+    vk::UnmapMemory(device(), mem);
 
-    vk::FreeMemory(m_device->device(), mem, NULL);
+    vk::FreeMemory(device(), mem, NULL);
 }
 
 TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
@@ -307,12 +307,12 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
     mem_alloc.memoryTypeIndex = memory_index;
 
     VkDeviceMemory memory;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &memory);
+    vk::AllocateMemory(device(), &mem_alloc, nullptr, &memory);
 
     uint32_t *pData;
     vk::MapMemory(device(), memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     vk::UnmapMemory(device(), memory);
-    vk::FreeMemory(m_device->device(), memory, nullptr);
+    vk::FreeMemory(device(), memory, nullptr);
 }
 
 TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
@@ -342,10 +342,10 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
             VkDeviceMemory mem;
             VkMemoryRequirements mem_reqs;
 
-            VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+            VkResult err = vk::CreateImage(device(), &image_create_info, nullptr, &image);
             ASSERT_EQ(VK_SUCCESS, err);
 
-            vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
+            vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
             VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
             mem_alloc.memoryTypeIndex = 0;
@@ -353,15 +353,15 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
             const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
             ASSERT_TRUE(pass);
 
-            err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
+            err = vk::AllocateMemory(device(), &mem_alloc, nullptr, &mem);
             ASSERT_EQ(VK_SUCCESS, err);
 
-            err = vk::BindImageMemory(m_device->device(), image, mem, 0);
+            err = vk::BindImageMemory(device(), image, mem, 0);
             ASSERT_EQ(VK_SUCCESS, err);
 
-            vk::DestroyImage(m_device->device(), image, nullptr);
+            vk::DestroyImage(device(), image, nullptr);
 
-            vk::FreeMemory(m_device->device(), mem, nullptr);
+            vk::FreeMemory(device(), mem, nullptr);
         }
     };
 
@@ -391,7 +391,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
     VkDeviceBufferMemoryRequirements info = vku::InitStructHelper();
     info.pCreateInfo = &buffer_create_info;
     VkMemoryRequirements2 memory_reqs2 = vku::InitStructHelper();
-    vk::GetDeviceBufferMemoryRequirements(m_device->device(), &info, &memory_reqs2);
+    vk::GetDeviceBufferMemoryRequirements(device(), &info, &memory_reqs2);
 
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = memory_reqs2.memoryRequirements.size;
@@ -401,7 +401,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
 
     vkt::DeviceMemory buffer_memory(*m_device, memory_info);
 
-    VkResult err = vk::BindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
+    VkResult err = vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 }
 
@@ -429,7 +429,7 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     VkDeviceImageMemoryRequirements info = vku::InitStructHelper();
     info.pCreateInfo = &image_create_info;
     VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
-    vk::GetDeviceImageMemoryRequirements(m_device->device(), &info, &mem_reqs);
+    vk::GetDeviceImageMemoryRequirements(device(), &info, &mem_reqs);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
@@ -439,6 +439,6 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
 
     vkt::DeviceMemory mem(*m_device, mem_alloc);
 
-    VkResult err = vk::BindImageMemory(m_device->device(), image, mem, 0);
+    VkResult err = vk::BindImageMemory(device(), image, mem, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 }

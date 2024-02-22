@@ -83,7 +83,7 @@ TEST_F(NegativeGpuAV, ValidationInlineUniformBlockAndMiscGpu) {
     descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
     descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
 
     char const *csSource = R"glsl(
         #version 450
@@ -930,7 +930,7 @@ TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
     descriptor_writes.descriptorCount = 2;
     descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes.pImageInfo = image_infos;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
 
     const char fsSource[] = R"glsl(
         #version 450

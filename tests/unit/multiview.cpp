@@ -391,7 +391,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         descriptor_write.descriptorCount = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_write.pBufferInfo = &buffer_info;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
         VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
         pipeline_layout_info.setLayoutCount = 1;

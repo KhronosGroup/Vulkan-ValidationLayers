@@ -45,7 +45,7 @@ TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
         copy_ds_update[i].dstBinding = i;
         copy_ds_update[i].descriptorCount = 1;
     }
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, copy_size, copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, copy_size, copy_ds_update);
 }
 
 TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
@@ -81,10 +81,10 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
         alloc_info.descriptorSetCount = 1;
         alloc_info.descriptorPool = ds_pool_one.handle();
         alloc_info.pSetLayouts = &ds_layout.handle();
-        err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
+        err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
         ASSERT_EQ(VK_SUCCESS, err);
     }  // ds_layout destroyed
-    vk::FreeDescriptorSets(m_device->device(), ds_pool_one.handle(), 1, &descriptorSet);
+    vk::FreeDescriptorSets(device(), ds_pool_one.handle(), 1, &descriptorSet);
 }
 
 TEST_F(PositiveDescriptors, PoolSizeCountZero) {
@@ -144,7 +144,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo *>(invalid_ptr);
         descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     }
 
     // Buffer Case
@@ -183,7 +183,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo *>(invalid_ptr);
         descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     }
 
     // Texel Buffer Case
@@ -224,7 +224,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo *>(invalid_ptr);
         descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo *>(invalid_ptr);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     }
 }
 
@@ -287,7 +287,7 @@ TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = ds.set_;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 }
 
 TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
@@ -338,7 +338,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptor_write.pBufferInfo = buff_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -456,7 +456,7 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = &buffer_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     VkCopyDescriptorSet copy_set = vku::InitStructHelper();
     copy_set.srcSet = descriptor_sets[0];
@@ -465,7 +465,7 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     copy_set.dstBinding = 1;
     copy_set.descriptorCount = 1;
 
-    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 
 TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
@@ -548,7 +548,7 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     descriptor_write.pNext = &blas_descriptor;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     VkCopyDescriptorSet copy_set = vku::InitStructHelper();
     copy_set.srcSet = descriptor_sets[0];
@@ -557,7 +557,7 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     copy_set.dstBinding = 1;
     copy_set.descriptorCount = 1;
 
-    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 
 TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
@@ -655,11 +655,11 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     descriptor_write.dstSet = descriptor_set2.set_;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
@@ -740,7 +740,7 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         descriptor_write.pImageInfo = &image_info;
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     };
     const auto &testing_thread2 = [&]() {
         VkDescriptorImageInfo image_info = {};
@@ -755,7 +755,7 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         descriptor_write.pImageInfo = &image_info;
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     };
 
     std::array<std::thread, 2> threads = {std::thread(testing_thread1), std::thread(testing_thread2)};
@@ -1000,7 +1000,7 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.pBufferInfo = nullptr;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
 
 TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
@@ -1139,7 +1139,7 @@ TEST_F(PositiveDescriptors, VariableDescriptorCount) {
     alloc_info.pSetLayouts = &ds_layout.handle();
 
     VkDescriptorSet descriptor_set;
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
 }
 
 TEST_F(PositiveDescriptors, ShaderStageAll) {

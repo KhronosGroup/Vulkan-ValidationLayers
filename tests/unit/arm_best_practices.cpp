@@ -116,12 +116,12 @@ TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
     image_info.mipLevels = 1;
 
     VkImage image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->device(), &image_info, nullptr, &image);
+    vk::CreateImage(device(), &image_info, nullptr, &image);
 
     m_errorMonitor->VerifyFound();
 
     if (image) {
-        vk::DestroyImage(m_device->device(), image, nullptr);
+        vk::DestroyImage(device(), image, nullptr);
     }
 }
 
@@ -145,7 +145,7 @@ TEST_F(VkArmBestPracticesLayerTest, NonTransientMSImage) {
     image_info.mipLevels = 1;
 
     VkImage image;
-    vk::CreateImage(m_device->device(), &image_info, nullptr, &image);
+    vk::CreateImage(device(), &image_info, nullptr, &image);
 
     m_errorMonitor->VerifyFound();
 }
@@ -210,7 +210,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &subpass;
 
-    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &m_renderPass);
+    vk::CreateRenderPass(device(), &rp_info, nullptr, &m_renderPass);
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -353,12 +353,12 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     alloc_info.descriptorSetCount = descriptor_sets.size() / 2;
     alloc_info.pSetLayouts = ds_layouts.data();
 
-    VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets.data());
+    VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets.data());
     ASSERT_EQ(VK_SUCCESS, err);
 
     // free one descriptor set
     VkDescriptorSet* ds = descriptor_sets.data();
-    err = vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, ds);
+    err = vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, ds);
 
     // the previous allocate and free should not cause any warning
     ASSERT_EQ(VK_SUCCESS, err);
@@ -372,14 +372,14 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkAllocateDescriptorSets-suboptimal-reuse");
 
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, ds);
+    err = vk::AllocateDescriptorSets(device(), &alloc_info, ds);
 
     // this should create a validation warning, in addition to the appropriate warning message
     m_errorMonitor->VerifyFound();
 
     // allocate the remaining descriptor sets (N - (N/2))
     alloc_info.descriptorSetCount = descriptor_sets.size() - (descriptor_sets.size() / 2);
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, ds);
+    err = vk::AllocateDescriptorSets(device(), &alloc_info, ds);
 
     // this should create no validation warnings
 }
@@ -441,7 +441,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
         pr_pipe.CreateGraphicsPipeline();
 
-        vk::ResetCommandPool(m_device->device(), m_commandPool->handle(), 0);
+        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
         m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -1389,7 +1389,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
          VK_QUEUE_FAMILY_IGNORED,
          VK_QUEUE_FAMILY_IGNORED,
-         images[0]->image(),
+         images[0]->handle(),
          {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
          nullptr,
@@ -1399,7 +1399,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
          VK_QUEUE_FAMILY_IGNORED,
          VK_QUEUE_FAMILY_IGNORED,
-         images[1]->image(),
+         images[1]->handle(),
          {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
     };
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
@@ -1414,7 +1414,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     blit_region.dstSubresource.layerCount = 1;
     blit_region.dstOffsets[1] = blit_size;
 
-    vk::CmdBlitImage(m_commandBuffer->handle(), images[0]->image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[1]->image(),
+    vk::CmdBlitImage(m_commandBuffer->handle(), images[0]->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[1]->handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     VkImageMemoryBarrier pre_render_pass_barriers[2] = {
@@ -1426,7 +1426,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
          VK_QUEUE_FAMILY_IGNORED,
          VK_QUEUE_FAMILY_IGNORED,
-         images[0]->image(),
+         images[0]->handle(),
          {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
          nullptr,
@@ -1436,7 +1436,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
          VK_QUEUE_FAMILY_IGNORED,
          VK_QUEUE_FAMILY_IGNORED,
-         images[1]->image(),
+         images[1]->handle(),
          {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
     };
 

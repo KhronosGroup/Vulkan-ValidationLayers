@@ -64,11 +64,11 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
     VkBuffer buffer;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    VkResult err = vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkMemoryRequirements memory_reqs;
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &memory_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer, &memory_reqs);
 
     VkDedicatedAllocationMemoryAllocateInfoNV dedicated_memory_info = vku::InitStructHelper();
     dedicated_memory_info.buffer = buffer;
@@ -82,14 +82,14 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     ASSERT_TRUE(pass);
 
     VkDeviceMemory buffer_memory;
-    err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &buffer_memory);
+    err = vk::AllocateMemory(device(), &memory_info, NULL, &buffer_memory);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    err = vk::BindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
+    err = vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::FreeMemory(m_device->device(), buffer_memory, NULL);
+    vk::DestroyBuffer(device(), buffer, NULL);
+    vk::FreeMemory(device(), buffer_memory, NULL);
 }
 
 TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
@@ -225,7 +225,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkDestroySurfaceKHR");
+    auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(device(), "vkDestroySurfaceKHR");
     if (fpDestroySurface) {
         m_errorMonitor->SetError("Null was expected!");
     }
@@ -235,8 +235,8 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr with and without extension enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
-    auto vkTrimCommandPool = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPool");
-    auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPoolKHR");
+    auto vkTrimCommandPool = vk::GetDeviceProcAddr(device(), "vkTrimCommandPool");
+    auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(device(), "vkTrimCommandPoolKHR");
     if (nullptr == vkTrimCommandPool) m_errorMonitor->SetError("Unexpected null pointer");
     if (nullptr != vkTrimCommandPoolKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
 
@@ -285,7 +285,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
 
     // Also verify that we don't get the KHR extension address without enabling the KHR extension
     auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
     if (nullptr != vkGetBufferDeviceAddressKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
 }
 
@@ -440,7 +440,7 @@ TEST_F(VkPositiveLayerTest, UseInteractionApi1) {
     }
 
     VkDeviceGroupPresentCapabilitiesKHR device_group_present_caps = vku::InitStructHelper();
-    vk::GetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
+    vk::GetDeviceGroupPresentCapabilitiesKHR(device(), &device_group_present_caps);
 }
 
 TEST_F(VkPositiveLayerTest, UseInteractionApi2) {
@@ -457,7 +457,7 @@ TEST_F(VkPositiveLayerTest, UseInteractionApi2) {
     }
 
     VkDeviceGroupPresentCapabilitiesKHR device_group_present_caps = vku::InitStructHelper();
-    vk::GetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
+    vk::GetDeviceGroupPresentCapabilitiesKHR(device(), &device_group_present_caps);
 }
 
 TEST_F(VkPositiveLayerTest, ExtensionExpressions) {

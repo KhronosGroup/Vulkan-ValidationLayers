@@ -1137,7 +1137,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();

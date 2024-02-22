@@ -126,7 +126,7 @@ TEST_F(PositiveThreading, NullFenceCollision) {
     RETURN_IF_SKIP(Init());
 
     ThreadTestData data;
-    data.device = m_device->device();
+    data.device = device();
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
@@ -135,7 +135,7 @@ TEST_F(PositiveThreading, NullFenceCollision) {
     // There should be no validation error from collision of that non-object.
     std::thread thread(ReleaseNullFence, &data);
     for (int i = 0; i < 40000; i++) {
-        vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
+        vk::DestroyFence(device(), VK_NULL_HANDLE, NULL);
     }
     thread.join();
 

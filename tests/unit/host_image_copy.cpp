@@ -673,7 +673,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
         // Any invalid usage will get 02251
         m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048");
-        vk::CreateImage(m_device->device(), &image_ci, NULL, &image_no_feature);
+        vk::CreateImage(device(), &image_ci, NULL, &image_no_feature);
         m_errorMonitor->VerifyFound();
         image_ci.format = format;
     }

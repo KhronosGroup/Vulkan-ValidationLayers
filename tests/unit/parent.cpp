@@ -78,7 +78,7 @@ TEST_F(NegativeParent, BindBuffer) {
 
     VkMemoryRequirements mem_reqs;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferMemoryRequirements-buffer-parent");
-    vk::GetBufferMemoryRequirements(m_second_device->device(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(m_second_device->handle(), buffer.handle(), &mem_reqs);
     m_errorMonitor->VerifyFound();
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
@@ -112,7 +112,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
 
     VkMemoryRequirements mem_reqs;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-parent");
-    vk::GetImageMemoryRequirements(m_second_device->device(), image.handle(), &mem_reqs);
+    vk::GetImageMemoryRequirements(m_second_device->handle(), image.handle(), &mem_reqs);
     m_errorMonitor->VerifyFound();
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
 
@@ -152,7 +152,7 @@ TEST_F(NegativeParent, ImageView) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateImageView-image-09179");
-    vk::CreateImageView(m_second_device->device(), &ivci, nullptr, &image_view);
+    vk::CreateImageView(m_second_device->handle(), &ivci, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
 }
 
@@ -387,7 +387,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     swapchain_ci.oldSwapchain = VK_NULL_HANDLE;
 
     VkSwapchainKHR other_device_swapchain = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(instance2_device.device(), &swapchain_ci, nullptr, &other_device_swapchain));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(instance2_device.handle(), &swapchain_ci, nullptr, &other_device_swapchain));
 
     // oldSwapchain from a different device
     swapchain_ci.surface = m_surface;
@@ -396,7 +396,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-commonparent");
     vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
     m_errorMonitor->VerifyFound();
-    vk::DestroySwapchainKHR(instance2_device.device(), other_device_swapchain, nullptr);
+    vk::DestroySwapchainKHR(instance2_device.handle(), other_device_swapchain, nullptr);
 }
 
 TEST_F(NegativeParent, Instance_Surface_2) {

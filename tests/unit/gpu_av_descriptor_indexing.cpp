@@ -69,7 +69,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBBuffer) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[1].pBufferInfo = &buffer_info[1];
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     char const *vs_source = R"glsl(
         #version 450
@@ -195,7 +195,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     char const *vs_source = R"glsl(
         #version 450
@@ -305,7 +305,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
@@ -433,10 +433,10 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
     descriptor_writes[0].dstSet = descriptor_set_variable.set_;
     descriptor_writes[1].dstSet = descriptor_set_variable.set_;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     char const *vs_source = R"glsl(
         #version 450
@@ -564,7 +564,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     char const *vs_source = R"glsl(
         #version 450
@@ -689,7 +689,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[1].pBufferInfo = &buffer_info[1];
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     const char *tesSource = R"glsl(
         #version 450
@@ -808,7 +808,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[1].pBufferInfo = &buffer_info[1];
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     const char vs_source[] = R"glsl(
         #version 450
@@ -923,7 +923,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
     descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[1].pBufferInfo = &buffer_info[1];
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     char const *csSource = R"glsl(
         #version 450
@@ -1029,7 +1029,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     descriptor_writes[1].descriptorCount = 2;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
@@ -1151,7 +1151,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     descriptor_writes[1].descriptorCount = 2;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
@@ -1278,7 +1278,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
     // - The fragment shader makes the invalid array access.
@@ -1435,7 +1435,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
     pipe.CreateGraphicsPipeline();
 
     // Make both bindings valid before binding to the command buffer
-    vk::UpdateDescriptorSets(m_device->device(), 2, &descriptor_write[0], 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 2, &descriptor_write[0], 0, nullptr);
 
     m_commandBuffer->begin();
 
@@ -1448,7 +1448,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
     m_commandBuffer->EndRenderPass();
 
     // Valid to update binding 1 after being bound
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[1], 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write[1], 0, nullptr);
 
     m_commandBuffer->end();
 

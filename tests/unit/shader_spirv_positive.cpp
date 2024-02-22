@@ -599,14 +599,14 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
 
     // Make sure spec constants were updated correctly
     void *pData;
-    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(m_device->device(), buffer.memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), buffer.memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
     uint32_t *ssbo_data = reinterpret_cast<uint32_t *>(pData);
     ASSERT_EQ(ssbo_data[0], 0x02);
     ASSERT_EQ(ssbo_data[1], 0x05040302);
     ASSERT_EQ(ssbo_data[2], 0x06050403);
     ASSERT_EQ(ssbo_data[3], 0x07060504);
     ASSERT_EQ(ssbo_data[4], 0x04);
-    vk::UnmapMemory(m_device->device(), buffer.memory().handle());
+    vk::UnmapMemory(device(), buffer.memory().handle());
 }
 
 TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {

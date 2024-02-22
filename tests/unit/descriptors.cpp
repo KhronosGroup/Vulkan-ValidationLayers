@@ -42,7 +42,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolConsistency) {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    vk::FreeDescriptorSets(m_device->device(), bad_pool.handle(), 1, &descriptor_set.set_);
+    vk::FreeDescriptorSets(device(), bad_pool.handle(), 1, &descriptor_set.set_);
 
     m_errorMonitor->VerifyFound();
 }
@@ -89,7 +89,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-apiVersion-07895");
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
+    vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
     m_errorMonitor->VerifyFound();
 
     alloc_info.descriptorSetCount = 1;
@@ -107,7 +107,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = &ds_layout_ub.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-apiVersion-07896");
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
 
@@ -142,11 +142,11 @@ TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
-    VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
+    VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-descriptorPool-00312");
-    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &descriptorSet);
+    vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &descriptorSet);
     m_errorMonitor->VerifyFound();
 }
 
@@ -254,7 +254,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
 
     // 1) The uniform buffer is intentionally invalid here
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00324");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // Create a buffer to update the descriptor with
@@ -274,32 +274,32 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 5;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 4;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 3;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     // 3) The second descriptor has a null_ptr pImmutableSamplers and the third descriptor contains an immutable sampler
     descriptor_write.dstBinding = 1;
@@ -313,7 +313,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     descriptor_write.pImageInfo = imageInfo;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00318");  // binding 2
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");  // binding 3
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // 4) That sampled image descriptors have required layouts -- create images to update the descriptor with
@@ -330,27 +330,27 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04149");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 7;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     imageInfo[0].sampler = sampler.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04150");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 8;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04151");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // 5) Attempt to update an immutable sampler
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02752");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
 
@@ -425,7 +425,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
         descriptor_write.pBufferInfo = buffer_info;
 
         // Update descriptor
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
         // Create PSO that uses the uniform buffers
         char const *fsSource = R"glsl(
@@ -590,7 +590,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
+    err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
@@ -619,7 +619,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = 0;
     memory_info.memoryTypeIndex = 0;
-    vk::GetImageMemoryRequirements(m_device->device(), tmp_image.handle(), &memory_reqs);
+    vk::GetImageMemoryRequirements(device(), tmp_image.handle(), &memory_reqs);
     // Allocate enough memory for both images
     VkDeviceSize align_mod = memory_reqs.size % memory_reqs.alignment;
     VkDeviceSize aligned_size = ((align_mod == 0) ? memory_reqs.size : (memory_reqs.size + memory_reqs.alignment - align_mod));
@@ -666,7 +666,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &img_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     // Create PSO to be used for draw-time errors below
     char const *fsSource = R"glsl(
@@ -734,7 +734,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     // Re-update descriptor with new view
     img_info.imageView = view.handle();
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     // Now test destroying sampler prior to cmd buffer submission
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -753,7 +753,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     // Now re-update descriptor with valid sampler and delete image
     img_info.sampler = sampler2.handle();
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -774,7 +774,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     m_errorMonitor->VerifyFound();
     // Now update descriptor to be valid, but then update and free descriptor
     img_info.imageView = view2.handle();
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_commandBuffer->begin(&info);
 
     // Transit image2 layout from VK_IMAGE_LAYOUT_UNDEFINED into VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -793,12 +793,12 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     // Immediately try to update the descriptor set in the active command buffer - failure expected
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-None-03047");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // Immediately try to destroy the descriptor set in the active command buffer - failure expected
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309");
-    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &descriptorSet);
+    vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &descriptorSet);
     m_errorMonitor->VerifyFound();
 
     // Try again once the queue is idle - should succeed w/o error
@@ -808,7 +808,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
         "pDescriptorSets must be a valid pointer to an array of descriptorSetCount VkDescriptorSet handles, each element of which "
         "must either be a valid handle or VK_NULL_HANDLE");
     m_errorMonitor->SetUnexpectedError("Unable to remove DescriptorSet obj");
-    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &descriptorSet);
+    vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &descriptorSet);
 
     // Attempt to submit cmd buffer containing the freed descriptor set
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
@@ -869,7 +869,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].pImageInfo = &img_info1;
 
-    vk::UpdateDescriptorSets(m_device->device(), 2, descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes.data(), 0, NULL);
 
     // Destroy the sampler before it's bound to the cmd buffer
     sampler1.destroy();
@@ -972,7 +972,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
         // Set up the descriptor
         img_info.imageView = view->handle();
         img_info.imageLayout = descriptor_layout;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
         for (TestType test_type : test_list) {
             cmd_buf.begin();
@@ -1097,7 +1097,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     m_default_queue->submit(*m_commandBuffer);
     // Reset pool while in-flight, causing error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetDescriptorPool-descriptorPool-00313");
-    vk::ResetDescriptorPool(m_device->device(), descriptor_set.pool_, 0);
+    vk::ResetDescriptorPool(device(), descriptor_set.pool_, 0);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
 }
@@ -1483,7 +1483,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->begin();
@@ -1622,12 +1622,12 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.descriptorSetCount = ds_vk_layouts.size();
     alloc_info.pSetLayouts = ds_vk_layouts.data();
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptorSet);
+    err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
     VkDescriptorSet ds0_fs_only = {};
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = &ds_layout_fs_only.handle();
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &ds0_fs_only);
+    err = vk::AllocateDescriptorSets(device(), &alloc_info, &ds0_fs_only);
     ASSERT_EQ(VK_SUCCESS, err);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layouts[0], &ds_layouts[1]});
@@ -1654,7 +1654,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = &buffer_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1838,7 +1838,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         descriptor_write.dstSet = descriptor_sets[i]->handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error_codes[i]);
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
         m_errorMonitor->VerifyFound();
         if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
@@ -1890,7 +1890,7 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {
     descriptor_write.pBufferInfo = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-08766");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1943,7 +1943,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
 
         // Have to bind memory to buffer before descriptor update
         VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
+        vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
         VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
         mem_alloc.allocationSize = mem_reqs.size;
@@ -1958,7 +1958,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
             printf("Failed to allocate memory in DSBufferLimitErrors; skipped.\n");
             continue;
         }
-        VkResult err = vk::BindBufferMemory(m_device->device(), buffer.handle(), mem.handle(), 0);
+        VkResult err = vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
         ASSERT_EQ(VK_SUCCESS, err);
 
         VkDescriptorBufferInfo buff_info = {};
@@ -1977,7 +1977,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
             buff_info.range = test_case.max_range + 1;
             buff_info.offset = 0;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.max_range_vu);
-            vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+            vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
             m_errorMonitor->VerifyFound();
         }
 
@@ -1986,7 +1986,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
             buff_info.range = test_case.max_range;
             buff_info.offset = test_case.min_align - 1;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.min_align_vu);
-            vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+            vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
             m_errorMonitor->VerifyFound();
         }
 
@@ -1994,7 +1994,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         buff_info.range = VK_WHOLE_SIZE;
         buff_info.offset = 0;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.max_range_vu);
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2042,7 +2042,7 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = &buff_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     m_errorMonitor->VerifyFound();
 }
@@ -2111,7 +2111,7 @@ TEST_F(NegativeDescriptors, DSUpdateStruct) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     descriptor_write.pImageInfo = &info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     m_errorMonitor->VerifyFound();
 }
@@ -2224,7 +2224,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     copy_ds_update.dstSet = descriptor_set.set_;
     copy_ds_update.dstBinding = 0;       // ERROR : copy to UNIFORM binding
     copy_ds_update.descriptorCount = 1;  // copy 1 descriptor
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
 
     m_errorMonitor->VerifyFound();
     // Now perform a copy update that fails due to binding out of bounds
@@ -2235,7 +2235,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     copy_ds_update.dstSet = descriptor_set.set_;
     copy_ds_update.dstBinding = 0;
     copy_ds_update.descriptorCount = 1;  // Copy 1 descriptor
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
 
     m_errorMonitor->VerifyFound();
 
@@ -2246,7 +2246,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     copy_ds_update.dstSet = descriptor_set.set_;
     copy_ds_update.dstBinding = 3;       // ERROR : Invalid binding for matching layout
     copy_ds_update.descriptorCount = 1;  // Copy 1 descriptor
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
 
     m_errorMonitor->VerifyFound();
 
@@ -2261,7 +2261,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     copy_ds_update.dstSet = descriptor_set.set_;
     copy_ds_update.dstBinding = 0;
     copy_ds_update.descriptorCount = 5;  // ERROR copy 5 descriptors (out of bounds for layout)
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
 
     m_errorMonitor->VerifyFound();
 
@@ -2272,7 +2272,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     copy_ds_update.dstSet = descriptor_set_2.set_;
     copy_ds_update.dstBinding = 0;
     copy_ds_update.descriptorCount = 1;
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2308,7 +2308,7 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
     VkDescriptorImageInfo dii = {VK_NULL_HANDLE, view.handle(), VK_IMAGE_LAYOUT_GENERAL};
     auto write = vku::InitStruct<VkWriteDescriptorSet>(nullptr, descriptor_set.set_, 0u, 0u, 1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                                      &dii, nullptr, nullptr);
-    vk::UpdateDescriptorSets(m_device->device(), 1, &write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &write, 0, nullptr);
 
     m_errorMonitor->VerifyFound();
 }
@@ -2360,7 +2360,7 @@ TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
 
     // Put valid data in the good and bad sources, simultaneously doing a positive test on write and copy operations
     write_descriptor.dstSet = good_src.set_;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &write_descriptor, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &write_descriptor, 0, NULL);
 
     OneOffDescriptorSet bad_src(m_device, one_uniform_buffer);
     ASSERT_TRUE(bad_src.Initialized());
@@ -2368,24 +2368,24 @@ TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     // to complete our positive testing use copy, where above we used write.
     copy_descriptor.srcSet = good_src.set_;
     copy_descriptor.dstSet = bad_src.set_;
-    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_descriptor);
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_descriptor);
     bad_src.layout_ = vkt::DescriptorSetLayout();
 
     // Trigger the three invalid use errors
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kWriteDestroyedLayout);
     write_descriptor.dstSet = bad_dst.set_;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &write_descriptor, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &write_descriptor, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kCopyDstDestroyedLayout);
     copy_descriptor.dstSet = bad_dst.set_;
-    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_descriptor);
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_descriptor);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kCopySrcDestroyedLayout);
     copy_descriptor.srcSet = bad_src.set_;
     copy_descriptor.dstSet = good_dst.set_;
-    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_descriptor);
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_descriptor);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2433,7 +2433,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-descriptorPoolOverallocation-09227");
         {
             VkDescriptorPool pool;
-            vk::CreateDescriptorPool(m_device->device(), &invalid_dp_ci, nullptr, &pool);
+            vk::CreateDescriptorPool(device(), &invalid_dp_ci, nullptr, &pool);
         }
         m_errorMonitor->VerifyFound();
     }
@@ -2449,7 +2449,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolSize-descriptorCount-00302");
         {
             VkDescriptorPool pool;
-            vk::CreateDescriptorPool(m_device->device(), &dp_ci, nullptr, &pool);
+            vk::CreateDescriptorPool(device(), &dp_ci, nullptr, &pool);
         }
         m_errorMonitor->VerifyFound();
     }
@@ -2484,7 +2484,7 @@ TEST_F(NegativeDescriptors, DuplicateDescriptorBinding) {
     ds_layout_ci.pBindings = dsl_binding;
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-binding-00279");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2552,7 +2552,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
         VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
 
-        vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+        vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -2564,7 +2564,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         ds_layout_ci.pBindings = &dslb;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-08004");
-        vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+        vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2585,7 +2585,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     {
         VkDescriptorPool ds_pool = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolSize-type-02218");
-        vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+        vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &ds_pool);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2614,7 +2614,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = pool.handle();
     alloc_info.pSetLayouts = set_layouts;
-    VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
+    VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
     ASSERT_EQ(VK_SUCCESS, err);
 
     // Test invalid VkWriteDescriptorSet parameters (array element and size must be multiple of 4)
@@ -2634,24 +2634,24 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     // one for dataSiz and for descriptorCount
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02220");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
     write_inline_uniform.dataSize = 4;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02219");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.pNext = nullptr;
     descriptor_write.dstArrayElement = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02221");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.pNext = &write_inline_uniform;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     // Test invalid VkCopyDescriptorSet parameters (array element and size must be multiple of 4)
     VkCopyDescriptorSet copy_ds_update = vku::InitStructHelper();
@@ -2665,23 +2665,23 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
 
     copy_ds_update.srcArrayElement = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcBinding-02223");
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 
     copy_ds_update.srcArrayElement = 0;
     copy_ds_update.dstArrayElement = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02224");
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 
     copy_ds_update.dstArrayElement = 0;
     copy_ds_update.descriptorCount = 5;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcBinding-02225");
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 
     copy_ds_update.descriptorCount = 4;
-    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
 }
 
 TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
@@ -2705,7 +2705,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04604");
     VkDescriptorSetLayout ds_layout = {};
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2726,7 +2726,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
 
     VkDescriptorPool ds_pool = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &ds_pool);
     m_errorMonitor->VerifyFound();
 
     // have struct, but with value of zero
@@ -2734,7 +2734,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
     pool_inline_info.maxInlineUniformBlockBindings = 0;
     ds_pool_ci.pNext = &pool_inline_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &ds_pool);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3138,7 +3138,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
 
     VkDescriptorPool bad_pool;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-flags-04607");
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
+    vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3160,13 +3160,13 @@ TEST_F(NegativeDescriptors, MissingMutableDescriptorTypeFeature) {
 
     VkDescriptorPool bad_pool;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-flags-04609");
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
+    vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 
     ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     ds_pool_ci.flags = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608");
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &bad_pool);
+    vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3212,13 +3212,13 @@ TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
     {
         VkDescriptorPool pool;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
-        vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
+        vk::CreateDescriptorPool(device(), &ds_pool_ci, nullptr, &pool);
         m_errorMonitor->VerifyFound();
 
         lists[1].pDescriptorTypes = first_types;
         mdtci.mutableDescriptorTypeListCount = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
-        vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
+        vk::CreateDescriptorPool(device(), &ds_pool_ci, nullptr, &pool);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -3271,7 +3271,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
 
     VkDescriptorSet descriptor_set;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610");
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3351,7 +3351,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
         allocInfo.descriptorPool = descPool.handle();
 
         // The Galaxy S10 device used in LunarG CI fails to allocate this descriptor set
-        res = vk::AllocateDescriptorSets(m_device->device(), &allocInfo, &descSetHandle);
+        res = vk::AllocateDescriptorSets(device(), &allocInfo, &descSetHandle);
         if (res != VK_SUCCESS) {
             GTEST_SKIP() << "vkAllocateDescriptorSets failed with error";
         }
@@ -3370,7 +3370,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
     writeDesc.dstSet = descSet.handle();
 
     m_errorMonitor->Reset();
-    vk::UpdateDescriptorSets(m_device->device(), 1, &writeDesc, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &writeDesc, 0, nullptr);
 }
 
 TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
@@ -3482,38 +3482,38 @@ TEST_F(NegativeDescriptors, MutableDescriptors) {
     VkDescriptorSetLayout ds_layout;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-descriptorTypeCount-04599");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     mutable_descriptor_type_list.descriptorTypeCount = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-descriptorTypeCount-04597");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     mutable_descriptor_type_list.descriptorTypeCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04598");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04600");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04601");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04602");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04603");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3579,7 +3579,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
 
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-04615");
-    vk::CreateDescriptorUpdateTemplate(m_device->device(), &update_template_ci, nullptr, &update_template);
+    vk::CreateDescriptorUpdateTemplate(device(), &update_template_ci, nullptr, &update_template);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3600,7 +3600,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
 
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     VkDescriptorType types[2] = {
@@ -3622,7 +3622,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
 
     binding.pImmutableSamplers = &sampler.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     binding.pImmutableSamplers = nullptr;
@@ -3649,7 +3649,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
 
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04596");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     VkDescriptorType types[2] = {
@@ -3671,7 +3671,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-mutableDescriptorType-04595");
     m_errorMonitor->SetUnexpectedError(
         "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext");  // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2457
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3765,7 +3765,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06537");
 
@@ -3869,7 +3869,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09000");
 
@@ -3985,10 +3985,10 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     descriptor_write.dstSet = descriptor_set_input_attachment.set_;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
@@ -4214,7 +4214,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_write.pBufferInfo = &buffer_info;
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
         VkCopyDescriptorSet copy_set = vku::InitStructHelper();
         copy_set.srcSet = descriptor_sets[1];
@@ -4224,7 +4224,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         copy_set.descriptorCount = 1;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstSet-04612");
-        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -4294,7 +4294,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_write.pBufferInfo = &buffer_info;
 
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
         VkCopyDescriptorSet copy_set = vku::InitStructHelper();
         copy_set.srcSet = descriptor_sets[1];
@@ -4304,7 +4304,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         copy_set.descriptorCount = 1;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstSet-04614");
-        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -4384,13 +4384,13 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         descriptor_write.descriptorCount = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         descriptor_write.pImageInfo = &image_info;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
         descriptor_write.dstArrayElement = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_write.pBufferInfo = &buffer_info;
         descriptor_write.pImageInfo = nullptr;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
         VkCopyDescriptorSet copy_set = vku::InitStructHelper();
         copy_set.srcSet = descriptor_sets[0];
@@ -4403,17 +4403,17 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         // copying both mutables should fail because element 1 is the wrong type
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-04613");
-        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
 
         // copying element 0 should work
         copy_set.descriptorCount = 1;
-        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 
         // copying element 1 fail because it is the wrong type
         copy_set.srcArrayElement = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-04613");
-        vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+        vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -4496,7 +4496,7 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &image_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     VkCopyDescriptorSet copy_set = vku::InitStructHelper();
     copy_set.srcSet = descriptor_sets[1];
@@ -4508,7 +4508,7 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     vk::DestroySampler(device(), sampler, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00325");
-    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4791,7 +4791,7 @@ TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-07795");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -5137,14 +5137,14 @@ TEST_F(NegativeDescriptors, DescriptorTypeNotInPool) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
-    VkResult result = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+    VkResult result = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
 
     // not all implementations will return this exact error code
     if (result != VK_ERROR_OUT_OF_POOL_MEMORY) {
         GTEST_SKIP() << "Does not return expected VK_ERROR_OUT_OF_POOL_MEMORY";
     }
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "WARNING-CoreValidation-AllocateDescriptorSets-WrongType");
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
 

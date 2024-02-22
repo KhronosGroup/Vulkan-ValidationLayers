@@ -850,7 +850,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     mghi.memory = buffer_memory_export;
     mghi.handleType = handle_type;
     HANDLE handle;
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi, &handle));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(device(), &mghi, &handle));
 
     VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper();
     import_info.handleType = handle_type;
@@ -861,7 +861,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     mgfi.memory = buffer_memory_export;
     mgfi.handleType = handle_type;
     int fd = 0;
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(device(), &mgfi, &fd));
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
     import_info.handleType = handle_type;

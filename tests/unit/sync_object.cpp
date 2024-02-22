@@ -477,7 +477,7 @@ TEST_F(NegativeSyncObject, Barriers) {
             VkImage mp_image;
             VkDeviceMemory plane_0_memory;
             VkDeviceMemory plane_1_memory;
-            ASSERT_EQ(VK_SUCCESS, vk::CreateImage(m_device->device(), &image_create_info, NULL, &mp_image));
+            ASSERT_EQ(VK_SUCCESS, vk::CreateImage(device(), &image_create_info, NULL, &mp_image));
 
             VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -532,7 +532,7 @@ TEST_F(NegativeSyncObject, Barriers) {
 
             vk::FreeMemory(device(), plane_0_memory, NULL);
             vk::FreeMemory(device(), plane_1_memory, NULL);
-            vk::DestroyImage(m_device->device(), mp_image, nullptr);
+            vk::DestroyImage(device(), mp_image, nullptr);
         }
     }
 
@@ -2209,13 +2209,13 @@ TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoCore) {
 
     // timelineSemaphore feature bit not set
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252");
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 
     // Binary semaphore can't be initialValue 0
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279");
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2239,13 +2239,13 @@ TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoExtension) {
 
     // timelineSemaphore feature bit not set
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252");
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 
     // Binary semaphore can't be initialValue 0
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279");
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2266,18 +2266,18 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[0]));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore[0]));
     // index 1 should be a binary semaphore
     semaphore_create_info.pNext = nullptr;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[1]));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore[1]));
     VkSemaphore extra_binary;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &extra_binary));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &extra_binary));
 
     VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
     semaphore_signal_info.value = 10;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
     uint64_t signalValue = 20;
@@ -2330,9 +2330,9 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     m_default_queue->wait();
-    vk::DestroySemaphore(m_device->device(), semaphore[0], nullptr);
-    vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
-    vk::DestroySemaphore(m_device->device(), extra_binary, nullptr);
+    vk::DestroySemaphore(device(), semaphore[0], nullptr);
+    vk::DestroySemaphore(device(), semaphore[1], nullptr);
+    vk::DestroySemaphore(device(), extra_binary, nullptr);
 }
 
 TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
@@ -2348,7 +2348,7 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
     VkSemaphore semaphore;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore));
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo submit_info[2] = {};
@@ -2378,7 +2378,7 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     vk::QueueSubmit(m_default_queue->handle(), 2, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
+    vk::DestroySemaphore(device(), semaphore, nullptr);
 }
 
 TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
@@ -2431,7 +2431,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
         VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
         semaphore_signal_info.semaphore = semaphore.handle();
         semaphore_signal_info.value = signalValue;
-        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
     }
 
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -2559,7 +2559,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
         VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
         semaphore_signal_info.semaphore = semaphore.handle();
         semaphore_signal_info.value = signalValue;
-        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
     }
 
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -2951,10 +2951,10 @@ TEST_F(NegativeSyncObject, WaitSemaphoresType) {
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &(semaphore[0])));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &(semaphore[0])));
 
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &(semaphore[1])));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &(semaphore[1])));
 
     VkSemaphoreWaitInfo semaphore_wait_info = vku::InitStructHelper();
     semaphore_wait_info.semaphoreCount = 2;
@@ -2963,11 +2963,11 @@ TEST_F(NegativeSyncObject, WaitSemaphoresType) {
     semaphore_wait_info.pValues = &wait_values[0];
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreWaitInfo-pSemaphores-03256");
-    vk::WaitSemaphoresKHR(m_device->device(), &semaphore_wait_info, 10000);
+    vk::WaitSemaphoresKHR(device(), &semaphore_wait_info, 10000);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroySemaphore(m_device->device(), semaphore[0], nullptr);
-    vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
+    vk::DestroySemaphore(device(), semaphore[0], nullptr);
+    vk::DestroySemaphore(device(), semaphore[1], nullptr);
 }
 
 TEST_F(NegativeSyncObject, SignalSemaphoreType) {
@@ -2984,7 +2984,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreType) {
     semaphore_signal_info.value = 10;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-semaphore-03257");
-    vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3005,19 +3005,19 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
     VkSemaphore semaphore[2];
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[0]));
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore[1]));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore[0]));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore[1]));
 
     VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03258");
-    vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 
     semaphore_signal_info.value = 10;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
     uint64_t waitValue = 10;
@@ -3039,34 +3039,34 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     semaphore_signal_info.value = 25;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03259");
-    vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 
     semaphore_signal_info.value = 15;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
     semaphore_signal_info.semaphore = semaphore[1];
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         VkSemaphore sem;
 
         semaphore_type_create_info.initialValue = 0;
-        ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &sem));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &sem));
 
         semaphore_signal_info.semaphore = sem;
         semaphore_signal_info.value = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03260");
-        vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+        vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
         m_errorMonitor->VerifyFound();
 
         semaphore_signal_info.value--;
-        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
 
         m_default_queue->wait();
 
-        vk::DestroySemaphore(m_device->device(), sem, nullptr);
+        vk::DestroySemaphore(device(), sem, nullptr);
 
         // Regression test for value difference validations ran against binary semaphores
         {
@@ -3074,11 +3074,11 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
             VkSemaphore binary_sem;
 
             semaphore_type_create_info.initialValue = 0;
-            ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &timeline_sem));
+            ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &timeline_sem));
 
             VkSemaphoreCreateInfo binary_semaphore_create_info = vku::InitStructHelper();
 
-            ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(m_device->device(), &binary_semaphore_create_info, nullptr, &binary_sem));
+            ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &binary_semaphore_create_info, nullptr, &binary_sem));
 
             signalValue = 1;
             uint64_t offendingValue = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
@@ -3099,18 +3099,18 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
 
             semaphore_signal_info.semaphore = timeline_sem;
             semaphore_signal_info.value = 1;
-            vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+            vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
 
             m_default_queue->wait();
 
-            vk::DestroySemaphore(m_device->device(), binary_sem, nullptr);
-            vk::DestroySemaphore(m_device->device(), timeline_sem, nullptr);
+            vk::DestroySemaphore(device(), binary_sem, nullptr);
+            vk::DestroySemaphore(device(), timeline_sem, nullptr);
         }
     }
 
     m_default_queue->wait();
-    vk::DestroySemaphore(m_device->device(), semaphore[0], nullptr);
-    vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
+    vk::DestroySemaphore(device(), semaphore[0], nullptr);
+    vk::DestroySemaphore(device(), semaphore[1], nullptr);
 }
 
 TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
@@ -3137,7 +3137,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
     semaphore_signal_info.semaphore = semaphore[0].handle();
     semaphore_signal_info.value = 10;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(device(), &semaphore_signal_info));
 
     VkSemaphoreSubmitInfoKHR signal_info = vku::InitStructHelper();
     signal_info.semaphore = semaphore[0].handle();
@@ -3173,13 +3173,13 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     semaphore_signal_info.value = 25;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03259");
-    vk::SignalSemaphore(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphore(device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 
     semaphore_signal_info.value = 15;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(device(), &semaphore_signal_info));
     semaphore_signal_info.semaphore = semaphore[1].handle();
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
+    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
@@ -3199,7 +3199,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
 
         semaphore_signal_info.semaphore = timeline_sem.handle();
         semaphore_signal_info.value = 1;
-        vk::SignalSemaphore(m_device->device(), &semaphore_signal_info);
+        vk::SignalSemaphore(device(), &semaphore_signal_info);
 
         m_default_queue->wait();
     }
@@ -3219,7 +3219,7 @@ TEST_F(NegativeSyncObject, SemaphoreCounterType) {
     uint64_t value = 0xdeadbeef;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetSemaphoreCounterValue-semaphore-03255");
-    vk::GetSemaphoreCounterValueKHR(m_device->device(), semaphore.handle(), &value);
+    vk::GetSemaphoreCounterValueKHR(device(), semaphore.handle(), &value);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3660,10 +3660,10 @@ TEST_F(NegativeSyncObject, ResetEventThenSet) {
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &command_buffer);
 
     VkQueue queue = VK_NULL_HANDLE;
-    vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
+    vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 0, &queue);
 
     {
         VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -3682,13 +3682,13 @@ TEST_F(NegativeSyncObject, ResetEventThenSet) {
     }
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetEvent-event-09543");
-        vk::SetEvent(m_device->device(), event.handle());
+        vk::SetEvent(device(), event.handle());
         m_errorMonitor->VerifyFound();
     }
 
     vk::QueueWaitIdle(queue);
 
-    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
+    vk::FreeCommandBuffers(device(), command_pool.handle(), 1, &command_buffer);
 }
 
 TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,7 +43,7 @@ TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286");
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -179,7 +179,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    VkResult err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016");
@@ -205,11 +205,11 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00240 - too many uniform buffer type descriptors in vertex stage
     dslb_vec.clear();
@@ -225,7 +225,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");
@@ -248,11 +248,11 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00242 - too many storage buffer type descriptors in compute stage
     dslb_vec.clear();
@@ -271,7 +271,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");
@@ -295,11 +295,11 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00244 - too many sampled image type descriptors in multiple stages
     dslb_vec.clear();
@@ -319,7 +319,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");
@@ -346,11 +346,11 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00246 - too many storage image type descriptors in fragment stage
     dslb_vec.clear();
@@ -366,7 +366,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");
@@ -383,11 +383,11 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d18 - too many input attachments in fragment stage
     dslb_vec.clear();
@@ -399,7 +399,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021");
@@ -415,11 +415,11 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 }
 
 TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
@@ -484,7 +484,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    VkResult err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");
@@ -517,11 +517,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d1c - too many uniform buffer type descriptors overall
     dslb_vec.clear();
@@ -534,7 +534,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029");
@@ -550,11 +550,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d1e - too many dynamic uniform buffer type descriptors overall
     dslb_vec.clear();
@@ -567,7 +567,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030");
@@ -583,11 +583,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d20 - too many storage buffer type descriptors overall
     dslb_vec.clear();
@@ -600,7 +600,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031");
@@ -616,11 +616,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d22 - too many dynamic storage buffer type descriptors overall
     dslb_vec.clear();
@@ -633,7 +633,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032");
@@ -649,11 +649,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d24 - too many sampled image type descriptors overall
     dslb_vec.clear();
@@ -677,7 +677,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");
@@ -703,11 +703,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d26 - too many storage image type descriptors overall
     dslb_vec.clear();
@@ -725,7 +725,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");
@@ -742,11 +742,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
     // VU 0fe00d28 - too many input attachment type descriptors overall
     dslb_vec.clear();
@@ -759,7 +759,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035");
@@ -775,11 +775,11 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
         }
     }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 }
 
 TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
@@ -1004,7 +1004,7 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     pipeline_layout_ci.pSetLayouts = ds_vk_layouts.data();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1036,6 +1036,6 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
 
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 }

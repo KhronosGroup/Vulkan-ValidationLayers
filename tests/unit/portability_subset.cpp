@@ -64,7 +64,7 @@ TEST_F(NegativePortabilitySubset, Event) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateEvent-events-04468");
     VkEventCreateInfo eci = vku::InitStructHelper();
     VkEvent event;
-    vk::CreateEvent(m_device->device(), &eci, nullptr, &event);
+    vk::CreateEvent(device(), &eci, nullptr, &event);
     m_errorMonitor->VerifyFound();
 }
 
@@ -137,7 +137,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
 
     VkImageViewCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
-    ci.image = image.image();
+    ci.image = image.handle();
     ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     // Incorrect swizzling due to portability
@@ -184,7 +184,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount)
 
     VkImageViewCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
-    ci.image = image.image();
+    ci.image = image.handle();
     ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ci.format = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     // Incorrect swizzling due to portability
@@ -490,7 +490,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     descriptor_writes[0].pImageInfo = &img_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450");
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
 

@@ -205,7 +205,7 @@ TEST_F(NegativeSampler, AllocationCount) {
 
     int i;
     for (i = 0; i <= max_samplers; i++) {
-        err = vk::CreateSampler(m_device->device(), &sampler_create_info, NULL, &samplers[i]);
+        err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
             break;
         }
@@ -213,7 +213,7 @@ TEST_F(NegativeSampler, AllocationCount) {
     m_errorMonitor->VerifyFound();
 
     for (int j = 0; j < i; j++) {
-        vk::DestroySampler(m_device->device(), samplers[j], NULL);
+        vk::DestroySampler(device(), samplers[j], NULL);
     }
 }
 
@@ -619,7 +619,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.pImageInfo = image_infos;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-01948");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // pImmutableSamplers = nullptr causes an error , VUID-VkWriteDescriptorSet-descriptorType-02738.
@@ -632,7 +632,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_infos[0];
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02738");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
 
@@ -779,7 +779,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 1, &dsl_binding};
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009");
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_properties = vku::InitStructHelper();
@@ -794,11 +794,11 @@ TEST_F(NegativeSampler, CustomBorderColor) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
         }
         for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers; i++) {
-            vk::CreateSampler(m_device->device(), &sampler_info, NULL, &samplers[i]);
+            vk::CreateSampler(device(), &sampler_info, NULL, &samplers[i]);
         }
         m_errorMonitor->VerifyFound();
         for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers - 1; i++) {
-            vk::DestroySampler(m_device->device(), samplers[i], nullptr);
+            vk::DestroySampler(device(), samplers[i], nullptr);
         }
     }
 }
@@ -848,7 +848,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[0].pImageInfo = &img_info;
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, NULL);
     char const *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
@@ -1496,6 +1496,6 @@ TEST_F(NegativeSampler, CustomBorderColorsFeature) {
     sampler_info.pNext = &custom_color_cinfo;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-customBorderColors-04085");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::CreateSampler(device(), &sampler_info, NULL, &sampler);
     m_errorMonitor->VerifyFound();
 }

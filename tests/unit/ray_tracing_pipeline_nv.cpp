@@ -255,7 +255,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         vk::CreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
-        vk::DestroyPipeline(m_device->device(), pipeline, NULL);
+        vk::DestroyPipeline(device(), pipeline, NULL);
     }
 
     // General shader index doesn't exist

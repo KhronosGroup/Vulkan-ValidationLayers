@@ -525,7 +525,7 @@ void VkRenderFramework::ShutdownFramework() {
     // Nothing to shut down without a VkInstance
     if (!instance_) return;
 
-    if (m_device && m_device->device() != VK_NULL_HANDLE) {
+    if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->wait();
     }
 
@@ -945,7 +945,7 @@ std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR 
 }
 
 void VkRenderFramework::DestroySwapchain() {
-    if (m_device && m_device->device() != VK_NULL_HANDLE) {
+    if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->wait();
         if (m_swapchain != VK_NULL_HANDLE) {
             vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);

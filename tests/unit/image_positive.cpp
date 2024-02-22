@@ -334,9 +334,9 @@ TEST_F(PositiveImage, FormatCompatibility) {
     image_create_info.flags = 0;
 
     VkImage image;
-    vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
 
-    vk::DestroyImage(m_device->device(), image, nullptr);
+    vk::DestroyImage(device(), image, nullptr);
 }
 
 TEST_F(PositiveImage, MultpilePNext) {
@@ -528,11 +528,11 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     bind_swapchain_info.imageIndex = 0;
 
     VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
-    bind_info.image = image.image();
+    bind_info.image = image.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
 
     uint32_t swapchain_images_count = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
@@ -1006,7 +1006,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     // Set up the descriptor
     img_info.imageView = view.handle();
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     for (TestType test_type : test_list) {
         auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1195,7 +1195,7 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     // Set up the descriptor
     img_info.imageView = other_view.handle();
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     for (TestType test_type : test_list) {
         VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
@@ -1284,11 +1284,11 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
 
     m_commandBuffer->begin();
 
-    vk::CmdBlitImage(m_commandBuffer->handle(), image.image(), image.Layout(), image.image(), image.Layout(), 1, &blitRegion,
+    vk::CmdBlitImage(m_commandBuffer->handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
                      VK_FILTER_NEAREST);
 
     blitRegion.dstSubresource.layerCount = 2;  // same as VK_REMAINING_ARRAY_LAYERS
-    vk::CmdBlitImage(m_commandBuffer->handle(), image.image(), image.Layout(), image.image(), image.Layout(), 1, &blitRegion,
+    vk::CmdBlitImage(m_commandBuffer->handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
                      VK_FILTER_NEAREST);
 }
 

@@ -273,7 +273,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -369,7 +369,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
@@ -379,7 +379,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 
     uint32_t image_index;
     vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handle, &image_index);
-    vk::WaitForFences(m_device->device(), 1, &fence_handle, VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence_handle, VK_TRUE, kWaitTimeout);
 
     m_commandBuffer->begin();
 
@@ -732,10 +732,10 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
-    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
-    vk::ResetFences(m_device->device(), 1, &fence.handle());
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+    vk::ResetFences(device(), 1, &fence.handle());
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence.handle());
-    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
 TEST_F(PositiveWsi, SwapchainPresentShared) {
@@ -1095,7 +1095,7 @@ TEST_F(PositiveWsi, DestroySwapchainWithBoundImages) {
         bind_info.memory = VK_NULL_HANDLE;
         bind_info.memoryOffset = 0;
 
-        vk::BindImageMemory2KHR(m_device->device(), 1, &bind_info);
+        vk::BindImageMemory2KHR(device(), 1, &bind_info);
     }
 }
 

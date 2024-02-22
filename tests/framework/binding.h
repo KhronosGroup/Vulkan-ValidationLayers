@@ -212,7 +212,6 @@ class Device : public internal::Handle<VkDevice> {
         init(extensions);
     };
 
-    VkDevice device() { return handle(); }
     const PhysicalDevice &phy() const { return phy_; }
 
     std::vector<const char *> GetEnabledExtensions() { return enabled_extensions_; }
@@ -600,8 +599,6 @@ class Image : public internal::NonDispHandle<VkImage> {
                                                uint32_t const layers, VkFormat const format, VkFlags const usage,
                                                VkImageTiling const requested_tiling = VK_IMAGE_TILING_OPTIMAL,
                                                const std::vector<uint32_t> *queue_families = nullptr);
-
-    VkImage image() const { return handle(); }
 
     static bool IsCompatible(const Device &dev, VkImageUsageFlags usages, VkFormatFeatureFlags2 features);
 

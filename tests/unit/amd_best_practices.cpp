@@ -340,8 +340,8 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[0]);
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
 
     VkCopyDescriptorSet copy_info = {};
     copy_info.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;

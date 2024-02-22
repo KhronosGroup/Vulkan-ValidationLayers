@@ -674,7 +674,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     VkBuffer buffer;
-    VkResult result = vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    VkResult result = vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
     ASSERT_EQ(VK_SUCCESS, result);
 
     m_commandBuffer->begin();
@@ -691,7 +691,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vk::DestroyBuffer(m_device->device(), buffer, 0);
+    vk::DestroyBuffer(device(), buffer, 0);
 }
 
 TEST_F(NegativeMesh, ExtensionDisabledNV) {

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,9 +157,9 @@ TEST_F(PositiveTooling, PrivateDataDevice) {
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
     static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)m_device->device(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, data_value);
     uint64_t data;
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)m_device->device(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, &data);
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
 }

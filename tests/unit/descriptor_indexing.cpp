@@ -113,11 +113,11 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     pipe.CreateGraphicsPipeline();
 
     // Make both bindings valid before binding to the command buffer
-    vk::UpdateDescriptorSets(m_device->device(), 2, &descriptor_write[0], 0, NULL);
+    vk::UpdateDescriptorSets(device(), 2, &descriptor_write[0], 0, NULL);
 
     // Invalid to update binding 0 after being bound. But the error is actually
     // generated during vk::EndCommandBuffer
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[0], 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write[0], 0, NULL);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
 
@@ -187,7 +187,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
 
     // binding 1 has a different VkDescriptorBindingFlags
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
 
@@ -343,7 +343,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptor_writes[0].pBufferInfo = buffer_info;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
-            vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+            vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, NULL);
             m_errorMonitor->VerifyFound();
         }
     }
