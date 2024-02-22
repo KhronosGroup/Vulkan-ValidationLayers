@@ -547,7 +547,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentMissingNotRead) {
 TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     TEST_DESCRIPTION("Input Attachment array where need to follow the index into the array");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);
@@ -678,7 +678,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
 TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     TEST_DESCRIPTION("Input Attachment sharing same variable, but different aspect");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features12);

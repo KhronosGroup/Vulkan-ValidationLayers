@@ -1357,6 +1357,7 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
 TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     TEST_DESCRIPTION("Buffer barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -1398,6 +1399,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
 TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     TEST_DESCRIPTION("Image barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -1713,6 +1715,7 @@ TEST_F(NegativeSyncObject, BarrierQueues) {
     TEST_DESCRIPTION("Test buffer memory with both src and dst queue VK_QUEUE_FAMILY_EXTERNAL.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -1975,6 +1978,7 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
 
 TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddDisabledFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -2194,7 +2198,7 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueueFamilies) {
 TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoCore) {
     TEST_DESCRIPTION("Invalid usage of VkSemaphoreTypeCreateInfo with a 1.2 core version");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     // Core 1.2 supports timelineSemaphore feature bit but not enabled
     RETURN_IF_SKIP(Init());
 
@@ -3367,6 +3371,7 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage) {
 TEST_F(NegativeSyncObject, DetectInterQueueEventUsage2) {
     TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent2/CmdWaitEvents2)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -3539,6 +3544,7 @@ TEST_F(NegativeSyncObject, InvalidDeviceOnlyEvent) {
 
 TEST_F(NegativeSyncObject, SetEvent2DependencyFlags) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -3556,6 +3562,7 @@ TEST_F(NegativeSyncObject, SetEvent2DependencyFlags) {
 
 TEST_F(NegativeSyncObject, SetEvent2HostStage) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 

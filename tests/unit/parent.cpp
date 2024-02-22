@@ -198,6 +198,7 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
 TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     TEST_DESCRIPTION("Test RenderPass and Imageless Framebuffer");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_framebuffer);
@@ -250,6 +251,7 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
 TEST_F(NegativeParent, RenderPassCommandBuffer) {
     TEST_DESCRIPTION("Test RenderPass and Framebuffer");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Renderpass created on first device
     auto features = m_device->phy().features();

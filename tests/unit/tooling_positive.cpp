@@ -120,7 +120,7 @@ TEST_F(PositiveTooling, PrivateDataExt) {
 
 TEST_F(PositiveTooling, PrivateDataCore) {
     TEST_DESCRIPTION("Basic usage calling private data as core.");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
@@ -149,6 +149,7 @@ TEST_F(PositiveTooling, PrivateDataCore) {
 TEST_F(PositiveTooling, PrivateDataDevice) {
     TEST_DESCRIPTION("Test private data can set VkDevice.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 

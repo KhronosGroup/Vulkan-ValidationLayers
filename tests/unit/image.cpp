@@ -3850,17 +3850,10 @@ TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
 TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
     TEST_DESCRIPTION("Do not use VkSamplerYcbcrConversionInfo when required for an image view.");
 
-    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
-        printf("samplerYcbcrConversion not supported, skipping test\n");
-        return;
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
@@ -4085,6 +4078,7 @@ TEST_F(NegativeImage, SparseResidencyLinear) {
 TEST_F(NegativeImage, DisjointWithoutAlias) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_DISJOINT_BIT without VK_IMAGE_CREATE_ALIAS_BIT.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
@@ -5843,7 +5837,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
 TEST_F(NegativeImage, ComputeImageLayout11) {
     TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader using vkCmdDispatchBase");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
     const char *cs = R"glsl(#version 450

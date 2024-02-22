@@ -217,7 +217,8 @@ TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
 }
 
 TEST_F(NegativePipeline, BadPipelineObject) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
+
     constexpr uint64_t fake_pipeline_handle = 0xbaad6001;
     VkPipeline bad_pipeline = CastFromUint64<VkPipeline>(fake_pipeline_handle);
 
@@ -2060,7 +2061,7 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled10) {
 TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled11) {
     TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.1 without the shaderDrawParameters feature enabled.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

@@ -322,12 +322,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
 TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
@@ -363,12 +360,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
 TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants default");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
@@ -409,12 +403,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
 TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
@@ -465,8 +456,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
 
 TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION("Test VK_KHR_workgroup_memory_explicit_layout");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
 
+    // Vulkan 1.2 is required because we use SPIR-V 1.5 shaders
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper();

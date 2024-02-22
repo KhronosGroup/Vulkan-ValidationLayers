@@ -1062,6 +1062,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
 TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     TEST_DESCRIPTION("Verify renderpass layout transitions for a 2d ImageView created from a 3d Image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

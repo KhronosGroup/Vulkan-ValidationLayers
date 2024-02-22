@@ -117,6 +117,14 @@ if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
 }
 ```
 
+Alternatively, to require the device to support the target Vulkan version, the test writer can call:
+
+```cpp
+SetRequiredApiVersion(VK_API_VERSION_1_1);
+// Will skip if the supported instance version or device supported version is not high enough
+RETURN_IF_SKIP(InitFramework());
+```
+
 ### Promoted extensions
 
 The test framework now automatically handles extensions promoted to core versions by not enabling the extensions if the target instance Vulkan version (set through `SetTargetApiVersion`) or the Vulkan version supported by the device (queriable using `DeviceValidationVersion`) already includes the instance or device extension's functionality, respectively.

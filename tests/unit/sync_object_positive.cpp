@@ -1517,6 +1517,7 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent) {
 TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
     TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent2/CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -2195,6 +2196,7 @@ TEST_F(PositiveSyncObject, SubpassBarrier) {
 TEST_F(PositiveSyncObject, SubpassBarrier2) {
     TEST_DESCRIPTION("The queue family indices for subpass barrier should be equal (but otherwise are not restricted");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -2285,6 +2287,7 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
 TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     TEST_DESCRIPTION("Barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 

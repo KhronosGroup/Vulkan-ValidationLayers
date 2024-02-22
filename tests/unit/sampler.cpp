@@ -34,7 +34,7 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled) {
 TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
     TEST_DESCRIPTION("Validation using CLAMP_TO_EDGE for Vulkan 1.2 without the samplerMirrorClampToEdge feature enabled.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -487,8 +487,9 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     TEST_DESCRIPTION(
         "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
 
-    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    // Require Vulkan 1.1 or VK_KHR_sampler_ycbcr_conversion
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
@@ -1402,7 +1403,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCopyObject) {
 TEST_F(NegativeSampler, ReductionModeFeature) {
     TEST_DESCRIPTION("Test using VkSamplerReductionModeCreateInfo without required feature.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = vku::InitStructHelper();

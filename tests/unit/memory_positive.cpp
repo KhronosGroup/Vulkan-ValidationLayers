@@ -380,6 +380,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
     TEST_DESCRIPTION("Test vkGetDeviceBufferMemoryRequirements");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
 
     RETURN_IF_SKIP(Init());
 
@@ -409,6 +410,7 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     TEST_DESCRIPTION("Test vkGetDeviceImageMemoryRequirements");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
 
     RETURN_IF_SKIP(Init());
 

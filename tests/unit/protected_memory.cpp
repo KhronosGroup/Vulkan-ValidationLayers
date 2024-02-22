@@ -19,9 +19,8 @@
 
 TEST_F(NegativeProtectedMemory, Queue) {
     TEST_DESCRIPTION("Try creating queue without VK_QUEUE_PROTECTED_BIT capability");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceProtectedMemoryFeatures protected_features = vku::InitStructHelper();
@@ -76,8 +75,7 @@ TEST_F(NegativeProtectedMemory, Queue) {
 TEST_F(NegativeProtectedMemory, Submit) {
     TEST_DESCRIPTION("Setting protectedSubmit with a queue not created with VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     // creates a queue without VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT
     RETURN_IF_SKIP(Init());
 
@@ -148,9 +146,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
 TEST_F(NegativeProtectedMemory, Memory) {
     TEST_DESCRIPTION("Validate cases where protectedMemory feature is enabled and usages are invalid");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
@@ -271,9 +267,8 @@ TEST_F(NegativeProtectedMemory, Memory) {
 
 TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     TEST_DESCRIPTION("Vulkan 1.1 unique queue detection where both are protected and same queue family");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
     // Needed for both protected memory and vkGetDeviceQueue2
@@ -342,9 +337,8 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
 
 TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     TEST_DESCRIPTION("General testing of vkGetDeviceQueue and general Device creation cases");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
     VkDeviceQueueInfo2 queue_info_2 = vku::InitStructHelper();
@@ -466,7 +460,7 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
 TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     TEST_DESCRIPTION("Test VUIDs from VK_EXT_pipeline_protected_access");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -630,10 +624,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     TEST_DESCRIPTION("Test making commands in unprotected command buffers that can't be used");
 
     // protect memory added in VK 1.1
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
@@ -698,9 +689,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
 TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     TEST_DESCRIPTION("Test where there is mixing of protectedMemory backed resource in command buffers");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
@@ -1072,6 +1061,7 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
     TEST_DESCRIPTION("Bind ray tracing pipeline in a protected command buffer");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
@@ -1142,7 +1132,7 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
 
 TEST_F(NegativeProtectedMemory, RayQuery) {
     TEST_DESCRIPTION("Bind ray tracing pipeline in a protected command buffer");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::protectedMemory);

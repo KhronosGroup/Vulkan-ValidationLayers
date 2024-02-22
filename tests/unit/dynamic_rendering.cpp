@@ -1669,6 +1669,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
 TEST_F(NegativeDynamicRendering, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("VkCommandBufferBeginInfo Dynamic Rendering Tests.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     vkt::CommandBuffer cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);

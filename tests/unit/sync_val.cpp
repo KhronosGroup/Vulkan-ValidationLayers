@@ -1550,13 +1550,10 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
 TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     TEST_DESCRIPTION("Copying to attachment creates hazard with attachment load operation");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -1601,13 +1598,10 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
 TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     TEST_DESCRIPTION("Copying to attachment creates hazard with attachment store operation");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -1651,7 +1645,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
 }
 
 TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
     AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -4534,6 +4528,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
 
 TEST_F(NegativeSyncVal, QSSubmit2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
@@ -6127,13 +6122,13 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
 TEST_F(NegativeSyncVal, QSDebugRegion_TimelineStability) {
     TEST_DESCRIPTION("Timeline semaphores are not supported yet but they should not crash the app");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_features = vku::InitStructHelper();
-    timeline_features.timelineSemaphore = VK_TRUE;
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper(&timeline_features);
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
@@ -6203,10 +6198,10 @@ TEST_F(NegativeSyncVal, QSDebugRegion_TimelineStability) {
 TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     TEST_DESCRIPTION("SHADER_READ_BIT barrier cannot protect UNIFORM_READ_BIT accesses");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     constexpr VkDeviceSize size = 1024;
     const vkt::Buffer staging_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -6280,10 +6275,10 @@ TEST_F(NegativeSyncVal, FillBufferMissingBarrier) {
 TEST_F(NegativeSyncVal, FillBufferWrongBarrier) {
     TEST_DESCRIPTION("Insufficient synchronization with vkCmdFillBuffer TRANSFER_WRITE access");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     constexpr VkDeviceSize size = 1024;
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -6338,10 +6333,10 @@ TEST_F(NegativeSyncVal, UpdateBufferMissingBarrier) {
 TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
     TEST_DESCRIPTION("Insufficient synchronization with vkCmdUpdateBuffer TRANSFER_WRITE access");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     constexpr VkDeviceSize size = 64;
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);

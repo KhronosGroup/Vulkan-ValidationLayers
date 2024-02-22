@@ -19,7 +19,7 @@
 TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
     TEST_DESCRIPTION("Test writing to texel buffer with less components.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     // not valid GLSL, but would look like:

@@ -21,6 +21,7 @@ ParentTest::~ParentTest() {
 TEST_F(PositiveParent, ImagelessFramebuffer) {
     TEST_DESCRIPTION("pAttachments is ignored even for common parent");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(imageless_framebuffer);

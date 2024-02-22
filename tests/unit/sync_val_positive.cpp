@@ -184,7 +184,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
 TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     TEST_DESCRIPTION("Signal semaphore on the host and wait on the host");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitSyncValFramework());
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(InitState());
@@ -238,7 +238,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
 TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     TEST_DESCRIPTION("Singal semaphore on the host and regularly read semaphore payload value");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitSyncValFramework());
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(InitState());
@@ -283,7 +283,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
 
 TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     TEST_DESCRIPTION("Read semaphore counter value from multiple threads");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitSyncValFramework());
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(InitState());
@@ -618,13 +618,10 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
 TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using dynamic indexing. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (features12.runtimeDescriptorArray != VK_TRUE) {
-        GTEST_SKIP() << "runtimeDescriptorArray not supported and is required";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     constexpr VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -701,12 +698,8 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
 TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using constant indices. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
-    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -772,12 +765,8 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the texel buffer array using constant indices. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
-    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -873,10 +862,10 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
         "with image read in the previous batch.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -962,10 +951,10 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
 TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     TEST_DESCRIPTION("Transition and read image in different submits synchronized via ALL_COMMANDS semaphore");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
@@ -1048,12 +1037,12 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
 TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     TEST_DESCRIPTION("Test color resolve with dynamic rendering");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&sync2_features);
-    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     const uint32_t width = 64;
     const uint32_t height = 64;
@@ -1096,12 +1085,12 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
 TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     TEST_DESCRIPTION("Test depth resolve with dynamic rendering");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&sync2_features);
-    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     const uint32_t width = 64;
     const uint32_t height = 64;
@@ -1143,10 +1132,10 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
 TEST_F(PositiveSyncVal, FillBuffer) {
     TEST_DESCRIPTION("Synchronize with vkCmdFillBuffer assuming that its writes happen on the CLEAR stage");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     constexpr VkDeviceSize size = 1024;
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -1177,10 +1166,10 @@ TEST_F(PositiveSyncVal, FillBuffer) {
 TEST_F(PositiveSyncVal, UpdateBuffer) {
     TEST_DESCRIPTION("Synchronize with vkCmdUpdateBuffer assuming that its writes happen on the CLEAR stage");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
 
     constexpr VkDeviceSize size = 64;
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);

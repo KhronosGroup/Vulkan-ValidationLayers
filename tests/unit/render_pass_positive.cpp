@@ -738,15 +738,9 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     TEST_DESCRIPTION("Render pass using a dedicated stencil layout, different from depth layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features vulkan_12_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(vulkan_12_features);
-    if (vulkan_12_features.separateDepthStencilLayouts == VK_FALSE) {
-        GTEST_SKIP() << "separateDepthStencilLayouts feature not supported, skipping test.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &vulkan_12_features));
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
 
     // Create depth stencil image
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
@@ -797,15 +791,9 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     TEST_DESCRIPTION("Use queries in a render pass instance with multiview enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan11Features vulkan_11_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(vulkan_11_features);
-
-    if (vulkan_11_features.multiview == VK_FALSE) {
-        GTEST_SKIP() << "multiview feature not supported, skipping test.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);

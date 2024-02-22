@@ -1122,7 +1122,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
 TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     TEST_DESCRIPTION("Non-InputAttachment shader input with unknown image format");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);

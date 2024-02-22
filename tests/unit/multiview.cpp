@@ -1114,6 +1114,8 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     TEST_DESCRIPTION("Create graphics pipeline using multiview features which are not enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
     AddRequiredFeature(vkt::Feature::tessellationShader);
     AddRequiredFeature(vkt::Feature::geometryShader);

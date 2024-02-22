@@ -423,6 +423,12 @@ void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
     app_info_.apiVersion = m_target_api_version.Value();
 }
 
+void VkLayerTest::SetRequiredApiVersion(APIVersion required_api_version) {
+    // Implicitly means that the target API version is at least as high
+    SetTargetApiVersion(required_api_version);
+    m_required_api_version = required_api_version;
+}
+
 APIVersion VkLayerTest::DeviceValidationVersion() const {
     // The validation layers assume the version we are validating to is the apiVersion unless the device apiVersion is lower
     return std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));

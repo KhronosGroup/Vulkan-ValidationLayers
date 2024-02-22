@@ -1208,13 +1208,11 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeZero) {
 TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
     TEST_DESCRIPTION("Make sure an error is logged when a specialization map entry's size is not correct with type");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
 
     bool int8_support = false;
     bool float64_support = false;
 
-    // require to make enable logic simpler
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
@@ -1834,14 +1832,10 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
     TEST_DESCRIPTION("Validate using Device memory scope in spirv.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    features12.vulkanMemoryModelDeviceScope = VK_FALSE;
-    if (features12.vulkanMemoryModel == VK_FALSE) {
-        GTEST_SKIP() << "vulkanMemoryModel feature is not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    RETURN_IF_SKIP(Init());
 
     char const *csSource = R"glsl(
         #version 450
@@ -1861,14 +1855,10 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
     TEST_DESCRIPTION("Validate using QueueFamily memory scope in spirv.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    features12.vulkanMemoryModel = VK_FALSE;
-    if (features12.vulkanMemoryModelDeviceScope == VK_FALSE) {
-        GTEST_SKIP() << "vulkanMemoryModelDeviceScope feature is not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    AddDisabledFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(Init());
 
     char const *csSource = R"glsl(
         #version 450
@@ -2124,7 +2114,7 @@ TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
 TEST_F(NegativeShaderSpirv, InvalidExtension) {
     TEST_DESCRIPTION("Use an invalid SPIR-V extension in OpExtension.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     InitRenderTarget();

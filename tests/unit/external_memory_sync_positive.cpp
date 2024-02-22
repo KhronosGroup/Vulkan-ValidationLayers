@@ -139,7 +139,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
@@ -253,6 +253,8 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
 TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {
     TEST_DESCRIPTION("Create external buffer that requires dedicated allocation.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -330,6 +332,7 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
 TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
     TEST_DESCRIPTION("Test vkExportMetalObjectsEXT");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
 

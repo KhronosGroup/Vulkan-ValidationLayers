@@ -1296,16 +1296,8 @@ TEST_F(PositivePipeline, DualBlendShader) {
     TEST_DESCRIPTION("Test drawing with dual source blending with too many fragment output attachments.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-
-    if (features2.features.dualSrcBlend == VK_FALSE) {
-        GTEST_SKIP() << "dualSrcBlend feature is not available";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::dualSrcBlend);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(

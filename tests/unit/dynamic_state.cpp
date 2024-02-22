@@ -4021,6 +4021,7 @@ TEST_F(NegativeDynamicState, ScissorWithCount) {
     TEST_DESCRIPTION("Validate creating graphics pipeline with dynamic state scissor with count.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -4723,6 +4724,7 @@ TEST_F(NegativeDynamicState, MissingCmdBindVertexBuffers2) {
 
 TEST_F(NegativeDynamicState, CmdBindVertexBuffers2NullOffset) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     m_commandBuffer->begin();
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);

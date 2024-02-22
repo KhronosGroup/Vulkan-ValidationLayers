@@ -38,6 +38,7 @@ TEST_F(NegativeTooling, PrivateDataFeature) {
 TEST_F(NegativeTooling, PrivateDataSetNonDevice) {
     TEST_DESCRIPTION("Use Private Data on a non-Device object type.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
@@ -60,6 +61,7 @@ TEST_F(NegativeTooling, PrivateDataSetNonDevice) {
 TEST_F(NegativeTooling, PrivateDataSetBadHandle) {
     TEST_DESCRIPTION("Use Private Data a non valid handle.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
@@ -79,6 +81,7 @@ TEST_F(NegativeTooling, PrivateDataSetBadHandle) {
 TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
     TEST_DESCRIPTION("Test private data can set VkDevice.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
@@ -104,6 +107,7 @@ TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
 
 TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
@@ -130,6 +134,7 @@ TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
 
 TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
@@ -148,6 +153,7 @@ TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
 
 TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 

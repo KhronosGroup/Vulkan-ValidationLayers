@@ -5043,6 +5043,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
     TEST_DESCRIPTION("Test the maxInlineUniformTotalSize limit");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -5099,7 +5100,8 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
 
 TEST_F(NegativeDescriptors, DescriptorTypeNotInPool) {
     TEST_DESCRIPTION("With maintenance1, allocate descriptor with type not in pool");
-    SetTargetApiVersion(VK_API_VERSION_1_1);  // Need VK_KHR_maintenance1
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

@@ -924,6 +924,7 @@ TEST_F(NegativeRenderPass, AttachmentReferenceSync2Layout) {
     TEST_DESCRIPTION("Attachment reference uses sync2 and ATTACHMENT_OPTIMAL_KHR or READ_ONLY_OPTIMAL_KHR layouts");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     // synchronization2 not enabled
     RETURN_IF_SKIP(Init());
 
@@ -1373,6 +1374,7 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
     TEST_DESCRIPTION("Test that separate stencil initial/final layouts match up with the usage bits in framebuffer attachment");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
     RETURN_IF_SKIP(Init());
 
@@ -2662,6 +2664,7 @@ TEST_F(NegativeRenderPass, AllViewMasksZero) {
     TEST_DESCRIPTION("Test VkRenderPassMultiviewCreateInfo with all view mask elements being 0.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkSubpassDescription subpass_description = {};
     subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -3274,6 +3277,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
@@ -4006,6 +4010,7 @@ TEST_F(NegativeRenderPass, ViewMaskWithoutFeature) {
     TEST_DESCRIPTION("Create render pass using view masks with multiview disabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkAttachmentReference attachment_reference = {};

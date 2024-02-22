@@ -282,7 +282,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.2 with feature bit enabled");
 
     // use 1.2 to get the feature bit in VkPhysicalDeviceVulkan11Features
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
 
     RETURN_IF_SKIP(InitFramework());
 
@@ -382,7 +382,7 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
     TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.2");
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
@@ -611,15 +611,15 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
 
 TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
     TEST_DESCRIPTION("Create a shader using 1.3 spirv environment");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
 }
 
-TEST_F(PositiveShaderInterface, OpTypeArraySpecConstant) {
+TEST_F(PositiveShaderSpirv, OpTypeArraySpecConstant) {
     TEST_DESCRIPTION("Make sure spec constants for a OpTypeArray doesn't assert");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
     std::stringstream spv_source;
@@ -1700,7 +1700,7 @@ TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
 
     // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();

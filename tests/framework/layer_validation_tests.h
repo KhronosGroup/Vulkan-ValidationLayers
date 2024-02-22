@@ -203,7 +203,16 @@ class VkLayerTest : public VkLayerTestBase {
     APIVersion DeviceValidationVersion() const;
 
   protected:
+    // Enables target API version (at instance creation) but does NOT require the target API version
+    // to be supported by the physical device itself in order to enable functionalities that may be
+    // either available as extension form or as promoted core features.
+    // In order to actually require physical device version, check the physical device supported API version
+    // with DeviceValidationVersion() or use SetRequiredApiVersion().
     void SetTargetApiVersion(APIVersion target_api_version);
+    // Enables required API version and ALSO requires it to be supported by the physical device itself.
+    // Should only be used when the API version is a hard requirement that would otherwise necessitate
+    // the use of DeviceValidationVersion() to verify physical device supported API version.
+    void SetRequiredApiVersion(APIVersion required_api_version);
     bool LoadDeviceProfileLayer(
         PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
         PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);

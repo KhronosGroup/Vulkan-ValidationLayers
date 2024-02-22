@@ -329,8 +329,8 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     }
 
     APIVersion used_version = std::min(m_instance_api_version, APIVersion(physDevProps_.apiVersion));
-    if (used_version < m_target_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_target_api_version.Minor() << " is required";
+    if (used_version < m_required_api_version) {
+        GTEST_SKIP() << "At least Vulkan version 1." << m_required_api_version.Minor() << " is required";
     }
 
     for (const auto &ext : m_required_extensions) {

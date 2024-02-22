@@ -285,6 +285,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     TEST_DESCRIPTION("Test writing to image unknown format with less components, but in unused Entrypoint.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

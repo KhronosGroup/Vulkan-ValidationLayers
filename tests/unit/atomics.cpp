@@ -522,7 +522,9 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
 
 TEST_F(NegativeAtomic, Float) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    // Requires Vulkan 1.1 as we use SPIR-V 1.3 shaders
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     // Create device without VK_EXT_shader_atomic_float extension or features enabled
@@ -805,6 +807,9 @@ TEST_F(NegativeAtomic, Float) {
 TEST_F(NegativeAtomic, Float2) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float2.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    // Requires Vulkan 1.1 as we use SPIR-V 1.3 shaders
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
 
     // Create device without VK_EXT_shader_atomic_float2 extension or features enabled
     RETURN_IF_SKIP(InitFramework());

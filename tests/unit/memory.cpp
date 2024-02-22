@@ -1794,9 +1794,11 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
 TEST_F(NegativeMemory, DedicatedAllocation) {
     TEST_DESCRIPTION("Create invalid requests to dedicated allocation of memory");
 
-    // Both VK_KHR_dedicated_allocation and VK_KHR_sampler_ycbcr_conversion supported in 1.1
-    // Quicke to set 1.1 then check all extensions in 1.0
+    // Required Vulkan 1.1 or VK_KHR_dedicated_allocation + VK_KHR_sampler_ycbcr_conversion
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+
     RETURN_IF_SKIP(Init());
 
     const VkFormat disjoint_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;

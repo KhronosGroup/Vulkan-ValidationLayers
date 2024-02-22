@@ -491,7 +491,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
     // Vulkan 1.1 is a dependency of VK_KHR_video_queue, but both the version and the extension
     // is optional from the point of view of this test case
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::hostQueryReset);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
@@ -591,7 +591,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
+        vk::ResetQueryPool(m_device->device(), query_pool.handle(), 0, 1);
 
         m_commandBuffer->begin(&command_buffer_begin_info);
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
@@ -890,6 +890,7 @@ TEST_F(NegativeQuery, HostResetBadRange) {
     TEST_DESCRIPTION("Bad range in vkResetQueryPoolEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::hostQueryReset);
     RETURN_IF_SKIP(Init());
 
@@ -904,6 +905,7 @@ TEST_F(NegativeQuery, HostResetQueryPool) {
     TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::hostQueryReset);
     RETURN_IF_SKIP(Init());
 
@@ -922,6 +924,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
     TEST_DESCRIPTION("Device not matching queryPool in vkResetQueryPoolEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features = vku::InitStructHelper();
@@ -1633,15 +1636,9 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     TEST_DESCRIPTION("Test CmdBeginQuery in subpass with multiview");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features_1_1 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features_1_1);
-    if (!features_1_1.multiview) {
-        GTEST_SKIP() << "Test requires VkPhysicalDeviceVulkan11Features::multiview feature.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2285,6 +2282,7 @@ TEST_F(NegativeQuery, CmdResetQueryPoolWithoutQueryPool) {
 TEST_F(NegativeQuery, ResetQueryPoolWithoutQueryPool) {
     TEST_DESCRIPTION("call vkResetQueryPool with queryPool being invalid.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-queryPool-parameter");

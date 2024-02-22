@@ -22,6 +22,7 @@ TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating buffer with incompatible external memory handle types");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -62,6 +63,7 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating image with incompatible external memory handle types");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -163,6 +165,7 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
 TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -216,6 +219,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
 TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Bind buffer memory with unsupported external memory handle type.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -264,6 +268,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Bind buffer memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -303,6 +308,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Bind image memory with unsupported external memory handle type.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -350,6 +356,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Bind image memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -403,6 +410,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -462,6 +470,7 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
     const char *no_tempory_tl_vuid = "VUID-VkImportSemaphoreFdInfoKHR-flags-03323";
 #endif
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(extension_name);
@@ -517,6 +526,7 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
 TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
@@ -764,6 +774,7 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
@@ -832,6 +843,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     const char *other_export_type_vuid = "VUID-VkFenceGetFdInfoKHR-handleType-01453";
     const char *bad_import_type_vuid = "VUID-VkImportFenceFdInfoKHR-handleType-01464";
 #endif
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
@@ -905,6 +917,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
 TEST_F(NegativeExternalMemorySync, SyncFdFence) {
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
@@ -961,6 +974,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(extension_name);
@@ -1052,6 +1066,7 @@ TEST_F(NegativeExternalMemorySync, Semaphore) {
     const char *other_export_type_vuid = "VUID-VkSemaphoreGetFdInfoKHR-handleType-01132";
     const char *bad_import_type_vuid = "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143";
 #endif
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(extension_name);
@@ -1113,6 +1128,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(ext_mem_extension_name);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
@@ -1324,6 +1340,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 TEST_F(NegativeExternalMemorySync, FenceExportWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Create fence with unsupported external handle type in VkExportFenceCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1349,6 +1366,7 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, FenceExportWithIncompatibleHandleType) {
     TEST_DESCRIPTION("Create fence with incompatible external handle types in VkExportFenceCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1376,6 +1394,7 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithIncompatibleHandleType) {
 TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Create semaphore with unsupported external handle type in VkExportSemaphoreCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1401,6 +1420,7 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     TEST_DESCRIPTION("Create semaphore with incompatible external handle types in VkExportSemaphoreCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1428,6 +1448,7 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
 TEST_F(NegativeExternalMemorySync, MemoryAndMemoryNV) {
     TEST_DESCRIPTION("Test for both external memory and external memory NV in image create pNext chain.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -1461,6 +1482,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
     TEST_DESCRIPTION("Validate layout of image with external memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
@@ -1497,6 +1519,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 TEST_F(NegativeExternalMemorySync, D3D12FenceSubmitInfo) {
     TEST_DESCRIPTION("Test invalid D3D12FenceSubmitInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
@@ -1952,6 +1975,7 @@ TEST_F(NegativeExternalMemorySync, Win32ExportFromImportedFence) {
 TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
     TEST_DESCRIPTION("Bind external buffer that requires dedicated allocation to non-dedicated memory.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1977,6 +2001,7 @@ TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
 TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
     TEST_DESCRIPTION("Bind external image that requires dedicated allocation to non-dedicated memory.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2015,6 +2040,7 @@ TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 TEST_F(NegativeExternalMemorySync, Win32MemoryHandleProperties) {
     TEST_DESCRIPTION("Call vkGetMemoryWin32HandlePropertiesKHR with invalid Win32 handle or with opaque handle type");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
@@ -2219,6 +2245,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferSupport) {
 
 TEST_F(NegativeExternalMemorySync, FdMemoryHandleProperties) {
     TEST_DESCRIPTION("Call vkGetMemoryFdPropertiesKHR with invalid fd handle or with opaque handle type");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
@@ -2606,6 +2633,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostMemoryIndex) {
 TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     TEST_DESCRIPTION("Test VK_EXT_metal_objects VUIDs");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);

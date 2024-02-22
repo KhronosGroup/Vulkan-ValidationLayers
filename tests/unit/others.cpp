@@ -954,8 +954,7 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
 TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     TEST_DESCRIPTION("Checks that features are enabled if extension is passed in for promoted extensions with requirement.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
     const bool test_1_2 = (DeviceValidationVersion() >= VK_API_VERSION_1_2);
@@ -1373,6 +1372,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
 TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     TEST_DESCRIPTION("Test for invalid imageCreate flags bit with physicalDeviceCount.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework());
 
@@ -1499,7 +1499,7 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     TEST_DESCRIPTION("Create a pNext chain containing valid structures, but with a duplicate structure type");
 
     // VK_KHR_get_physical_device_properties2 promoted to 1.1
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-sType-unique");

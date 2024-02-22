@@ -21,6 +21,7 @@
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
@@ -99,6 +100,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
 TEST_F(PositiveSubpass, SubpassWithEventWait) {
     TEST_DESCRIPTION("Subpass waits for the event set outside of this subpass");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 

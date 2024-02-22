@@ -393,7 +393,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
 TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 with feature bit enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();

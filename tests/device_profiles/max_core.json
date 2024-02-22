@@ -649,6 +649,28 @@
                     "uniformTexelBufferOffsetSingleTexelAlignment": true,
                     "maxBufferSize": 4294967000
                 },
+                "VkPhysicalDeviceSubgroupProperties": {
+                    "subgroupSize": 32,
+                    "supportedStages": [
+                        "VK_SHADER_STAGE_VERTEX_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
+                        "VK_SHADER_STAGE_GEOMETRY_BIT",
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT"
+                    ],
+                    "supportedOperations": [
+                        "VK_SUBGROUP_FEATURE_BASIC_BIT",
+                        "VK_SUBGROUP_FEATURE_VOTE_BIT",
+                        "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT",
+                        "VK_SUBGROUP_FEATURE_BALLOT_BIT",
+                        "VK_SUBGROUP_FEATURE_SHUFFLE_BIT",
+                        "VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT",
+                        "VK_SUBGROUP_FEATURE_CLUSTERED_BIT",
+                        "VK_SUBGROUP_FEATURE_QUAD_BIT"
+                    ],
+                    "quadOperationsInAllStages": true
+                },
                 "VkPhysicalDevicePointClippingProperties": {},
                 "VkPhysicalDeviceMultiviewProperties": {
                     "maxMultiviewViewCount": 16,

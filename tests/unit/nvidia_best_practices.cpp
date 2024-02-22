@@ -582,16 +582,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
 TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
 {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceSynchronization2Features synchronization2_features = vku::InitStructHelper(&dynamic_rendering_features);
-    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(synchronization2_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "This test requires dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -951,16 +947,10 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
 TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
 {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "This test requires dynamicRendering";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     auto set_desired = [this] {
         m_errorMonitor->Finish();

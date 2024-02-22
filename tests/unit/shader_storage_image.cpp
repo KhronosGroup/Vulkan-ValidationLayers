@@ -19,7 +19,7 @@
 TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
@@ -96,7 +96,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
 TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
@@ -486,7 +486,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
     // because checks for read/write without format has to be done per format
     // rather than as a device feature. The code we test here only looks at
     // the shader.
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
@@ -557,7 +557,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
     // because checks for read/write without format has to be done per format
     // rather than as a device feature. The code we test here only looks at
     // the shader.
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
@@ -619,7 +619,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
 TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     // not valid GLSL, but would look like:
@@ -669,7 +669,7 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
 TEST_F(NegativeShaderStorageImage, WriteLessComponentCopyObject) {
     TEST_DESCRIPTION("Test writing to image with less components, but use OpCopyObject.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     // not valid GLSL, but would look like:
@@ -723,7 +723,7 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponentCopyObject) {
 TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
     // not valid GLSL, but would look like:
@@ -789,7 +789,8 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
 TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image unknown format with less components.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     // not valid GLSL, but would look like:
@@ -877,7 +878,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
 TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     TEST_DESCRIPTION("Test writing to image unknown format with VK_FORMAT_A8_UNORM_KHR.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 

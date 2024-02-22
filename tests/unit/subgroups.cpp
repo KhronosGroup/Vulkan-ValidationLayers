@@ -901,6 +901,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeature) {
     TEST_DESCRIPTION("Test using subgroupSizeControl feature when it's not enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_properties = vku::InitStructHelper();

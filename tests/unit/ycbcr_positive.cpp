@@ -35,6 +35,8 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
 
 TEST_F(PositiveYcbcr, PlaneAspectNone) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_createinfo = vku::InitStructHelper();

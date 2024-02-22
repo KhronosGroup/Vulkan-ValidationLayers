@@ -5075,7 +5075,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 TEST_F(NegativeCommand, DrawIndirectCountFeature) {
     TEST_DESCRIPTION("Test covered valid usage for the 1.2 drawIndirectCount feature");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -5947,7 +5947,7 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
 TEST_F(NegativeCommand, CopyCommands2V13) {
     TEST_DESCRIPTION("Ensure copy_commands2 promotions are validated");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -7053,6 +7053,7 @@ TEST_F(NegativeCommand, CopyDifferentFormatTexelBlockExtent) {
     TEST_DESCRIPTION("Copy bewteen compress images with different texel block extent.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkFormat src_format = VK_FORMAT_BC7_UNORM_BLOCK;

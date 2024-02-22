@@ -233,7 +233,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
 
 TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr with and without extension enabled");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetRequiredApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
     auto vkTrimCommandPool = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPool");
     auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPoolKHR");
@@ -264,7 +264,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
 
 TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
     TEST_DESCRIPTION("Enable bufferDeviceAddress feature via Vulkan12features struct");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    SetRequiredApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(bda_features);

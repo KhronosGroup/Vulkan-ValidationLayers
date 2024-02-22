@@ -53,7 +53,7 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
 TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     TEST_DESCRIPTION("texelBufferAlignment is enabled by default in 1.3.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetRequiredApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
 
     const VkDeviceSize minTexelBufferOffsetAlignment = m_device->phy().limits_.minTexelBufferOffsetAlignment;

@@ -15,6 +15,7 @@
 TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     TEST_DESCRIPTION("Create an imageless framebuffer");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());
@@ -62,6 +63,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());
 
