@@ -211,7 +211,7 @@ TEST_F(NegativeCommand, SecondaryCommandbufferAsPrimary) {
 
 TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit2KHR.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -255,7 +255,7 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
 }
 
 TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -444,7 +444,7 @@ TEST_F(NegativeCommand, PushConstants) {
 }
 
 TEST_F(NegativeCommand, PushConstant2PipelineLayoutCreateInfo) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
@@ -4539,7 +4539,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
 
 TEST_F(NegativeCommand, MultiDraw) {
     TEST_DESCRIPTION("Test validation of multi_draw extension");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiDraw);
     RETURN_IF_SKIP(Init());
@@ -4624,7 +4624,7 @@ TEST_F(NegativeCommand, MultiDraw) {
 
 TEST_F(NegativeCommand, MultiDrawMaintenance5) {
     TEST_DESCRIPTION("Test validation of multi_draw extension with VK_KHR_maintenance5");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -4664,7 +4664,7 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5) {
 
 TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
     TEST_DESCRIPTION("Test validation of multi_draw extension with VK_KHR_maintenance5");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -4698,7 +4698,7 @@ TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
 
 TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
     TEST_DESCRIPTION("Test vkCmdBindIndexBuffer2KHR with vkCmdBindIndexBuffer");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -4733,7 +4733,7 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
 
 TEST_F(NegativeCommand, MultiDrawFeatures) {
     TEST_DESCRIPTION("Test validation of multi draw feature enabled");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -5075,7 +5075,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 TEST_F(NegativeCommand, DrawIndirectCountFeature) {
     TEST_DESCRIPTION("Test covered valid usage for the 1.2 drawIndirectCount feature");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -5356,7 +5356,6 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
 
 TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     TEST_DESCRIPTION("Verify if sampler is filter cubic, image view needs to support it.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -5386,7 +5385,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props = vku::InitStructHelper();
     VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&filter_cubic_props);
 
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
 
     if (filter_cubic_props.filterCubic || filter_cubic_props.filterCubicMinmax) {
         GTEST_SKIP() << "Image and ImageView supports filter cubic ; skipped.";
@@ -5576,7 +5575,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
 }
 
 TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
@@ -5947,7 +5946,7 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
 TEST_F(NegativeCommand, CopyCommands2V13) {
     TEST_DESCRIPTION("Ensure copy_commands2 promotions are validated");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -6070,7 +6069,6 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
 // TODO 6898
 TEST_F(NegativeCommand, DISABLED_CopyImageOverlappingMemory) {
     TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
@@ -7051,8 +7049,7 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
 
 TEST_F(NegativeCommand, CopyDifferentFormatTexelBlockExtent) {
     TEST_DESCRIPTION("Copy bewteen compress images with different texel block extent.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkFormat src_format = VK_FORMAT_BC7_UNORM_BLOCK;

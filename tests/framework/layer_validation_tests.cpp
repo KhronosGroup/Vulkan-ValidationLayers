@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -413,7 +413,22 @@ void VkLayerTest::AddSurfaceExtension() {
 #endif
 }
 
+// TODO not working as expected https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7547
+// This is for setting the target API Version desired
+// A call to DeviceValidationVersion() after will verifiy if it works as expected
 void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
+    if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
+    // If we set target twice, make sure higest version always wins
+    if (target_api_version < m_attempted_api_version) return;
+
+    m_attempted_api_version = target_api_version;  // used to know if request failed
+    m_target_api_version = target_api_version;
+    app_info_.apiVersion = m_target_api_version.Value();
+}
+
+// Set the mimimum version required for a test to run
+// ex. when a test uses VK_KHR_maintenance5 you will need version 1.1+
+void VkLayerTest::AddRequiredMinimumApiVersion(APIVersion target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
     // If we set target twice, make sure higest version always wins
     if (target_api_version < m_attempted_api_version) return;

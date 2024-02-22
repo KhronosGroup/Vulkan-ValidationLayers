@@ -204,6 +204,7 @@ class VkLayerTest : public VkLayerTestBase {
 
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);
+    void AddRequiredMinimumApiVersion(APIVersion target_api_version);
     bool LoadDeviceProfileLayer(
         PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
         PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);

@@ -357,7 +357,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
 
 TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     TEST_DESCRIPTION("texelBufferAlignment is not enabled by default in 1.2.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
         GTEST_SKIP() << "Vulkan version 1.2 or less is required";
@@ -618,7 +618,7 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
 
 TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     TEST_DESCRIPTION("Submit bad offsets binding the index buffer using vkCmdBindIndexBuffer2KHR");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -651,7 +651,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
 
 TEST_F(NegativeBuffer, IndexBuffer2Size) {
     TEST_DESCRIPTION("Submit bad size binding the index buffer using vkCmdBindIndexBuffer2KHR");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -688,7 +688,7 @@ TEST_F(NegativeBuffer, IndexBufferNull) {
 }
 
 TEST_F(NegativeBuffer, IndexBufferNullOffset) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
@@ -703,7 +703,7 @@ TEST_F(NegativeBuffer, IndexBufferNullOffset) {
 
 TEST_F(NegativeBuffer, BufferUsageFlags2) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with bad flags.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -738,7 +738,7 @@ TEST_F(NegativeBuffer, BufferUsageFlagsUsage) {
 
 TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are not a subset of the Buffer.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -954,7 +954,7 @@ TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
 TEST_F(NegativeBuffer, MaxBufferSize) {
     TEST_DESCRIPTION("check limit of maxBufferSize");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(Init());

@@ -379,7 +379,6 @@ void ExtendedDynStateCalls(ErrorMonitor *error_monitor, VkCommandBuffer cmd_buf,
 TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -802,7 +801,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
 TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabledNoMultiview) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -838,7 +836,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabledNoMultiview) {
 TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -887,7 +884,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
 TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -922,7 +918,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsDisabled) {
 TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2LogicOp VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -957,7 +952,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpDisabled) {
 TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 LogicOp VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features = vku::InitStructHelper();
@@ -1014,7 +1008,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
 TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -1067,7 +1060,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
 TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 LogicOp VUs");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -1302,8 +1294,6 @@ TEST_F(NegativeDynamicState, PipelineFeatureDisabledShadingRateImageEnable) {
 
 TEST_F(NegativeDynamicState, ExtendedDynamicState3CmdSetFeatureDisabled) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 calling vkCmdSet* without feature");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
@@ -1963,7 +1953,6 @@ TEST_F(NegativeDynamicState, DrawNotSetColorWriteMask) {
 TEST_F(NegativeDynamicState, VertexInputDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when disabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1989,7 +1978,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateDisabled) {
 TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
     RETURN_IF_SKIP(Init());
@@ -2176,7 +2164,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
 TEST_F(NegativeDynamicState, VertexInputDynamicStateDivisor) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when VK_EXT_vertex_attribute_divisor is enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
@@ -2249,7 +2236,6 @@ TEST_F(NegativeDynamicState, RasterizationSamples) {
 
 TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     TEST_DESCRIPTION("Test all color blend attachments are dynamically set at draw time.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -2445,7 +2431,6 @@ TEST_F(NegativeDynamicState, PipelineColorWriteCreateInfoEXTDynaimcState3) {
 TEST_F(NegativeDynamicState, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     TEST_DESCRIPTION(
         "Test drawing with dual source blending with too many fragment output attachments, but using dynamic blending.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -2751,7 +2736,6 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferResetBitmask) {
 TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferReset) {
     TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3003,8 +2987,6 @@ TEST_F(NegativeDynamicState, SampleLocations) {
 
 TEST_F(NegativeDynamicState, SetViewportParam) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetViewport without multiViewport feature");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkPhysicalDeviceFeatures features{};
     RETURN_IF_SKIP(Init(&features));
 
@@ -3403,7 +3385,7 @@ TEST_F(NegativeDynamicState, Duplicate) {
 TEST_F(NegativeDynamicState, NonGraphics) {
     TEST_DESCRIPTION("Create a pipeline with non graphics dynamic states set.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4020,7 +4002,7 @@ TEST_F(NegativeDynamicState, MultiViewport) {
 TEST_F(NegativeDynamicState, ScissorWithCount) {
     TEST_DESCRIPTION("Validate creating graphics pipeline with dynamic state scissor with count.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -4053,7 +4035,6 @@ TEST_F(NegativeDynamicState, ScissorWithCount) {
 TEST_F(NegativeDynamicState, DrawNotSetSampleLocations) {
     TEST_DESCRIPTION("Validate dynamic sample locations.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
@@ -4206,7 +4187,7 @@ TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableFeatures) {
 
 TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
     TEST_DESCRIPTION("Bad aspect masks for vkCmdSetAttachmentFeedbackLoopEnableEXT");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -4232,7 +4213,6 @@ TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
 TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     TEST_DESCRIPTION("Call vkCmdSetDepthBias2EXT with VkPhysicalDeviceFeatures::depthBiasClamp feature disabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -4271,8 +4251,6 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
     TEST_DESCRIPTION(
         "Call vkCmdSetDepthBias2EXT with VkPhysicalDeviceFeatures::depthBiasClamp and VkPhysicalDeviceDepthBiasControlFeaturesEXT "
         "features disabled");
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -4431,7 +4409,6 @@ TEST_F(NegativeDynamicState, CoverageReductionModeNotSet) {
 TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
     TEST_DESCRIPTION("Validate dynamic exclusive scissor.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -4722,7 +4699,7 @@ TEST_F(NegativeDynamicState, MissingCmdBindVertexBuffers2) {
 }
 
 TEST_F(NegativeDynamicState, CmdBindVertexBuffers2NullOffset) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
     m_commandBuffer->begin();
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);

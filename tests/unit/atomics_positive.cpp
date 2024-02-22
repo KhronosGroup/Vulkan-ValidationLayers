@@ -17,7 +17,7 @@
 
 TEST_F(PositiveAtomic, ImageInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -80,7 +80,7 @@ TEST_F(PositiveAtomic, ImageInt64) {
 
 TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 at draw time with Sparse image.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -142,7 +142,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
 
 TEST_F(PositiveAtomic, Float) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
@@ -390,7 +390,7 @@ TEST_F(PositiveAtomic, Float) {
 
 TEST_F(PositiveAtomic, Float2) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float2.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -667,7 +667,7 @@ TEST_F(PositiveAtomic, Float2) {
 
 TEST_F(PositiveAtomic, PhysicalPointer) {
     TEST_DESCRIPTION("Make sure atomic validation handles if from a OpConvertUToPtr (physical pointer)");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
@@ -735,7 +735,7 @@ TEST_F(PositiveAtomic, PhysicalPointer) {
 
 TEST_F(PositiveAtomic, Int64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);

@@ -53,7 +53,7 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
 TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     TEST_DESCRIPTION("texelBufferAlignment is enabled by default in 1.3.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
 
     const VkDeviceSize minTexelBufferOffsetAlignment = m_device->phy().limits_.minTexelBufferOffsetAlignment;
@@ -91,7 +91,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
 TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     TEST_DESCRIPTION("Add elements to buffer_address_map, worst case scenario");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
@@ -134,7 +134,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
 TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     TEST_DESCRIPTION("Add elements to buffer_address_map, good case scenario");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
@@ -166,7 +166,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
 
 TEST_F(PositiveBuffer, IndexBuffer2Size) {
     TEST_DESCRIPTION("Valid vkCmdBindIndexBuffer2KHR");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -186,7 +186,7 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
 }
 
 TEST_F(PositiveBuffer, IndexBufferNull) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
@@ -209,7 +209,7 @@ TEST_F(PositiveBuffer, IndexBufferNull) {
 
 TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with good flags.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -231,7 +231,7 @@ TEST_F(PositiveBuffer, BufferViewUsageBasic) {
 
 TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are a subset of the Buffer.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -253,7 +253,7 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
 
 TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
     TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -273,7 +273,7 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
 
 TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
     TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR, even if bad.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());

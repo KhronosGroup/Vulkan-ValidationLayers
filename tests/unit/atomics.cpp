@@ -18,7 +18,6 @@
 
 TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
     TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if vertexPipelineStoresAndAtomics disable.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
     AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
@@ -69,7 +68,6 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
 
 TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
     TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if fragmentStoresAndAtomics disable.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
     AddDisabledFeature(vkt::Feature::fragmentStoresAndAtomics);
@@ -120,7 +118,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
 
 TEST_F(NegativeAtomic, Int64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(Init());
 
@@ -197,7 +195,7 @@ TEST_F(NegativeAtomic, Int64) {
 
 TEST_F(NegativeAtomic, ImageInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(Init());
@@ -277,7 +275,7 @@ TEST_F(NegativeAtomic, ImageInt64) {
 
 TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 64 bit image view.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -329,7 +327,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
 
 TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -380,7 +378,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
 
 TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 at draw time with Sparse image.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -452,7 +450,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
 
 TEST_F(NegativeAtomic, ImageInt64Mesh32) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view in Mesh shaders.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -522,7 +520,7 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
 
 TEST_F(NegativeAtomic, Float) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     // Create device without VK_EXT_shader_atomic_float extension or features enabled
@@ -804,7 +802,7 @@ TEST_F(NegativeAtomic, Float) {
 
 TEST_F(NegativeAtomic, Float2) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float2.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
 
     // Create device without VK_EXT_shader_atomic_float2 extension or features enabled
     RETURN_IF_SKIP(InitFramework());
@@ -1148,7 +1146,7 @@ TEST_F(NegativeAtomic, Float2) {
 
 TEST_F(NegativeAtomic, Float2WidthMismatch) {
     TEST_DESCRIPTION("VK_EXT_shader_atomic_float2 but enable wrong bitwidth.");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 

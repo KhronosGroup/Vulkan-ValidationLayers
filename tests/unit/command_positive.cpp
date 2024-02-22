@@ -358,7 +358,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
     // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
     AllowPromotedExtensions();
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -393,7 +393,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
 TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 with feature bit enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
@@ -780,8 +780,7 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
     TEST_DESCRIPTION(
         "Use a command buffer with vkCmdFillBuffer that was allocated from a command pool that does not support graphics or "
         "compute opeartions");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> transfer =
@@ -803,7 +802,7 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
 TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
     TEST_DESCRIPTION(
         "Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS using VK_KHR_maintenance5");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -852,7 +851,7 @@ TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
 
 TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
     TEST_DESCRIPTION("Test copying an image with extent mistmatch using VK_KHR_maintenance5");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -898,7 +897,7 @@ TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
 
 TEST_F(PositiveCommand, MultiDrawMaintenance5) {
     TEST_DESCRIPTION("Test validation of multi_draw extension with VK_KHR_maintenance5");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -941,7 +940,7 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5) {
 
 TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
     TEST_DESCRIPTION("Test vkCmdBindIndexBuffer2KHR with vkCmdBindIndexBuffer");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -975,7 +974,7 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
 TEST_F(PositiveCommand, CopyImageLayerCount) {
     TEST_DESCRIPTION("Check layerCount in vkCmdCopyImage");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
@@ -1010,12 +1009,9 @@ TEST_F(PositiveCommand, CopyImageLayerCount) {
 
 TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
     TEST_DESCRIPTION("Use SignExtend to turn a UINT resource into a SINT.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
 
     const char *csSource = R"(
                      OpCapability Shader
@@ -1078,12 +1074,9 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
 
 TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
     TEST_DESCRIPTION("Use ZeroExtend as a redundant was to be SINT.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
 
     const char *csSource = R"(
                      OpCapability Shader
@@ -1149,7 +1142,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
 TEST_F(PositiveCommand, CopyBufferToRemaingImageLayers) {
     TEST_DESCRIPTION("Test vkCmdCopyBufferToImage2 with VK_REMAINING_ARRAY_LAYERS");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -1204,7 +1197,6 @@ TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
 
 TEST_F(PositiveCommand, CopyImageOverlappingMemory) {
     TEST_DESCRIPTION("Validate Copy Image from/to Buffer with overlapping memory");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
 
     auto image_ci =

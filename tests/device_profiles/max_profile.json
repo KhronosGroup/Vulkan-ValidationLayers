@@ -6294,6 +6294,16 @@
                         ]
                     }
                 },
+                "VK_FORMAT_BC7_UNORM_BLOCK": {
+                    "VkFormatProperties3": {
+                        "linearTilingFeatures": [],
+                        "optimalTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
+                        ],
+                        "bufferFeatures": []
+                    }
+                },
                 "VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK": {
                     "VkFormatProperties3": {
                         "linearTilingFeatures": [
@@ -6639,6 +6649,16 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT"
                         ]
+                    }
+                },
+                "VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK": {
+                    "VkFormatProperties3": {
+                        "linearTilingFeatures": [],
+                        "optimalTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
+                        ],
+                        "bufferFeatures": []
                     }
                 },
                 "VK_FORMAT_G8B8G8R8_422_UNORM": {

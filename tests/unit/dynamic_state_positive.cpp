@@ -48,8 +48,6 @@ TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
 TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
     TEST_DESCRIPTION("DynamicViewportWithCount/ScissorWithCount without multiViewport feature not enabled.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     RETURN_IF_SKIP(Init());
@@ -66,8 +64,6 @@ TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
 
 TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
     RETURN_IF_SKIP(Init());
@@ -114,7 +110,6 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
 
 TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
@@ -168,7 +163,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
 
 TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) {
     TEST_DESCRIPTION("VK_KHR_maintenance5 lets you use VK_WHOLE_SIZE with VK_EXT_extended_dynamic_state");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredMinimumApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -370,7 +365,6 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
 TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     TEST_DESCRIPTION("Validate binding a non-dynamic pipeline doesn't trigger dynamic static errors");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     RETURN_IF_SKIP(Init());
@@ -458,7 +452,6 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
 TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
     TEST_DESCRIPTION("Call vkCmdSetDepthBias2EXT with VkPhysicalDeviceFeatures::depthBiasClamp feature enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -512,7 +505,6 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
 TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     TEST_DESCRIPTION("Call vkCmdSetDepthBias2EXT with VkPhysicalDeviceFeatures::depthBiasClamp feature disabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -568,7 +560,6 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
         "VkPhysicalDeviceDepthBiasControlFeaturesEXT "
         "features enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
