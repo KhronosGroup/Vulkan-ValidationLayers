@@ -839,7 +839,7 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
          (enabled_features.shaderBufferFloat16Atomics == VK_TRUE) || (enabled_features.shaderBufferFloat16AtomicAdd == VK_TRUE) ||
          (enabled_features.shaderBufferFloat16AtomicMinMax == VK_TRUE) ||
          (enabled_features.shaderBufferFloat32AtomicMinMax == VK_TRUE) ||
-         (enabled_features.shaderBufferFloat64AtomicMinMax == VK_TRUE));
+         (enabled_features.shaderBufferFloat64AtomicMinMax == VK_TRUE) || (enabled_features.shaderFloat16VectorAtomics == VK_TRUE));
 
     const bool valid_workgroup_float =
         ((enabled_features.shaderSharedFloat32Atomics == VK_TRUE) || (enabled_features.shaderSharedFloat32AtomicAdd == VK_TRUE) ||
@@ -847,11 +847,11 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
          (enabled_features.shaderSharedFloat16Atomics == VK_TRUE) || (enabled_features.shaderSharedFloat16AtomicAdd == VK_TRUE) ||
          (enabled_features.shaderSharedFloat16AtomicMinMax == VK_TRUE) ||
          (enabled_features.shaderSharedFloat32AtomicMinMax == VK_TRUE) ||
-         (enabled_features.shaderSharedFloat64AtomicMinMax == VK_TRUE));
+         (enabled_features.shaderSharedFloat64AtomicMinMax == VK_TRUE) || (enabled_features.shaderFloat16VectorAtomics == VK_TRUE));
 
     const bool valid_image_float =
         ((enabled_features.shaderImageFloat32Atomics == VK_TRUE) || (enabled_features.shaderImageFloat32AtomicAdd == VK_TRUE) ||
-         (enabled_features.shaderImageFloat32AtomicMinMax == VK_TRUE));
+         (enabled_features.shaderImageFloat32AtomicMinMax == VK_TRUE) || (enabled_features.shaderFloat16VectorAtomics == VK_TRUE));
 
     const bool valid_16_float =
         ((enabled_features.shaderBufferFloat16Atomics == VK_TRUE) || (enabled_features.shaderBufferFloat16AtomicAdd == VK_TRUE) ||
@@ -872,13 +872,22 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
          (enabled_features.shaderSharedFloat64Atomics == VK_TRUE) || (enabled_features.shaderSharedFloat64AtomicAdd == VK_TRUE) ||
          (enabled_features.shaderBufferFloat64AtomicMinMax == VK_TRUE) ||
          (enabled_features.shaderSharedFloat64AtomicMinMax == VK_TRUE));
+
+    const bool valid_16_float_vector = (enabled_features.shaderFloat16VectorAtomics == VK_TRUE);
     // clang-format on
 
     for (const spirv::Instruction *atomic_def : stateless_data.atomic_inst) {
         const spirv::AtomicInstructionInfo &atomic = module_state.GetAtomicInfo(*atomic_def);
         const uint32_t opcode = atomic_def->Opcode();
 
-        if ((atomic.bit_width == 64) && (atomic.type == spv::OpTypeInt)) {
+        if (atomic.type == spv::OpTypeFloat && (atomic.vector_size == 2 || atomic.vector_size == 4)) {
+            if (!valid_16_float_vector) {
+                skip |= LogError("VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581", module_state.handle(), loc,
+                                 "SPIR-V is using 16-bit float vector atomics operations\n%s\nwith %s storage class, but "
+                                 "shaderFloat16VectorAtomics was not enabled.",
+                                 atomic_def->Describe().c_str(), string_SpvStorageClass(atomic.storage_class));
+            }
+        } else if ((atomic.bit_width == 64) && (atomic.type == spv::OpTypeInt)) {
             // Validate 64-bit image atomics
             if (((atomic.storage_class == spv::StorageClassStorageBuffer) || (atomic.storage_class == spv::StorageClassUniform)) &&
                 (enabled_features.shaderBufferInt64Atomics == VK_FALSE)) {
@@ -907,7 +916,7 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
                                      "shaderBufferFloat32Atomics or shaderBufferFloat32AtomicAdd or shaderBufferFloat64Atomics or "
                                      "shaderBufferFloat64AtomicAdd or shaderBufferFloat16Atomics or shaderBufferFloat16AtomicAdd "
                                      "or shaderBufferFloat16AtomicMinMax or shaderBufferFloat32AtomicMinMax or "
-                                     "shaderBufferFloat64AtomicMinMax was not enabled.",
+                                     "shaderBufferFloat64AtomicMinMax or shaderFloat16VectorAtomics was not enabled.",
                                      atomic_def->Describe().c_str());
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (enabled_features.shaderBufferFloat16AtomicAdd == VK_FALSE)) {
@@ -970,7 +979,8 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
                                  "shaderSharedFloat32Atomics or "
                                  "shaderSharedFloat32AtomicAdd or shaderSharedFloat64Atomics or shaderSharedFloat64AtomicAdd or "
                                  "shaderSharedFloat16Atomics or shaderSharedFloat16AtomicAdd or shaderSharedFloat16AtomicMinMax or "
-                                 "shaderSharedFloat32AtomicMinMax or shaderSharedFloat64AtomicMinMax was not enabled.",
+                                 "shaderSharedFloat32AtomicMinMax or shaderSharedFloat64AtomicMinMax or shaderFloat16VectorAtomics "
+                                 "was not enabled.",
                                  atomic_def->Describe().c_str());
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (enabled_features.shaderSharedFloat16AtomicAdd == VK_FALSE)) {
