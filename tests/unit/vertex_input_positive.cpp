@@ -605,3 +605,224 @@ TEST_F(PositiveVertexInput, VertexAttributeDivisorFirstInstance) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveVertexInput, VertextBindingNonLinear) {
+    TEST_DESCRIPTION("Have Binding not be in a linear order");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription vtx_binding_des[3] = {
+        {3, 0, VK_VERTEX_INPUT_RATE_VERTEX}, {5, 0, VK_VERTEX_INPUT_RATE_VERTEX}, {2, 0, VK_VERTEX_INPUT_RATE_VERTEX}};
+
+    VkVertexInputAttributeDescription vtx_attri_des[3] = {
+        {0, 5, VK_FORMAT_R8G8B8A8_UNORM, 0}, {1, 3, VK_FORMAT_R8G8B8A8_UNORM, 0}, {2, 2, VK_FORMAT_R8G8B8A8_UNORM, 0}};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 3;
+    pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
+    pipe.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    VkDeviceSize offsets[6] = {0, 0, 0, 0, 0, 0};
+    VkBuffer buffers[6] = {buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle()};
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 6, buffers, offsets);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveVertexInput, VertextBindingDynamicState) {
+    TEST_DESCRIPTION("Test bad binding with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offsets[2] = {0, 0};
+
+    VkVertexInputBindingDescription2EXT bindings[3] = {vku::InitStructHelper(), vku::InitStructHelper(), vku::InitStructHelper()};
+    bindings[0].binding = 3;
+    bindings[0].divisor = 1;
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[1].binding = 5;
+    bindings[1].divisor = 1;
+    bindings[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[2].binding = 2;
+    bindings[2].divisor = 1;
+    bindings[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attributes[3] = {vku::InitStructHelper(), vku::InitStructHelper(),
+                                                           vku::InitStructHelper()};
+    attributes[0].location = 1;
+    attributes[0].binding = 3;
+    attributes[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attributes[1].location = 2;
+    attributes[1].binding = 5;
+    attributes[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attributes[2].location = 3;
+    attributes[2].binding = 2;
+    attributes[2].format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    VkBuffer buffers[2] = {buffer.handle(), buffer.handle()};
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 5, 2, buffers, offsets);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 3, bindings, 3, attributes);
+    // set later, shouldn't matter
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 2, 2, buffers, offsets);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveVertexInput, VertexStrideDynamicStride) {
+    TEST_DESCRIPTION("set the Stride to fix bad stride in vkCmdBindVertexBuffers2");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription bindings = {0, 3, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attributes = {0, 0, VK_FORMAT_R16_UNORM, 0};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offset = 0;
+    VkDeviceSize good_stride = 4;
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &good_stride);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveVertexInput, VertexStrideDoubleDynamicStride) {
+    TEST_DESCRIPTION("set the Stride to invalid, then valid");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
+    binding.binding = 0;
+    binding.divisor = 1;
+    binding.stride = 4;
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attribute = vku::InitStructHelper();
+    attribute.location = 0;
+    attribute.binding = 0;
+    attribute.format = VK_FORMAT_R16_UNORM;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    const VkDeviceSize offset = 0;
+    const VkDeviceSize bad_stride = 3;
+    const VkDeviceSize good_stride = 4;
+
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &bad_stride);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);  // set to valid
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    // flip order around
+    binding.stride = static_cast<uint32_t>(bad_stride);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &good_stride);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveVertexInput, InputBindingMaxVertexInputBindingStrideDynamic) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Test when stride is greater than VkPhysicalDeviceLimits::maxVertexInputBindingStride.
+    VkVertexInputBindingDescription vertex_input_binding_description{};
+    vertex_input_binding_description.stride = m_device->phy().limits_.maxVertexInputBindingStride + 1;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+        helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveVertexInput, BindVertexBufferNull) {
+    TEST_DESCRIPTION("Have null vertex but use nullDescriptor feature");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription bindings = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attributes = {0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offsets[2] = {0, 0};
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 2, buffers, offsets);
+
+    // only uses first binding
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

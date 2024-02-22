@@ -186,8 +186,7 @@ void CommandBuffer::ResetCBState() {
     renderPassQueries.clear();
     image_layout_map.clear();
     aliased_image_layout_map.clear();
-    current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
-    vertex_buffer_used = false;
+    current_vertex_buffer_binding_info.clear();
     primaryCommandBuffer = VK_NULL_HANDLE;
     linkedCommandBuffers.clear();
     queue_submit_functions.clear();
@@ -1099,9 +1098,6 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
     if (!pipe) {
         return;
     }
-    if (pipe->vertex_input_state && !pipe->vertex_input_state->binding_descriptions.empty()) {
-        vertex_buffer_used = true;
-    }
 
     // Update the consumed viewport/scissor count.
     {
@@ -1649,8 +1645,7 @@ void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderOb
 void CommandBuffer::UnbindResources() {
     // Vertex and index buffers
     index_buffer_binding.reset();
-    vertex_buffer_used = false;
-    current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
+    current_vertex_buffer_binding_info.clear();
 
     // Push constants
     push_constant_data.clear();

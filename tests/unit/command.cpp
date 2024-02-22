@@ -112,7 +112,6 @@ TEST_F(NegativeCommand, IndexBufferNotBound) {
     TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -123,6 +122,27 @@ TEST_F(NegativeCommand, IndexBufferNotBound) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-07312");
+    // Use DrawIndexed w/o an index buffer bound
+    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, IndexBufferDestroyed) {
+    TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    index_buffer.destroy();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-recording");
     // Use DrawIndexed w/o an index buffer bound
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();

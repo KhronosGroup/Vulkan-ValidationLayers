@@ -29,7 +29,7 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const safe_VkGraphics
     if (create_info.pVertexInputState) {
         const auto *vici = create_info.pVertexInputState;
         if (vici->vertexBindingDescriptionCount) {
-            const auto count = vici->vertexBindingDescriptionCount;
+            const uint32_t count = vici->vertexBindingDescriptionCount;
             binding_descriptions.reserve(count);
             binding_to_index_map.reserve(count);
 
@@ -39,20 +39,11 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const safe_VkGraphics
             }
         }
 
-        if (vici->vertexAttributeDescriptionCount) {
-            vertex_attribute_descriptions.reserve(vici->vertexAttributeDescriptionCount);
-            std::copy(vici->pVertexAttributeDescriptions,
-                      vici->pVertexAttributeDescriptions + vici->vertexAttributeDescriptionCount,
-                      std::back_inserter(vertex_attribute_descriptions));
-        }
-
-        vertex_attribute_alignments.reserve(vertex_attribute_descriptions.size());
-        for (const auto &attr : vertex_attribute_descriptions) {
-            VkDeviceSize vtx_attrib_req_alignment = vkuFormatElementSize(attr.format);
-            if (vkuFormatElementIsTexel(attr.format)) {
-                vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attr.format));
-            }
-            vertex_attribute_alignments.push_back(vtx_attrib_req_alignment);
+        vertex_attribute_descriptions.reserve(vici->vertexAttributeDescriptionCount);
+        for (const auto [i, description] :
+             vvl::enumerate(vici->pVertexAttributeDescriptions, vici->vertexAttributeDescriptionCount)) {
+            vertex_attribute_descriptions.emplace_back(vku::InitStruct<VkVertexInputAttributeDescription2EXT>(
+                nullptr, description->location, description->binding, description->format, description->offset));
         }
     }
 }

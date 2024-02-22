@@ -537,17 +537,20 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
         return skip;
     }
 
-    const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+    // TODO - doesn't consider dynamic vertex binding input
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5281
+    const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info;
     const auto &binding_buffers_size = binding_buffers.size();
     const auto &binding_descriptions_size = pipe->vertex_input_state->binding_descriptions.size();
 
     for (size_t i = 0; i < binding_descriptions_size; ++i) {
         const auto &binding_description = pipe->vertex_input_state->binding_descriptions[i];
         if (binding_description.binding < binding_buffers_size) {
-            const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (!binding_buffer.bound()) continue;
+            const auto &binding_buffer = binding_buffers.at(binding_description.binding);
 
-            auto *buf_state = binding_buffer.buffer_state.get();
+            const auto buf_state = sync_state_->Get<vvl::Buffer>(binding_buffer.buffer);
+            if (!buf_state) continue;  // also skips if using nullDescriptor
+
             const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
@@ -567,17 +570,20 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
     if (!pipe) {
         return;
     }
-    const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+    // TODO - doesn't consider dynamic vertex binding input
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5281
+    const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info;
     const auto &binding_buffers_size = binding_buffers.size();
     const auto &binding_descriptions_size = pipe->vertex_input_state->binding_descriptions.size();
 
     for (size_t i = 0; i < binding_descriptions_size; ++i) {
         const auto &binding_description = pipe->vertex_input_state->binding_descriptions[i];
         if (binding_description.binding < binding_buffers_size) {
-            const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (!binding_buffer.bound()) continue;
+            const auto &binding_buffer = binding_buffers.at(binding_description.binding);
 
-            auto *buf_state = binding_buffer.buffer_state.get();
+            const auto buf_state = sync_state_->Get<vvl::Buffer>(binding_buffer.buffer);
+            if (!buf_state) continue;  // also skips if using nullDescriptor
+
             const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
                                                 SyncOrdering::kNonAttachment, range, tag);
@@ -588,12 +594,12 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uint32_t> &index_count, uint32_t firstIndex,
                                                          const Location &loc) const {
     bool skip = false;
-    if (!cb_state_->index_buffer_binding.bound()) {
+    const auto &index_binding = cb_state_->index_buffer_binding;
+    const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
+    if (!index_buf_state) {
         return skip;
     }
 
-    const auto &index_binding = cb_state_->index_buffer_binding;
-    auto *index_buf_state = index_binding.buffer_state.get();
     const auto index_size = GetIndexAlignment(index_binding.index_type);
     const ResourceAccessRange range = MakeRange(index_binding, firstIndex, index_count, index_size);
 
@@ -613,10 +619,10 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
 
 void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex,
                                                        const ResourceUsageTag tag) {
-    if (!cb_state_->index_buffer_binding.bound()) return;
-
     const auto &index_binding = cb_state_->index_buffer_binding;
-    auto *index_buf_state = index_binding.buffer_state.get();
+    const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
+    if (!index_buf_state) return;
+
     const auto index_size = GetIndexAlignment(index_binding.index_type);
     const ResourceAccessRange range = MakeRange(index_binding, firstIndex, indexCount, index_size);
     current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag);

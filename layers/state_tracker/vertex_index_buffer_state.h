@@ -20,41 +20,32 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
-#include <vector>
-#include <memory>
 
 namespace vvl {
 class Buffer;
-}  // namespace vvl
 
-struct BufferBinding {
-    std::shared_ptr<vvl::Buffer> buffer_state;
+struct VertexBufferBinding {
+    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using nullDescriptor
     VkDeviceSize size;
     VkDeviceSize offset;
     VkDeviceSize stride;
 
-    BufferBinding() : buffer_state(), size(0), offset(0), stride(0) {}
-    BufferBinding(const std::shared_ptr<vvl::Buffer> &buffer_state_, VkDeviceSize size_, VkDeviceSize offset_, VkDeviceSize stride_);
-    BufferBinding(const std::shared_ptr<vvl::Buffer> &buffer_state_, VkDeviceSize offset_);
-    virtual ~BufferBinding() {}
+    VertexBufferBinding() : buffer(VK_NULL_HANDLE), size(0), offset(0), stride(0) {}
 
-    virtual void reset() { *this = BufferBinding(); }
-    bool bound() const;
+    void reset() { *this = VertexBufferBinding(); }
 };
 
-struct IndexBufferBinding : BufferBinding {
+struct IndexBufferBinding {
+    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using nullDescriptor
+    VkDeviceSize size;
+    VkDeviceSize offset;
     VkIndexType index_type;
 
-    IndexBufferBinding() : BufferBinding(), index_type(static_cast<VkIndexType>(0)) {}
-    IndexBufferBinding(const std::shared_ptr<vvl::Buffer> &buffer_state_, VkDeviceSize offset_, VkIndexType index_type_);
-    // TODO - We could clean up the BufferBinding interface now we have 2 ways to bind both the Vertex and Index buffer
-    IndexBufferBinding(const std::shared_ptr<vvl::Buffer> &buffer_state_, VkDeviceSize size_, VkDeviceSize offset_,
-                       VkIndexType index_type_);
-    virtual ~IndexBufferBinding() {}
+    IndexBufferBinding() : buffer(VK_NULL_HANDLE), size(0), offset(0), index_type(static_cast<VkIndexType>(0)) {}
+    IndexBufferBinding(VkBuffer buffer_, VkDeviceSize size_, VkDeviceSize offset_, VkIndexType index_type_)
+        : buffer(buffer_), size(size_), offset(offset_), index_type(index_type_) {}
 
-    virtual void reset() override { *this = IndexBufferBinding(); }
+    void reset() { *this = IndexBufferBinding(); }
 };
 
-struct CBVertexBufferBindingInfo {
-    std::vector<BufferBinding> vertex_buffer_bindings;
-};
+}  // namespace vvl

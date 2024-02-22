@@ -66,10 +66,18 @@ ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_
     return MakeRange(range_start, range_size);
 }
 
-ResourceAccessRange MakeRange(const BufferBinding& binding, uint32_t first_index, const std::optional<uint32_t>& count,
+ResourceAccessRange MakeRange(const vvl::VertexBufferBinding& binding, uint32_t first_index, const std::optional<uint32_t>& count,
                               uint32_t stride) {
     if (count) {
         return MakeRange(binding.offset, first_index, count.value(), stride);
+    }
+    return MakeRange(binding);
+}
+
+ResourceAccessRange MakeRange(const vvl::IndexBufferBinding& binding, uint32_t first_index, const std::optional<uint32_t>& count,
+                              uint32_t index_size) {
+    if (count) {
+        return MakeRange(binding.offset, first_index, count.value(), index_size);
     }
     return MakeRange(binding);
 }

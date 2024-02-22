@@ -57,17 +57,11 @@ struct VertexInputState : public PipelineSubState {
     safe_VkPipelineVertexInputStateCreateInfo *input_state = nullptr;
     safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
 
-    using VertexBindingVector = std::vector<VkVertexInputBindingDescription>;
-    VertexBindingVector binding_descriptions;
+    std::vector<VkVertexInputBindingDescription> binding_descriptions;
 
-    using VertexBindingIndexMap = vvl::unordered_map<uint32_t, uint32_t>;
-    VertexBindingIndexMap binding_to_index_map;
+    vvl::unordered_map<uint32_t, uint32_t> binding_to_index_map;
 
-    using VertexAttrVector = std::vector<VkVertexInputAttributeDescription>;
-    VertexAttrVector vertex_attribute_descriptions;
-
-    using VertexAttrAlignmentVector = std::vector<VkDeviceSize>;
-    VertexAttrAlignmentVector vertex_attribute_alignments;
+    std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descriptions;
 
     std::shared_ptr<VertexInputState> FromCreateInfo(const ValidationStateTracker &state,
                                                      const safe_VkGraphicsPipelineCreateInfo &create_info);
