@@ -86,7 +86,7 @@ class Validator : public gpu_tracker::Validator {
         desired_features.fragmentStoresAndAtomics = true;
     }
 
-    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
+    void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
                           const Location& loc) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -175,7 +175,7 @@ class Validator : public gpu_tracker::Validator {
                                               VkDeviceAddress indirectDeviceAddress, const RecordObject& record_obj) override;
     void PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                const RecordObject& record_obj) override;
-    void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
+    void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, const Location& loc);
 
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) final;

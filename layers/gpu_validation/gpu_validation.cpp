@@ -41,10 +41,10 @@
 #include "generated/gpu_inst_shader_hash.h"
 #include "generated/gpu_pre_copy_buffer_to_image_comp.h"
 
-VkDeviceAddress gpuav::Validator::GetBufferDeviceAddress(VkBuffer buffer) const {
+VkDeviceAddress gpuav::Validator::GetBufferDeviceAddress(VkBuffer buffer, const Location &loc) const {
     if (!buffer_device_address_enabled) {
         assert(false);
-        ReportSetupProblem(device, "Buffer device address feature not enabled, calling GetBufferDeviceAddress is invalid");
+        ReportSetupProblem(buffer, loc, "Buffer device address feature not enabled, calling GetBufferDeviceAddress is invalid");
         aborted = true;
         return 0;
     }
@@ -168,7 +168,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
                  << instrumented_error << " Proceeding with non instrumented shader.";
-            ReportSetupProblem(device, strm.str().c_str());
+            ReportSetupProblem(device, loc, strm.str().c_str());
             assert(false);
             return false;
         }
@@ -182,7 +182,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         // Call CreateAggressiveDCEPass with preserve_interface == true
         dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
         if (!dce_pass.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options)) {
-            ReportSetupProblem(device,
+            ReportSetupProblem(device, loc,
                                "Failure to run spirv-opt DCE on instrumented shader.  Proceeding with non-instrumented shader.");
             assert(false);
             return false;
@@ -246,7 +246,7 @@ void gpuav::Validator::UpdateInstrumentationBuffer(CommandBuffer *cb_node) {
     }
 }
 
-void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer) {
+void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer, const Location &loc) {
     if (gpuav_bda_buffer_version == buffer_device_address_ranges_version) {
         return;
     }
@@ -282,7 +282,7 @@ void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer) 
                        << ") is greater than khronos_validation.gpuav_max_buffer_device_addresses ("
                        << gpuav_settings.gpuav_max_buffer_device_addresses
                        << "). Truncating BDA table which could result in invalid validation";
-        ReportSetupProblem(device, problem_string.str().c_str());
+        ReportSetupProblem(device, loc, problem_string.str().c_str());
     }
     size_t num_addresses =
         std::min(static_cast<uint32_t>(address_ranges_num_addresses), gpuav_settings.gpuav_max_buffer_device_addresses);
@@ -300,11 +300,12 @@ void gpuav::Validator::UpdateBDABuffer(DeviceMemoryBlock device_address_buffer) 
     gpuav_bda_buffer_version = buffer_device_address_ranges_version;
 }
 
-void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint) {
+void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                              const Location &loc) {
     if (aborted) return;
     auto cb_node = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "Unrecognized command buffer");
+        ReportSetupProblem(commandBuffer, loc, "Unrecognized command buffer");
         aborted = true;
         return;
     }
@@ -329,7 +330,7 @@ void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkP
         VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_buffers.bindless_state_buffer,
                                           &di_buffers.bindless_state_buffer_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to allocate device memory. Device could become unstable.", true);
+            ReportSetupProblem(commandBuffer, loc, "Unable to allocate device memory. Device could become unstable.", true);
             aborted = true;
             return;
         }
@@ -337,7 +338,7 @@ void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkP
         result =
             vmaMapMemory(vmaAllocator, di_buffers.bindless_state_buffer_allocation, reinterpret_cast<void **>(&bindless_state));
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to map device memory. Device could become unstable.", true);
+            ReportSetupProblem(commandBuffer, loc, "Unable to map device memory. Device could become unstable.", true);
             aborted = true;
             return;
         }
@@ -379,7 +380,7 @@ void gpuav::Validator::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkP
 // This function will add the returned VkPipeline handle to another object incharge of destroying it. Caller does NOT have to
 // destroy it
 VkPipeline gpuav::Validator::GetDrawValidationPipeline(PreDrawResources::SharedResources &shared_draw_resources,
-                                                       VkRenderPass render_pass) {
+                                                       VkRenderPass render_pass, const Location &loc) {
     VkPipeline validation_pipeline = VK_NULL_HANDLE;
     // NOTE: for dynamic rendering, render_pass will be VK_NULL_HANDLE but we'll use that as a map
     // key anyways;
@@ -415,7 +416,7 @@ VkPipeline gpuav::Validator::GetDrawValidationPipeline(PreDrawResources::SharedR
 
     VkResult result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &validation_pipeline);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create graphics pipeline. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create graphics pipeline. Aborting GPU-AV");
         aborted = true;
         return VK_NULL_HANDLE;
     }
@@ -425,7 +426,7 @@ VkPipeline gpuav::Validator::GetDrawValidationPipeline(PreDrawResources::SharedR
 }
 
 gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const VkCommandBuffer cmd_buffer,
-                                                                         const VkPipelineBindPoint bind_point, vvl::Func command,
+                                                                         const VkPipelineBindPoint bind_point, const Location &loc,
                                                                          const CmdIndirectState *indirect_state) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
@@ -437,7 +438,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "Unrecognized command buffer");
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
         aborted = true;
         return CommandResources();
     }
@@ -446,7 +447,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
-        ReportSetupProblem(device, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer, loc, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
         aborted = true;
         return CommandResources();
     }
@@ -456,13 +457,13 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
     result = desc_set_manager->GetDescriptorSets(1, &output_buffer_desc_pool, debug_desc_layout, &output_buffer_desc_set);
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate descriptor sets. Device could become unstable.");
+        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor sets. Device could become unstable.");
         aborted = true;
         return CommandResources();
     }
 
     DeviceMemoryBlock output_block = {};
-    if (AllocateOutputMem(output_block) == false) {
+    if (AllocateOutputMem(output_block, loc) == false) {
         aborted = true;
         return CommandResources();
     }
@@ -542,7 +543,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
     }
 
     if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
-        ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer, loc, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
         aborted = true;
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
         return CommandResources();
@@ -561,13 +562,13 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
     cmd_resources.output_buffer_desc_pool = output_buffer_desc_pool;
     cmd_resources.pipeline_bind_point = bind_point;
     cmd_resources.uses_robustness = uses_robustness;
-    cmd_resources.command = command;
+    cmd_resources.command = loc.function;
     cmd_resources.desc_binding_index = di_buf_index;
     cmd_resources.desc_binding_list = &cb_node->di_input_buffer_list;
     return cmd_resources;
 }
 
-bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem) {
+bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem, const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = output_buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -576,7 +577,7 @@ bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem) {
     alloc_info.pool = output_buffer_pool;
     VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_mem.buffer, &output_mem.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate device memory. Device could become unstable.", true);
+        ReportSetupProblem(device, loc, "Unable to allocate device memory. Device could become unstable.", true);
         aborted = true;
         return false;
     }
@@ -590,7 +591,8 @@ bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem) {
         }
         vmaUnmapMemory(vmaAllocator, output_mem.allocation);
     } else {
-        ReportSetupProblem(device, "Unable to map device memory allocated for output buffer. Device could become unstable.", true);
+        ReportSetupProblem(device, loc, "Unable to map device memory allocated for output buffer. Device could become unstable.",
+                           true);
         aborted = true;
         return false;
     }
@@ -599,9 +601,9 @@ bool gpuav::Validator::AllocateOutputMem(DeviceMemoryBlock &output_mem) {
 }
 
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndirectValidationResources(
-    vvl::Func command, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
+    const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset, uint32_t draw_count,
     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, uint32_t stride) {
-    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, command);
+    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
     if (!gpuav_settings.validate_indirect_buffer) {
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
@@ -609,7 +611,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "Unrecognized command buffer");
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
         aborted = true;
         return nullptr;
     }
@@ -619,7 +621,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     const auto *pipeline_state = last_bound.pipeline_state;
     const bool use_shader_objects = pipeline_state == nullptr;
 
-    PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources(use_shader_objects);
+    PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources(use_shader_objects, loc);
     if (!shared_resources) {
         return nullptr;
     }
@@ -633,9 +635,9 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 
     VkPipeline validation_pipeline = VK_NULL_HANDLE;
     if (!use_shader_objects) {
-        validation_pipeline = GetDrawValidationPipeline(*shared_resources, cb_node->activeRenderPass.get()->VkHandle());
+        validation_pipeline = GetDrawValidationPipeline(*shared_resources, cb_node->activeRenderPass.get()->VkHandle(), loc);
         if (validation_pipeline == VK_NULL_HANDLE) {
-            ReportSetupProblem(device, "Could not find or create a pipeline. Aborting GPU-AV");
+            ReportSetupProblem(cmd_buffer, loc, "Could not find or create a pipeline. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -644,7 +646,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     result = desc_set_manager->GetDescriptorSet(&draw_resources->desc_pool, shared_resources->ds_layout,
                                                 &draw_resources->buffer_desc_set);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate descriptor set. Aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor set. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -679,6 +681,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     // or DEVICE_LOST resulting from the invalid call will prevent preceeding validation errors from being reported.
 
     // Save current graphics pipeline state
+    const vvl::Func command = loc.function;
     RestorablePipelineState restorable_state(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS);
     const bool is_mesh_call =
         (command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
@@ -693,7 +696,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     if (is_count_call) {
         // Validate count buffer
         if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
-            ReportSetupProblem(device, "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV");
+            ReportSetupProblem(cmd_buffer, loc,
+                               "Count buffer offset is larger than can be contained in an unsigned int. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -785,8 +789,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
 }
 
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIndirectValidationResources(
-    vvl::Func command, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
-    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, command);
+    const Location &loc, VkCommandBuffer cmd_buffer, VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
+    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, loc);
     if (!gpuav_settings.validate_indirect_buffer) {
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
@@ -799,7 +803,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "Unrecognized command buffer");
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
         aborted = true;
         return nullptr;
     }
@@ -809,7 +813,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     const auto *pipeline_state = last_bound.pipeline_state;
     const bool use_shader_objects = pipeline_state == nullptr;
 
-    PreDispatchResources::SharedResources *shared_resources = GetSharedDispatchIndirectValidationResources(use_shader_objects);
+    PreDispatchResources::SharedResources *shared_resources = GetSharedDispatchIndirectValidationResources(use_shader_objects, loc);
     if (!shared_resources) {
         return std::make_unique<gpuav::PreDispatchResources>();
     }
@@ -824,7 +828,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
     result = desc_set_manager->GetDescriptorSet(&dispatch_resources->desc_pool, shared_resources->ds_layout,
                                                 &dispatch_resources->indirect_buffer_desc_set);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate descriptor set. Aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor set. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -878,14 +882,14 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDispatchIn
 }
 
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysValidationResources(
-    vvl::Func command, VkCommandBuffer cmd_buffer, VkDeviceAddress indirect_data_address) {
-    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, command);
+    const Location &loc, VkCommandBuffer cmd_buffer, VkDeviceAddress indirect_data_address) {
+    CommandResources cmd_resources = AllocateActionCommandResources(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, loc);
     if (!gpuav_settings.validate_indirect_buffer) {
         auto cmd_resources_ptr = std::make_unique<CommandResources>(cmd_resources);
         return cmd_resources_ptr;
     }
 
-    PreTraceRaysResources::SharedResources *shared_resources = GetSharedTraceRaysValidationResources();
+    PreTraceRaysResources::SharedResources *shared_resources = GetSharedTraceRaysValidationResources(loc);
     if (!shared_resources) {
         return nullptr;
     }
@@ -901,7 +905,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
     result = desc_set_manager->GetDescriptorSet(&trace_rays_resources->desc_pool, shared_resources->ds_layout,
                                                 &trace_rays_resources->desc_set);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate descriptor set for ray tracing validation pipeline. Aborting GPU-AV");
+        ReportSetupProblem(cmd_buffer, loc,
+                           "Unable to allocate descriptor set for ray tracing validation pipeline. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -926,7 +931,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "Unrecognized command buffer");
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
         aborted = true;
         return nullptr;
     }
@@ -972,7 +977,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreTraceRaysV
 }
 
 std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBufferToImageValidationResources(
-    vvl::Func cmd, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
+    const Location &loc, VkCommandBuffer cmd_buffer, const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
     if (!gpuav_settings.validate_copies) {
         return nullptr;
     }
@@ -984,7 +989,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
 
     auto image_state = Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
-        ReportSetupProblem(device, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image");
+        ReportSetupProblem(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image");
         aborted = true;
         return nullptr;
     }
@@ -997,20 +1002,20 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer");
+        ReportSetupProblem(cmd_buffer, loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized command buffer");
         aborted = true;
         return nullptr;
     }
 
-    gpuav::PreCopyBufferToImageResources::SharedResources *shared_resources = GetSharedCopyBufferToImageValidationResources();
+    gpuav::PreCopyBufferToImageResources::SharedResources *shared_resources = GetSharedCopyBufferToImageValidationResources(loc);
     if (!shared_resources) {
         return nullptr;
     }
 
     CommandResources cmd_resources;
-    cmd_resources.command = cmd;
+    cmd_resources.command = loc.function;
     // Only the output buffer is needed
-    if (AllocateOutputMem(cmd_resources.output_mem_block) == false) {
+    if (AllocateOutputMem(cmd_resources.output_mem_block, loc) == false) {
         aborted = true;
         return nullptr;
     }
@@ -1057,7 +1062,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
             vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &copy_buffer_to_img_resources->copy_src_regions_buffer,
                             &copy_buffer_to_img_resources->copy_src_regions_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
+            ReportSetupProblem(cmd_buffer, loc, "Unable to allocate device memory for GPU copy of pRegions. Aborting GPU-AV.",
+                               true);
             aborted = true;
             return nullptr;
         }
@@ -1067,7 +1073,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to map device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
+            ReportSetupProblem(cmd_buffer, loc, "Unable to map device memory for GPU copy of pRegions. Aborting GPU-AV.", true);
             aborted = true;
             return nullptr;
         }
@@ -1136,7 +1142,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
         VkResult result = desc_set_manager->GetDescriptorSet(&copy_buffer_to_img_resources->desc_pool, shared_resources->ds_layout,
                                                              &copy_buffer_to_img_resources->desc_set);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
+            ReportSetupProblem(cmd_buffer, loc,
+                               "Unable to allocate descriptor set for copy buffer to image validation. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -1184,7 +1191,8 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
     return copy_buffer_to_img_resources;
 }
 
-gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirectValidationResources(bool use_shader_objects) {
+gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirectValidationResources(bool use_shader_objects,
+                                                                                                     const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreDrawResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
         return reinterpret_cast<gpuav::PreDrawResources::SharedResources *>(shared_resources->second.get());
@@ -1205,7 +1213,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
     ds_layout_ci.pBindings = bindings.data();
     result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &shared_resources->ds_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create descriptor set layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1221,7 +1229,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
     pipeline_layout_ci.pSetLayouts = &shared_resources->ds_layout;
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create pipeline layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1239,7 +1247,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
         shader_ci.pPushConstantRanges = &push_constant_range;
         result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shared_resources->shader_object);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create shader object. Aborting GPU-AV");
+            ReportSetupProblem(device, loc, "Unable to create shader object. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -1249,7 +1257,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
         shader_module_ci.pCode = gpu_pre_draw_vert;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &shared_resources->shader_module);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create shader module. Aborting GPU-AV");
+            ReportSetupProblem(device, loc, "Unable to create shader module. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -1264,7 +1272,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
 }
 
 gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatchIndirectValidationResources(
-    bool use_shader_objects) {
+    bool use_shader_objects, const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreDispatchResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
         return reinterpret_cast<gpuav::PreDispatchResources::SharedResources *>(shared_resources->second.get());
@@ -1283,7 +1291,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
     ds_layout_ci.pBindings = bindings.data();
     result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &shared_resources->ds_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create descriptor set layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1299,7 +1307,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
     pipeline_layout_ci.pSetLayouts = &shared_resources->ds_layout;
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create pipeline layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1317,7 +1325,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
         shader_ci.pPushConstantRanges = &push_constant_range;
         result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shared_resources->shader_object);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create shader object. Aborting GPU-AV");
+            ReportSetupProblem(device, loc, "Unable to create shader object. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -1328,7 +1336,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create shader module. Aborting GPU-AV");
+            ReportSetupProblem(device, loc, "Unable to create shader module. Aborting GPU-AV");
             aborted = true;
             return nullptr;
         }
@@ -1348,7 +1356,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
         DispatchDestroyShaderModule(device, validation_shader, nullptr);
 
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Failed to create compute pipeline for pre dispatch validation.");
+            ReportSetupProblem(device, loc, "Failed to create compute pipeline for pre dispatch validation.");
             return nullptr;
         }
     }
@@ -1361,7 +1369,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
     return reinterpret_cast<gpuav::PreDispatchResources::SharedResources *>(elt.first->second.get());
 }
 
-gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceRaysValidationResources() {
+gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceRaysValidationResources(const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreTraceRaysResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
         return reinterpret_cast<gpuav::PreTraceRaysResources::SharedResources *>(shared_resources->second.get());
@@ -1380,7 +1388,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     ds_layout_ci.pBindings = bindings.data();
     result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &shared_resources->ds_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create descriptor set layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1396,7 +1404,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     pipeline_layout_ci.pSetLayouts = &shared_resources->ds_layout;
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create pipeline layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1407,7 +1415,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create ray tracing shader module. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create ray tracing shader module. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1438,7 +1446,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     DispatchDestroyShaderModule(device, validation_shader, nullptr);
 
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Failed to create ray tracing pipeline for pre trace rays validation. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Failed to create ray tracing pipeline for pre trace rays validation. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1455,7 +1463,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     result = DispatchGetRayTracingShaderGroupHandlesKHR(device, shared_resources->pipeline, 0, rt_pipeline_create_info.groupCount,
                                                         sbt_size, sbt_host_storage.data());
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Failed to call vkGetRayTracingShaderGroupHandlesKHR. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Failed to call vkGetRayTracingShaderGroupHandlesKHR. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1477,7 +1485,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
     result = vmaCreatePool(vmaAllocator, &pool_create_info, &shared_resources->sbt_pool);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create VMA memory pool for SBT. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create VMA memory pool for SBT. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1486,7 +1494,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &shared_resources->sbt_buffer,
                              &shared_resources->sbt_allocation, nullptr);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to allocate device memory for shader binding table. Aborting GPU-AV.", true);
+        ReportSetupProblem(device, loc, "Unable to allocate device memory for shader binding table. Aborting GPU-AV.", true);
         aborted = true;
         return nullptr;
     }
@@ -1496,7 +1504,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
 
     if (result != VK_SUCCESS) {
         ReportSetupProblem(
-            device, "Failed to map shader binding table when creating trace rays validation resources. Aborting GPU-AV", true);
+            device, loc, "Failed to map shader binding table when creating trace rays validation resources. Aborting GPU-AV", true);
         aborted = true;
         return nullptr;
     }
@@ -1508,10 +1516,10 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     shared_resources->shader_group_handle_size_aligned = shader_group_size_aligned;
 
     // Retrieve SBT address
-    const VkDeviceAddress sbt_address = GetBufferDeviceAddress(shared_resources->sbt_buffer);
+    const VkDeviceAddress sbt_address = GetBufferDeviceAddress(shared_resources->sbt_buffer, loc);
     assert(sbt_address != 0);
     if (sbt_address == 0) {
-        ReportSetupProblem(device, "Retrieved SBT buffer device address is null. Aborting GPU-AV.");
+        ReportSetupProblem(device, loc, "Retrieved SBT buffer device address is null. Aborting GPU-AV.");
         aborted = true;
         return nullptr;
     }
@@ -1526,7 +1534,8 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     return reinterpret_cast<gpuav::PreTraceRaysResources::SharedResources *>(elt.first->second.get());
 }
 
-gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetSharedCopyBufferToImageValidationResources() {
+gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetSharedCopyBufferToImageValidationResources(
+    const Location &loc) {
     if (auto shared_resources = shared_validation_resources_map.find(typeid(PreCopyBufferToImageResources::SharedResources));
         shared_resources != shared_validation_resources_map.end()) {
         return reinterpret_cast<gpuav::PreCopyBufferToImageResources::SharedResources *>(shared_resources->second.get());
@@ -1546,7 +1555,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
     ds_layout_ci.pBindings = bindings.data();
     result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &shared_resources->ds_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create descriptor set layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create descriptor set layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1567,7 +1576,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
     pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
     result = vmaCreatePool(vmaAllocator, &pool_create_info, &shared_resources->copy_regions_pool);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create VMA memory pool for buffer to image copies validation. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create VMA memory pool for buffer to image copies validation. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1577,7 +1586,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
     pipeline_layout_ci.pSetLayouts = &shared_resources->ds_layout;
     result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &shared_resources->pipeline_layout);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create pipeline layout. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create pipeline layout. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1588,7 +1597,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create shader module. Aborting GPU-AV");
+        ReportSetupProblem(device, loc, "Unable to create shader module. Aborting GPU-AV");
         aborted = true;
         return nullptr;
     }
@@ -1605,7 +1614,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
 
     result = DispatchCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &shared_resources->pipeline);
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Failed to create compute pipeline for copy buffer to image validation. Aborting GPU-AV.");
+        ReportSetupProblem(device, loc, "Failed to create compute pipeline for copy buffer to image validation. Aborting GPU-AV.");
     }
 
     DispatchDestroyShaderModule(device, validation_shader, nullptr);
@@ -1618,14 +1627,14 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
     return reinterpret_cast<gpuav::PreCopyBufferToImageResources::SharedResources *>(elt.first->second.get());
 }
 
-void gpuav::Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer,
-                                             std::unique_ptr<CommandResources> command_resources) {
+void gpuav::Validator::StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
+                                             const Location &loc) {
     if (aborted) return;
     if (!command_resources) return;
 
     auto cb_node = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_node) {
-        ReportSetupProblem(device, "Unrecognized command buffer");
+        ReportSetupProblem(cmd_buffer, loc, "Unrecognized command buffer");
         aborted = true;
         return;
     }

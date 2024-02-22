@@ -436,9 +436,9 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
     return skip;
 }
 
-void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state
-    StateTracker::CreateDevice(pCreateInfo);
+    StateTracker::CreateDevice(pCreateInfo, loc);
 
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
     // would be messier without.
@@ -464,7 +464,6 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
             std::copy(std::istreambuf_iterator<char>(read_file), {}, std::back_inserter(validation_cache_data));
             read_file.close();
         } else {
-            Location loc(Func::vkCreateDevice);
             LogInfo("WARNING-cache-file-error", device, loc,
                     "Cannot open shader validation cache at %s for reading (it may not exist yet)", validation_cache_path.c_str());
         }
