@@ -1317,3 +1317,74 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeAtomic, ImageFloat16Vector) {
+    TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_NV_SHADER_ATOMIC_FLOAT16_VECTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    // shaderFloat16VectorAtomics not enabled
+    RETURN_IF_SKIP(Init());
+
+    // clang-format off
+    std::string cs_image_base = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_NV_shader_atomic_fp16_vector : enable
+        layout(set = 0, binding = 0) buffer ssbo { f16vec2 y; };
+        layout(set = 0, binding = 1, rg16f) uniform image2D z;
+        void main() {
+    )glsl";
+
+    std::string cs_image_add = cs_image_base + R"glsl(
+           y = imageAtomicAdd(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+
+    std::string cs_image_min = cs_image_base + R"glsl(
+           y = imageAtomicMin(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+
+    std::string cs_image_max = cs_image_base + R"glsl(
+           y = imageAtomicMax(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+
+    std::string cs_image_exchange = cs_image_base + R"glsl(
+           y = imageAtomicExchange(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+    // clang-format on
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581");
+        VkShaderObj const cs(this, cs_image_add.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581");
+        VkShaderObj const cs(this, cs_image_min.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581");
+        VkShaderObj const cs(this, cs_image_max.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581");
+        VkShaderObj const cs(this, cs_image_exchange.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+        m_errorMonitor->VerifyFound();
+    }
+}

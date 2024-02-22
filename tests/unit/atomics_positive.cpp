@@ -874,3 +874,66 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveAtomic, ImageFloat16Vector) {
+    TEST_DESCRIPTION("Test VK_NV_shader_atomic_float16_vector.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_NV_SHADER_ATOMIC_FLOAT16_VECTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderFloat16VectorAtomics);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    RETURN_IF_SKIP(Init());
+
+    // clang-format off
+    std::string cs_image_base = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_NV_shader_atomic_fp16_vector : enable
+        layout(set = 0, binding = 0) buffer ssbo { f16vec2 y; };
+        layout(set = 0, binding = 1, rg16f) uniform image2D z;
+        void main() {
+    )glsl";
+
+    std::string cs_image_add = cs_image_base + R"glsl(
+           y = imageAtomicAdd(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+
+    std::string cs_image_min = cs_image_base + R"glsl(
+           y = imageAtomicMin(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+
+    std::string cs_image_max = cs_image_base + R"glsl(
+           y = imageAtomicMax(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+
+    std::string cs_image_exchange = cs_image_base + R"glsl(
+           y = imageAtomicExchange(z, ivec2(1, 1), f16vec2(1,2));
+        }
+    )glsl";
+    // clang-format on
+
+    const char *current_shader = nullptr;
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+        helper.cs_ = std::make_unique<VkShaderObj>(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+
+    current_shader = cs_image_add.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+
+    current_shader = cs_image_min.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+
+    current_shader = cs_image_max.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+
+    current_shader = cs_image_exchange.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
