@@ -1933,14 +1933,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     swapchain_create_info.oldSwapchain = 0;
 
     // Query present mode data
-    const std::array defined_present_modes{
-        VK_PRESENT_MODE_IMMEDIATE_KHR,
-        VK_PRESENT_MODE_MAILBOX_KHR,
-        VK_PRESENT_MODE_FIFO_KHR,
-        VK_PRESENT_MODE_FIFO_RELAXED_KHR,
-        VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR,
-        VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR,
-    };
+    const std::array defined_present_modes{VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_KHR,
+                                           VK_PRESENT_MODE_FIFO_RELAXED_KHR};
 
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), m_surface, &count, nullptr);
     std::vector<VkPresentModeKHR> pdev_surface_present_modes(count);
@@ -2263,7 +2257,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
@@ -2410,13 +2404,13 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
 
-    vkt::Fence present_fence;
-    present_fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence present_fence(*m_device);
+    VkFence fences[2] = {present_fence.handle(), present_fence.handle()};
 
     // PresentFenceInfo swapchaincount not equal to PresentInfo swapchaincount
     VkSwapchainPresentFenceInfoEXT fence_info = vku::InitStructHelper();
     fence_info.swapchainCount = present.swapchainCount + 1;
-    fence_info.pFences = &present_fence.handle();
+    fence_info.pFences = fences;
     present.pNext = &fence_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-07757");
