@@ -30,8 +30,9 @@ class HazardDetector {
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(usage_info_); }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+                             QueueId queue_id) const {
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag, queue_id);
     }
     explicit HazardDetector(SyncStageAccessIndex usage_index) : usage_info_(SyncStageAccess::UsageInfo(usage_index)) {}
 };
@@ -44,8 +45,9 @@ class HazardDetectorWithOrdering {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectHazard(usage_info_, ordering_rule_, kQueueIdInvalid);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+                             QueueId queue_id) const {
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag, queue_id);
     }
     HazardDetectorWithOrdering(SyncStageAccessIndex usage_index, SyncOrdering ordering)
         : usage_info_(SyncStageAccess::UsageInfo(usage_index)), ordering_rule_(ordering) {}
@@ -58,8 +60,9 @@ class HazardDetectFirstUse {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        return pos->second.DetectAsyncHazard(recorded_use_, tag_range_, start_tag);
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+                             QueueId queue_id) const {
+        return pos->second.DetectAsyncHazard(recorded_use_, tag_range_, start_tag, queue_id);
     }
 
   private:
@@ -87,7 +90,7 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     async_.reserve(subpass_dep.async.size());
     for (const auto async_subpass : subpass_dep.async) {
         // Start tags are not known at creation time (as it's done at BeginRenderpass)
-        async_.emplace_back(contexts[async_subpass], kInvalidTag);
+        async_.emplace_back(contexts[async_subpass], kInvalidTag, kQueueIdInvalid);
     }
 
     if (has_barrier_from_external) {
@@ -276,9 +279,9 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
     return hazard;
 }
 
-void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageTag tag) {
+void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageTag tag, QueueId queue_id) {
     if (context) {
-        async_.emplace_back(*context, tag);
+        async_.emplace_back(*context, tag, queue_id);
     }
 }
 
@@ -387,9 +390,10 @@ class BarrierHazardDetector {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectBarrierHazard(usage_info_, kQueueIdInvalid, src_exec_scope_, src_access_scope_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+                             QueueId queue_id) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag, queue_id);
     }
 
   private:
@@ -445,9 +449,10 @@ class EventBarrierHazardDetector {
         return hazard;
     }
 
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+                             QueueId queue_id) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag, queue_id);
     }
 
   private:
