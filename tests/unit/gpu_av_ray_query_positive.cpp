@@ -279,9 +279,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     m_device->wait();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7546
-// Crashing on Linux Mesa, wait for a driver update
-TEST_F(PositiveGpuAVRayQuery, DISABLED_GraphicsBasic) {
+TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     TEST_DESCRIPTION("Ray query in a vertex shader");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
