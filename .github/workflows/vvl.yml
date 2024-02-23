@@ -220,7 +220,7 @@ jobs:
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
       # Helps verify install location and prints the exported symbols.
-      - run: nm -gU /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation
+      - run: nm -gU /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation 
       # Helps verify useful details about the dylib (platform, minos, sdk)
       - run: vtool -show-build /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation
 
