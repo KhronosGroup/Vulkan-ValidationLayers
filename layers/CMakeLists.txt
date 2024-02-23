@@ -116,7 +116,11 @@ endif()
 
 add_subdirectory(gpu_validation/spirv)
 
-add_library(vvl MODULE)
+if(IOS)
+    add_library(vvl SHARED)
+else()
+    add_library(vvl MODULE)
+endif()
 
 target_sources(vvl PRIVATE
     best_practices/best_practices_error_enums.h
@@ -333,7 +337,16 @@ elseif(MINGW)
     target_compile_options(vvl PRIVATE -Wa,-mbig-obj)
     set_target_properties(vvl PROPERTIES PREFIX "") # remove the prefix "lib" so the manifest json "library_path" matches
 elseif(APPLE)
+
+if(IOS)
+    set_target_properties(vvl PROPERTIES
+		FRAMEWORK			TRUE
+		MACOSX_FRAMEWORK_IDENTIFIER 	com.khronos.validation
+    )
+else()
     set_target_properties(vvl PROPERTIES SUFFIX ".dylib")
+endif()
+
     target_link_options(vvl PRIVATE -exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.exp)
 elseif(ANDROID)
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}-android.map)
