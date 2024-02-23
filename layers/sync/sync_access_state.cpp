@@ -847,6 +847,20 @@ bool ResourceAccessWriteState::IsOrdered(const OrderingBarrier &ordering, QueueI
 
 bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                                                     const SyncStageAccessFlags &src_access_scope) const {
+    // Current implementation relies on TOP_OF_PIPE constant due to the fact that it's non-zero value
+    // and AND-ing with it can create execution dependency when necessary. One example, it allows the
+    // ALL_COMMANDS stage to guard all accesses even if NONE/TOP_OF_PIPE is used. When NONE constant is
+    // used, which has numerical value of zero, then AND-ing with it always results in 0 which means
+    // "no barrier", so it's not possible to use NONE internally in equivalent way to TOP_OF_PIPE.
+    // Here we replace NONE with TOP_OF_PIPE in the scenarios where they are equivalent according to the spec.
+    //
+    // If we update implementation to get rid of deprecated TOP_OF_PIPE/BOTTOM_OF_PIPE then we must
+    // invert the condition below and exchange TOP_OF_PIPE and NONE roles, so deprecated stages would
+    // not propagate into implementation internals.
+    if (src_exec_scope == VK_PIPELINE_STAGE_2_NONE && src_access_scope.none()) {
+        src_exec_scope = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+    }
+
     // Special rules for sequential ILT's
     if (IsIndex(SYNC_IMAGE_LAYOUT_TRANSITION)) {
         if (queue_id == queue_) {

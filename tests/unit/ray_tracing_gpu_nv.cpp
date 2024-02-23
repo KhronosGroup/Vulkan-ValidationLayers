@@ -414,7 +414,7 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationRestoresSt
 
     VkPipeline compute_pipeline;
     ASSERT_EQ(VK_SUCCESS,
-              vk::CreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &compute_pipeline_ci, nullptr, &compute_pipeline));
+              vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_pipeline_ci, nullptr, &compute_pipeline));
 
     normal_descriptor_set.WriteDescriptorBufferInfo(0, normal_descriptor_buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     normal_descriptor_set.UpdateDescriptorSets();
@@ -484,5 +484,5 @@ TEST_F(NegativeGpuAVRayTracingNV, BuildAccelerationStructureValidationRestoresSt
     output_descriptor_buffer.memory().unmap();
 
     // Clean up
-    vk::DestroyPipeline(m_device->device(), compute_pipeline, nullptr);
+    vk::DestroyPipeline(device(), compute_pipeline, nullptr);
 }

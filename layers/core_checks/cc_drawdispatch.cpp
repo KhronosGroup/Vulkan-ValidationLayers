@@ -33,7 +33,8 @@ using vvl::GetDrawDispatchVuid;
 bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    if (!cb_state.index_buffer_binding.bound() && !enabled_features.maintenance6) {
+    const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
+    if (!buffer_state && !enabled_features.maintenance6 && !enabled_features.nullDescriptor) {
         skip |= LogError(vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "Index buffer object has not been bound to this command buffer.");
     }
@@ -63,21 +64,16 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
             pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pVertexInputState->pNext);
         if (vertex_input_divisor_state && phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE &&
             firstInstance != 0u) {
-            bool non_1_divisor = false;
-            uint32_t i = 0;
-            for (; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
+            for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
                 if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
-                    non_1_divisor = true;
-                    break;
+                    const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
+                    skip |= LogError(vuid.vertex_input_09461, objlist, loc,
+                                     "VkPipelineVertexInputDivisorStateCreateInfoKHR::pVertexBindingDivisors[%" PRIu32
+                                     "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
+                                     ", but supportsNonZeroFirstInstance is VK_FALSE.",
+                                     i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
+                    break;  // only report first instance of the error
                 }
-            }
-            if (non_1_divisor) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
-                skip |= LogError(vuid.vertex_input_09461, objlist, loc,
-                                 "VkPipelineVertexInputDivisorStateCreateInfoKHR::pVertexBindingDivisors[%" PRIu32
-                                 "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
-                                 ", but supportsNonZeroFirstInstance is VK_FALSE.",
-                                 i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
             }
         }
     }
@@ -85,8 +81,8 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     if (!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VERTEX_INPUT_EXT] &&
             phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
-            for (uint32_t i = 0; i < (uint32_t)cb_state.dynamic_state_value.vertex_binding_descriptions.size(); ++i) {
-                if (cb_state.dynamic_state_value.vertex_binding_descriptions[i].divisor != 1u) {
+            for (uint32_t i = 0; i < (uint32_t)cb_state.dynamic_state_value.vertex_binding_descriptions_divisor.size(); ++i) {
+                if (cb_state.dynamic_state_value.vertex_binding_descriptions_divisor[i] != 1u) {
                     LogObjectList objlist(cb_state.Handle());
                     if (pipeline_state) {
                         objlist.add(pipeline_state->Handle());
@@ -94,7 +90,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                     skip |= LogError(vuid.vertex_input_09462, objlist, loc,
                                      "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "].divisor as %" PRIu32
                                      ", but firstInstance is %" PRIu32 " and supportsNonZeroFirstInstance is VK_FALSE.",
-                                     i, cb_state.dynamic_state_value.vertex_binding_descriptions[i].divisor, firstInstance);
+                                     i, cb_state.dynamic_state_value.vertex_binding_descriptions_divisor[i], firstInstance);
                     break;
                 }
             }
@@ -203,8 +199,12 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_state, uint32_t indexCount, uint32_t firstIndex,
                                                   const Location &loc, const char *first_index_vuid) const {
     bool skip = false;
-    if (!enabled_features.robustBufferAccess2 && cb_state.index_buffer_binding.bound()) {
-        const auto &index_buffer_binding = cb_state.index_buffer_binding;
+    if (enabled_features.robustBufferAccess2) {
+        return skip;
+    }
+    const auto &index_buffer_binding = cb_state.index_buffer_binding;
+    const auto buffer_state = Get<vvl::Buffer>(index_buffer_binding.buffer);
+    if (buffer_state) {
         const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
         // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
         // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
@@ -212,7 +212,7 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_s
         VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
         if (end_offset > index_buffer_binding.size) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            objlist.add(index_buffer_binding.buffer_state->Handle());
+            objlist.add(buffer_state->Handle());
             skip |= LogError(first_index_vuid, objlist, loc,
                              "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
                              ")) "

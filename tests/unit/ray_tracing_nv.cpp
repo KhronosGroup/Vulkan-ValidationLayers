@@ -312,12 +312,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     }
     descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[2].pImageInfo = descriptor_image_infos;
-    vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, NULL);
     if (descriptor_indexing) {
         descriptor_writes[0].dstSet = ds_variable.set_;
         descriptor_writes[1].dstSet = ds_variable.set_;
         descriptor_writes[2].dstSet = ds_variable.set_;
-        vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, NULL);
     }
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
@@ -1590,7 +1590,7 @@ TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
 
     acc.pAccelerationStructures = &top_level_as.handle();
     descriptor_write.pNext = &acc;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 }
 
 TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {

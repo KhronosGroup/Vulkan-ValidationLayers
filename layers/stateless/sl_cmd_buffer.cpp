@@ -84,6 +84,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pBuffers == nullptr) {
+            skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-parameter", commandBuffer,
+                             error_obj.location.dot(Field::pBuffers), "is NULL.");
+            return skip;
+        }
         if (pBuffers[i] == VK_NULL_HANDLE) {
             const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
             const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
@@ -243,6 +248,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pBuffers == nullptr) {
+            skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-parameter", commandBuffer,
+                             error_obj.location.dot(Field::pBuffers), "is NULL.");
+            return skip;
+        }
         if (pBuffers[i] == VK_NULL_HANDLE) {
             const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
             const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);

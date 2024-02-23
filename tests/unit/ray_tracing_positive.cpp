@@ -477,7 +477,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
-        vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
         VkDeviceSize consumed_buffer_size = 0;
         for (size_t i = 0; i < blas_count; ++i) {
@@ -545,7 +545,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         scratch_buffer_frame_0->init_no_mem(*m_device, scratch_buffer_ci);
 
         // Bind memory to scratch buffer
-        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_0->handle(), common_scratch_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer_frame_0->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -579,7 +579,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         scratch_buffer_frame_1->init_no_mem(*m_device, scratch_buffer_ci);
 
         // Bind memory to scratch buffer
-        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_1->handle(), common_scratch_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer_frame_1->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -628,7 +628,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         scratch_buffer_frame_2->init_no_mem(*m_device, scratch_buffer_ci);
 
         // Bind memory to scratch buffer
-        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_2->handle(), common_scratch_memory.handle(), 0);
+        vk::BindBufferMemory(device(), scratch_buffer_frame_2->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -786,11 +786,16 @@ TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
         GTEST_SKIP() << "Need a big scratch size, skipping test.";
     }
 
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_struct_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(acc_struct_properties);
+    VkDeviceSize scratch_size = size_info.buildScratchSize + acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
+    scratch_size = Align<VkDeviceSize>(scratch_size, acc_struct_properties.minAccelerationStructureScratchOffsetAlignment);
+
     // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 4096;
+    alloc_info.allocationSize = scratch_size;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     VkBufferCreateInfo small_buffer_ci = vku::InitStructHelper();
@@ -801,7 +806,7 @@ TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
     auto small_scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
     small_scratch_buffer->bind_memory(buffer_memory, 0);
 
-    small_buffer_ci.size = 4096;
+    small_buffer_ci.size = alloc_info.allocationSize;
     auto big_scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
     big_scratch_buffer->bind_memory(buffer_memory, 0);
     const VkDeviceAddress big_scratch_address = big_scratch_buffer->address();

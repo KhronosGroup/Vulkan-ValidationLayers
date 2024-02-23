@@ -1800,7 +1800,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Scratch data buffer is missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag
     {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-        const VkDeviceSize scratch_size = blas.GetSizeInfo().buildScratchSize;
+        const VkDeviceSize scratch_size =
+            blas.GetSizeInfo().buildScratchSize + acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, scratch_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -1860,7 +1861,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
         for (auto &dst_blas_buffer : dst_blas_buffers) {
             dst_blas_buffer.init_no_mem(*m_device, dst_blas_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), dst_blas_buffer.handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), dst_blas_buffer.handle(), buffer_memory.handle(), 0);
 
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             blas.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffer));
@@ -1891,10 +1892,10 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
         for (size_t i = 0; i < build_info_count; ++i) {
             src_blas_buffers[i].init_no_mem(*m_device, blas_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), src_blas_buffers[i].handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), src_blas_buffers[i].handle(), buffer_memory.handle(), 0);
 
             dst_blas_buffers[i].init_no_mem(*m_device, blas_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
 
             // 1st step: build destination acceleration struct
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -1970,7 +1971,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
         for (auto &scratch_buffer : scratch_buffers) {
             scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
-            vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
 
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             blas.SetScratchBuffer(std::move(scratch_buffer));
@@ -2007,10 +2008,10 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
         for (size_t i = 0; i < build_info_count; ++i) {
             dst_blas_buffers[i].init_no_mem(*m_device, dst_blas_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
             scratch_buffers[i] = std::make_shared<vkt::Buffer>();
             scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
 
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             blas.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffers[i]));
@@ -2056,11 +2057,11 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory2) {
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
         for (size_t i = 0; i < build_info_count; ++i) {
             src_blas_buffers[i].init_no_mem(*m_device, blas_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), src_blas_buffers[i].handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), src_blas_buffers[i].handle(), buffer_memory.handle(), 0);
 
             scratch_buffers[i] = std::make_shared<vkt::Buffer>();
             scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
+            vk::BindBufferMemory(device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
 
             // 1st step: build destination acceleration struct
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);

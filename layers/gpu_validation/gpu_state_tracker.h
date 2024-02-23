@@ -29,7 +29,7 @@ class Queue : public vvl::Queue {
     Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties);
     virtual ~Queue();
-    void SubmitBarrier();
+    void SubmitBarrier(const Location &loc);
 
   private:
     Validator &state_;
@@ -98,7 +98,7 @@ class Validator : public ValidationStateTracker {
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
                                    void *modified_create_info) override;
-    void CreateDevice(const VkDeviceCreateInfo *pCreateInfo) override;
+    void CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
 
@@ -173,29 +173,18 @@ class Validator : public ValidationStateTracker {
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 
-    template <typename T>
-    void ReportSetupProblem(T object, const char *const specific_message, bool vma_fail = false) const {
-        std::string logit = specific_message;
-        if (vma_fail) {
-            char *stats_string;
-            vmaBuildStatsString(vmaAllocator, &stats_string, false);
-            logit += " VMA statistics = ";
-            logit += stats_string;
-            vmaFreeStatsString(vmaAllocator, stats_string);
-        }
-        Location loc(vvl::Func::vkCreateDevice);
-        LogError(setup_vuid, object, loc, "Setup Error. Detail: (%s)", logit.c_str());
-    }
+    void ReportSetupProblem(LogObjectList objlist, const Location &loc, const char *const specific_message,
+                            bool vma_fail = false) const;
     bool CheckForGpuAvEnabled(const void *pNext);
 
   protected:
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const;
     void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer, const Location &loc);
 
-    void SubmitBarrier(VkQueue queue) {
+    void SubmitBarrier(VkQueue queue, const Location &loc) {
         auto queue_state = Get<Queue>(queue);
         if (queue_state) {
-            queue_state->SubmitBarrier();
+            queue_state->SubmitBarrier(loc);
         }
     }
 

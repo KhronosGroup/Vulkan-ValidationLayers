@@ -585,7 +585,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
 
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, nullptr);
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);

@@ -528,9 +528,9 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuff
                                                            *pDependencyInfo);
 }
 
-void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state
-    StateTracker::CreateDevice(pCreateInfo);
+    StateTracker::CreateDevice(pCreateInfo, loc);
 
     ForEachShared<vvl::Queue>([this](const std::shared_ptr<vvl::Queue> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
@@ -1872,7 +1872,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, error_obj.location,
                              "Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
@@ -1897,7 +1897,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
@@ -2082,7 +2082,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, error_obj.location,
                              "Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
@@ -2108,7 +2108,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 

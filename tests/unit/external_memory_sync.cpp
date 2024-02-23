@@ -797,7 +797,7 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     import_fence.import_handle(ext_fence, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT_KHR);
 
     // Undo the temporary import
-    vk::ResetFences(m_device->device(), 1, &import_fence.handle());
+    vk::ResetFences(device(), 1, &import_fence.handle());
 
     // Signal the previously imported fence twice, the second signal should produce a validation error
     vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
@@ -895,7 +895,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     }
     // If handle is not NULL, name must be NULL
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceWin32HandleInfoKHR-handle-01462");
-    vk::ImportFenceWin32HandleKHR(m_device->device(), &ifi);
+    vk::ImportFenceWin32HandleKHR(device(), &ifi);
     m_errorMonitor->VerifyFound();
 #endif
     auto err = import_fence.import_handle(ext_handle, handle_type);
@@ -1236,8 +1236,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
                                                 image_export.memory().handle(), handle_type};
     HANDLE handle_buffer;
     HANDLE handle_image;
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi_buffer, &handle_buffer));
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi_image, &handle_image));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(device(), &mghi_buffer, &handle_buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(device(), &mghi_image, &handle_image));
 
     VkImportMemoryWin32HandleInfoKHR import_info_buffer = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, nullptr,
                                                            handle_type, handle_buffer};
@@ -1255,8 +1255,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 
     int fd_buffer;
     int fd_image;
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(m_device->device(), &mgfi_buffer, &fd_buffer));
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(m_device->device(), &mgfi_image, &fd_image));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(device(), &mgfi_buffer, &fd_buffer));
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(device(), &mgfi_image, &fd_image));
 
     VkImportMemoryFdInfoKHR import_info_buffer = vku::InitStructHelper();
     import_info_buffer.handleType = handle_type;
@@ -1342,7 +1342,7 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithUnsupportedHandleType) {
     const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
     VkFence fence = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportFenceCreateInfo-handleTypes-01446");
-    vk::CreateFence(m_device->device(), &create_info, nullptr, &fence);
+    vk::CreateFence(device(), &create_info, nullptr, &fence);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1369,7 +1369,7 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithIncompatibleHandleType) {
     const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
     VkFence fence = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportFenceCreateInfo-handleTypes-01446");
-    vk::CreateFence(m_device->device(), &create_info, nullptr, &fence);
+    vk::CreateFence(device(), &create_info, nullptr, &fence);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1394,7 +1394,7 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
     const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     VkSemaphore semaphore = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
-    vk::CreateSemaphore(m_device->device(), &create_info, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1421,7 +1421,7 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     VkSemaphore semaphore = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
-    vk::CreateSemaphore(m_device->device(), &create_info, nullptr, &semaphore);
+    vk::CreateSemaphore(device(), &create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2076,7 +2076,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32ImageNoDedicated) {
     get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
     HANDLE handle = NULL;
-    vk::GetMemoryWin32HandleKHR(m_device->device(), &get_handle_info, &handle);
+    vk::GetMemoryWin32HandleKHR(device(), &get_handle_info, &handle);
 
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
     dedicated_info.image = image;
@@ -2131,7 +2131,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
     HANDLE handle = NULL;
-    vk::GetMemoryWin32HandleKHR(m_device->device(), &get_handle_info, &handle);
+    vk::GetMemoryWin32HandleKHR(device(), &get_handle_info, &handle);
 
     vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
     dedicated_info.buffer = buffer2.handle();
@@ -2274,7 +2274,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferNoDedicated) {
     mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     int fd;
-    vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd);
+    vk::GetMemoryFdKHR(device(), &mgfi, &fd);
     if (fd < 0) {
         GTEST_SKIP() << "Cannot export FD memory";
     }
@@ -2332,7 +2332,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     int fd;
-    vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd);
+    vk::GetMemoryFdKHR(device(), &mgfi, &fd);
 
     vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
 
@@ -2880,7 +2880,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
             ycbcr_create_info.forceExplicitReconstruction = false;
 
             VkSamplerYcbcrConversion conversion;
-            err = vk::CreateSamplerYcbcrConversionKHR(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
+            err = vk::CreateSamplerYcbcrConversionKHR(device(), &ycbcr_create_info, nullptr, &conversion);
             ASSERT_EQ(VK_SUCCESS, err);
 
             VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
@@ -2895,7 +2895,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06802");
             vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
             m_errorMonitor->VerifyFound();
-            vk::DestroySamplerYcbcrConversionKHR(m_device->device(), conversion, nullptr);
+            vk::DestroySamplerYcbcrConversionKHR(device(), conversion, nullptr);
         }
     }
 }

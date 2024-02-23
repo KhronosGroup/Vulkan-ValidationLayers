@@ -1352,21 +1352,21 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
 
     auto cb = m_commandBuffer->handle();
 
-    vk::CmdBlitImage(cb, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_0_front_1_front, VK_FILTER_NEAREST);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdBlitImage(cb, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_0_front_1_front, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdBlitImage(cb, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_1_front_0_front, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBlitImage(cb, image_b.image(), VK_IMAGE_LAYOUT_GENERAL, image_a.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdBlitImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_1_back_0_back, VK_FILTER_NEAREST);
 
     m_commandBuffer->end();
@@ -4049,7 +4049,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     descriptor_writes[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[5].pImageInfo = &image_info[2];
 
-    vk::UpdateDescriptorSets(m_device->device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 
     // only descriptor 0 is used, the rest are going to get destroyed
     char const *shader_source = R"glsl(
@@ -6253,6 +6253,122 @@ TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
                               0, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, FillBufferMissingBarrier) {
+    TEST_DESCRIPTION("Missing synchronization with vkCmdFillBuffer TRANSFER_WRITE access");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr VkDeviceSize size = 1024;
+    vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy region{};
+    region.size = size;
+
+    m_commandBuffer->begin();
+    vk::CmdFillBuffer(*m_commandBuffer, src_buffer, 0, size, 42);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, FillBufferWrongBarrier) {
+    TEST_DESCRIPTION("Insufficient synchronization with vkCmdFillBuffer TRANSFER_WRITE access");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    constexpr VkDeviceSize size = 1024;
+    vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy region{};
+    region.size = size;
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;    // should be COPY
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;  // should be READ
+    barrier.buffer = src_buffer;
+    barrier.size = size;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &barrier;
+
+    m_commandBuffer->begin();
+    vk::CmdFillBuffer(*m_commandBuffer, src_buffer, 0, size, 42);
+    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, UpdateBufferMissingBarrier) {
+    TEST_DESCRIPTION("Missing synchronization with vkCmdUpdateBuffer TRANSFER_WRITE access");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr VkDeviceSize size = 64;
+    vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    std::array<uint8_t, size> data = {};
+
+    VkBufferCopy region{};
+    region.size = size;
+
+    m_commandBuffer->begin();
+    vk::CmdUpdateBuffer(*m_commandBuffer, src_buffer, 0, static_cast<VkDeviceSize>(data.size()), data.data());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
+    TEST_DESCRIPTION("Insufficient synchronization with vkCmdUpdateBuffer TRANSFER_WRITE access");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    constexpr VkDeviceSize size = 64;
+    vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    std::array<uint8_t, size> data = {};
+
+    VkBufferCopy region{};
+    region.size = size;
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;  // should be CLEAR
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barrier.buffer = src_buffer;
+    barrier.size = size;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &barrier;
+
+    m_commandBuffer->begin();
+    vk::CmdUpdateBuffer(*m_commandBuffer, src_buffer, 0, static_cast<VkDeviceSize>(data.size()), data.data());
+    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }

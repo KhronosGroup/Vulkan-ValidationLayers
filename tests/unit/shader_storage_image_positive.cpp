@@ -79,7 +79,7 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
@@ -170,7 +170,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
@@ -253,7 +253,7 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     uint32_t data = 2;
     VkSpecializationMapEntry entry;
@@ -381,7 +381,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     VkShaderObj const fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);

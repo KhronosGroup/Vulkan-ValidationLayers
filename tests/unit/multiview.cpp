@@ -391,7 +391,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         descriptor_write.descriptorCount = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_write.pBufferInfo = &buffer_info;
-        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
         VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
         pipeline_layout_info.setLayoutCount = 1;
@@ -498,7 +498,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04007");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
         vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -509,7 +509,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
             m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04007");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
             vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();

@@ -31,17 +31,13 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
     if (cb_state) {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
         const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-        const auto& current_vtx_bfr_binding_info = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings;
-
         // Verify vertex binding
         if (pipeline_state && pipeline_state->vertex_input_state &&
-            pipeline_state->vertex_input_state->binding_descriptions.size() <= 0) {
-            if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
-                skip |=
-                    LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), loc,
+            pipeline_state->vertex_input_state->binding_descriptions.empty() &&
+            !cb_state->current_vertex_buffer_binding_info.empty()) {
+            skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), loc,
                                           "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
                                           FormatHandle(cb_state->Handle()).c_str(), FormatHandle(pipeline_state->Handle()).c_str());
-            }
         }
 
         const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -207,9 +203,8 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     bool skip = false;
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
-
-    const auto* ib_state = cmd_state.index_buffer_binding.buffer_state.get();
-    if (ib_state == nullptr || cmd_state.index_buffer_binding.buffer_state->Destroyed()) return skip;
+    const auto ib_state = Get<vvl::Buffer>(cmd_state.index_buffer_binding.buffer);
+    if (!ib_state) return skip;
 
     const VkIndexType ib_type = cmd_state.index_buffer_binding.index_type;
     const auto& ib_mem_state = *ib_state->MemState();

@@ -242,7 +242,7 @@ class CommandBuffer : public RefcountedStateObject {
         std::vector<VkColorComponentFlags> color_write_masks;        // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
 
         // VK_DYNAMIC_STATE_VERTEX_INPUT_EXT
-        std::vector<VkVertexInputBindingDescription2EXT> vertex_binding_descriptions;
+        std::vector<uint32_t> vertex_binding_descriptions_divisor;
         std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descriptions;
 
         // VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT
@@ -296,7 +296,7 @@ class CommandBuffer : public RefcountedStateObject {
             color_write_enabled.reset();
             color_blend_equations.clear();
             color_write_masks.clear();
-            vertex_binding_descriptions.clear();
+            vertex_binding_descriptions_divisor.clear();
             vertex_attribute_descriptions.clear();
             viewport_w_scalings.clear();
             exclusive_scissor_enables.clear();
@@ -387,8 +387,9 @@ class CommandBuffer : public RefcountedStateObject {
     CommandBufferImageLayoutMap image_layout_map;
     CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
-    CBVertexBufferBindingInfo current_vertex_buffer_binding_info;
-    bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
+    vvl::unordered_map<uint32_t, vvl::VertexBufferBinding> current_vertex_buffer_binding_info;
+    vvl::IndexBufferBinding index_buffer_binding;
+
     VkCommandBuffer primaryCommandBuffer;
     // If primary, the secondary command buffers we will call.
     vvl::unordered_set<CommandBuffer *> linkedCommandBuffers;
@@ -410,7 +411,6 @@ class CommandBuffer : public RefcountedStateObject {
     std::vector<std::function<bool(CommandBuffer &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
-    IndexBufferBinding index_buffer_binding;
     bool performance_lock_acquired = false;
     bool performance_lock_released = false;
 

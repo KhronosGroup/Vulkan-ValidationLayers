@@ -77,7 +77,7 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectDevice) {
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
-    name_info.objectHandle = (uint64_t)m_device->device();
+    name_info.objectHandle = (uint64_t)device();
     name_info.pObjectName = object_name;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 

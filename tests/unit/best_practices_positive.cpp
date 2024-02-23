@@ -28,42 +28,42 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDescriptorPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyDescriptorSetLayout(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyBuffer(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyBufferView(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyCommandPool(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyDescriptorPool(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyDescriptorSetLayout(device(), VK_NULL_HANDLE, NULL);
     vk::DestroyDevice(VK_NULL_HANDLE, NULL);
-    vk::DestroyEvent(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyFramebuffer(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyImage(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyImageView(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyEvent(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyFence(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyFramebuffer(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyImage(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyImageView(device(), VK_NULL_HANDLE, NULL);
     vk::DestroyInstance(VK_NULL_HANDLE, NULL);
-    vk::DestroyPipeline(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyPipelineCache(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyPipelineLayout(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyQueryPool(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyRenderPass(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroySampler(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroySemaphore(m_device->device(), VK_NULL_HANDLE, NULL);
-    vk::DestroyShaderModule(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyPipeline(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyPipelineCache(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyPipelineLayout(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyQueryPool(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyRenderPass(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroySampler(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroySemaphore(device(), VK_NULL_HANDLE, NULL);
+    vk::DestroyShaderModule(device(), VK_NULL_HANDLE, NULL);
 
     VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info{};
     pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
     VkCommandBuffer command_buffers[3] = {};
     VkCommandBufferAllocateInfo command_buffer_allocate_info{};
     command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     command_buffer_allocate_info.commandPool = command_pool;
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffers[1]);
-    vk::FreeCommandBuffers(m_device->device(), command_pool, 3, command_buffers);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &command_buffers[1]);
+    vk::FreeCommandBuffers(device(), command_pool, 3, command_buffers);
+    vk::DestroyCommandPool(device(), command_pool, NULL);
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -93,11 +93,11 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
+    err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 3, descriptor_sets);
+    vk::FreeDescriptorSets(device(), ds_pool.handle(), 3, descriptor_sets);
 
-    vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
+    vk::FreeMemory(device(), VK_NULL_HANDLE, NULL);
 }
 
 TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {

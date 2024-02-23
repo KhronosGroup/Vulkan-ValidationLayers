@@ -692,7 +692,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     // Save local link to this device's physical device state
     device_state->physical_device_state = Get<vvl::PhysicalDevice>(gpu).get();
     // finish setup in the object representing the device
-    device_state->CreateDevice(pCreateInfo);
+    device_state->CreateDevice(pCreateInfo, record_obj.location);
 }
 
 std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
@@ -700,7 +700,7 @@ std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue q, uint3
     return std::make_shared<vvl::Queue>(*this, q, index, flags, queueFamilyProperties);
 }
 
-void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
+void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
 
     const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
@@ -985,13 +985,14 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
-        uint32_t num_cooperative_matrix_properties = 0;
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties,
-                                                                               NULL);
-        cooperative_matrix_properties.resize(num_cooperative_matrix_properties, vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
+        uint32_t num_cooperative_matrix_properties_nv = 0;
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device,
+                                                                               &num_cooperative_matrix_properties_nv, NULL);
+        cooperative_matrix_properties_nv.resize(num_cooperative_matrix_properties_nv,
+                                                vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
 
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties,
-                                                                               cooperative_matrix_properties.data());
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(
+            physical_device, &num_cooperative_matrix_properties_nv, cooperative_matrix_properties_nv.data());
     }
 
     if (IsExtEnabled(dev_ext.vk_khr_cooperative_matrix)) {
@@ -2242,6 +2243,13 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
         cb_state->dynamic_state_status.pipeline.reset();
 
+        if (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+            !pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+            for (const auto &description : pipe_state->vertex_input_state->binding_descriptions) {
+                cb_state->current_vertex_buffer_binding_info[description.binding].stride = description.stride;
+            }
+        }
+
         // Used to calculate vvl::CommandBuffer::usedViewportScissorCount upon draw command with this graphics pipeline.
         // If rasterization disabled (no viewport/scissors used), or the actual number of viewports/scissors is dynamic (unknown at
         // this time), then these are set to 0 to disable this checking.
@@ -2856,11 +2864,15 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
     }
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
-    cb_state->index_buffer_binding = IndexBufferBinding(Get<vvl::Buffer>(buffer), offset, indexType);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
+    // Being able to set the size was added in VK_KHR_maintenance5 via vkCmdBindIndexBuffer2KHR
+    // Using this function is the same as passing in VK_WHOLE_SIZE
+    VkDeviceSize buffer_size = vvl::Buffer::ComputeSize(buffer_state, offset, VK_WHOLE_SIZE);
+    cb_state->index_buffer_binding = vvl::IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
     // Add binding for this index buffer to this commandbuffer
-    if (!disabled[command_buffer_state]) {
-        cb_state->AddChild(cb_state->index_buffer_binding.buffer_state);
+    if (!disabled[command_buffer_state] && buffer) {
+        cb_state->AddChild(buffer_state);
     }
 }
 
@@ -2872,11 +2884,13 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer
     }
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
-    cb_state->index_buffer_binding = IndexBufferBinding(Get<vvl::Buffer>(buffer), size, offset, indexType);
+    auto buffer_state = Get<vvl::Buffer>(buffer);
+    VkDeviceSize buffer_size = vvl::Buffer::ComputeSize(buffer_state, offset, size);
+    cb_state->index_buffer_binding = vvl::IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
     // Add binding for this index buffer to this commandbuffer
-    if (!disabled[command_buffer_state]) {
-        cb_state->AddChild(cb_state->index_buffer_binding.buffer_state);
+    if (!disabled[command_buffer_state] && buffer) {
+        cb_state->AddChild(buffer_state);
     }
 }
 
@@ -2886,18 +2900,17 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
 
-    uint32_t end = firstBinding + bindingCount;
-    if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
-        cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.resize(end);
-    }
-
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding = BufferBinding(Get<vvl::Buffer>(pBuffers[i]), pOffsets[i]);
+        auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
+        // the stride is set from the pipeline or dynamic state
+        vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
+        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.offset = pOffsets[i];
+        vertex_buffer_binding.size = vvl::Buffer::ComputeSize(buffer_state, vertex_buffer_binding.offset, VK_WHOLE_SIZE);
 
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i] && !disabled[command_buffer_state]) {
-            cb_state->AddChild(vertex_buffer_binding.buffer_state);
+            cb_state->AddChild(buffer_state);
         }
     }
 }
@@ -4945,20 +4958,19 @@ void ValidationStateTracker::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer
         cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
 
-    uint32_t end = firstBinding + bindingCount;
-    if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
-        cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.resize(end);
-    }
-
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        const VkDeviceSize binding_size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
-        const VkDeviceSize binding_stride = (pStrides) ? pStrides[i] : 0;
-        vertex_buffer_binding = BufferBinding(Get<vvl::Buffer>(pBuffers[i]), binding_size, pOffsets[i], binding_stride);
+        auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
+        vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
+        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
+        vertex_buffer_binding.offset = pOffsets[i];
+        if (pStrides) {
+            vertex_buffer_binding.stride = pStrides[i];
+        }
 
         // Add binding for this vertex buffer to this commandbuffer
         if (!disabled[command_buffer_state] && pBuffers[i]) {
-            cb_state->AddChild(vertex_buffer_binding.buffer_state);
+            cb_state->AddChild(buffer_state);
         }
     }
 }
@@ -5171,13 +5183,17 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
         status_flags.set(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
     cb_state->RecordStateCmd(record_obj.location.function, status_flags);
-    cb_state->dynamic_state_value.vertex_binding_descriptions.resize(vertexBindingDescriptionCount);
-    for (uint32_t i = 0; i < vertexBindingDescriptionCount; ++i) {
-        cb_state->dynamic_state_value.vertex_binding_descriptions[i] = pVertexBindingDescriptions[i];
+
+    cb_state->dynamic_state_value.vertex_binding_descriptions_divisor.resize(vertexBindingDescriptionCount);
+    for (const auto [i, description] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
+        cb_state->dynamic_state_value.vertex_binding_descriptions_divisor[i] = description->divisor;
+
+        cb_state->current_vertex_buffer_binding_info[description->binding].stride = description->stride;
     }
+
     cb_state->dynamic_state_value.vertex_attribute_descriptions.resize(vertexAttributeDescriptionCount);
-    for (uint32_t i = 0; i < vertexAttributeDescriptionCount; ++i) {
-        cb_state->dynamic_state_value.vertex_attribute_descriptions[i] = pVertexAttributeDescriptions[i];
+    for (const auto [i, description] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
+        cb_state->dynamic_state_value.vertex_attribute_descriptions[i] = *description;
     }
 }
 

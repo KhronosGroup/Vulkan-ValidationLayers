@@ -75,7 +75,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
     command_buffer_allocate_info.commandPool = m_commandPool->handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, command_buffer);
 
     {
         VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -108,7 +108,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
 
     m_default_queue->wait();
 
-    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
+    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 2, command_buffer);
 }
 
 TEST_F(PositiveQuery, BasicQuery) {
@@ -250,7 +250,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     vkt::CommandBuffer secondary_buffer(*m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkQueue queue = VK_NULL_HANDLE;
-    vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
+    vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     uint32_t qfi = 0;
     VkBufferCreateInfo buff_create_info = vku::InitStructHelper();
@@ -311,10 +311,10 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, command_buffer);
 
     VkQueue queue = VK_NULL_HANDLE;
-    vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
+    vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     uint32_t qfi = 0;
     VkBufferCreateInfo buff_create_info = vku::InitStructHelper();
@@ -373,7 +373,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
     uint8_t data[out_data_size];
     VkResult res;
     do {
-        res = vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, 4, 0);
+        res = vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, &data, 4, 0);
     } while (res != VK_SUCCESS);
 
     m_default_queue->wait();
@@ -542,5 +542,5 @@ TEST_F(PositiveQuery, HostQueryResetSuccess) {
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
-    vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
+    vk::ResetQueryPoolEXT(device(), query_pool.handle(), 0, 1);
 }

@@ -635,15 +635,15 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH264) {
     size_t data_size = 0;
 
     // Calling without feedback info and data pointer is legal
-    context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, nullptr, &data_size, nullptr);
+    context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, nullptr);
 
     std::vector<uint8_t> data_buffer(data_size);
 
     // Calling without feedback info but data pointer is legal
-    context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, nullptr, &data_size, data_buffer.data());
+    context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, data_buffer.data());
 
     // Calling with feedback info not including codec-specific feedback info
-    context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, &feedback_info, &data_size, nullptr);
+    context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, &feedback_info, &data_size, nullptr);
 }
 
 TEST_F(PositiveVideo, GetEncodedSessionParamsH265) {
@@ -670,15 +670,15 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH265) {
     size_t data_size = 0;
 
     // Calling without feedback info and data pointer is legal
-    context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, nullptr, &data_size, nullptr);
+    context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, nullptr);
 
     std::vector<uint8_t> data_buffer(data_size);
 
     // Calling without feedback info but data pointer is legal
-    context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, nullptr, &data_size, data_buffer.data());
+    context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, data_buffer.data());
 
     // Calling with feedback info not including codec-specific feedback info
-    context.vk.GetEncodedVideoSessionParametersKHR(m_device->device(), &get_info, &feedback_info, &data_size, nullptr);
+    context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, &feedback_info, &data_size, nullptr);
 }
 
 TEST_F(PositiveVideoSyncVal, ImageRangeGenYcbcrSubsampling) {

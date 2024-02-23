@@ -159,7 +159,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-01630");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01632");
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
     VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
@@ -168,7 +168,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     bind_info.pNext = &bind_swapchain_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandle");
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
     bind_info.memory = mem.handle();
@@ -179,12 +179,12 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01631");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644");
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
     bind_info.memory = VK_NULL_HANDLE;
     bind_swapchain_info.imageIndex = 0;
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
 }
 
 TEST_F(NegativeWsi, SwapchainImage) {
@@ -323,7 +323,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     bind_info.image = peer_image.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
@@ -1117,12 +1117,12 @@ TEST_F(NegativeWsi, DeviceMask) {
 
     VkDeviceMemory mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
-    vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
     m_errorMonitor->VerifyFound();
 
     alloc_flags_info.deviceMask = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
-    vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
     m_errorMonitor->VerifyFound();
 
     uint32_t pdev_group_count = 0;
@@ -1141,12 +1141,12 @@ TEST_F(NegativeWsi, DeviceMask) {
                     void *data;
                     VkDeviceMemory mi_mem;
                     alloc_flags_info.deviceMask = 3;
-                    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mi_mem);
+                    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mi_mem);
                     if (VK_SUCCESS == err) {
                         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00683");
-                        vk::MapMemory(m_device->device(), mi_mem, 0, 1024, 0, &data);
+                        vk::MapMemory(device(), mi_mem, 0, 1024, 0, &data);
                         m_errorMonitor->VerifyFound();
-                        vk::FreeMemory(m_device->device(), mi_mem, nullptr);
+                        vk::FreeMemory(device(), mi_mem, nullptr);
                     }
                     test_run = true;
                     break;
@@ -1226,7 +1226,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     acquire_next_image_info.deviceMask = 0xFFFFFFFF;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-deviceMask-01290");
-    vk::AcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
+    vk::AcquireNextImage2KHR(device(), &acquire_next_image_info, &imageIndex);
     m_errorMonitor->VerifyFound();
 
     // NOTE: We cannot wait on fence in this test because all of the acquire calls fail.
@@ -1235,7 +1235,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     acquire_next_image_info.deviceMask = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
-    vk::AcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
+    vk::AcquireNextImage2KHR(device(), &acquire_next_image_info, &imageIndex);
     m_errorMonitor->VerifyFound();
 
     // Test VkDeviceGroupSubmitInfo
@@ -1687,8 +1687,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     vk::WaitForPresentKHR(device(), swapchain2, 5, kWaitTimeout);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroySwapchainKHR(m_device->device(), swapchain2, nullptr);
-    vk::DestroySwapchainKHR(m_device->device(), swapchain3, nullptr);
+    vk::DestroySwapchainKHR(device(), swapchain2, nullptr);
+    vk::DestroySwapchainKHR(device(), swapchain3, nullptr);
     DestroySurface(surface2);
     DestroySurfaceContext(surface_context);
 }
@@ -2192,7 +2192,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     release_info.imageIndexCount = 1;
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
-    vk::ReleaseSwapchainImagesEXT(m_device->device(), &release_info);
+    vk::ReleaseSwapchainImagesEXT(device(), &release_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2284,7 +2284,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 
     // SwapchainMaint1 enabled + deferred_memory_alloc but image not acquired:
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756");
-    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), m_surface, &count, nullptr);
@@ -2462,7 +2462,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07786");
-    vk::ReleaseSwapchainImagesEXT(m_device->device(), &release_info);
+    vk::ReleaseSwapchainImagesEXT(device(), &release_info);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->wait();
@@ -3203,7 +3203,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroySwapchainKHR(m_device->device(), swapchain, nullptr);
+    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
 }
 
 TEST_F(NegativeWsi, PresentInfoParameters) {

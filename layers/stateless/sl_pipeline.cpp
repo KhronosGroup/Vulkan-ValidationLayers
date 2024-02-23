@@ -463,7 +463,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
         const bool has_dynamic_exclusive_scissor_nv = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
         const bool has_dynamic_viewport_with_count = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         const bool has_dynamic_scissor_with_count = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-        const bool has_dynamic_vertex_input = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
 
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
@@ -508,6 +507,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                                                  create_info_loc.dot(Field::pInputAssemblyState));
         }
 
+        const bool has_dynamic_vertex_input = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
         if (!has_dynamic_vertex_input && !(active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) &&
             (create_info.pVertexInputState != nullptr)) {
             auto const &vertex_input_state = create_info.pVertexInputState;
@@ -528,6 +528,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                  vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
             }
 
+            const bool has_dynamic_binding_stride = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
             vvl::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
             for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
                 const Location binding_loc = vertex_loc.dot(Field::pVertexBindingDescriptions);
@@ -548,7 +549,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                      vertex_bind_desc.binding, device_limits.maxVertexInputBindings);
                 }
 
-                if (vertex_bind_desc.stride > device_limits.maxVertexInputBindingStride) {
+                if (!has_dynamic_binding_stride && vertex_bind_desc.stride > device_limits.maxVertexInputBindingStride) {
                     skip |= LogError("VUID-VkVertexInputBindingDescription-stride-00619", device, binding_loc.dot(Field::stride),
                                      "(%" PRIu32
                                      ") is larger "

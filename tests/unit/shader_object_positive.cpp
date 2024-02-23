@@ -678,7 +678,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
-    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
 
     VkDescriptorBufferInfo storage_buffer_info = {storageBuffer.handle(), 0, sizeof(uint32_t)};
 

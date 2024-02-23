@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
     descriptor_write.pTexelBufferView = &buffer_view.handle();
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);

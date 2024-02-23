@@ -84,8 +84,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityAtomicFloat32MinMaxEXT, {0, &DeviceFeatures::shaderImageFloat32AtomicMinMax, nullptr, ""}},
     {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &DeviceFeatures::shaderBufferFloat64AtomicMinMax, nullptr, ""}},
     {spv::CapabilityAtomicFloat64MinMaxEXT, {0, &DeviceFeatures::shaderSharedFloat64AtomicMinMax, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityAtomicFloat16VectorNV, {0, &DeviceFeatures::shaderFloat16VectorAtomics, nullptr, ""}},
+    {spv::CapabilityAtomicFloat16VectorNV, {0, &DeviceFeatures::shaderFloat16VectorAtomics, nullptr, ""}},
     {spv::CapabilityInt64ImageEXT, {0, &DeviceFeatures::shaderImageInt64Atomics, nullptr, ""}},
     {spv::CapabilityInt16, {0, &DeviceFeatures::shaderInt16, nullptr, ""}},
     {spv::CapabilityTessellationPointSize, {0, &DeviceFeatures::shaderTessellationAndGeometryPointSize, nullptr, ""}},
@@ -400,6 +399,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "AtomicFloat32MinMaxEXT";
         case spv::CapabilityAtomicFloat64MinMaxEXT:
             return "AtomicFloat64MinMaxEXT";
+        case spv::CapabilityAtomicFloat16VectorNV:
+            return "AtomicFloat16VectorNV";
         case spv::CapabilityInt64ImageEXT:
             return "Int64ImageEXT";
         case spv::CapabilityInt16:
@@ -777,6 +778,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityAtomicFloat16MinMaxEXT, "VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat16AtomicMinMax OR VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat16AtomicMinMax"},
     {spv::CapabilityAtomicFloat32MinMaxEXT, "VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat32AtomicMinMax OR VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat32AtomicMinMax OR VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderImageFloat32AtomicMinMax"},
     {spv::CapabilityAtomicFloat64MinMaxEXT, "VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat64AtomicMinMax OR VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderSharedFloat64AtomicMinMax"},
+    {spv::CapabilityAtomicFloat16VectorNV, "VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::shaderFloat16VectorAtomics"},
     {spv::CapabilityInt64ImageEXT, "VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::shaderImageInt64Atomics"},
     {spv::CapabilityInt16, "VkPhysicalDeviceFeatures::shaderInt16"},
     {spv::CapabilityTessellationPointSize, "VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize"},

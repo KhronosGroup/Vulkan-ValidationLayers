@@ -351,8 +351,8 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
     }
 }
 
-void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
-    BaseClass::CreateDevice(pCreateInfo);
+void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+    BaseClass::CreateDevice(pCreateInfo, loc);
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
     auto chain_info = get_chain_info(pCreateInfo, VK_LOADER_DATA_CALLBACK);
     assert(chain_info->u.pfnSetDeviceLoaderData);
@@ -366,7 +366,7 @@ void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     // We can't do anything if there is only one.
     // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
     if (adjusted_max_desc_sets == 1) {
-        ReportSetupProblem(device, "Device can bind only a single descriptor set.");
+        ReportSetupProblem(device, loc, "Device can bind only a single descriptor set.");
         aborted = true;
         return;
     }
@@ -398,7 +398,7 @@ void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
 
     assert((result1 == VK_SUCCESS) && (result2 == VK_SUCCESS) && (result3 == VK_SUCCESS));
     if ((result1 != VK_SUCCESS) || (result2 != VK_SUCCESS) || (result3 != VK_SUCCESS)) {
-        ReportSetupProblem(device, "Unable to create descriptor set layout.");
+        ReportSetupProblem(device, loc, "Unable to create descriptor set layout.");
         if (result1 == VK_SUCCESS) {
             DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
         }
@@ -457,7 +457,7 @@ gpu_tracker::Queue::~Queue() {
 
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void gpu_tracker::Queue::SubmitBarrier() {
+void gpu_tracker::Queue::SubmitBarrier(const Location &loc) {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 
@@ -465,7 +465,7 @@ void gpu_tracker::Queue::SubmitBarrier() {
         pool_create_info.queueFamilyIndex = queueFamilyIndex;
         result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
-            state_.ReportSetupProblem(state_.device, "Unable to create command pool for barrier CB.");
+            state_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
             barrier_command_pool_ = VK_NULL_HANDLE;
             return;
         }
@@ -476,7 +476,7 @@ void gpu_tracker::Queue::SubmitBarrier() {
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         result = DispatchAllocateCommandBuffers(state_.device, &buffer_alloc_info, &barrier_command_buffer_);
         if (result != VK_SUCCESS) {
-            state_.ReportSetupProblem(state_.device, "Unable to create barrier command buffer.");
+            state_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
             DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
@@ -550,7 +550,7 @@ void gpu_tracker::Validator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
     }
     if (!buffers_present) return;
 
-    SubmitBarrier(queue);
+    SubmitBarrier(queue, record_obj.location);
 
     DispatchQueueWaitIdle(queue);
 
@@ -576,7 +576,7 @@ void gpu_tracker::Validator::RecordQueueSubmit2(VkQueue queue, uint32_t submitCo
     }
     if (!buffers_present) return;
 
-    SubmitBarrier(queue);
+    SubmitBarrier(queue, record_obj.location);
 
     DispatchQueueWaitIdle(queue);
 
@@ -609,7 +609,7 @@ bool gpu_tracker::Validator::ValidateCmdWaitEvents(VkCommandBuffer command_buffe
         error_msg << loc.Message()
                   << ": recorded with VK_PIPELINE_STAGE_HOST_BIT set. GPU-Assisted validation waits on queue completion. This wait "
                      "could block the host's signaling of this event, resulting in deadlock.";
-        ReportSetupProblem(command_buffer, error_msg.str().c_str());
+        ReportSetupProblem(command_buffer, loc, error_msg.str().c_str());
     }
     return false;
 }
@@ -659,7 +659,7 @@ void gpu_tracker::Validator::PreCallRecordCreatePipelineLayout(VkDevice device, 
              << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
              << "Validation is not modifying the pipeline layout. "
              << "Instrumented shaders are replaced with non-instrumented shaders.";
-        ReportSetupProblem(device, strm.str().c_str());
+        ReportSetupProblem(device, record_obj.location, strm.str().c_str());
     } else {
         // Modify the pipeline layout by:
         // 1. Copying the caller's descriptor set desc_layouts
@@ -682,7 +682,7 @@ void gpu_tracker::Validator::PostCallRecordCreatePipelineLayout(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
-        ReportSetupProblem(device, "Unable to create pipeline layout.  Device could become unstable.");
+        ReportSetupProblem(device, record_obj.location, "Unable to create pipeline layout.  Device could become unstable.");
         aborted = true;
     }
     BaseClass::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
@@ -703,7 +703,7 @@ void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint
                  << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
                  << "Validation is not modifying the pipeline layout. "
                  << "Instrumented shaders are replaced with non-instrumented shaders.";
-            ReportSetupProblem(device, strm.str().c_str());
+            ReportSetupProblem(device, record_obj.location, strm.str().c_str());
         } else {
             // Modify the pipeline layout by:
             // 1. Copying the caller's descriptor set desc_layouts
@@ -981,7 +981,7 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
                 if (result == VK_SUCCESS) {
                     SetShaderModule(new_pipeline_ci, *stage.pipeline_create_info, shader_module, i);
                 } else {
-                    ReportSetupProblem(device,
+                    ReportSetupProblem(device, record_obj.location,
                                        "Unable to replace instrumented shader with non-instrumented one.  "
                                        "Device could become unstable.");
                 }

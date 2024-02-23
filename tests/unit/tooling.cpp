@@ -70,7 +70,7 @@ TEST_F(NegativeTooling, PrivateDataSetBadHandle) {
     static const uint64_t data_value = 0x70AD;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetPrivateData-objectHandle-04017");
     // valid handle, but not a vkSample
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)m_device->device(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)device(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -91,7 +91,7 @@ TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
 
     static const uint64_t data_value = 0x70AD;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)second_device.device(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)second_device.handle(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vkt::Sampler sampler(second_device, SafeSaneSamplerCreateInfo());
@@ -140,7 +140,7 @@ TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
     uint64_t data;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPrivateData-objectHandle-09498");
     // valid handle, but not a vkSample
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)m_device->device(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)device(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
