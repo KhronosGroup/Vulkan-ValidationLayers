@@ -210,23 +210,23 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
 }
 
 // Asynchronous Hazards occur between subpasses with no connection through the DAG
-HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoType &usage_info,
-                                                    const ResourceUsageTag start_tag) const {
+HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoType &usage_info, const ResourceUsageTag start_tag,
+                                                    QueueId queue_id) const {
     HazardResult hazard;
     // Async checks need to not go back further than the start of the subpass, as we only want to find hazards between the async
     // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
     // the raster ordering rules.
     if (IsRead(usage_info)) {
-        if (last_write.has_value() && (last_write->tag_ >= start_tag)) {
+        if (last_write.has_value() && last_write->IsQueue(queue_id) && (last_write->tag_ >= start_tag)) {
             hazard.Set(this, usage_info, READ_RACING_WRITE, *last_write);
         }
     } else {
-        if (last_write.has_value() && (last_write->tag_ >= start_tag)) {
+        if (last_write.has_value() && last_write->IsQueue(queue_id) && (last_write->tag_ >= start_tag)) {
             hazard.Set(this, usage_info, WRITE_RACING_WRITE, *last_write);
         } else if (last_reads.size() > 0) {
             // Any reads during the other subpass will conflict with this write, so we need to check them all.
             for (const auto &read_access : last_reads) {
-                if (read_access.tag >= start_tag) {
+                if (read_access.queue == queue_id && read_access.tag >= start_tag) {
                     hazard.Set(this, usage_info, WRITE_RACING_READ, read_access.access, read_access.tag);
                     break;
                 }
@@ -237,14 +237,14 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoTyp
 }
 
 HazardResult ResourceAccessState::DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
-                                                    ResourceUsageTag start_tag) const {
+                                                    ResourceUsageTag start_tag, QueueId queue_id) const {
     HazardResult hazard;
     for (const auto &first : recorded_use.first_accesses_) {
         // Skip and quit logic
         if (first.tag < tag_range.begin) continue;
         if (first.tag >= tag_range.end) break;
 
-        hazard = DetectAsyncHazard(*first.usage_info, start_tag);
+        hazard = DetectAsyncHazard(*first.usage_info, start_tag, queue_id);
         if (hazard.IsHazard()) {
             hazard.AddRecordedAccess(first);
             break;

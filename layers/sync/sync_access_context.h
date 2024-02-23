@@ -367,20 +367,22 @@ class AccessContext {
     void EraseIf(Predicate &&pred);
 
     // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
-    void AddAsyncContext(const AccessContext *context, ResourceUsageTag tag);
+    void AddAsyncContext(const AccessContext *context, ResourceUsageTag tag, QueueId queue_id);
 
     class AsyncReference {
       public:
-        AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag)
-            : context_(&async_context), tag_(async_tag) {}
+        AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag, QueueId queue_id)
+            : context_(&async_context), tag_(async_tag), queue_id_(queue_id) {}
         const AccessContext &Context() const { return *context_; }
         // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
         // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
         ResourceUsageTag StartTag() const;
+        QueueId GetQueueId() const { return queue_id_; }
 
       protected:
         const AccessContext *context_;
         ResourceUsageTag tag_;  // Start of open ended asynchronous range
+        QueueId queue_id_;
     };
 
     template <typename Action, typename RangeGen>
@@ -443,7 +445,8 @@ class AccessContext {
                                       const ResourceAccessRange &range) const;
 
     template <typename Detector, typename RangeGen>
-    HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag) const;
+    HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag,
+                                   QueueId async_queue_id) const;
 
     template <typename NormalizeOp>
     void Trim(NormalizeOp &&normalize);
@@ -516,18 +519,18 @@ void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, Attachm
 
 // A non recursive range walker for the asynchronous contexts (those we have no barriers with)
 template <typename Detector, typename RangeGen>
-HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen,
-                                              ResourceUsageTag async_tag) const {
+HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag,
+                                              QueueId async_queue_id) const {
     using RangeType = typename RangeGen::RangeType;
     using ConstIterator = ResourceAccessRangeMap::const_iterator;
     RangeGen range_gen(const_range_gen);
 
     HazardResult hazard;
 
-    auto do_async_hazard_check = [&detector, async_tag, &hazard](const RangeType &range, const ConstIterator &end,
-                                                                 ConstIterator &pos) {
+    auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const RangeType &range, const ConstIterator &end,
+                                                                                 ConstIterator &pos) {
         while (pos != end && pos->first.begin < range.end) {
-            hazard = detector.DetectAsync(pos, async_tag);
+            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
             if (hazard.IsHazard()) return true;
             ++pos;
         }
@@ -658,7 +661,7 @@ HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, Rang
         // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
         // so we'll check these first
         for (const auto &async_ref : async_) {
-            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen, async_ref.StartTag());
+            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen, async_ref.StartTag(), async_ref.GetQueueId());
             if (hazard.IsHazard()) return hazard;
         }
     }
