@@ -1168,9 +1168,9 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     RETURN_IF_SKIP(Init());
 
     // Check for external semaphore import and export capability
-    VkPhysicalDeviceExternalSemaphoreInfoKHR esi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR, nullptr,
-                                                    handle_type};
-    VkExternalSemaphorePropertiesKHR esp = {VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR, nullptr};
+    VkPhysicalDeviceExternalSemaphoreInfoKHR esi = vku::InitStructHelper();
+    esi.handleType = handle_type;
+    VkExternalSemaphorePropertiesKHR esp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1215,11 +1215,11 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
         bi[1].pWaitSemaphores = &import_semaphore.handle();
         bi[2] = bi[0];
         bi[3] = bi[1];
-        vk::QueueBindSparse(m_default_queue->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
     }
 
     // Cleanup
-    m_default_queue->wait();
+    m_device->wait();
 }
 
 TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
