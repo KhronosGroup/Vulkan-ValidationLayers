@@ -1,5 +1,5 @@
-# Copyright (c) 2021-2023 Valve Corporation
-# Copyright (c) 2021-2023 LunarG, Inc.
+# Copyright (c) 2021-2024 Valve Corporation
+# Copyright (c) 2021-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -220,10 +220,10 @@ jobs:
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
       # Helps verify install location and prints the exported symbols.
-      - run: nm -gU /tmp/lib/libVkLayer_khronos_validation.dylib
+      - run: nm -gU /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation
       # Helps verify useful details about the dylib (platform, minos, sdk)
-      - run: vtool -show-build /tmp/lib/libVkLayer_khronos_validation.dylib
-
+      - run: vtool -show-build /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation
+      
   mingw:
     runs-on: windows-latest
     defaults:
