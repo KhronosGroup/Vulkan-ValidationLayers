@@ -350,7 +350,7 @@ TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
         RETURN_IF_SKIP(InitState(nullptr, &features2));
     }
 
-    const VkDevice device = device();
+    const VkDevice device = this->device();
 
     // Get Metal Device and Metal Command Queue in 1 call
     {
