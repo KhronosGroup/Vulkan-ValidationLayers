@@ -442,26 +442,29 @@ void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRen
     renderpasses_states.erase(renderPass);
 }
 
-bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin,
+bool StatelessValidation::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
-        skip |= LogError("VUID-VkRenderPassBeginInfo-clearValueCount-04962", rp_begin->renderPass,
+        const LogObjectList objlist(commandBuffer, rp_begin->renderPass);
+        skip |= LogError("VUID-VkRenderPassBeginInfo-clearValueCount-04962", objlist,
                          error_obj.location.dot(Field::pRenderPassBegin).dot(Field::clearValueCount),
                          "(%" PRIu32 ") is not zero, but pRenderPassBegin->pClearValues is NULL.", rp_begin->clearValueCount);
     }
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                   VkSubpassContents, const ErrorObject &error_obj) const {
-    return ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer,
+                                                                   const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents,
+                                                                   const ErrorObject &error_obj) const {
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
+                                                                    const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                     const VkSubpassBeginInfo *,
                                                                     const ErrorObject &error_obj) const {
-    return ValidateCmdBeginRenderPass(pRenderPassBegin, error_obj);
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
 }
 
 static bool UniqueRenderingInfoImageViews(const VkRenderingInfo *pRenderingInfo, VkImageView imageView) {

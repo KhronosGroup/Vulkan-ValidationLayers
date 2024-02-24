@@ -301,9 +301,9 @@ class BestPractices : public ValidationStateTracker {
 
     bool ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& createInfo, const Location& create_info_loc) const;
 
-    bool CheckPipelineStageFlags(const Location& loc, VkPipelineStageFlags flags) const;
-    bool CheckPipelineStageFlags(const Location& loc, VkPipelineStageFlags2KHR flags) const;
-    bool CheckDependencyInfo(const Location& dep_loc, const VkDependencyInfoKHR& dep_info) const;
+    bool CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags flags) const;
+    bool CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2KHR flags) const;
+    bool CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc, const VkDependencyInfoKHR& dep_info) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,

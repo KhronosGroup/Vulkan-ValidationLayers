@@ -144,7 +144,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateStageMaskHost(const Location& stage_mask_loc, VkPipelineStageFlags2KHR stageMask) const;
+    bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
+                               VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
                            const Location& size_loc) const;
     bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
@@ -713,7 +714,7 @@ class CoreChecks : public ValidationStateTracker {
                                                           const Location& region_loc) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, const char* image_layer_count_var_name,
-                                       const VkImage image, const SubresourceRangeErrorCodes& errorCodes,
+                                       const LogObjectList& objlist, const SubresourceRangeErrorCodes& errorCodes,
                                        const Location& subresource_loc) const;
     bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                              vvl::Image& image_state, VkSampleCountFlagBits msrtss_samples,
@@ -771,8 +772,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                      const ErrorObject& error_obj) const override;
 
-    bool ValidateClearImageSubresourceRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                            const VkImageSubresourceRange& range, const Location& loc) const;
+    bool ValidateClearImageSubresourceRange(const LogObjectList& objlist, const VkImageSubresourceRange& range,
+                                            const Location& loc) const;
 
     bool ValidateClearAttachmentExtent(const vvl::CommandBuffer& cb_state, const VkRect2D& render_area,
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects,
@@ -980,14 +981,16 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCreateImageViewSubresourceRange(const vvl::Image& image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange, const Location& loc) const;
 
-    bool ValidateCmdClearColorSubresourceRange(const vvl::Image& image_state, const VkImageSubresourceRange& subresourceRange,
+    bool ValidateCmdClearColorSubresourceRange(const VkImageCreateInfo& create_info,
+                                               const VkImageSubresourceRange& subresourceRange, const LogObjectList& objlist,
                                                const Location& loc) const;
 
-    bool ValidateCmdClearDepthSubresourceRange(const vvl::Image& image_state, const VkImageSubresourceRange& subresourceRange,
+    bool ValidateCmdClearDepthSubresourceRange(const VkImageCreateInfo& create_info,
+                                               const VkImageSubresourceRange& subresourceRange, const LogObjectList& objlist,
                                                const Location& loc) const;
 
-    bool ValidateImageBarrierSubresourceRange(const Location& loc, const vvl::Image& image_state,
-                                              const VkImageSubresourceRange& subresourceRange) const;
+    bool ValidateImageBarrierSubresourceRange(const VkImageCreateInfo& create_info, const VkImageSubresourceRange& subresourceRange,
+                                              const LogObjectList& objlist, const Location& loc) const;
 
     bool ValidateImageViewFormatFeatures(const vvl::Image& image_state, const VkFormat view_format,
                                          const VkImageUsageFlags image_usage, const Location& create_info_loc) const;
@@ -1627,8 +1630,8 @@ class CoreChecks : public ValidationStateTracker {
                                     const ErrorObject& error_obj) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                   const RecordObject& record_obj) override;
-    bool ValidateQueryPoolIndex(const vvl::QueryPool& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
-                                const Location& loc, const char* first_vuid, const char* sum_vuid) const;
+    bool ValidateQueryPoolIndex(LogObjectList objlist, const vvl::QueryPool& query_pool_state, uint32_t firstQuery,
+                                uint32_t queryCount, const Location& loc, const char* first_vuid, const char* sum_vuid) const;
     bool ValidateQueriesNotActive(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                   uint32_t queryCount, const Location& loc, const char* vuid) const;
     bool PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
@@ -2007,8 +2010,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                        const ErrorObject& error_obj) const override;
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
-                                 const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags,
-                                 const Location& loc) const;
+                                 vvl::Field field_name, const uint64_t parameter_value, const VkQueryResultFlags flags,
+                                 const LogObjectList& objlist, const Location& loc) const;
     bool ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer& cb_state, const std::string& vuid, const uint32_t stride,
                                          Struct struct_name, const uint32_t struct_size, const Location& loc) const;
     bool ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer& cb_state, const std::string& vuid, const uint32_t stride,

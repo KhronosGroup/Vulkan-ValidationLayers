@@ -147,7 +147,8 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cb_st
 
     // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
     if (!cb_state.has_draw_cmd) {
-        skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_ClearCmdBeforeDraw, cb_state.Handle(), loc,
+        const LogObjectList objlist(cb_state.Handle(), rp->Handle());
+        skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_ClearCmdBeforeDraw, objlist, loc,
                                       "issued on %s prior to any Draw Cmds in current render pass. It is recommended you "
                                       "use RenderPass LOAD_OP_CLEAR on attachments instead.",
                                       FormatHandle(cb_state).c_str());
@@ -155,8 +156,9 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cb_st
 
     if ((new_aspects & VK_IMAGE_ASPECT_COLOR_BIT) &&
         rp->createInfo.pAttachments[fb_attachment].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        const LogObjectList objlist(cb_state.Handle(), rp->Handle());
         skip |=
-            LogPerformanceWarning(kVUID_BestPractices_ClearAttachments_ClearAfterLoad, device, loc,
+            LogPerformanceWarning(kVUID_BestPractices_ClearAttachments_ClearAfterLoad, objlist, loc,
                                   "issued on %s for color attachment #%u in this subpass, "
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
@@ -165,8 +167,9 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cb_st
 
     if ((new_aspects & VK_IMAGE_ASPECT_DEPTH_BIT) &&
         rp->createInfo.pAttachments[fb_attachment].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        const LogObjectList objlist(cb_state.Handle(), rp->Handle());
         skip |=
-            LogPerformanceWarning(kVUID_BestPractices_ClearAttachments_ClearAfterLoad, device, loc,
+            LogPerformanceWarning(kVUID_BestPractices_ClearAttachments_ClearAfterLoad, objlist, loc,
                                   "issued on %s for the depth attachment in this subpass, "
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
@@ -179,8 +182,9 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cb_st
 
     if ((new_aspects & VK_IMAGE_ASPECT_STENCIL_BIT) &&
         rp->createInfo.pAttachments[fb_attachment].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        const LogObjectList objlist(cb_state.Handle(), rp->Handle());
         skip |=
-            LogPerformanceWarning(kVUID_BestPractices_ClearAttachments_ClearAfterLoad, device, loc,
+            LogPerformanceWarning(kVUID_BestPractices_ClearAttachments_ClearAfterLoad, objlist, loc,
                                   "issued on %s for the stencil attachment in this subpass, "
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
@@ -289,7 +293,8 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                pAttachments[attachment_idx].clearValue.color.float32[3] != 1.0f;
 
                 if (black_check && white_check) {
-                    skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_FastClearValues, device, error_obj.location,
+                    skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_FastClearValues, commandBuffer,
+                                                  error_obj.location,
                                                   "%s clear value for color attachment %" PRId32
                                                   " is not a fast clear value."
                                                   "Consider changing to one of the following:"
@@ -303,7 +308,8 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                 if ((pAttachments[attachment_idx].clearValue.depthStencil.depth != 0 &&
                      pAttachments[attachment_idx].clearValue.depthStencil.depth != 1) &&
                     pAttachments[attachment_idx].clearValue.depthStencil.stencil != 0) {
-                    skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_FastClearValues, device, error_obj.location,
+                    skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_FastClearValues, commandBuffer,
+                                                  error_obj.location,
                                                   "%s clear value for depth/stencil "
                                                   "attachment %" PRId32
                                                   " is not a fast clear value."
@@ -326,17 +332,21 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
     auto dst_image_type = Get<vvl::Image>(dst_image)->createInfo.imageType;
 
     if (src_image_type != dst_image_type) {
-        skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_MismatchedImageType, command_buffer, loc,
+        const LogObjectList objlist(command_buffer, src_image, dst_image);
+        skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_MismatchedImageType, objlist, loc,
                                       "srcImage type (%s) and dstImage type (%s) are not the same.",
                                       string_VkImageType(src_image_type), string_VkImageType(dst_image_type));
     }
 
-    skip |= VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(kVUID_BestPractices_CmdResolveImage_ResolvingImage, command_buffer, loc,
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        const LogObjectList objlist(command_buffer, src_image, dst_image);
+        skip |=
+            LogPerformanceWarning(kVUID_BestPractices_CmdResolveImage_ResolvingImage, objlist, loc,
                                   "%s Attempting to resolve a multisampled image. "
                                   "This is a very slow and extremely bandwidth intensive path. "
                                   "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
                                   VendorSpecificTag(kBPVendorArm));
+    }
     return skip;
 }
 
@@ -541,7 +551,7 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
     auto dst = Get<bp_state::Image>(image);
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_ClearImage, device, error_obj.location,
+        skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_ClearImage, commandBuffer, error_obj.location,
                                       "%s using vkCmdClearColorImage is not recommended. Prefer using LOAD_OP_CLEAR or "
                                       "vkCmdClearAttachments instead",
                                       VendorSpecificTag(kBPVendorAMD));
@@ -560,7 +570,7 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_ClearImage, device, error_obj.location,
+        skip |= LogPerformanceWarning(kVUID_BestPractices_ClearAttachment_ClearImage, commandBuffer, error_obj.location,
                                       "%s using vkCmdClearDepthStencilImage is not recommended. Prefer using LOAD_OP_CLEAR or "
                                       "vkCmdClearAttachments instead",
                                       VendorSpecificTag(kBPVendorAMD));
@@ -589,7 +599,8 @@ bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
             VkImageTiling src_Tiling = src_state->createInfo.tiling;
             VkImageTiling dst_Tiling = dst_state->createInfo.tiling;
             if (src_Tiling != dst_Tiling && (src_Tiling == VK_IMAGE_TILING_LINEAR || dst_Tiling == VK_IMAGE_TILING_LINEAR)) {
-                skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidImageToImageCopy, device, error_obj.location,
+                const LogObjectList objlist(commandBuffer, srcImage, dstImage);
+                skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidImageToImageCopy, objlist, error_obj.location,
                                               "%s srcImage (%s) and dstImage (%s) have differing tilings. Use buffer to "
                                               "image (vkCmdCopyImageToBuffer) "
                                               "and image to buffer (vkCmdCopyBufferToImage) copies instead of image to image "

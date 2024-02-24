@@ -171,8 +171,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
             auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, srcBuffer);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), srcBuffer, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(srcBuffer).c_str(), region, cb_context->FormatHazard(hazard).c_str());
             }
@@ -181,8 +182,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, dstBuffer);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstBuffer).c_str(), region, cb_context->FormatHazard(hazard).c_str());
             }
@@ -237,8 +239,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
             auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.IsHazard()) {
                 // TODO -- add tag information to log msg when useful.
+                const LogObjectList objlist(commandBuffer, pCopyBufferInfo->srcBuffer);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), pCopyBufferInfo->srcBuffer, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(pCopyBufferInfo->srcBuffer).c_str(), region, cb_context->FormatHazard(hazard).c_str());
             }
@@ -247,8 +250,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, pCopyBufferInfo->dstBuffer);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), pCopyBufferInfo->dstBuffer, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(pCopyBufferInfo->dstBuffer).c_str(), region, cb_context->FormatHazard(hazard).c_str());
             }
@@ -318,8 +322,9 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset,
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, srcImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), srcImage, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(srcImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -329,8 +334,9 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
             auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset,
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, dstImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), dstImage, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -389,7 +395,8 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset,
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), pCopyImageInfo->srcImage, error_obj.location,
+                const LogObjectList objlist(commandBuffer, pCopyImageInfo->srcImage);
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                                  "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.Hazard()), FormatHandle(pCopyImageInfo->srcImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
@@ -400,7 +407,8 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset,
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), pCopyImageInfo->dstImage, error_obj.location,
+                const LogObjectList objlist(commandBuffer, pCopyImageInfo->dstImage);
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                                  "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.Hazard()), FormatHandle(pCopyImageInfo->dstImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
@@ -848,7 +856,8 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                 hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
                 if (hazard.IsHazard()) {
                     // PHASE1 TODO -- add tag information to log msg when useful.
-                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), srcBuffer, loc,
+                    const LogObjectList objlist(commandBuffer, srcBuffer);
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
                                      "Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
                                      string_SyncHazard(hazard.Hazard()), FormatHandle(srcBuffer).c_str(), region,
                                      cb_access_context->FormatHazard(hazard).c_str());
@@ -858,8 +867,9 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
             hazard = context->DetectHazard(*dst_image, RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
                                            copy_region.imageExtent, false, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, dstImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), dstImage, loc,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
                              "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -970,8 +980,9 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
                                                 copy_region.imageExtent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, srcImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), srcImage, loc,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
                              "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(srcImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -981,7 +992,8 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                     GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format, src_image->createInfo.arrayLayers));
                 hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
                 if (hazard.IsHazard()) {
-                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, loc,
+                    const LogObjectList objlist(commandBuffer, dstBuffer);
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
                                      "Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
                                      string_SyncHazard(hazard.Hazard()), FormatHandle(dstBuffer).c_str(), region,
                                      cb_access_context->FormatHazard(hazard).c_str());
@@ -1100,8 +1112,9 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(blit_region.srcSubresource), offset, extent, false,
                                                 SYNC_BLIT_TRANSFER_READ);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, srcImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), srcImage, loc,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
                              "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(srcImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -1117,8 +1130,9 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(blit_region.dstSubresource), offset, extent, false,
                                                 SYNC_BLIT_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, dstImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), dstImage, loc,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
                              "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -1684,7 +1698,8 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
         if (image_state) {
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), image, error_obj.location,
+                const LogObjectList objlist(commandBuffer, image);
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                                  "Hazard %s for %s, range index %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                                  FormatHandle(image).c_str(), index, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -1737,7 +1752,8 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
         if (image_state) {
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), image, error_obj.location,
+                const LogObjectList objlist(commandBuffer, image);
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                                  "Hazard %s for %s, range index %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                                  FormatHandle(image).c_str(), index, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -1822,7 +1838,8 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, error_obj.location,
+            const LogObjectList objlist(commandBuffer, queryPool, dstBuffer);
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
@@ -1874,7 +1891,8 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, error_obj.location,
+            const LogObjectList objlist(commandBuffer, dstBuffer);
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
@@ -1923,8 +1941,9 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(resolve_region.srcSubresource),
                                                 resolve_region.srcOffset, resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_READ);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, srcImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), srcImage, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(srcImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -1935,8 +1954,9 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                 context->DetectHazard(*dst_image, RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
                                       resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, dstImage);
                 skip |=
-                    LogError(string_SyncHazardVUID(hazard.Hazard()), dstImage, error_obj.location,
+                    LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
@@ -2001,7 +2021,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(resolve_region.srcSubresource),
                                                 resolve_region.srcOffset, resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_READ);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), pResolveImageInfo->srcImage, region_loc,
+                const LogObjectList objlist(commandBuffer, pResolveImageInfo->srcImage);
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, region_loc,
                                  "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.Hazard()), FormatHandle(pResolveImageInfo->srcImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
@@ -2013,7 +2034,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
                 context->DetectHazard(*dst_image, RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
                                       resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
-                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), pResolveImageInfo->dstImage, region_loc,
+                const LogObjectList objlist(commandBuffer, pResolveImageInfo->dstImage);
+                skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, region_loc,
                                  "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
                                  string_SyncHazard(hazard.Hazard()), FormatHandle(pResolveImageInfo->dstImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
@@ -2084,7 +2106,8 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
-            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), dstBuffer, error_obj.location,
+            const LogObjectList objlist(commandBuffer, dstBuffer);
+            skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, error_obj.location,
                              "Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
                              FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }

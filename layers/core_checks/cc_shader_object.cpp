@@ -393,7 +393,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
     const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     if (enabled_features.shaderObject == VK_FALSE) {
-        skip |= LogError("VUID-vkCmdBindShadersEXT-None-08462", device, error_obj.location,
+        skip |= LogError("VUID-vkCmdBindShadersEXT-None-08462", commandBuffer, error_obj.location,
                          "the shaderObject feature was not enabled.");
     }
 
@@ -407,7 +407,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
 
         for (uint32_t j = i; j < stageCount; ++j) {
             if (i != j && stage == pStages[j]) {
-                skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08463", device, stage_loc,
+                skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08463", commandBuffer, stage_loc,
                                  "and pStages[%" PRIu32 "] are both %s.", j, string_VkShaderStageFlagBits(stage));
             }
         }
@@ -422,12 +422,12 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                    (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
                    shader != VK_NULL_HANDLE) {
             skip |=
-                LogError("VUID-vkCmdBindShadersEXT-pShaders-08474", device, stage_loc,
+                LogError("VUID-vkCmdBindShadersEXT-pShaders-08474", commandBuffer, stage_loc,
                          "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but tessellationShader feature was not enabled.",
                          string_VkShaderStageFlagBits(stage), i);
         } else if (enabled_features.geometryShader == VK_FALSE && stage == VK_SHADER_STAGE_GEOMETRY_BIT &&
                    shader != VK_NULL_HANDLE) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08475", device, stage_loc,
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08475", commandBuffer, stage_loc,
                              "is VK_SHADER_STAGE_GEOMETRY_BIT and pShaders[%" PRIu32
                              "] is not VK_NULL_HANDLE, but geometryShader feature was not enabled.",
                              i);
@@ -464,37 +464,37 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
             }
         }
         if (stage == VK_SHADER_STAGE_TASK_BIT_EXT && enabled_features.taskShader == VK_FALSE && shader != VK_NULL_HANDLE) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08490", device, stage_loc,
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08490", commandBuffer, stage_loc,
                              "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but taskShader feature was not enabled.",
                              string_VkShaderStageFlagBits(stage), i);
         } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && enabled_features.meshShader == VK_FALSE && shader != VK_NULL_HANDLE) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08491", device, stage_loc,
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08491", commandBuffer, stage_loc,
                              "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but meshShader feature was not enabled.",
                              string_VkShaderStageFlagBits(stage), i);
         }
         if (stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08464", device, stage_loc, "is %s.",
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08464", commandBuffer, stage_loc, "is %s.",
                              string_VkShaderStageFlagBits(stage));
         }
         if ((stage & (VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                       VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)) >
             0) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08465", device, stage_loc, "is %s.",
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08465", commandBuffer, stage_loc, "is %s.",
                              string_VkShaderStageFlagBits(stage));
         }
         if (stage == VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08467", device, stage_loc, "is %s.",
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08467", commandBuffer, stage_loc, "is %s.",
                              string_VkShaderStageFlagBits(stage));
         }
         if (stage == VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI) {
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08468", device, stage_loc, "is %s.",
+            skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08468", commandBuffer, stage_loc, "is %s.",
                              string_VkShaderStageFlagBits(stage));
         }
         if (shader != VK_NULL_HANDLE) {
             const auto shader_state = Get<vvl::ShaderObject>(shader);
             if (shader_state->create_info.stage != stage) {
                 skip |=
-                    LogError("VUID-vkCmdBindShadersEXT-pShaders-08469", device, stage_loc,
+                    LogError("VUID-vkCmdBindShadersEXT-pShaders-08469", commandBuffer, stage_loc,
                              "is %s, but pShaders[%" PRIu32 "] was created with shader stage %s.",
                              string_VkShaderStageFlagBits(stage), i, string_VkShaderStageFlagBits(shader_state->create_info.stage));
             }
@@ -502,14 +502,14 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
     }
 
     if (vertexStageIndex != stageCount && taskStageIndex != stageCount) {
-        skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08470", device, error_obj.location,
+        skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08470", commandBuffer, error_obj.location,
                          "pStages[%" PRIu32 "] is VK_SHADER_STAGE_VERTEX_BIT and pStages[%" PRIu32
                          "] is VK_SHADER_STAGE_TASK_BIT_EXT, but neither of pShaders[%" PRIu32 "] and pShaders[%" PRIu32
                          "] are VK_NULL_HANDLE.",
                          vertexStageIndex, taskStageIndex, vertexStageIndex, taskStageIndex);
     }
     if (vertexStageIndex != stageCount && meshStageIndex != stageCount) {
-        skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08471", device, error_obj.location,
+        skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08471", commandBuffer, error_obj.location,
                          "pStages[%" PRIu32 "] is VK_SHADER_STAGE_VERTEX_BIT and pStages[%" PRIu32
                          "] is VK_SHADER_STAGE_MESH_BIT_EXT, but neither of pShaders[%" PRIu32 "] and pShaders[%" PRIu32
                          "] are VK_NULL_HANDLE.",

@@ -442,12 +442,13 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
         auto buffer_state = Get<vvl::Buffer>(buffer);
         const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
         if (!IsIntegerMultipleOf(size, offset_align)) {
-            skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08767", commandBuffer, error_obj.location.dot(Field::size),
+            const LogObjectList objlist(commandBuffer, buffer);
+            skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08767", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") does not fall on alignment (%s) boundary.", size, string_VkIndexType(indexType));
         }
         if ((offset + size) > buffer_state->createInfo.size) {
             const LogObjectList objlist(commandBuffer, buffer);
-            skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08768", commandBuffer, error_obj.location.dot(Field::size),
+            skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08768", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") + offset (%" PRIu64 ") is larger than the buffer size (%" PRIu64 ").", size, offset,
                              buffer_state->createInfo.size);
         }

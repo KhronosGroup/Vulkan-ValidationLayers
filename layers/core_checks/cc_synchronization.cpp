@@ -69,11 +69,12 @@ struct TimelineMaxDiffCheck {
     uint64_t max_diff;
 };
 
-bool CoreChecks::ValidateStageMaskHost(const Location &stage_mask_loc, VkPipelineStageFlags2KHR stageMask) const {
+bool CoreChecks::ValidateStageMaskHost(const LogObjectList &objlist, const Location &stage_mask_loc,
+                                       VkPipelineStageFlags2KHR stageMask) const {
     bool skip = false;
     if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(stage_mask_loc, sync_vuid_maps::SubmitError::kHostStageMask);
-        skip |= LogError(vuid, device, stage_mask_loc,
+        skip |= LogError(vuid, objlist, stage_mask_loc,
                          "must not include VK_PIPELINE_STAGE_HOST_BIT as the stage can't be invoked inside a command buffer.");
     }
     return skip;
@@ -267,7 +268,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             const LogObjectList objlist(semaphore, state.queue);
             auto stage_mask_loc = submit_loc.dot(Field::pWaitDstStageMask, i);
             skip |= ValidatePipelineStage(objlist, stage_mask_loc, state.queue_flags, submit.pWaitDstStageMask[i]);
-            skip |= ValidateStageMaskHost(stage_mask_loc, submit.pWaitDstStageMask[i]);
+            skip |= ValidateStageMaskHost(objlist, stage_mask_loc, submit.pWaitDstStageMask[i]);
         }
         auto semaphore_state = Get<vvl::Semaphore>(semaphore);
         if (!semaphore_state) {
@@ -337,9 +338,9 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     for (uint32_t i = 0; i < submit.waitSemaphoreInfoCount; ++i) {
         const auto &wait_info = submit.pWaitSemaphoreInfos[i];
         Location wait_info_loc = submit_loc.dot(Field::pWaitSemaphoreInfos, i);
-        skip |= ValidatePipelineStage(LogObjectList(wait_info.semaphore), wait_info_loc.dot(Field::stageMask), state.queue_flags,
-                                      wait_info.stageMask);
-        skip |= ValidateStageMaskHost(wait_info_loc.dot(Field::stageMask), wait_info.stageMask);
+        const LogObjectList objlist(wait_info.semaphore, state.queue);
+        skip |= ValidatePipelineStage(objlist, wait_info_loc.dot(Field::stageMask), state.queue_flags, wait_info.stageMask);
+        skip |= ValidateStageMaskHost(objlist, wait_info_loc.dot(Field::stageMask), wait_info.stageMask);
         skip |= state.ValidateWaitSemaphore(wait_info_loc.dot(Field::semaphore), wait_info.semaphore, wait_info.value);
 
         auto semaphore_state = Get<vvl::Semaphore>(wait_info.semaphore);
@@ -348,7 +349,6 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                 const auto &sig_info = submit.pSignalSemaphoreInfos[sig_index];
                 if (wait_info.semaphore == sig_info.semaphore && wait_info.value >= sig_info.value) {
                     Location sig_loc = submit_loc.dot(Field::pSignalSemaphoreInfos, sig_index);
-                    const LogObjectList objlist(wait_info.semaphore, state.queue);
                     skip |= LogError("VUID-VkSubmitInfo2-semaphore-03881", objlist, wait_info_loc.dot(Field::value),
                                      "(%" PRIu64 ") is less or equal to %s (%" PRIu64 ").", wait_info.value,
                                      sig_loc.dot(Field::value).Fields().c_str(), sig_info.value);
@@ -359,9 +359,9 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     for (uint32_t i = 0; i < submit.signalSemaphoreInfoCount; ++i) {
         const auto &sem_info = submit.pSignalSemaphoreInfos[i];
         auto signal_info_loc = submit_loc.dot(Field::pSignalSemaphoreInfos, i);
-        skip |= ValidatePipelineStage(LogObjectList(sem_info.semaphore), signal_info_loc.dot(Field::stageMask), state.queue_flags,
-                                      sem_info.stageMask);
-        skip |= ValidateStageMaskHost(signal_info_loc.dot(Field::stageMask), sem_info.stageMask);
+        const LogObjectList objlist(sem_info.semaphore, state.queue);
+        skip |= ValidatePipelineStage(objlist, signal_info_loc.dot(Field::stageMask), state.queue_flags, sem_info.stageMask);
+        skip |= ValidateStageMaskHost(objlist, signal_info_loc.dot(Field::stageMask), sem_info.stageMask);
         skip |= state.ValidateSignalSemaphore(signal_info_loc.dot(Field::semaphore), sem_info.semaphore, sem_info.value);
     }
     return skip;
@@ -615,7 +615,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     const Location stage_mask_loc = error_obj.location.dot(Field::stageMask);
     const LogObjectList objlist(commandBuffer);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
-    skip |= ValidateStageMaskHost(stage_mask_loc, stageMask);
+    skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
     return skip;
 }
 
@@ -651,7 +651,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
-    skip |= ValidateStageMaskHost(stage_mask_loc, stageMask);
+    skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
     return skip;
 }
 
@@ -669,7 +669,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
-    skip |= ValidateStageMaskHost(stage_mask_loc, stageMask);
+    skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
     return skip;
 }
 
@@ -2330,8 +2330,8 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         skip |= ValidateImageAspectMask(image_data->VkHandle(), image_data->createInfo.format,
                                         mem_barrier.subresourceRange.aspectMask, image_data->disjoint, image_loc);
 
-        skip |= ValidateImageBarrierSubresourceRange(barrier_loc.dot(Field::subresourceRange), *image_data,
-                                                     mem_barrier.subresourceRange);
+        skip |= ValidateImageBarrierSubresourceRange(image_data->createInfo, mem_barrier.subresourceRange, objects,
+                                                     barrier_loc.dot(Field::subresourceRange));
     }
     return skip;
 }

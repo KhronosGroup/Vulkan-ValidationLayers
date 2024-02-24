@@ -1010,10 +1010,11 @@ class StatelessValidation : public ValidationObject {
                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
                                                   const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const;
 
-    bool ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents,
-                                                  const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+    bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
+                                    const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                  VkSubpassContents, const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    const VkSubpassBeginInfo *, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                  const ErrorObject &error_obj) const;

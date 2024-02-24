@@ -151,10 +151,10 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
 
     for (uint32_t dependency = 0; dependency < pCreateInfo->dependencyCount; dependency++) {
         const Location dependency_loc = create_info_loc.dot(Field::pDependencies, dependency);
-        skip |=
-            CheckPipelineStageFlags(dependency_loc.dot(Field::srcStageMask), pCreateInfo->pDependencies[dependency].srcStageMask);
-        skip |=
-            CheckPipelineStageFlags(dependency_loc.dot(Field::dstStageMask), pCreateInfo->pDependencies[dependency].dstStageMask);
+        skip |= CheckPipelineStageFlags(device, dependency_loc.dot(Field::srcStageMask),
+                                        pCreateInfo->pDependencies[dependency].srcStageMask);
+        skip |= CheckPipelineStageFlags(device, dependency_loc.dot(Field::dstStageMask),
+                                        pCreateInfo->pDependencies[dependency].dstStageMask);
     }
 
     return skip;
@@ -169,7 +169,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
     }
 
     if (pRenderPassBegin->renderArea.extent.width == 0 || pRenderPassBegin->renderArea.extent.height == 0) {
-        skip |= LogWarning(kVUID_BestPractices_BeginRenderPass_ZeroSizeRenderArea, device, loc,
+        skip |= LogWarning(kVUID_BestPractices_BeginRenderPass_ZeroSizeRenderArea, commandBuffer, loc,
                            "This render pass has a zero-size render area. It cannot write to any attachments, "
                            "and can only be used for side effects such as layout transitions.");
     }
@@ -204,8 +204,9 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
 
             // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
             if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
+                const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
                 skip |=
-                    LogPerformanceWarning(kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback, device, loc,
+                    LogPerformanceWarning(kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback, objlist, loc,
                                           "%s %s: Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
                                           "Submitting this renderpass will cause the driver to inject a readback of the attachment "
                                           "which will copy in total %u pixels (renderArea = "
@@ -232,8 +233,9 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
         // Check if there are ClearValues passed to BeginRenderPass even though no attachments will be cleared
         if (!clearing && pRenderPassBegin->clearValueCount > 0) {
             // Flag as warning because nothing will happen per spec, and pClearValues will be ignored
+            const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
             skip |= LogWarning(
-                kVUID_BestPractices_ClearValueWithoutLoadOpClear, device, loc,
+                kVUID_BestPractices_ClearValueWithoutLoadOpClear, objlist, loc,
                 "This render pass does not have VkRenderPassCreateInfo.pAttachments->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR "
                 "but VkRenderPassBeginInfo.clearValueCount > 0. VkRenderPassBeginInfo.pClearValues will be ignored and no "
                 "attachments will be cleared.");
@@ -243,8 +245,9 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
         if (pRenderPassBegin->clearValueCount > rp_state->createInfo.attachmentCount) {
             // Flag as warning because the overflowing clearValues will be ignored and could even be undefined on certain platforms.
             // This could signal a bug and there seems to be no reason for this to happen on purpose.
+            const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
             skip |=
-                LogWarning(kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount, device, loc,
+                LogWarning(kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount, objlist, loc,
                            "This render pass has VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount "
                            "(%" PRIu32 " > %" PRIu32
                            ") and as such the clearValues that do not have a corresponding attachment will be ignored.",
@@ -810,7 +813,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
 
     if (uses_depth) {
         skip |= LogPerformanceWarning(
-            kVUID_BestPractices_EndRenderPass_DepthPrePassUsage, device, loc,
+            kVUID_BestPractices_EndRenderPass_DepthPrePassUsage, commandBuffer, loc,
             "%s %s: Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
             "renderering architectures; such as those in Arm Mali or PowerVR GPUs. Since they can remove geometry "
             "hidden by other opaque geometry. Mali has Forward Pixel Killing (FPK), PowerVR has Hiden Surface "
@@ -867,7 +870,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
 
             if (untouched_aspects) {
                 skip |= LogPerformanceWarning(
-                    kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile, device, loc,
+                    kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile, commandBuffer, loc,
                     "%s %s: Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
                     "was never accessed by a pipeline or clear command. "
                     "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the "
