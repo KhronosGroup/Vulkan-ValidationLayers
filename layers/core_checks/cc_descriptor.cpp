@@ -416,7 +416,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
                                           error_obj.location.dot(Field::pBindDescriptorSetsInfo));
 
     if (!enabled_features.dynamicPipelineLayout && pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", device,
+        skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", commandBuffer,
                          error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout), "is not valid.");
     }
 
@@ -2248,7 +2248,7 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
         pSetDescriptorBufferOffsetsInfo->pOffsets, error_obj.location);
 
     if (!enabled_features.dynamicPipelineLayout && pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-None-09495", device,
+        skip |= LogError("VUID-VkSetDescriptorBufferOffsetsInfoEXT-None-09495", commandBuffer,
                          error_obj.location.dot(Field::pSetDescriptorBufferOffsetsInfo).dot(Field::layout), "is not valid.");
     }
 
@@ -2334,7 +2334,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
                                                             pBindDescriptorBufferEmbeddedSamplersInfo->set, error_obj.location);
     if (!enabled_features.dynamicPipelineLayout && pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE) {
         skip |=
-            LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-None-09495", device,
+            LogError("VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-None-09495", commandBuffer,
                      error_obj.location.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo).dot(Field::layout), "is not valid.");
     }
 
@@ -2546,7 +2546,7 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, V
 
     const auto create_flags = setlayout->GetCreateFlags();
     if (!(create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
-        skip |= LogError("VUID-vkGetDescriptorSetLayoutSizeEXT-layout-08012", device, error_obj.location.dot(Field::layout),
+        skip |= LogError("VUID-vkGetDescriptorSetLayoutSizeEXT-layout-08012", layout, error_obj.location.dot(Field::layout),
                          "was created with %s.", string_VkDescriptorSetLayoutCreateFlags(create_flags).c_str());
     }
 
@@ -2568,7 +2568,7 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice 
     const auto create_flags = setlayout->GetCreateFlags();
     if (!(setlayout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
         skip |=
-            LogError("VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-08014", device, error_obj.location.dot(Field::layout),
+            LogError("VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-08014", layout, error_obj.location.dot(Field::layout),
                      "was created with %s.", string_VkDescriptorSetLayoutCreateFlags(create_flags).c_str());
     }
 
@@ -3503,7 +3503,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer command
                                          pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites,
                                          error_obj.location);
     if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-None-09495", device,
+        skip |= LogError("VUID-VkPushDescriptorSetInfoKHR-None-09495", commandBuffer,
                          error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout), "is not valid.");
     }
 
@@ -3641,13 +3641,15 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         if (!dsl->IsPushDescriptor()) {
             const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07305"
                                     : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305";
-            skip |= LogError(vuid, layout, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
+            const LogObjectList objlist(commandBuffer, layout);
+            skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
                              set, FormatHandle(layout).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
         const char *vuid =
             is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304";
-        skip |= LogError(vuid, layout, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
+        const LogObjectList objlist(commandBuffer, layout);
+        skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
                          FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
@@ -3724,7 +3726,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
         commandBuffer, pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate, pPushDescriptorSetWithTemplateInfo->layout,
         pPushDescriptorSetWithTemplateInfo->set, pPushDescriptorSetWithTemplateInfo->pData, error_obj.location);
     if (!enabled_features.dynamicPipelineLayout && pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", device,
+        skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", commandBuffer,
                          error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout), "is not valid.");
     }
 
@@ -4476,7 +4478,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuff
                                      error_obj.location.dot(Field::pPushConstantsInfo));
 
     if (!enabled_features.dynamicPipelineLayout && pPushConstantsInfo->layout == VK_NULL_HANDLE) {
-        skip |= LogError("VUID-VkPushConstantsInfoKHR-None-09495", device,
+        skip |= LogError("VUID-VkPushConstantsInfoKHR-None-09495", commandBuffer,
                          error_obj.location.dot(Field::pPushConstantsInfo).dot(Field::layout), "is not valid.");
     }
     return skip;

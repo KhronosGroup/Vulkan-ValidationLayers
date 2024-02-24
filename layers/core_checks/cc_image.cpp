@@ -808,12 +808,11 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
 
-bool CoreChecks::ValidateClearImageSubresourceRange(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
-                                                    const VkImageSubresourceRange &range, const Location &loc) const {
+bool CoreChecks::ValidateClearImageSubresourceRange(const LogObjectList &objlist, const VkImageSubresourceRange &range,
+                                                    const Location &loc) const {
     bool skip = false;
 
     if (range.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
-        LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError("VUID-vkCmdClearColorImage-aspectMask-02498", objlist, loc.dot(Field::aspectMask),
                          "is %s (must only include COLOR_BIT).", string_VkImageAspectFlags(range.aspectMask).c_str());
     }
@@ -834,8 +833,8 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     const auto &cb_state = *cb_state_ptr;
     const auto &image_state = *image_state_ptr;
     const Location image_loc = error_obj.location.dot(Field::image);
-    skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, image), image_state, image_loc,
-                                         "VUID-vkCmdClearColorImage-image-00003");
+    LogObjectList objlist(commandBuffer, image);
+    skip |= ValidateMemoryIsBoundToImage(objlist, image_state, image_loc, "VUID-vkCmdClearColorImage-image-00003");
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR, image_loc,
@@ -845,25 +844,22 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearColorImage-commandBuffer-01806");
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
-        skip |= ValidateCmdClearColorSubresourceRange(image_state, pRanges[i], range_loc);
-        skip |= ValidateClearImageSubresourceRange(cb_state, image_state, pRanges[i], range_loc);
+        skip |= ValidateCmdClearColorSubresourceRange(image_state.createInfo, pRanges[i], objlist, range_loc);
+        skip |= ValidateClearImageSubresourceRange(objlist, pRanges[i], range_loc);
         skip |= VerifyClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
     }
 
     const VkFormat format = image_state.createInfo.format;
     if (vkuFormatIsDepthOrStencil(format)) {
-        LogObjectList objlist(commandBuffer, image);
         skip |=
             LogError("VUID-vkCmdClearColorImage-image-00007", objlist, image_loc,
                      "(%s) was created with a depth/stencil format (%s).", FormatHandle(image).c_str(), string_VkFormat(format));
     } else if (vkuFormatIsCompressed(format)) {
-        LogObjectList objlist(commandBuffer, image);
         skip |= LogError("VUID-vkCmdClearColorImage-image-00007", objlist, image_loc,
                          "(%s) was created with a compressed format (%s).", FormatHandle(image).c_str(), string_VkFormat(format));
     }
 
     if (!(image_state.createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        LogObjectList objlist(commandBuffer, image);
         skip |= LogError("VUID-vkCmdClearColorImage-image-00002", objlist, image_loc,
                          "(%s) was created with usage %s (missing VK_IMAGE_USAGE_TRANSFER_DST_BIT).", FormatHandle(image).c_str(),
                          string_VkImageUsageFlags(image_state.createInfo.usage).c_str());
@@ -871,7 +867,6 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
 
     // Tests for "Formats requiring sampler Y’CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
     if (FormatRequiresYcbcrConversionExplicitly(format)) {
-        LogObjectList objlist(commandBuffer, image);
         skip |= LogError("VUID-vkCmdClearColorImage-image-01545", objlist, image_loc, "(%s) was created with format %s.",
                          FormatHandle(image).c_str(), string_VkFormat(format));
     }
@@ -925,8 +920,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     const Location image_loc = error_obj.location.dot(Field::image);
 
     const VkFormat image_format = image_state.createInfo.format;
-    skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, image), image_state, image_loc,
-                                         "VUID-vkCmdClearDepthStencilImage-image-00010");
+    const LogObjectList objlist(commandBuffer, image);
+    skip |= ValidateMemoryIsBoundToImage(objlist, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-image-00010");
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR, image_loc,
@@ -939,26 +934,23 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
-        skip |= ValidateCmdClearDepthSubresourceRange(image_state, pRanges[i], range_loc);
+        skip |= ValidateCmdClearDepthSubresourceRange(image_state.createInfo, pRanges[i], objlist, range_loc);
         skip |= VerifyClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
         // Image aspect must be depth or stencil or both
         VkImageAspectFlags valid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         if (((pRanges[i].aspectMask & valid_aspects) == 0) || ((pRanges[i].aspectMask & ~valid_aspects) != 0)) {
-            LogObjectList objlist(cb_state.Handle(), image);
             skip |=
                 LogError("VUID-vkCmdClearDepthStencilImage-aspectMask-02824", objlist, range_loc.dot(Field::aspectMask),
                          "is %s (can only be DEPTH_BIT or STENCIL_BIT).", string_VkImageAspectFlags(pRanges[i].aspectMask).c_str());
         }
         if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
             if (vkuFormatHasDepth(image_format) == false) {
-                LogObjectList objlist(cb_state.Handle(), image);
                 skip |= LogError("VUID-vkCmdClearDepthStencilImage-image-02826", objlist, range_loc.dot(Field::aspectMask),
                                  "has a VK_IMAGE_ASPECT_DEPTH_BIT but %s "
                                  "doesn't have a depth component.",
                                  string_VkFormat(image_format));
             }
             if ((image_state.createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
-                LogObjectList objlist(cb_state.Handle(), image);
                 skip |= LogError(
                     "VUID-vkCmdClearDepthStencilImage-pRanges-02660", objlist, range_loc.dot(Field::aspectMask),
                     "includes VK_IMAGE_ASPECT_DEPTH_BIT, but the image was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT.");
@@ -966,7 +958,6 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         }
         if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
             if (vkuFormatHasStencil(image_format) == false) {
-                LogObjectList objlist(cb_state.Handle(), image);
                 skip |= LogError("VUID-vkCmdClearDepthStencilImage-image-02825", objlist, range_loc.dot(Field::aspectMask),
                                  "has a VK_IMAGE_ASPECT_STENCIL_BIT but "
                                  "%s doesn't have a stencil component.",
@@ -975,14 +966,12 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
 
             if (image_stencil_struct != nullptr) {
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
-                    LogObjectList objlist(cb_state.Handle(), image);
                     skip |= LogError("VUID-vkCmdClearDepthStencilImage-pRanges-02658", objlist, range_loc.dot(Field::aspectMask),
                                      "includes VK_IMAGE_ASPECT_STENCIL_BIT and "
                                      "image was created with VkImageStencilUsageCreateInfo::stencilUsage = %s.",
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 }
             } else if ((image_state.createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
-                LogObjectList objlist(cb_state.Handle(), image);
                 skip |= LogError("VUID-vkCmdClearDepthStencilImage-pRanges-02659", objlist, range_loc.dot(Field::aspectMask),
                                  "includes VK_IMAGE_ASPECT_STENCIL_BIT and "
                                  "image was not created with VkImageStencilUsageCreateInfo, but was created with "
@@ -992,13 +981,11 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     }
 
     if (!vkuFormatIsDepthOrStencil(image_format)) {
-        LogObjectList objlist(cb_state.Handle(), image);
         skip |=
             LogError("VUID-vkCmdClearDepthStencilImage-image-00014", objlist, image_loc,
                      "(%s) doesn't have a depth/stencil format (%s).", FormatHandle(image).c_str(), string_VkFormat(image_format));
     }
     if (VK_IMAGE_USAGE_TRANSFER_DST_BIT != (VK_IMAGE_USAGE_TRANSFER_DST_BIT & image_state.createInfo.usage)) {
-        LogObjectList objlist(cb_state.Handle(), image);
         skip |= LogError("VUID-vkCmdClearDepthStencilImage-pRanges-02659", objlist, image_loc,
                          "(%s) was not created with the "
                          "VK_IMAGE_USAGE_TRANSFER_DST_BIT set.",
@@ -1447,27 +1434,27 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
 
 bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                                const VkImageSubresourceRange &subresourceRange,
-                                               const char *image_layer_count_var_name, const VkImage image,
+                                               const char *image_layer_count_var_name, const LogObjectList &objlist,
                                                const SubresourceRangeErrorCodes &errorCodes,
                                                const Location &subresource_loc) const {
     bool skip = false;
 
     // Validate mip levels
     if (subresourceRange.baseMipLevel >= image_mip_count) {
-        skip |= LogError(errorCodes.base_mip_err, image, subresource_loc.dot(Field::baseMipLevel),
+        skip |= LogError(errorCodes.base_mip_err, objlist, subresource_loc.dot(Field::baseMipLevel),
                          "(%" PRIu32 ") is greater or equal to the mip level count of the image (%" PRIu32 ").",
                          subresourceRange.baseMipLevel, image_mip_count);
     }
 
     if (subresourceRange.levelCount != VK_REMAINING_MIP_LEVELS) {
         if (subresourceRange.levelCount == 0) {
-            skip |= LogError("VUID-VkImageSubresourceRange-levelCount-01720", image, subresource_loc.dot(Field::levelCount),
+            skip |= LogError("VUID-VkImageSubresourceRange-levelCount-01720", objlist, subresource_loc.dot(Field::levelCount),
                              "is zero.");
         } else {
             const uint64_t necessary_mip_count = uint64_t{subresourceRange.baseMipLevel} + uint64_t{subresourceRange.levelCount};
 
             if (necessary_mip_count > image_mip_count) {
-                skip |= LogError(errorCodes.mip_count_err, image, subresource_loc.dot(Field::baseMipLevel),
+                skip |= LogError(errorCodes.mip_count_err, objlist, subresource_loc.dot(Field::baseMipLevel),
                                  "(%" PRIu32 ") + levelCount (%" PRIu32 ") is (%" PRIu64
                                  ") which is greater than the mip level count of the image (i.e. greater than %" PRIu32 ").",
                                  subresourceRange.baseMipLevel, subresourceRange.levelCount, necessary_mip_count, image_mip_count);
@@ -1477,21 +1464,21 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
     // Validate array layers
     if (subresourceRange.baseArrayLayer >= image_layer_count) {
-        skip |= LogError(errorCodes.base_layer_err, image, subresource_loc.dot(Field::baseArrayLayer),
+        skip |= LogError(errorCodes.base_layer_err, objlist, subresource_loc.dot(Field::baseArrayLayer),
                          "(%" PRIu32 ") is greater or equal to the %s of the image when it was created (%" PRIu32 ").",
                          subresourceRange.baseArrayLayer, image_layer_count_var_name, image_layer_count);
     }
 
     if (subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS) {
         if (subresourceRange.layerCount == 0) {
-            skip |= LogError("VUID-VkImageSubresourceRange-layerCount-01721", image, subresource_loc.dot(Field::layerCount),
+            skip |= LogError("VUID-VkImageSubresourceRange-layerCount-01721", objlist, subresource_loc.dot(Field::layerCount),
                              "is zero.");
         } else {
             const uint64_t necessary_layer_count =
                 uint64_t{subresourceRange.baseArrayLayer} + uint64_t{subresourceRange.layerCount};
 
             if (necessary_layer_count > image_layer_count) {
-                skip |= LogError(errorCodes.layer_count_err, image, subresource_loc.dot(Field::baseArrayLayer),
+                skip |= LogError(errorCodes.layer_count_err, objlist, subresource_loc.dot(Field::baseArrayLayer),
                                  "(%" PRIu32 ") + layerCount (%" PRIu32 ") is (%" PRIu64
                                  ") which is greater than the %s of the image when it was created (%" PRIu32 ").",
                                  subresourceRange.baseArrayLayer, subresourceRange.layerCount, necessary_layer_count,
@@ -1503,7 +1490,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     if (subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
         if (subresourceRange.aspectMask &
             (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-            skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-01670", image, subresource_loc.dot(Field::aspectMask),
+            skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-01670", objlist, subresource_loc.dot(Field::aspectMask),
                              "is %s.", string_VkImageAspectFlags(subresourceRange.aspectMask).c_str());
         }
     }
@@ -1511,7 +1498,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     // aspectMask must not contain VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT
     if (subresourceRange.aspectMask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
                                        VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
-        skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-02278", image, subresource_loc.dot(Field::aspectMask), "is %s.",
+        skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-02278", objlist, subresource_loc.dot(Field::aspectMask), "is %s.",
                          string_VkImageAspectFlags(subresourceRange.aspectMask).c_str());
     }
 
@@ -1552,37 +1539,37 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image
                                          loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateCmdClearColorSubresourceRange(const vvl::Image &image_state,
-                                                       const VkImageSubresourceRange &subresourceRange, const Location &loc) const {
+bool CoreChecks::ValidateCmdClearColorSubresourceRange(const VkImageCreateInfo &create_info,
+                                                       const VkImageSubresourceRange &subresourceRange,
+                                                       const LogObjectList &objlist, const Location &loc) const {
     SubresourceRangeErrorCodes subresource_range_error_codes = {};
     subresource_range_error_codes.base_mip_err = "VUID-vkCmdClearColorImage-baseMipLevel-01470";
     subresource_range_error_codes.mip_count_err = "VUID-vkCmdClearColorImage-pRanges-01692";
     subresource_range_error_codes.base_layer_err = "VUID-vkCmdClearColorImage-baseArrayLayer-01472";
     subresource_range_error_codes.layer_count_err = "VUID-vkCmdClearColorImage-pRanges-01693";
 
-    return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         "arrayLayers", image_state.VkHandle(), subresource_range_error_codes,
-                                         loc.dot(Field::subresourceRange));
+    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, "arrayLayers", objlist,
+                                         subresource_range_error_codes, loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const vvl::Image &image_state,
-                                                       const VkImageSubresourceRange &subresourceRange, const Location &loc) const {
+bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const VkImageCreateInfo &create_info,
+                                                       const VkImageSubresourceRange &subresourceRange,
+                                                       const LogObjectList &objlist, const Location &loc) const {
     SubresourceRangeErrorCodes subresource_range_error_codes = {};
     subresource_range_error_codes.base_mip_err = "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474";
     subresource_range_error_codes.mip_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01694";
     subresource_range_error_codes.base_layer_err = "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476";
     subresource_range_error_codes.layer_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01695";
 
-    return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         "arrayLayers", image_state.VkHandle(), subresource_range_error_codes,
-                                         loc.dot(Field::subresourceRange));
+    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, "arrayLayers", objlist,
+                                         subresource_range_error_codes, loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateImageBarrierSubresourceRange(const Location &loc, const vvl::Image &image_state,
-                                                      const VkImageSubresourceRange &subresourceRange) const {
-    return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         "arrayLayers", image_state.VkHandle(), sync_vuid_maps::GetSubResourceVUIDs(loc),
-                                         loc.dot(Field::subresourceRange));
+bool CoreChecks::ValidateImageBarrierSubresourceRange(const VkImageCreateInfo &create_info,
+                                                      const VkImageSubresourceRange &subresourceRange, const LogObjectList &objlist,
+                                                      const Location &loc) const {
+    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, "arrayLayers", objlist,
+                                         sync_vuid_maps::GetSubResourceVUIDs(loc), loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, const VkFormat view_format,

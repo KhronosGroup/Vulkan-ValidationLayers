@@ -429,15 +429,18 @@ bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer 
     bool skip = false;
 
     if (dstOffset & 3) {
-        skip |= LogError("VUID-vkCmdUpdateBuffer-dstOffset-00036", commandBuffer, error_obj.location.dot(Field::dstOffset),
+        const LogObjectList objlist(commandBuffer, dstBuffer);
+        skip |= LogError("VUID-vkCmdUpdateBuffer-dstOffset-00036", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 "), is not a multiple of 4.", dstOffset);
     }
 
     if ((dataSize <= 0) || (dataSize > 65536)) {
-        skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00037", commandBuffer, error_obj.location.dot(Field::dataSize),
+        const LogObjectList objlist(commandBuffer, dstBuffer);
+        skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00037", objlist, error_obj.location.dot(Field::dataSize),
                          "(%" PRIu64 "), must be greater than zero and less than or equal to 65536.", dataSize);
     } else if (dataSize & 3) {
-        skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00038", commandBuffer, error_obj.location.dot(Field::dataSize),
+        const LogObjectList objlist(commandBuffer, dstBuffer);
+        skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00038", objlist, error_obj.location.dot(Field::dataSize),
                          "(%" PRIu64 "), is not a multiple of 4.", dataSize);
     }
     return skip;
@@ -449,16 +452,19 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
     bool skip = false;
 
     if (dstOffset & 3) {
-        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00025", dstBuffer, error_obj.location.dot(Field::dstOffset),
+        const LogObjectList objlist(commandBuffer, dstBuffer);
+        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00025", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
     }
 
     if (size != VK_WHOLE_SIZE) {
         if (size <= 0) {
-            skip |= LogError("VUID-vkCmdFillBuffer-size-00026", dstBuffer, error_obj.location.dot(Field::size),
+            const LogObjectList objlist(commandBuffer, dstBuffer);
+            skip |= LogError("VUID-vkCmdFillBuffer-size-00026", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") must be greater than zero.", size);
         } else if (size & 3) {
-            skip |= LogError("VUID-vkCmdFillBuffer-size-00028", dstBuffer, error_obj.location.dot(Field::size),
+            const LogObjectList objlist(commandBuffer, dstBuffer);
+            skip |= LogError("VUID-vkCmdFillBuffer-size-00028", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") is not a multiple of 4.", size);
         }
     }

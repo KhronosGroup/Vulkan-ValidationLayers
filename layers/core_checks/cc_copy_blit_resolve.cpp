@@ -2165,15 +2165,13 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     if (!IsValueIn(srcImageLayout,
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-01917" : "VUID-vkCmdCopyImage-srcImageLayout-01917";
-        const LogObjectList objlist(cb_state.Handle(), src_image_state->Handle());
-        skip |= LogError(vuid, objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
+        skip |= LogError(vuid, src_objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
     }
 
     if (!IsValueIn(dstImageLayout,
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-01395" : "VUID-vkCmdCopyImage-dstImageLayout-01395";
-        const LogObjectList objlist(cb_state.Handle(), dst_image_state->Handle());
-        skip |= LogError(vuid, objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
+        skip |= LogError(vuid, dst_objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
     }
 
     const bool same_image = (src_image_state == dst_image_state);
@@ -2191,8 +2189,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             if (!IsValueIn(srcImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL}) ||
                 !IsValueIn(dstImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-09460" : "VUID-vkCmdCopyImage-srcImage-09460";
-                const LogObjectList objlist(cb_state.Handle(), src_image_state->Handle());
-                skip |= LogError(vuid, objlist, loc,
+                skip |= LogError(vuid, src_objlist, loc,
                                  "copying to same VkImage (miplevel = %u, srcLayer[%u,%u), dstLayer[%u,%u)), but srcImageLayout is "
                                  "%s and dstImageLayout is %s",
                                  src_subresource.mipLevel, src_subresource.baseArrayLayer,
@@ -2521,6 +2518,8 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     const char *vuid;
     const Location src_image_loc = loc.dot(Field::srcImage);
     const Location dst_buffer_loc = loc.dot(Field::dstBuffer);
+    const LogObjectList src_objlist(commandBuffer, srcImage);
+    const LogObjectList dst_objlist(commandBuffer, dstBuffer);
 
     skip |= ValidateBufferImageCopyData(cb_state, regionCount, pRegions, *src_image_state, loc);
 
@@ -2547,7 +2546,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     skip |= ValidateImageSampleCount(commandBuffer, *src_image_state, VK_SAMPLE_COUNT_1_BIT, src_image_loc, vuid);
 
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-07966" : "VUID-vkCmdCopyImageToBuffer-srcImage-07966";
-    skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, srcImage), *src_image_state, src_image_loc, vuid);
+    skip |= ValidateMemoryIsBoundToImage(src_objlist, *src_image_state, src_image_loc, vuid);
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-dstBuffer-00192" : "VUID-vkCmdCopyImageToBuffer-dstBuffer-00192";
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, dst_buffer_loc, vuid);
 
@@ -2555,8 +2554,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-00186" : "VUID-vkCmdCopyImageToBuffer-srcImage-00186";
     skip |= ValidateImageUsageFlags(commandBuffer, *src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true, vuid, src_image_loc);
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-dstBuffer-00191" : "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191";
-    skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, dstBuffer), *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     true, vuid, dst_buffer_loc);
+    skip |= ValidateBufferUsageFlags(dst_objlist, *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
     vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01831" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831";
     skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc, vuid);
     vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01832" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832";
@@ -2580,8 +2578,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     if (!IsValueIn(srcImageLayout,
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-01397" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397";
-        const LogObjectList objlist(cb_state.Handle(), src_image_state->Handle());
-        skip |= LogError(vuid, objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
+        skip |= LogError(vuid, src_objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
     }
 
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -2686,6 +2683,8 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     const char *vuid;
     const Location src_buffer_loc = loc.dot(Field::srcBuffer);
     const Location dst_image_loc = loc.dot(Field::dstImage);
+    const LogObjectList src_objlist(commandBuffer, srcBuffer);
+    const LogObjectList dst_objlist(commandBuffer, dstImage);
 
     skip |= ValidateBufferImageCopyData(cb_state, regionCount, pRegions, *dst_image_state, loc);
 
@@ -2701,10 +2700,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-srcBuffer-00176" : "VUID-vkCmdCopyBufferToImage-srcBuffer-00176";
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_buffer_state, src_buffer_loc, vuid);
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImage-07966" : "VUID-vkCmdCopyBufferToImage-dstImage-07966";
-    skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, dstImage), *dst_image_state, dst_image_loc, vuid);
+    skip |= ValidateMemoryIsBoundToImage(dst_objlist, *dst_image_state, dst_image_loc, vuid);
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-srcBuffer-00174" : "VUID-vkCmdCopyBufferToImage-srcBuffer-00174";
-    skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, srcBuffer), *src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                     true, vuid, src_buffer_loc);
+    skip |= ValidateBufferUsageFlags(src_objlist, *src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImage-00177" : "VUID-vkCmdCopyBufferToImage-dstImage-00177";
     skip |= ValidateImageUsageFlags(commandBuffer, *dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, vuid, dst_image_loc);
     vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-01828" : "VUID-vkCmdCopyBufferToImage-commandBuffer-01828";
@@ -2730,8 +2728,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     if (!IsValueIn(dstImageLayout,
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImageLayout-01396" : "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396";
-        const LogObjectList objlist(cb_state.Handle(), dst_image_state->Handle());
-        skip |= LogError(vuid, objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
+        skip |= LogError(vuid, dst_objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
     }
 
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -3423,15 +3420,13 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
     if (!IsValueIn(srcImageLayout,
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImageLayout-01398" : "VUID-vkCmdBlitImage-srcImageLayout-01398";
-        const LogObjectList objlist(cb_state.Handle(), src_image_state->Handle());
-        skip |= LogError(vuid, objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
+        skip |= LogError(vuid, src_objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
     }
 
     if (!IsValueIn(dstImageLayout,
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImageLayout-01399" : "VUID-vkCmdBlitImage-dstImageLayout-01399";
-        const LogObjectList objlist(cb_state.Handle(), dst_image_state->Handle());
-        skip |= LogError(vuid, objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
+        skip |= LogError(vuid, dst_objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
     }
 
     const bool same_image = (src_image_state == dst_image_state);
@@ -3452,8 +3447,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             if (!IsValueIn(srcImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL}) ||
                 !IsValueIn(dstImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-09459" : "VUID-vkCmdBlitImage-srcImage-09459";
-                const LogObjectList objlist(cb_state.Handle(), src_image_state->Handle());
-                skip |= LogError(vuid, objlist, loc,
+                skip |= LogError(vuid, src_objlist, loc,
                                  "blitting to same same VkImage (miplevel = %u, srcLayer[%u,%u), dstLayer[%u,%u)), but "
                                  "srcImageLayout is %s and dstImageLayout is %s",
                                  src_subresource.mipLevel, src_subresource.baseArrayLayer,

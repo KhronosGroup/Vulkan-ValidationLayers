@@ -350,16 +350,16 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
         for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreCount; semaphore++) {
-            skip |= CheckPipelineStageFlags(submit_loc.dot(Field::pWaitDstStageMask, semaphore),
+            skip |= CheckPipelineStageFlags(queue, submit_loc.dot(Field::pWaitDstStageMask, semaphore),
                                             pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
         if (pSubmits[submit].signalSemaphoreCount == 0 && pSubmits[submit].pSignalSemaphores != nullptr) {
-            LogInfo(kVUID_BestPractices_SemaphoreCount, device, error_obj.location,
+            LogInfo(kVUID_BestPractices_SemaphoreCount, queue, error_obj.location,
                     "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.", submit,
                     submit);
         }
         if (pSubmits[submit].waitSemaphoreCount == 0 && pSubmits[submit].pWaitSemaphores != nullptr) {
-            LogInfo(kVUID_BestPractices_SemaphoreCount, device, error_obj.location,
+            LogInfo(kVUID_BestPractices_SemaphoreCount, queue, error_obj.location,
                     "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit,
                     submit);
         }
@@ -381,7 +381,7 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
         const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
         for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
             const Location semaphore_loc = submit_loc.dot(Field::pWaitSemaphoreInfos, semaphore);
-            skip |= CheckPipelineStageFlags(semaphore_loc.dot(Field::stageMask),
+            skip |= CheckPipelineStageFlags(queue, semaphore_loc.dot(Field::stageMask),
                                             pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
         }
     }

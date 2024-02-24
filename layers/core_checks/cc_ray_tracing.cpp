@@ -1395,8 +1395,8 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
                                               "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-buffer-03736");
 
         if (!as_state->built) {
-            skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964", device, as_loc,
-                             "has not been built.");
+            skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964", commandBuffer,
+                             as_loc, "has not been built.");
         } else {
             if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
                 if (!(as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
@@ -1601,7 +1601,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
 
     const auto buffer_states = GetBuffersByAddress(dst_address);
     if (buffer_states.empty()) {
-        skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03739", device,
+        skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03739", commandBuffer,
                          error_obj.location.dot(Field::pInfo).dot(Field::dst).dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") is not a valid buffer address.", dst_address);
     } else {
@@ -1658,7 +1658,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
 
     const auto buffer_states = GetBuffersByAddress(src_address);
     if (buffer_states.empty()) {
-        skip |= LogError("VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-03742", device,
+        skip |= LogError("VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-03742", commandBuffer,
                          error_obj.location.dot(Field::pInfo).dot(Field::src).dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") is not a valid buffer address.", src_address);
     } else {

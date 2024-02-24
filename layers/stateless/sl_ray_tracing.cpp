@@ -817,7 +817,7 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
     const auto *acceleration_structure_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
-        skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructure-08924", device,
+        skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructure-08924", commandBuffer,
                          error_obj.location, "accelerationStructure feature was not enabled.");
     }
 
@@ -1178,7 +1178,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     const auto *acceleration_structure_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acceleration_structure_features || acceleration_structure_features->accelerationStructure == VK_FALSE) {
-        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-accelerationStructure-08923", device, error_obj.location,
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-accelerationStructure-08923", commandBuffer, error_obj.location,
                          "accelerationStructure feature was not enabled.");
     }
 
@@ -1525,7 +1525,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
 
         skip |= ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
                               info->geometryCount, &ppBuildRangeInfos[info_i], false, true, kVUIDUndefined,
-                              "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-03676");
+                              "VUID-vkBuildAccelerationStructuresKHR-ppBuildRangeInfos-03676");
 
         if (info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
             if (info->scratchData.hostAddress == nullptr) {
