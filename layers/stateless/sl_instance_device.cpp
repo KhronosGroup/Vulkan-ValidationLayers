@@ -385,6 +385,13 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
     }
 
+     if (IsExtEnabled(device_extensions.vk_arm_render_pass_striped)) {
+        VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&renderpass_striped_props);
+        GetPhysicalDeviceProperties2(physicalDevice, prop2);
+        phys_dev_ext_props.renderpass_striped_props = renderpass_striped_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object

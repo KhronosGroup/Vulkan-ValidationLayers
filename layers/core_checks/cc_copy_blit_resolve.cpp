@@ -21,7 +21,6 @@
 #include <sstream>
 #include <vector>
 
-#include "containers/range_vector.h"
 #include "core_validation.h"
 #include "error_message/error_strings.h"
 #include <vulkan/vk_enum_string_helper.h>
@@ -29,20 +28,6 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
-
-// Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
-static sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    int64_t intersection_min = std::max(x, y);
-    int64_t intersection_max = std::min(x + static_cast<int64_t>(x_size), y + static_cast<int64_t>(y_size));
-
-    return {intersection_min, intersection_max};
-}
-
-// Returns true if [x, x + x_size) and [y, y + y_size) overlap
-static bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    auto intersection = GetRangeIntersection(x, x_size, y, y_size);
-    return intersection.non_empty();
-}
 
 struct ImageRegionIntersection {
     VkImageSubresourceLayers subresource = {};

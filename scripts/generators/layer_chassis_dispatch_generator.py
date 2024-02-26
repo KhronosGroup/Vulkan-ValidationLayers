@@ -431,6 +431,11 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                                 pre_code += f'{new_prefix}[{index}] = {member.name}[{index}];\n'
                             if process_pnext:
                                 pre_code += f'WrapPnextChainHandles(layer_data, {new_prefix}[{index}].pNext);\n'
+                        if member.type == "VkCommandBufferSubmitInfo" and process_pnext:
+                            pre_code += f'if ({new_prefix}[{index}].pNext)'
+                            pre_code += '{\n'
+                            pre_code += f'WrapPnextChainHandles(layer_data, {new_prefix}[{index}].pNext);\n'
+                            pre_code += '}\n'
                         local_prefix = f'{new_prefix}[{index}].'
                         # Process sub-structs in this struct
                         (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, local_prefix, arrayIndex, isCreate, isDestroy, False)

@@ -355,6 +355,8 @@ class CommandBuffer : public RefcountedStateObject {
     // Used for both type of renderPass
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     uint32_t active_render_pass_device_mask;
+    bool has_render_pass_striped;
+    uint32_t striped_count;
     // only when not using dynamic rendering
     safe_VkRenderPassBeginInfo active_render_pass_begin_info;
     std::shared_ptr<std::vector<SubpassInfo>> active_subpasses;

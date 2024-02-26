@@ -261,6 +261,43 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     return skip;
 }
 
+bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::CommandBuffer &cb_state, const void *pNext,
+                                                    const Location &loc) const {
+    bool skip = false;
+    LogObjectList objlist(queue, cb_state.Handle());
+
+    const VkRenderPassStripeSubmitInfoARM *rp_submit_info = vku::FindStructInPNextChain<VkRenderPassStripeSubmitInfoARM>(pNext);
+    if (!rp_submit_info) {
+        if (cb_state.has_render_pass_striped) {
+            skip |= LogError("VUID-VkCommandBufferSubmitInfo-commandBuffer-09445", objlist, loc.dot(Field::pNext),
+                             "missing VkRenderPassStripeSubmitInfoARM struct because command buffer contain begin info "
+                             "with renderpass striped struct");
+        }
+        return skip;
+    }
+
+    if (rp_submit_info->stripeSemaphoreInfoCount != cb_state.striped_count) {
+        skip |= LogError("VUID-VkCommandBufferSubmitInfo-pNext-09446", objlist,
+                         loc.pNext(Struct::VkRenderPassStripeSubmitInfoARM, Field::stripeSemaphoreInfoCount),
+                         "= %" PRIu32 " must be equal to  VkRenderPassStripeBeginInfoARM::stripeInfoCount = %" PRIu32 ".",
+                         rp_submit_info->stripeSemaphoreInfoCount, cb_state.striped_count);
+    }
+
+    for (uint32_t count = 0; count < rp_submit_info->stripeSemaphoreInfoCount; ++count) {
+        auto semaphore = rp_submit_info->pStripeSemaphoreInfos[count].semaphore;
+        auto semaphore_state = Get<vvl::Semaphore>(semaphore);
+        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
+            objlist.add(semaphore);
+            skip |= LogError("VUID-VkRenderPassStripeSubmitInfoARM-semaphore-09447", objlist,
+                             loc.pNext(Struct::VkRenderPassStripeSubmitInfoARM, Field::pStripeSemaphoreInfos, count),
+                             "is not a VK_SEMAPHORE_TYPE_BINARY.");
+            break;
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                       const ErrorObject &error_obj) const {
     bool skip = false;
@@ -343,6 +380,8 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                     }
                     suspended_render_pass_instance = false;
                 }
+
+                skip |= ValidateRenderPassStripeSubmitInfo(queue, *cb_state, submit.pCommandBufferInfos[i].pNext, info_loc);
             }
         }
         if (suspended_render_pass_instance) {
