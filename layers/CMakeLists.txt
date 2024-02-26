@@ -377,7 +377,6 @@ endif()
 target_link_libraries(vvl PRIVATE
     SPIRV-Headers::SPIRV-Headers
     SPIRV-Tools-opt
-    SPIRV-Tools-link
     gpu_av_spirv
     VkLayer_utils
 )

@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2023 Valve Corporation
-# Copyright (c) 2014-2023 LunarG, Inc.
+# Copyright (c) 2014-2024 Valve Corporation
+# Copyright (c) 2014-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,8 +81,6 @@ find_package(VulkanUtilityLibraries CONFIG QUIET)
 find_package(SPIRV-Headers CONFIG QUIET)
 
 find_package(SPIRV-Tools-opt CONFIG QUIET)
-
-find_package(SPIRV-Tools-link CONFIG QUIET)
 
 # NOTE: Our custom code generation target isn't desirable for system package managers or add_subdirectory users.
 # So this target needs to be off by default to avoid obtuse build errors or patches.
