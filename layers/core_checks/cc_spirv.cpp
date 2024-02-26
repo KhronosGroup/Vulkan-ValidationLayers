@@ -366,6 +366,17 @@ bool CoreChecks::ValidateMemoryScope(const spirv::Module &module_state, const sp
     return skip;
 }
 
+bool CoreChecks::ValidateSubgroupRotateClustered(const spirv::Module &module_state, const spirv::Instruction &insn,
+                                                 const Location &loc) const {
+    bool skip = false;
+    if (!enabled_features.shaderSubgroupRotateClustered && insn.Opcode() == spv::OpGroupNonUniformRotateKHR && insn.Length() == 7) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderSubgroupRotateClustered-09566", module_state.handle(), loc,
+                         "SPIR-V\n%s\nuses ClusterSize operand, but the shaderSubgroupRotateClustered feature was not enabled.",
+                         insn.Describe().c_str());
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const spirv::Module &module_state, const spirv::Instruction &insn,
                                                             const Location &loc) const {
     bool skip = false;
@@ -2901,6 +2912,7 @@ bool CoreChecks::ValidateSpirvStateless(const spirv::Module &module_state, const
         skip |= ValidateShaderCapabilitiesAndExtensions(insn, has_pipeline, loc);
         skip |= ValidateTexelOffsetLimits(module_state, insn, loc);
         skip |= ValidateMemoryScope(module_state, insn, loc);
+        skip |= ValidateSubgroupRotateClustered(module_state, insn, loc);
     }
 
     for (const auto &entry_point : module_state.static_data_.entry_points) {

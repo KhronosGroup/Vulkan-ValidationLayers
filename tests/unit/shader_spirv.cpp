@@ -1830,6 +1830,49 @@ TEST_F(NegativeShaderSpirv, NoScalarBlockLayout12) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderSpirv, SubgroupRotate) {
+    TEST_DESCRIPTION("Missing shaderSubgroupRotate");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::shaderSubgroupRotate);
+    RETURN_IF_SKIP(Init());
+
+    char const *source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_rotate: enable
+        layout(binding = 0) buffer Buffers { vec4  x; } data;
+        void main() {
+            data.x = subgroupRotate(data.x, 1);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, SubgroupRotateClustered) {
+    TEST_DESCRIPTION("Missing shaderSubgroupRotateClustered");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupRotate);
+    AddDisabledFeature(vkt::Feature::shaderSubgroupRotateClustered);
+    RETURN_IF_SKIP(Init());
+
+    char const *source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_rotate: enable
+        layout(binding = 0) buffer Buffers { vec4  x; } data;
+        void main() {
+            data.x = subgroupClusteredRotate(data.x, 1, 1);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSubgroupRotateClustered-09566");
+    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
     TEST_DESCRIPTION("Validate using Device memory scope in spirv.");
 
