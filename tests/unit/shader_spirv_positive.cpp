@@ -1601,21 +1601,13 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
     }
 }
 
-TEST_F(PositiveShaderSpirv, ReadShaderClock) {
+TEST_F(PositiveShaderSpirv, ReadShaderClockDevice) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(shader_clock_features);
-    if ((shader_clock_features.shaderDeviceClock == VK_FALSE) && (shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
-        // shaderSubgroupClock should be supported, but extra check
-        GTEST_SKIP() << "no support for shaderDeviceClock or shaderSubgroupClock";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderDeviceClock);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Device scope using GL_EXT_shader_realtime_clock
@@ -1629,6 +1621,21 @@ TEST_F(PositiveShaderSpirv, ReadShaderClock) {
     )glsl";
     VkShaderObj vs_device(this, vsSourceDevice, VK_SHADER_STAGE_VERTEX_BIT);
 
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderSpirv, ReadShaderClockSubgroup) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_clock");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupClock);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
     // Subgroup scope using ARB_shader_clock
     char const *vsSourceScope = R"glsl(
         #version 450
@@ -1640,19 +1647,10 @@ TEST_F(PositiveShaderSpirv, ReadShaderClock) {
     )glsl";
     VkShaderObj vs_subgroup(this, vsSourceScope, VK_SHADER_STAGE_VERTEX_BIT);
 
-    if (shader_clock_features.shaderDeviceClock == VK_TRUE) {
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-    }
-
-    if (shader_clock_features.shaderSubgroupClock == VK_TRUE) {
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-    }
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositiveShaderSpirv, PhysicalStorageBufferStructRecursion) {
