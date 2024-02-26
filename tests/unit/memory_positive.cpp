@@ -13,6 +13,10 @@
 
 #include "../framework/layer_validation_tests.h"
 
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#include <sys/mman.h>
+#endif
+
 TEST_F(PositiveMemory, MapMemory2) {
     TEST_DESCRIPTION("Validate vkMapMemory2 and vkUnmapMemory2");
 
@@ -64,6 +68,82 @@ TEST_F(PositiveMemory, MapMemory2) {
 
     vk::FreeMemory(device(), memory, NULL);
 }
+
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(PositiveMemory, MapMemoryPlaced) {
+    TEST_DESCRIPTION("Validate placed memory maps");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::memoryMapPlaced);
+    AddRequiredFeature(vkt::Feature::memoryUnmapReserve);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_placed_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(map_placed_props);
+
+    /* Vulkan doesn't have any requirements on what allocationSize can be
+     * other than that it must be non-zero.  Pick 64KB because that should
+     * work out to an even number of pages on basically any GPU.
+     */
+    const VkDeviceSize allocation_size = map_placed_props.minPlacedMemoryMapAlignment * 16;
+
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+    memory_info.allocationSize = allocation_size;
+
+    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    ASSERT_TRUE(pass);
+
+    vkt::DeviceMemory memory(*m_device, memory_info);
+
+    /* Reserve one more page in case we need to deal with any alignment weirdness. */
+    size_t reservation_size = allocation_size + map_placed_props.minPlacedMemoryMapAlignment;
+    void *reservation = mmap(NULL, reservation_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    ASSERT_TRUE(reservation != MAP_FAILED);
+
+    /* Align up to minPlacedMemoryMapAlignment */
+    uintptr_t align_1 = map_placed_props.minPlacedMemoryMapAlignment - 1;
+    void *addr = reinterpret_cast<void *>((reinterpret_cast<uintptr_t>(reservation) + align_1) & ~align_1);
+
+    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    map_info.memory = memory;
+    map_info.flags = VK_MEMORY_MAP_PLACED_BIT_EXT;
+    map_info.offset = 0;
+    map_info.size = VK_WHOLE_SIZE;
+
+    VkMemoryMapPlacedInfoEXT placed_info = vku::InitStructHelper();
+    placed_info.pPlacedAddress = addr;
+    map_info.pNext = &placed_info;
+
+    void *pData;
+    VkResult res = vk::MapMemory2KHR(device(), &map_info, &pData);
+    ASSERT_EQ(VK_SUCCESS, res);
+
+    ASSERT_EQ(pData, addr);
+
+    /* Write some data and make sure we don't fault */
+    memset(pData, 0x5c, allocation_size);
+
+    VkMemoryUnmapInfoKHR unmap_info = vku::InitStructHelper();
+    unmap_info.memory = memory;
+    unmap_info.flags = VK_MEMORY_UNMAP_RESERVE_BIT_EXT;
+
+    res = vk::UnmapMemory2KHR(device(), &unmap_info);
+    ASSERT_EQ(VK_SUCCESS, res);
+
+    map_info.flags = 0;
+    vk::MapMemory2KHR(device(), &map_info, &pData);
+
+    /* We unmapped with RESERVE above so this should be different */
+    ASSERT_NE(pData, addr);
+
+    ASSERT_EQ(static_cast<uint8_t *>(pData)[0], 0x5c);
+
+    unmap_info.flags = 0;
+    res = vk::UnmapMemory2KHR(device(), &unmap_info);
+    ASSERT_EQ(VK_SUCCESS, res);
+}
+#endif
 
 TEST_F(PositiveMemory, GetMemoryRequirements2) {
     TEST_DESCRIPTION(
