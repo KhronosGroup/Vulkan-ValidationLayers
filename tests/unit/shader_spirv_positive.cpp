@@ -1601,6 +1601,43 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
     }
 }
 
+TEST_F(PositiveShaderSpirv, SubgroupRotate) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupRotate);
+    RETURN_IF_SKIP(Init());
+
+    char const *source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_rotate: enable
+        layout(binding = 0) buffer Buffers { vec4  x; } data;
+        void main() {
+            data.x = subgroupRotate(data.x, 1);
+        }
+    )glsl";
+
+    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+}
+
+TEST_F(PositiveShaderSpirv, SubgroupRotateClustered) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupRotate);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupRotateClustered);
+    RETURN_IF_SKIP(Init());
+
+    char const *source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_rotate: enable
+        layout(binding = 0) buffer Buffers { vec4  x; } data;
+        void main() {
+            data.x = subgroupClusteredRotate(data.x, 1, 1);
+        }
+    )glsl";
+
+    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+}
+
 TEST_F(PositiveShaderSpirv, ReadShaderClockDevice) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
 
