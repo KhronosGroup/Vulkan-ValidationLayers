@@ -2627,6 +2627,9 @@ VkResult DispatchQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmi
                 }
                 if (local_pSubmits[index0].pCommandBufferInfos) {
                     for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
+                        if (local_pSubmits[index0].pCommandBufferInfos[index1].pNext) {
+                            WrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
+                        }
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {
@@ -4849,6 +4852,9 @@ VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
                 }
                 if (local_pSubmits[index0].pCommandBufferInfos) {
                     for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
+                        if (local_pSubmits[index0].pCommandBufferInfos[index1].pNext) {
+                            WrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
+                        }
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {

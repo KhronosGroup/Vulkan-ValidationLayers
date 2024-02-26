@@ -18,6 +18,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "utils/convert_utils.h"
+#include "error_message/error_strings.h"
 
 bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                        uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
@@ -442,6 +443,93 @@ void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRen
     renderpasses_states.erase(renderPass);
 }
 
+bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext,
+                                                            const VkRect2D render_area, const Location &loc) const {
+    bool skip = false;
+    const auto rp_stripe_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pNext);
+    if (!rp_stripe_begin) {
+        return skip;
+    }
+
+    if (rp_stripe_begin->stripeInfoCount > phys_dev_ext_props.renderpass_striped_props.maxRenderPassStripes) {
+        skip |= LogError("VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-09450", commandBuffer,
+                         loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::stripeInfoCount),
+                         "= %" PRIu32 " is greater than maxRenderPassStripes (%" PRIu32 ").", rp_stripe_begin->stripeInfoCount,
+                         phys_dev_ext_props.renderpass_striped_props.maxRenderPassStripes);
+    }
+
+    const uint32_t width_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.width;
+    const uint32_t height_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.height;
+    const uint32_t last_stripe_index = (rp_stripe_begin->stripeInfoCount - 1);
+    uint32_t total_stripe_area = 0;
+    bool has_overlapping_stripes = false;
+
+    for (uint32_t i = 0; i < rp_stripe_begin->stripeInfoCount; ++i) {
+        const Location &stripe_info_loc = loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos, i);
+        const VkRect2D stripe_area = rp_stripe_begin->pStripeInfos[i].stripeArea;
+        total_stripe_area += (stripe_area.extent.width * stripe_area.extent.height);
+
+        // Check overlapping stripes, report only first overlapping stripe info.
+        for (uint32_t index = i + 1; (!has_overlapping_stripes && i != last_stripe_index && index <= last_stripe_index); ++index) {
+            const auto rect = rp_stripe_begin->pStripeInfos[index].stripeArea;
+            has_overlapping_stripes =
+                RangesIntersect(rect.offset.x, rect.extent.width, stripe_area.offset.x, stripe_area.extent.width);
+            has_overlapping_stripes &=
+                RangesIntersect(rect.offset.y, rect.extent.height, stripe_area.offset.y, stripe_area.extent.height);
+
+            if (has_overlapping_stripes) {
+                skip |= LogError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451", commandBuffer, stripe_info_loc,
+                                 "(offset{%s} extent{%s}) is overlapping with pStripeInfos[%" PRIu32 "] (offset{%s} extent {%s}).",
+                                 string_VkOffset2D(stripe_area.offset).c_str(), string_VkExtent2D(stripe_area.extent).c_str(),
+                                 index, string_VkOffset2D(rect.offset).c_str(), string_VkExtent2D(rect.extent).c_str());
+                break;
+            }
+        }
+
+        if (width_granularity > 0 && (stripe_area.offset.x % width_granularity) != 0) {
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452", commandBuffer,
+                             stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::x),
+                             "= %" PRIu32 " is not multiple of %" PRIu32 ". ", stripe_area.offset.x, width_granularity);
+        }
+
+        if (width_granularity > 0 && (stripe_area.extent.width % width_granularity) != 0 &&
+            ((stripe_area.extent.width + stripe_area.offset.x) != render_area.extent.width)) {
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453", commandBuffer,
+                             stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::width),
+                             "= %" PRIu32 " is not multiple of %" PRIu32
+                             ", or when added to the stripeArea.offset.x is not equal render area width (%" PRIu32 ")",
+                             stripe_area.extent.width, width_granularity, render_area.extent.width);
+        }
+
+        if (height_granularity > 0 && (stripe_area.offset.y % height_granularity) != 0) {
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454", commandBuffer,
+                             stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::y),
+                             "= %" PRIu32 ") is not multiple of %" PRIu32 ". ", stripe_area.offset.y, height_granularity);
+        }
+
+        if (height_granularity > 0 && (stripe_area.extent.height % height_granularity) != 0 &&
+            (stripe_area.extent.height + stripe_area.offset.y) != render_area.extent.height) {
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455", commandBuffer,
+                             stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::height),
+                             "= %" PRIu32 " is not multiple of %" PRIu32
+                             ", or when added to the stripeArea.offset.y is not equal to render area height (%" PRIu32 ")",
+                             stripe_area.extent.height, height_granularity, render_area.extent.height);
+        }
+    }
+
+    // Check render area coverage if there is no overlapping stripe.
+    const uint32_t total_render_area = render_area.extent.width * render_area.extent.height;
+    if (!has_overlapping_stripes && (total_stripe_area != total_render_area)) {
+        const std::string vuid = (loc.function == Func::vkCmdBeginRenderPass) ? "VUID-VkRenderPassBeginInfo-pNext-09539"
+                                                                              : "VUID-VkRenderingInfo-pNext-09535";
+        skip |= LogError(vuid.data(), commandBuffer, loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos),
+                         " total of stripe area = %" PRIu32 " is not covering whole render area %" PRIu32 ". ", total_stripe_area,
+                         total_render_area);
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
@@ -451,6 +539,10 @@ bool StatelessValidation::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuff
                          error_obj.location.dot(Field::pRenderPassBegin).dot(Field::clearValueCount),
                          "(%" PRIu32 ") is not zero, but pRenderPassBegin->pClearValues is NULL.", rp_begin->clearValueCount);
     }
+
+    const Location loc = error_obj.location.dot(Field::pRenderPassBegin);
+    skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, rp_begin->pNext, rp_begin->renderArea, loc);
+
     return skip;
 }
 
@@ -675,6 +767,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
                              FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
         }
     }
+
+    skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, pRenderingInfo->pNext, pRenderingInfo->renderArea, rendering_info_loc);
 
     for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
         if (pRenderingInfo->pColorAttachments[j].imageView == VK_NULL_HANDLE) {

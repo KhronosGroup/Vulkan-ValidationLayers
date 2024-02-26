@@ -63,6 +63,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
         VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
+        VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -1010,6 +1011,8 @@ class StatelessValidation : public ValidationObject {
                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
                                                   const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const;
 
+    bool ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext, const VkRect2D render_area,
+                                           const Location &loc) const;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
                                     const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,

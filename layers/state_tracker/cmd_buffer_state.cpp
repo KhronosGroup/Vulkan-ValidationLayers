@@ -175,6 +175,8 @@ void CommandBuffer::ResetCBState() {
     active_attachments = nullptr;
     active_subpasses = nullptr;
     active_color_attachments_index.clear();
+    has_render_pass_striped = false;
+    striped_count = 0;
     attachments_view_states.clear();
     activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
@@ -523,6 +525,12 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
         AddChild(activeRenderPass);
     }
 
+    auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderPassBegin->pNext);
+    if (rp_striped_begin) {
+        has_render_pass_striped = true;
+        striped_count += rp_striped_begin->stripeInfoCount;
+    }
+
     // Spec states that after BeginRenderPass all resources should be rebound
     if (activeRenderPass->has_multiview_enabled) {
         UnbindResources();
@@ -595,6 +603,12 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         active_render_pass_device_mask = chained_device_group_struct->deviceMask;
     } else {
         active_render_pass_device_mask = initial_device_mask;
+    }
+
+    auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderingInfo->pNext);
+    if (rp_striped_begin) {
+        has_render_pass_striped = true;
+        striped_count += rp_striped_begin->stripeInfoCount;
     }
 
     activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)
