@@ -788,9 +788,7 @@ VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkS
                                                                        VkQueueFlags queue_flags) {
     VkSemaphoreSubmitInfo semaphore_info = vku::InitStructHelper();
     semaphore_info.semaphore = info.pSignalSemaphores[index];
-    // Can't just use BOTTOM, because of how access expansion is done
-    semaphore_info.stageMask =
-        sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, queue_flags, VK_PIPELINE_STAGE_2_HOST_BIT);
+    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     return semaphore_info;
 }
 
