@@ -1,7 +1,7 @@
 ﻿/*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,10 +162,10 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             m_canonicalize_spv = true;
         } else if (current_argument == "--print-vu") {
             m_print_vu = true;
-        } else if (current_argument == "--syncval-enable-core") {
-            m_syncval_enable_core = true;
-        } else if (current_argument == "--gpuav-enable-core") {
-            m_gpuav_enable_core = true;
+        } else if (current_argument == "--syncval-disable-core") {
+            m_syncval_disable_core = true;
+        } else if (current_argument == "--gpuav-disable-core") {
+            m_gpuav_disable_core = true;
         } else if (current_argument == "--device-index" && ((i + 1) < *argc)) {
             m_phys_device_index = std::atoi(argv[++i]);
         } else if ((current_argument == "--help") || (current_argument == "-h")) {

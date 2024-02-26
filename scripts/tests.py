@@ -214,8 +214,8 @@ def RunVVLTests(args):
 
     common_ci.RunShellCmd(lvt_cmd, env=lvt_env)
 
-    print("Re-Running syncval tests with core validation enabled (--syncval-enable-core)")
-    common_ci.RunShellCmd(lvt_cmd + ' --gtest_filter=*SyncVal* --syncval-enable-core', env=lvt_env)
+    print("Re-Running syncval tests with core validation disabled (--syncval-disable-core)")
+    common_ci.RunShellCmd(lvt_cmd + ' --gtest_filter=*SyncVal* --syncval-disable-core', env=lvt_env)
 
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING disabled")
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '0'

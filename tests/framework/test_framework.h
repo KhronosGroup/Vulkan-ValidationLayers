@@ -52,8 +52,8 @@ class VkTestFramework : public ::testing::Test {
     static inline bool m_strip_spv = false;
     static inline bool m_do_everything_spv = false;
     static inline bool m_print_vu = false;
-    static inline bool m_syncval_enable_core = false;
-    static inline bool m_gpuav_enable_core = false;
+    static inline bool m_syncval_disable_core = false;
+    static inline bool m_gpuav_disable_core = false;
     static inline int m_phys_device_index = -1;
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
