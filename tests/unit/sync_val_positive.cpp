@@ -527,6 +527,68 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     m_default_queue->wait();
 }
 
+TEST_F(PositiveSyncVal, PresentAfterSubmitNoneDstStage) {
+    TEST_DESCRIPTION("Test that QueueSubmit's signal semaphore behaves the same way as QueueSubmit2 with ALL_COMMANDS signal.");
+    AddSurfaceExtension();
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitSwapchain());
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+
+    uint32_t image_index = 0;
+    ASSERT_EQ(VK_SUCCESS,
+              vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition.srcAccessMask = 0;
+    // Specify NONE as destination stage to detect issues during conversion SubmitInfo -> SubmitInfo2
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.dstAccessMask = 0;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
+    m_commandBuffer->end();
+
+    constexpr VkPipelineStageFlags semaphore_wait_stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &acquire_semaphore.handle();
+    submit.pWaitDstStageMask = &semaphore_wait_stage;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &m_commandBuffer->handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &submit_semaphore.handle();
+
+    // The goal of this test is to use QueueSubmit API (not QueueSubmit2) to
+    // ensure syncval correctly converts SubmitInfo to SubmitInfo2 with
+    // regard to signal semaphore.
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &submit_semaphore.handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_device->wait();
+}
+
 TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     TEST_DESCRIPTION("Use separate barriers for availability and visibility operations.");
     RETURN_IF_SKIP(InitSyncValFramework());
