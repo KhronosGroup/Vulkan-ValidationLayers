@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (c) 2015-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -92,6 +92,9 @@ bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, c
     VkResult err =
         vk::GetPhysicalDeviceImageFormatProperties(phy, info.format, info.imageType, info.tiling, info.usage, info.flags, &props);
     if (VK_SUCCESS != err) {
+        return false;
+    }
+    if (info.arrayLayers > props.maxArrayLayers) {
         return false;
     }
 

@@ -24,7 +24,7 @@ void VkSyncValTest::InitSyncValFramework(bool disable_queue_submit_validation) {
     features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 
     // Optionally enable core validation (by disabling nothing)
-    if (m_syncval_enable_core) {
+    if (!m_syncval_disable_core) {
         features_.disabledValidationFeatureCount = 0;
     }
 
@@ -1231,6 +1231,12 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     dynamic_rendering_features.dynamicRendering = VK_TRUE;
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+
+    VkPhysicalDeviceDepthStencilResolveProperties resolve_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(resolve_properties);
+    if ((resolve_properties.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT) == 0) {
+        GTEST_SKIP() << "VK_RESOLVE_MODE_MIN_BIT not supported";
+    }
 
     const uint32_t width = 64;
     const uint32_t height = 64;

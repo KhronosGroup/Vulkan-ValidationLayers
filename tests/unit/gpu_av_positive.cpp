@@ -33,7 +33,7 @@ VkValidationFeaturesEXT GpuAVTest::GetGpuAvValidationFeatures() {
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = size32(gpu_av_enables);
     features.pEnabledValidationFeatures = gpu_av_enables.data();
-    if (!m_gpuav_enable_core) {
+    if (m_gpuav_disable_core) {
         features.disabledValidationFeatureCount = size32(gpu_av_disables);
         features.pDisabledValidationFeatures = gpu_av_disables.data();
     }

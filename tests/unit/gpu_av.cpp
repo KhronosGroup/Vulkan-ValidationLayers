@@ -563,7 +563,7 @@ TEST_F(NegativeGpuAV, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     // GPU-AV will thus not be able to validate this draw call.
     // Descriptor arrays are not validated in core validation
     // (See call to `descriptor_set.SkipBinding()` in `CoreChecks::ValidateDrawState()`)
-    if (m_gpuav_enable_core) {
+    if (!m_gpuav_disable_core) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08609");
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08610");
     }
@@ -676,7 +676,7 @@ TEST_F(NegativeGpuAV, ShareOpSampledImage) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    if (m_gpuav_enable_core) {
+    if (!m_gpuav_disable_core) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08610");
     }
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

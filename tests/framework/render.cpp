@@ -153,21 +153,10 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
     return info;
 }
 
-inline void CheckDisableCoreValidation(VkValidationFeaturesEXT &features) {
-    auto disable = GetEnvironment("VK_LAYER_TESTS_DISABLE_CORE_VALIDATION");
-    vvl::ToLower(disable);
-    if (disable == "false" || disable == "0" || disable == "FALSE") {       // default is to change nothing, unless flag is correctly specified
-        features.disabledValidationFeatureCount = 0;                        // remove all disables to get all validation messages
-    }
-}
-
 void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
     auto validation = GetEnvironment("VK_LAYER_TESTS_VALIDATION_FEATURES");
     vvl::ToLower(validation);
     VkValidationFeaturesEXT *features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(first_pnext);
-    if (features) {
-        CheckDisableCoreValidation(*features);
-    }
     if (validation == "all" || validation == "core" || validation == "none") {
         if (!features) {
             features = &m_validation_features;
