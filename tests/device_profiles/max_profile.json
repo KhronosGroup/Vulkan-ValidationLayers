@@ -880,6 +880,9 @@
                     "leastRepresentableValueForceUnormRepresentation": true,
                     "floatRepresentation": true,
                     "depthBiasExact": true
+                },
+                "VkPhysicalDeviceRenderPassStripedFeaturesARM":{
+                    "renderPassStriped": true
                 }
             },
             "properties": {
@@ -1785,6 +1788,13 @@
                 "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM": {
                     "shaderCoreCount": 4294967000,
                     "shaderWarpsPerCore": 4294967000
+                },
+                "VkPhysicalDeviceRenderPassStripedPropertiesARM": {
+                    "renderPassStripeGranularity": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "maxRenderPassStripes": 32
                 }
             },
             "extensions": {
@@ -2147,7 +2157,8 @@
                 "VK_VALVE_mutable_descriptor_type": 1,
                 "VK_EXT_image_sliced_view_of_3d": 1,
                 "VK_EXT_shader_tile_image": 1,
-                "VK_EXT_dynamic_rendering_unused_attachments": 1
+                "VK_EXT_dynamic_rendering_unused_attachments": 1,
+                "VK_ARM_render_pass_striped": 1
             },
             "formats": {
                 "VK_FORMAT_UNDEFINED": {

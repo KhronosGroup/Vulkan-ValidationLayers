@@ -1137,3 +1137,69 @@ TEST_F(PositiveDynamicRendering, UnusedAttachmentsMismatchedFormats) {
     vk::CmdDraw(secondary.handle(), 1, 1, 0, 0);
     secondary.end();
 }
+
+TEST_F(PositiveDynamicRendering, BeginRenderingWithRenderPassStriped) {
+    TEST_DESCRIPTION("Test to validate begin rendering with VK_ARM_render_pass_striped. ");
+    AddRequiredExtensions(VK_ARM_RENDER_PASS_STRIPED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::renderPassStriped);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(rp_striped_props);
+    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width * 2;
+    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+
+    const uint32_t stripe_count = 8;
+    const uint32_t width = stripe_width * stripe_count;
+    const uint32_t height = stripe_height;
+    std::vector<VkRenderPassStripeInfoARM> stripe_infos(stripe_count);
+    for (uint32_t i = 0; i < stripe_count; ++i) {
+        stripe_infos[i] = vku::InitStructHelper();
+        stripe_infos[i].stripeArea.offset.x = stripe_width * i;
+        stripe_infos[i].stripeArea.offset.y = 0;
+        stripe_infos[i].stripeArea.extent.width = stripe_width;
+        stripe_infos[i].stripeArea.extent.height = stripe_height;
+    }
+
+    VkRenderPassStripeBeginInfoARM rp_striped_info = vku::InitStructHelper();
+    rp_striped_info.stripeInfoCount = stripe_count;
+    rp_striped_info.pStripeInfos = stripe_infos.data();
+
+    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper(&rp_striped_info);
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {width, height}};
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
+    vkt::CommandBuffer cmd_buffer(*m_device, &command_pool);
+
+    VkCommandBufferBeginInfo cmd_begin = vku::InitStructHelper();
+    cmd_buffer.begin(&cmd_begin);
+    cmd_buffer.BeginRendering(begin_rendering_info);
+    cmd_buffer.EndRendering();
+    cmd_buffer.end();
+
+    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
+    vkt::Semaphore semaphores[stripe_count];
+    VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count];
+
+    for (uint32_t i = 0; i < stripe_count; ++i) {
+        semaphores[i].init(*m_device, semaphore_create_info);
+        semaphore_submit_infos[i] = vku::InitStructHelper();
+        semaphore_submit_infos[i].semaphore = semaphores[i].handle();
+    }
+
+    VkRenderPassStripeSubmitInfoARM rp_stripe_submit_info = vku::InitStructHelper();
+    rp_stripe_submit_info.stripeSemaphoreInfoCount = stripe_count;
+    rp_stripe_submit_info.pStripeSemaphoreInfos = semaphore_submit_infos;
+
+    VkCommandBufferSubmitInfo cb_submit_info = vku::InitStructHelper(&rp_stripe_submit_info);
+    cb_submit_info.commandBuffer = cmd_buffer.handle();
+
+    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    submit_info.commandBufferInfoCount = 1;
+    submit_info.pCommandBufferInfos = &cb_submit_info;
+    vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->wait();
+}
