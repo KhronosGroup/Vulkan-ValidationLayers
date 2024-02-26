@@ -230,6 +230,9 @@
                     "shaderImageFloat32AtomicMinMax": true,
                     "sparseImageFloat32AtomicMinMax": true
                 },
+                "VkPhysicalDeviceShaderFloatControls2FeaturesKHR": {
+                    "shaderFloatControls2": true
+                },
                 "VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT": {
                     "vertexAttributeInstanceRateDivisor": true,
                     "vertexAttributeInstanceRateZeroDivisor": true
@@ -1929,6 +1932,7 @@
                 "VK_KHR_shader_draw_parameters": 1,
                 "VK_KHR_shader_float16_int8": 1,
                 "VK_KHR_shader_float_controls": 1,
+                "VK_KHR_shader_float_controls2": 1,
                 "VK_KHR_shader_integer_dot_product": 1,
                 "VK_KHR_shader_non_semantic_info": 1,
                 "VK_KHR_shader_subgroup_extended_types": 1,

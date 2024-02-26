@@ -1940,3 +1940,89 @@ TEST_F(PositiveShaderSpirv, PhysicalStorageBufferGlslang6) {
 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 }
+
+TEST_F(PositiveShaderSpirv, ShaderFloatControl2) {
+    TEST_DESCRIPTION("Basic usage of VK_KHR_shader_float_controls2");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloatControls2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFloatControlsProperties shader_float_control = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(shader_float_control);
+    if (!shader_float_control.shaderSignedZeroInfNanPreserveFloat32) {
+        GTEST_SKIP() << "shaderSignedZeroInfNanPreserveFloat32 not supported";
+    }
+
+    const char *spv_source = R"(
+        OpCapability Shader
+        OpCapability FloatControls2
+        OpExtension "SPV_KHR_float_controls2"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionModeId %main FPFastMathDefault %float %constant
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %add FPFastMathMode Fast
+        %void = OpTypeVoid
+        %int = OpTypeInt 32 0
+        %constant = OpConstant %int 0
+        %float = OpTypeFloat 32
+        %zero = OpConstant %float 0
+        %void_fn = OpTypeFunction %void
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        OpReturn
+        OpFunctionEnd
+        %func = OpFunction %void None %void_fn
+        %func_entry = OpLabel
+        %add = OpFAdd %float %zero %zero
+        OpReturn
+        OpFunctionEnd
+        )";
+
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+}
+
+TEST_F(PositiveShaderSpirv, FPFastMathMode) {
+    TEST_DESCRIPTION("Use NSZ, NotInf, and NotNaN for all fast math mode");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloatControls2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFloatControlsProperties shader_float_control = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(shader_float_control);
+    if (shader_float_control.shaderSignedZeroInfNanPreserveFloat32) {
+        GTEST_SKIP() << "shaderSignedZeroInfNanPreserveFloat32 is supported";
+    }
+
+    const char *spv_source = R"(
+        OpCapability Shader
+        OpCapability FloatControls2
+        OpExtension "SPV_KHR_float_controls2"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionModeId %main FPFastMathDefault %float %constant
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %add FPFastMathMode NSZ|NotInf|NotNaN
+        %void = OpTypeVoid
+        %int = OpTypeInt 32 0
+        %constant = OpConstant %int 7
+        %float = OpTypeFloat 32
+        %zero = OpConstant %float 0
+        %void_fn = OpTypeFunction %void
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        OpReturn
+        OpFunctionEnd
+        %func = OpFunction %void None %void_fn
+        %func_entry = OpLabel
+        %add = OpFAdd %float %zero %zero
+        OpReturn
+        OpFunctionEnd
+        )";
+
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+}

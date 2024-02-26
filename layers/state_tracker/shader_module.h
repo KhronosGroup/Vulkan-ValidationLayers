@@ -123,6 +123,8 @@ struct ExecutionModeSet {
 
         depth_replacing_bit = 1 << 24,
         stencil_ref_replacing_bit = 1 << 25,
+
+        fp_fast_math_default = 1 << 26,
     };
 
     // bits to know if things have been set or not by a Decoration
@@ -488,6 +490,9 @@ struct StatelessData {
     std::vector<const Instruction *> group_inst;
     // OpEmitStreamVertex/OpEndStreamPrimitive - only allowed in Geometry shader
     std::vector<const Instruction *> transform_feedback_stream_inst;
+
+    // simpler to just track all OpExecutionModeId and parse things needed later
+    std::vector<const Instruction *> execution_mode_id_inst;
 
     bool has_builtin_fully_covered{false};
     bool has_invocation_repack_instruction{false};
