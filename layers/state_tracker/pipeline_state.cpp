@@ -454,9 +454,7 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const StageStateVec &st
 }
 
 static VkPrimitiveTopology GetTopologyAtRasterizer(const Pipeline &pipeline) {
-    auto result = (pipeline.vertex_input_state && pipeline.vertex_input_state->input_assembly_state)
-                      ? pipeline.vertex_input_state->input_assembly_state->topology
-                      : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    auto result = (pipeline.InputAssemblyState()) ? pipeline.InputAssemblyState()->topology : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     for (const auto &stage : pipeline.stage_states) {
         if (!stage.entrypoint) {
             continue;

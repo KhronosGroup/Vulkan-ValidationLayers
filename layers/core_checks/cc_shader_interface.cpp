@@ -32,7 +32,6 @@
 bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
                                               const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
-    safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
     const Location vi_loc = create_info_loc.dot(Field::pVertexInputState);
 
     struct AttribInputPair {
@@ -45,21 +44,25 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     // or have 2 variables in a location
     std::map<uint32_t, AttribInputPair> location_map;
 
-    if (vi) {
-        for (uint32_t i = 0; i < vi->vertexAttributeDescriptionCount; ++i) {
-            // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
-            // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are
-            // "standard" color formats being used
-            const VkFormat format = vi->pVertexAttributeDescriptions[i].format;
-            const uint32_t format_size = vkuFormatElementSize(format);
-            // Vulkan Spec: Location is made up of 16 bytes, never can have 0 Locations
-            const uint32_t bytes_in_location = 16;
-            const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;
-            for (uint32_t j = 0; j < num_locations; ++j) {
-                const uint32_t index = vi->pVertexAttributeDescriptions[i].location + j;
-                location_map[index].attribute_input = &(vi->pVertexAttributeDescriptions[i].format);
-                location_map[index].attribute_index = i;
-            }
+    safe_VkPipelineVertexInputStateCreateInfo const *input_state = pipeline.InputState();
+    if (!input_state) {
+        // if using vertex and mesh, will hit an error, but still might get here
+        return skip;
+    }
+
+    for (uint32_t i = 0; i < input_state->vertexAttributeDescriptionCount; ++i) {
+        // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
+        // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are
+        // "standard" color formats being used
+        const VkFormat format = input_state->pVertexAttributeDescriptions[i].format;
+        const uint32_t format_size = vkuFormatElementSize(format);
+        // Vulkan Spec: Location is made up of 16 bytes, never can have 0 Locations
+        const uint32_t bytes_in_location = 16;
+        const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;
+        for (uint32_t j = 0; j < num_locations; ++j) {
+            const uint32_t index = input_state->pVertexAttributeDescriptions[i].location + j;
+            location_map[index].attribute_input = &(input_state->pVertexAttributeDescriptions[i].format);
+            location_map[index].attribute_index = i;
         }
     }
 

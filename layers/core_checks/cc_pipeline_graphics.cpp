@@ -113,18 +113,18 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     if ((pipeline.create_info_shaders & VK_SHADER_STAGE_VERTEX_BIT) && pipeline.OwnsSubState(pipeline.vertex_input_state)) {
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
             const auto *input_state = pipeline.InputState();
-            if (!input_state) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device,
-                                 create_info_loc.dot(Field::pVertexInputState), "is NULL.");
-            } else {
+            if (input_state) {
                 // Can use raw Pipeline state values because not using the stride (which can be dynamic with
                 // VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)
                 skip |= ValidatePipelineVertexDivisors(*input_state, pipeline.vertex_input_state->binding_descriptions,
                                                        create_info_loc);
+            } else if (!pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pVertexInputState) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device,
+                                 create_info_loc.dot(Field::pVertexInputState), "is NULL.");
             }
         }
 
-        if (!pipeline.InputAssemblyState()) {
+        if (!pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pInputAssemblyState) {
             if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) ||
                 !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) ||
                 !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
@@ -2125,7 +2125,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         }
     }
 
-    if (!multisample_state && pipeline.OwnsSubState(pipeline.fragment_output_state)) {
+    if (!pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pMultisampleState &&
+        pipeline.OwnsSubState(pipeline.fragment_output_state)) {
         // Don't need to check for VK_EXT_extended_dynamic_state3 since it would be on if using these VkDynamicState
         const bool dynamic_alpha_to_one =
             pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne;
