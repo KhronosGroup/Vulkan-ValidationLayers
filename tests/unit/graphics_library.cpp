@@ -2636,6 +2636,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateFragOutputNull) {
     frag_out_lib.gp_ci_.pMultisampleState = nullptr;
     frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026");
     frag_out_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }

@@ -216,7 +216,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     const auto& last_bound = cmd_state.lastBound[lv_bind_point];
     const auto* pipeline_state = last_bound.pipeline_state;
 
-    const auto* ia_state = pipeline_state ? pipeline_state->InputAssemblyState() : nullptr;
+    const auto* ia_state = pipeline_state->InputAssemblyState();
     if (ia_state) {
         primitive_restart_enable = ia_state->primitiveRestartEnable == VK_TRUE;
     }
