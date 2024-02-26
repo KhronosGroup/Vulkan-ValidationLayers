@@ -16,6 +16,10 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#include <sys/mman.h>
+#endif
+
 TEST_F(NegativeMemory, MapMemory) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
     bool pass;
@@ -322,6 +326,111 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 }
+
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(NegativeMemory, MapMemoryPlaced) {
+    TEST_DESCRIPTION("Attempt to map placed memory in a number of incorrect ways");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceMapMemoryPlacedFeaturesEXT map_placed_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(map_placed_features);
+    if (map_placed_features.memoryMapPlaced != VK_TRUE) {
+        GTEST_SKIP() << "memoryMapPlaced feature not supported";
+    }
+
+    RETURN_IF_SKIP(InitState(nullptr, &map_placed_features));
+
+    VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_placed_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(map_placed_props);
+
+    /* Vulkan doesn't have any requirements on what allocationSize can be
+     * other than that it must be non-zero.  Pick 64KB because that should
+     * work out to an even number of pages on basically any GPU.
+     */
+    const VkDeviceSize allocation_size = map_placed_props.minPlacedMemoryMapAlignment * 16;
+
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+    memory_info.allocationSize = allocation_size;
+
+    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    ASSERT_TRUE(pass);
+
+    vkt::DeviceMemory memory(*m_device, memory_info);
+
+    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    map_info.memory = memory;
+    map_info.flags = VK_MEMORY_MAP_PLACED_BIT_EXT;
+    map_info.offset = 0;
+    map_info.size = VK_WHOLE_SIZE;
+
+    /* No VkMemoryMapPlacedInfoEXT */
+    void *pData;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09570");
+    vk::MapMemory2KHR(device(), &map_info, &pData);
+    m_errorMonitor->VerifyFound();
+
+    VkMemoryMapPlacedInfoEXT placed_info = vku::InitStructHelper();
+    map_info.pNext = &placed_info;
+
+    /* No VkMemoryMapPlacedInfoEXT::pPlacedAddress == NULL */
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09570");
+    vk::MapMemory2KHR(device(), &map_info, &pData);
+    m_errorMonitor->VerifyFound();
+
+    /* Reserve two more pages in case we need to deal with any alignment weirdness. */
+    size_t reservation_size = allocation_size + map_placed_props.minPlacedMemoryMapAlignment;
+    void *reservation = mmap(NULL, reservation_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    ASSERT_TRUE(reservation != MAP_FAILED);
+
+    /* Align up to minPlacedMemoryMapAlignment */
+    uintptr_t align_1 = map_placed_props.minPlacedMemoryMapAlignment - 1;
+    void *addr = reinterpret_cast<void *>((reinterpret_cast<uintptr_t>(reservation) + align_1) & ~align_1);
+
+    placed_info.pPlacedAddress = ((char *)addr) + (map_placed_props.minPlacedMemoryMapAlignment / 2);
+
+    /* Unaligned VkMemoryMapPlacedInfoEXT::pPlacedAddress */
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapPlacedInfoEXT-pPlacedAddress-09577");
+    vk::MapMemory2KHR(device(), &map_info, &pData);
+    m_errorMonitor->VerifyFound();
+
+    placed_info.pPlacedAddress = addr;
+
+    if (map_placed_features.memoryMapRangePlaced) {
+        map_info.offset = map_placed_props.minPlacedMemoryMapAlignment / 2;
+
+        /* Unaligned offset */
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09573");
+        vk::MapMemory2KHR(device(), &map_info, &pData);
+        m_errorMonitor->VerifyFound();
+
+        map_info.offset = 0;
+        map_info.size = allocation_size - (map_placed_props.minPlacedMemoryMapAlignment / 2);
+
+        /* Unaligned size */
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09574");
+        vk::MapMemory2KHR(device(), &map_info, &pData);
+        m_errorMonitor->VerifyFound();
+    } else {
+        map_info.offset = map_placed_props.minPlacedMemoryMapAlignment;
+
+        /* Non-zero offset */
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09571");
+        vk::MapMemory2KHR(device(), &map_info, &pData);
+        m_errorMonitor->VerifyFound();
+
+        map_info.offset = 0;
+        map_info.size = allocation_size - map_placed_props.minPlacedMemoryMapAlignment;
+
+        /* Not VK_WHOLE_SIZE */
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09572");
+        vk::MapMemory2KHR(device(), &map_info, &pData);
+        m_errorMonitor->VerifyFound();
+    }
+}
+#endif
 
 TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     VkResult err;
