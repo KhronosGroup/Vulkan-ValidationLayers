@@ -1056,92 +1056,191 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
     return skip;
 }
 
+bool CoreChecks::ValidateShaderFloatControl(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                            const spirv::StatelessData &stateless_data, const Location &loc) const {
+    bool skip = false;
+
+    // Need to wrap otherwise phys_dev_props_core12 can be junk
+    if (!IsExtEnabled(device_extensions.vk_khr_shader_float_controls)) {
+        return skip;
+    }
+
+    if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::signed_zero_inf_nan_preserve_width_16) &&
+        !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat16-06293", module_state.handle(), loc,
+                         "SPIR-V requires SignedZeroInfNanPreserve for bit width 16 but it is not enabled on the device.");
+    } else if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::signed_zero_inf_nan_preserve_width_32) &&
+               !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-06294", module_state.handle(), loc,
+                         "SPIR-V requires SignedZeroInfNanPreserve for bit width 32 but it is not enabled on the device.");
+    } else if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::signed_zero_inf_nan_preserve_width_64) &&
+               !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat64-06295", module_state.handle(), loc,
+                         "SPIR-V requires SignedZeroInfNanPreserve for bit width 64 but it is not enabled on the device.");
+    }
+
+    const bool has_denorm_preserve_width_16 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_preserve_width_16);
+    const bool has_denorm_preserve_width_32 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_preserve_width_32);
+    const bool has_denorm_preserve_width_64 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_preserve_width_64);
+    if (has_denorm_preserve_width_16 && !phys_dev_props_core12.shaderDenormPreserveFloat16) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderDenormPreserveFloat16-06296", module_state.handle(), loc,
+                         "SPIR-V requires DenormPreserve for bit width 16 but it is not enabled on the device.");
+    } else if (has_denorm_preserve_width_32 && !phys_dev_props_core12.shaderDenormPreserveFloat32) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderDenormPreserveFloat32-06297", module_state.handle(), loc,
+                         "SPIR-V requires DenormPreserve for bit width 32 but it is not enabled on the device.");
+    } else if (has_denorm_preserve_width_64 && !phys_dev_props_core12.shaderDenormPreserveFloat64) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderDenormPreserveFloat64-06298", module_state.handle(), loc,
+                         "SPIR-V requires DenormPreserve for bit width 64 but it is not enabled on the device.");
+    }
+
+    const bool has_denorm_flush_to_zero_width_16 =
+        entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_flush_to_zero_width_16);
+    const bool has_denorm_flush_to_zero_width_32 =
+        entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_flush_to_zero_width_32);
+    const bool has_denorm_flush_to_zero_width_64 =
+        entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_flush_to_zero_width_64);
+    if (has_denorm_flush_to_zero_width_16 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat16) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat16-06299", module_state.handle(), loc,
+                         "SPIR-V requires DenormFlushToZero for bit width 16 but it is not enabled on the device.");
+    } else if (has_denorm_flush_to_zero_width_32 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat32) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat32-06300", module_state.handle(), loc,
+                         "SPIR-V requires DenormFlushToZero for bit width 32 but it is not enabled on the device.");
+    } else if (has_denorm_flush_to_zero_width_64 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat64) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat64-06301", module_state.handle(), loc,
+                         "SPIR-V requires DenormFlushToZero for bit width 64 but it is not enabled on the device.");
+    }
+
+    const bool has_rounding_mode_rte_width_16 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rte_width_16);
+    const bool has_rounding_mode_rte_width_32 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rte_width_32);
+    const bool has_rounding_mode_rte_width_64 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rte_width_64);
+    if (has_rounding_mode_rte_width_16 && !phys_dev_props_core12.shaderRoundingModeRTEFloat16) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTEFloat16-06302", module_state.handle(), loc,
+                         "SPIR-V requires RoundingModeRTE for bit width 16 but it is not enabled on the device.");
+    } else if (has_rounding_mode_rte_width_32 && !phys_dev_props_core12.shaderRoundingModeRTEFloat32) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTEFloat32-06303", module_state.handle(), loc,
+                         "SPIR-V requires RoundingModeRTE for bit width 32 but it is not enabled on the device.");
+    } else if (has_rounding_mode_rte_width_64 && !phys_dev_props_core12.shaderRoundingModeRTEFloat64) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTEFloat64-06304", module_state.handle(), loc,
+                         "SPIR-V requires RoundingModeRTE for bit width 64 but it is not enabled on the device.");
+    }
+
+    const bool has_rounding_mode_rtz_width_16 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rtz_width_16);
+    const bool has_rounding_mode_rtz_width_32 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rtz_width_32);
+    const bool has_rounding_mode_rtz_width_64 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rtz_width_64);
+    if (has_rounding_mode_rtz_width_16 && !phys_dev_props_core12.shaderRoundingModeRTZFloat16) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTZFloat16-06305", module_state.handle(), loc,
+                         "SPIR-V requires RoundingModeRTZ for bit width 16 but it is not enabled on the device.");
+    } else if (has_rounding_mode_rtz_width_32 && !phys_dev_props_core12.shaderRoundingModeRTZFloat32) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTZFloat32-06306", module_state.handle(), loc,
+                         "SPIR-V requires RoundingModeRTZ for bit width 32 but it is not enabled on the device.");
+    } else if (has_rounding_mode_rtz_width_64 && !phys_dev_props_core12.shaderRoundingModeRTZFloat64) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTZFloat64-06307", module_state.handle(), loc,
+                         "SPIR-V requires RoundingModeRTZ for bit width 64 but it is not enabled on the device.");
+    }
+
+    auto get_float_width = [&module_state](uint32_t id) {
+        const auto *insn = module_state.FindDef(id);
+        if (!insn || insn->Opcode() != spv::OpTypeFloat) {
+            return 0u;
+        } else {
+            return insn->Word(2);
+        }
+    };
+
+    const uint32_t mask = spv::FPFastMathModeNotNaNMask | spv::FPFastMathModeNotInfMask | spv::FPFastMathModeNSZMask;
+    if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::fp_fast_math_default)) {
+        for (const spirv::Instruction *insn : stateless_data.execution_mode_id_inst) {
+            const uint32_t mode = insn->Word(2);
+            if (mode != spv::ExecutionModeFPFastMathDefault) {
+                continue;
+            }
+
+            // spirv-val will catch if this is not a constant
+            const auto *fast_math_mode = module_state.FindDef(insn->Word(4));
+            const bool has_mask = (fast_math_mode->GetConstantValue() & mask) == mask;
+            if (has_mask) {
+                continue;  // nothing to validate
+            }
+
+            const uint32_t bit_width = get_float_width(insn->Word(3));
+
+            if (bit_width == 16 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16) {
+                skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat16-09559", module_state.handle(), loc,
+                                 "shaderSignedZeroInfNanPreserveFloat16 is false, but FPFastMathDefault is setting 16-bit floats "
+                                 "with modes 0x%" PRIx32 ".",
+                                 fast_math_mode->GetConstantValue());
+            } else if (bit_width == 32 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32) {
+                skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-09561", module_state.handle(), loc,
+                                 "shaderSignedZeroInfNanPreserveFloat32 is false, but FPFastMathDefault is setting 32-bit floats "
+                                 "with modes 0x%" PRIx32 ".",
+                                 fast_math_mode->GetConstantValue());
+            } else if (bit_width == 64 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64) {
+                skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat64-09563", module_state.handle(), loc,
+                                 "shaderSignedZeroInfNanPreserveFloat64 is false, but FPFastMathDefault is setting 64-bit floats "
+                                 "with modes 0x%" PRIx32 ".",
+                                 fast_math_mode->GetConstantValue());
+            }
+        }
+    }
+
+    for (const spirv::Instruction *insn : module_state.static_data_.decoration_inst) {
+        uint32_t decoration = insn->Word(2);
+        if (decoration != spv::DecorationFPFastMathMode) {
+            continue;
+        }
+        uint32_t modes = insn->Word(3);
+        const bool has_mask = (modes & mask) == mask;
+        if (has_mask) {
+            continue;  // nothing to validate
+        }
+
+        // See if target instruction uses any floats of various bit widths
+        bool float_16 = false;
+        bool float_32 = false;
+        bool float_64 = false;
+        uint32_t operand_index = 2;  // if using OpDecoration, this instruction must have a ResultId
+
+        const auto *target_insn = module_state.FindDef(insn->Word(1));
+        if (target_insn->TypeId() != 0) {
+            operand_index++;
+            const uint32_t bit_width = get_float_width(target_insn->TypeId());
+            float_16 |= bit_width == 16;
+            float_32 |= bit_width == 32;
+            float_64 |= bit_width == 64;
+        }
+
+        for (; operand_index < target_insn->Length(); operand_index++) {
+            const uint32_t bit_width = get_float_width(target_insn->Word(operand_index));
+            float_16 |= bit_width == 16;
+            float_32 |= bit_width == 32;
+            float_64 |= bit_width == 64;
+        }
+
+        if (float_16 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16) {
+            skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat16-09560", module_state.handle(), loc,
+                             "shaderSignedZeroInfNanPreserveFloat16 is false, FPFastMathMode has modes 0x%" PRIx32
+                             " but the target instruction\n%s\n is using 16-bit floats.",
+                             modes, target_insn->Describe().c_str());
+        } else if (float_32 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32) {
+            skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-09562", module_state.handle(), loc,
+                             "shaderSignedZeroInfNanPreserveFloat32 is false, FPFastMathMode has modes 0x%" PRIx32
+                             " but the target instruction\n%s\n is using 32-bit floats.",
+                             modes, target_insn->Describe().c_str());
+        } else if (float_64 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64) {
+            skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat64-09564", module_state.handle(), loc,
+                             "shaderSignedZeroInfNanPreserveFloat64 is false, FPFastMathMode has modes 0x%" PRIx32
+                             " but the target instruction\n%s\n is using 64-bit floats.",
+                             modes, target_insn->Describe().c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateExecutionModes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                         const spirv::StatelessData &stateless_data, const Location &loc) const {
     bool skip = false;
     const VkShaderStageFlagBits stage = entrypoint.stage;
-
-    // Need to wrap otherwise phys_dev_props_core12 can be junk
-    if (IsExtEnabled(device_extensions.vk_khr_shader_float_controls)) {
-        if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::signed_zero_inf_nan_preserve_width_16) &&
-            !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat16-06293", module_state.handle(), loc,
-                             "SPIR-V requires SignedZeroInfNanPreserve for bit width 16 but it is not enabled on the device.");
-        } else if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::signed_zero_inf_nan_preserve_width_32) &&
-                   !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-06294", module_state.handle(), loc,
-                             "SPIR-V requires SignedZeroInfNanPreserve for bit width 32 but it is not enabled on the device.");
-        } else if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::signed_zero_inf_nan_preserve_width_64) &&
-                   !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat64-06295", module_state.handle(), loc,
-                             "SPIR-V requires SignedZeroInfNanPreserve for bit width 64 but it is not enabled on the device.");
-        }
-
-        const bool has_denorm_preserve_width_16 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_preserve_width_16);
-        const bool has_denorm_preserve_width_32 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_preserve_width_32);
-        const bool has_denorm_preserve_width_64 = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_preserve_width_64);
-        if (has_denorm_preserve_width_16 && !phys_dev_props_core12.shaderDenormPreserveFloat16) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderDenormPreserveFloat16-06296", module_state.handle(), loc,
-                             "SPIR-V requires DenormPreserve for bit width 16 but it is not enabled on the device.");
-        } else if (has_denorm_preserve_width_32 && !phys_dev_props_core12.shaderDenormPreserveFloat32) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderDenormPreserveFloat32-06297", module_state.handle(), loc,
-                             "SPIR-V requires DenormPreserve for bit width 32 but it is not enabled on the device.");
-        } else if (has_denorm_preserve_width_64 && !phys_dev_props_core12.shaderDenormPreserveFloat64) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderDenormPreserveFloat64-06298", module_state.handle(), loc,
-                             "SPIR-V requires DenormPreserve for bit width 64 but it is not enabled on the device.");
-        }
-
-        const bool has_denorm_flush_to_zero_width_16 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_flush_to_zero_width_16);
-        const bool has_denorm_flush_to_zero_width_32 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_flush_to_zero_width_32);
-        const bool has_denorm_flush_to_zero_width_64 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::denorm_flush_to_zero_width_64);
-        if (has_denorm_flush_to_zero_width_16 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat16) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat16-06299", module_state.handle(), loc,
-                             "SPIR-V requires DenormFlushToZero for bit width 16 but it is not enabled on the device.");
-        } else if (has_denorm_flush_to_zero_width_32 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat32) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat32-06300", module_state.handle(), loc,
-                             "SPIR-V requires DenormFlushToZero for bit width 32 but it is not enabled on the device.");
-        } else if (has_denorm_flush_to_zero_width_64 && !phys_dev_props_core12.shaderDenormFlushToZeroFloat64) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderDenormFlushToZeroFloat64-06301", module_state.handle(), loc,
-                             "SPIR-V requires DenormFlushToZero for bit width 64 but it is not enabled on the device.");
-        }
-
-        const bool has_rounding_mode_rte_width_16 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rte_width_16);
-        const bool has_rounding_mode_rte_width_32 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rte_width_32);
-        const bool has_rounding_mode_rte_width_64 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rte_width_64);
-        if (has_rounding_mode_rte_width_16 && !phys_dev_props_core12.shaderRoundingModeRTEFloat16) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTEFloat16-06302", module_state.handle(), loc,
-                             "SPIR-V requires RoundingModeRTE for bit width 16 but it is not enabled on the device.");
-        } else if (has_rounding_mode_rte_width_32 && !phys_dev_props_core12.shaderRoundingModeRTEFloat32) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTEFloat32-06303", module_state.handle(), loc,
-                             "SPIR-V requires RoundingModeRTE for bit width 32 but it is not enabled on the device.");
-        } else if (has_rounding_mode_rte_width_64 && !phys_dev_props_core12.shaderRoundingModeRTEFloat64) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTEFloat64-06304", module_state.handle(), loc,
-                             "SPIR-V requires RoundingModeRTE for bit width 64 but it is not enabled on the device.");
-        }
-
-        const bool has_rounding_mode_rtz_width_16 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rtz_width_16);
-        const bool has_rounding_mode_rtz_width_32 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rtz_width_32);
-        const bool has_rounding_mode_rtz_width_64 =
-            entrypoint.execution_mode.Has(spirv::ExecutionModeSet::rounding_mode_rtz_width_64);
-        if (has_rounding_mode_rtz_width_16 && !phys_dev_props_core12.shaderRoundingModeRTZFloat16) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTZFloat16-06305", module_state.handle(), loc,
-                             "SPIR-V requires RoundingModeRTZ for bit width 16 but it is not enabled on the device.");
-        } else if (has_rounding_mode_rtz_width_32 && !phys_dev_props_core12.shaderRoundingModeRTZFloat32) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTZFloat32-06306", module_state.handle(), loc,
-                             "SPIR-V requires RoundingModeRTZ for bit width 32 but it is not enabled on the device.");
-        } else if (has_rounding_mode_rtz_width_64 && !phys_dev_props_core12.shaderRoundingModeRTZFloat64) {
-            skip |= LogError("VUID-RuntimeSpirv-shaderRoundingModeRTZFloat64-06307", module_state.handle(), loc,
-                             "SPIR-V requires RoundingModeRTZ for bit width 64 but it is not enabled on the device.");
-        }
-    }
 
     if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::local_size_id_bit)) {
         // Special case to print error by extension and feature bit
@@ -2807,6 +2906,7 @@ bool CoreChecks::ValidateSpirvStateless(const spirv::Module &module_state, const
     for (const auto &entry_point : module_state.static_data_.entry_points) {
         skip |= ValidateShaderStageGroupNonUniform(module_state, stateless_data, entry_point->stage, loc);
         skip |= ValidateShaderStageInputOutputLimits(module_state, *entry_point, stateless_data, loc);
+        skip |= ValidateShaderFloatControl(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateExecutionModes(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateConservativeRasterization(module_state, *entry_point, stateless_data, loc);
         if (enabled_features.transformFeedback) {

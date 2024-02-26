@@ -2148,3 +2148,95 @@ TEST_F(NegativeShaderSpirv, InvalidExtension) {
     VkShaderObj::CreateFromASM(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, FPFastMathDefault) {
+    TEST_DESCRIPTION("FPFastMathDefault missing required modes");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloatControls2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFloatControlsProperties shader_float_control = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(shader_float_control);
+    if (shader_float_control.shaderSignedZeroInfNanPreserveFloat32) {
+        GTEST_SKIP() << "shaderSignedZeroInfNanPreserveFloat32 is supported";
+    }
+
+    // Missing NotNaN
+    const char *spv_source = R"(
+        OpCapability Shader
+        OpCapability FloatControls2
+        OpExtension "SPV_KHR_float_controls2"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionModeId %main FPFastMathDefault %float %constant
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %add FPFastMathMode NSZ|NotInf|NotNaN
+        %void = OpTypeVoid
+        %int = OpTypeInt 32 0
+        %constant = OpConstant %int 6
+        %float = OpTypeFloat 32
+        %zero = OpConstant %float 0
+        %void_fn = OpTypeFunction %void
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        OpReturn
+        OpFunctionEnd
+        %func = OpFunction %void None %void_fn
+        %func_entry = OpLabel
+        %add = OpFAdd %float %zero %zero
+        OpReturn
+        OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-09561");
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, FPFastMathMode) {
+    TEST_DESCRIPTION("FPFastMathMode missing required modes");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloatControls2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFloatControlsProperties shader_float_control = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(shader_float_control);
+    if (shader_float_control.shaderSignedZeroInfNanPreserveFloat32) {
+        GTEST_SKIP() << "shaderSignedZeroInfNanPreserveFloat32 is supported";
+    }
+
+    // Missing NotNaN
+    const char *spv_source = R"(
+        OpCapability Shader
+        OpCapability FloatControls2
+        OpExtension "SPV_KHR_float_controls2"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionModeId %main FPFastMathDefault %float %constant
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %add FPFastMathMode NSZ|NotInf
+        %void = OpTypeVoid
+        %int = OpTypeInt 32 0
+        %constant = OpConstant %int 7
+        %float = OpTypeFloat 32
+        %zero = OpConstant %float 0
+        %void_fn = OpTypeFunction %void
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        OpReturn
+        OpFunctionEnd
+        %func = OpFunction %void None %void_fn
+        %func_entry = OpLabel
+        %add = OpFAdd %float %zero %zero
+        OpReturn
+        OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-09562");
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}

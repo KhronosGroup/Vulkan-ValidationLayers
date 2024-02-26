@@ -246,6 +246,11 @@ void ExecutionModeSet::Add(const Instruction& insn) {
                 flags |= rounding_mode_rtz_width_64;
             }
             break;
+        case spv::ExecutionModeFPFastMathDefault:  // VK_KHR_shader_float_controls2
+            // This is to indicate the mode was used
+            // Will look up the ID later as need the entire module parsed first
+            flags |= fp_fast_math_default;
+            break;
         case spv::ExecutionModeEarlyFragmentTests:
             flags |= early_fragment_test_bit;
             break;
@@ -833,7 +838,8 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
             definitions[result_id] = &insn;
         }
 
-        switch (insn.Opcode()) {
+        const uint32_t opcode = insn.Opcode();
+        switch (opcode) {
             // Specialization constants
             case spv::OpSpecConstantTrue:
             case spv::OpSpecConstantFalse:
@@ -891,6 +897,11 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
                 execution_modes[insn.Word(1)].Add(insn);
+
+                // Some OpExecutionModeId will have IDs after that need the entire module parsed first,
+                if (stateless_data && opcode == spv::OpExecutionModeId) {
+                    stateless_data->execution_mode_id_inst.push_back(&insn);
+                }
             } break;
             // Listed from vkspec.html#ray-tracing-repack
             case spv::OpTraceRayKHR:
@@ -1027,18 +1038,18 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 break;
 
             default:
-                if (AtomicOperation(insn.Opcode())) {
+                if (AtomicOperation(opcode)) {
                     if (stateless_data) {
                         stateless_data->atomic_inst.push_back(&insn);
                     }
-                    if (insn.Opcode() == spv::OpAtomicStore) {
+                    if (opcode == spv::OpAtomicStore) {
                         atomic_store_pointer_ids.emplace_back(insn.Word(1));
                         atomic_pointer_ids.emplace_back(insn.Word(1));
                     } else {
                         atomic_pointer_ids.emplace_back(insn.Word(3));
                     }
                 }
-                if (GroupOperation(insn.Opcode())) {
+                if (GroupOperation(opcode)) {
                     if (stateless_data) {
                         stateless_data->group_inst.push_back(&insn);
                     }
