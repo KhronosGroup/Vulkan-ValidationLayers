@@ -214,6 +214,18 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout.handle();
+
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    const auto depth_format = FindSupportedDepthOnlyFormat(gpu());
+
+    if (shader_objects) {
+        pipeline_rendering_info.colorAttachmentCount = 1;
+        pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+        pipeline_rendering_info.depthAttachmentFormat = depth_format;
+        pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    }
+
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
