@@ -325,8 +325,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallArray) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "VUID-vkCmdDraw-uniformBuffers-06935");
 }
 
-// Is failing to create a pipeline on new Windows NVIDIA NDA driver
-TEST_F(NegativeGpuAVOOB, DISABLED_UniformBufferTooSmallNestedStruct) {
+TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallNestedStruct) {
     TEST_DESCRIPTION(
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
         "definition.");
