@@ -341,7 +341,7 @@ class Pipeline : public StateObject {
 
     const safe_VkPipelineTessellationStateCreateInfo *TessellationState() const {
         if (pre_raster_state) {
-            return pre_raster_state->tess_create_info;
+            return pre_raster_state->tessellation_state;
         }
         return nullptr;
     }

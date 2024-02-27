@@ -57,17 +57,13 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const safe_VkGraphics
 
 PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTracker &state_data,
                                const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp)
-    : PipelineSubState(p), rp_state(rp), subpass(create_info.subpass) {
-    pipeline_layout = state_data.Get<vvl::PipelineLayout>(create_info.layout);
-
-    viewport_state = create_info.pViewportState;
-
-    rp_state = state_data.Get<vvl::RenderPass>(create_info.renderPass);
-
-    raster_state = create_info.pRasterizationState;
-
-    tess_create_info = create_info.pTessellationState;
-
+    : PipelineSubState(p),
+      pipeline_layout(state_data.Get<vvl::PipelineLayout>(create_info.layout)),
+      viewport_state(create_info.pViewportState),
+      raster_state(create_info.pRasterizationState),
+      tessellation_state(create_info.pTessellationState),
+      rp_state(rp),
+      subpass(create_info.subpass) {
     VkShaderStageFlags all_stages = 0;
 
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {

@@ -77,12 +77,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     }
 
     // While these are split into the 4 sub-states from GPL, they are validated for normal pipelines too.
-    // These are VUs that fall strangly between both GPL and non-GPL pipelines
+    // These are VUs that fall strangely between both GPL and non-GPL pipelines
     skip |= ValidateGraphicsPipelineVertexInputState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelinePreRasterizationState(pipeline, create_info_loc);
 
     skip |= ValidateGraphicsPipelineRenderPass(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineLibrary(pipeline, create_info_loc);
-    skip |= ValidateGraphicsPipelinePreRasterState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineTessellationState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, create_info_loc);
@@ -550,12 +550,33 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
     const bool is_create_library = (pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
 
-    if (is_create_library && !enabled_features.graphicsPipelineLibrary) {
-        skip |=
-            LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device, create_info_loc.dot(Field::flags),
-                     "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
-                     "graphicsPipelineLibrary feature is not enabled.",
-                     string_VkPipelineCreateFlags2KHR(pipeline_flags).c_str());
+    if (is_create_library) {
+        if (!enabled_features.graphicsPipelineLibrary) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device,
+                             create_info_loc.dot(Field::flags),
+                             "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
+                             "graphicsPipelineLibrary feature is not enabled.",
+                             string_VkPipelineCreateFlags2KHR(pipeline_flags).c_str());
+        }
+    } else {
+        // check to make sure all required sub states are here
+        // Note: You don't require a vertex input state (ex. if using Mesh Shaders)
+        if (!pipeline.pre_raster_state) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08901", device, create_info_loc,
+                             "Attempting to link pipeline libraries without a pre-rasterization shader state (did you forget to "
+                             "add VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
+        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
+                   !pipeline.RasterizationState()->rasterizerDiscardEnable) {
+            if (!pipeline.fragment_shader_state) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08909", device, create_info_loc,
+                                 "Attempting to link pipeline libraries without a fragment shader state (did you forget to add "
+                                 "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
+            } else if (!pipeline.fragment_output_state) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08909", device, create_info_loc,
+                                 "Attempting to link pipeline libraries without a fragment output state (did you forget to add "
+                                 "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
+            }
+        }
     }
 
     if (pipeline.OwnsSubState(pipeline.fragment_shader_state) && !pipeline.OwnsSubState(pipeline.pre_raster_state) &&
@@ -1398,7 +1419,8 @@ bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeline &pipeline,
+                                                               const Location &create_info_loc) const {
     bool skip = false;
     // Only validate once during creation
     if (!pipeline.OwnsSubState(pipeline.pre_raster_state)) {

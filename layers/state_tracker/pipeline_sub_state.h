@@ -78,8 +78,8 @@ struct PreRasterState : public PipelineSubState {
 
     std::shared_ptr<const vvl::PipelineLayout> pipeline_layout;
     safe_VkPipelineViewportStateCreateInfo *viewport_state = nullptr;
-
     safe_VkPipelineRasterizationStateCreateInfo *raster_state = nullptr;
+    const safe_VkPipelineTessellationStateCreateInfo *tessellation_state = nullptr;
 
     std::shared_ptr<const vvl::RenderPass> rp_state;
     uint32_t subpass = 0;
@@ -88,7 +88,6 @@ struct PreRasterState : public PipelineSubState {
 
     std::shared_ptr<const vvl::ShaderModule> tessc_shader, tesse_shader;
     const safe_VkPipelineShaderStageCreateInfo *tessc_shader_ci = nullptr, *tesse_shader_ci = nullptr;
-    const safe_VkPipelineTessellationStateCreateInfo *tess_create_info = nullptr;
 
     std::shared_ptr<const vvl::ShaderModule> vertex_shader, geometry_shader, task_shader, mesh_shader;
     const safe_VkPipelineShaderStageCreateInfo *vertex_shader_ci = nullptr, *geometry_shader_ci = nullptr,

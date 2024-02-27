@@ -1596,6 +1596,7 @@ TEST_F(PositiveGraphicsLibrary, PushConstant) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
     lib_ci.renderPass = renderPass();
     vkt::Pipeline lib(*m_device, lib_ci);
@@ -1636,6 +1637,7 @@ TEST_F(PositiveGraphicsLibrary, PushConstantOneLibrary) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
     lib_ci.renderPass = renderPass();
     vkt::Pipeline lib(*m_device, lib_ci);
