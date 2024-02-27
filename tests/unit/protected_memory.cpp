@@ -542,14 +542,14 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404");
         VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
-        lib_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
+        lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
         lib_ci.renderPass = renderPass();
         lib_ci.layout = pre_raster_lib.gp_ci_.layout;
         vkt::Pipeline lib(*m_device, lib_ci);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406");
-        lib_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+        lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
         vkt::Pipeline lib2(*m_device, lib_ci);
         m_errorMonitor->VerifyFound();
 
@@ -557,7 +557,8 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         protected_pre_raster_lib.InitPreRasterLibInfo(&stage_ci);
         protected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         protected_pre_raster_lib.InitState();
-        protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+        protected_pre_raster_lib.gp_ci_.flags =
+            VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
         ASSERT_EQ(VK_SUCCESS, protected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = protected_pre_raster_lib.pipeline_;
         VkGraphicsPipelineCreateInfo protected_lib_ci = vku::InitStructHelper(&link_info);
@@ -565,6 +566,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         protected_lib_ci.layout = pre_raster_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
         lib_ci.flags = 0;
+        protected_lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
         vkt::Pipeline lib3(*m_device, protected_lib_ci);
         m_errorMonitor->VerifyFound();
 
@@ -572,10 +574,12 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         unprotected_pre_raster_lib.InitPreRasterLibInfo(&stage_ci);
         unprotected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         unprotected_pre_raster_lib.InitState();
-        unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
+        unprotected_pre_raster_lib.gp_ci_.flags =
+            VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
         ASSERT_EQ(VK_SUCCESS, unprotected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = unprotected_pre_raster_lib.pipeline_;
         VkGraphicsPipelineCreateInfo unprotected_lib_ci = vku::InitStructHelper(&link_info);
+        unprotected_lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
         unprotected_lib_ci.renderPass = renderPass();
         unprotected_lib_ci.layout = pre_raster_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");

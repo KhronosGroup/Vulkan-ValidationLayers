@@ -361,7 +361,9 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
 static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
     CBDynamicFlags flags = 0;
 
-    const auto *dynamic_state_ci = pipe_state.GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>().pDynamicState;
+    const auto *dynamic_state_ci = (pipe_state.GetCreateInfoSType() == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR)
+                                       ? pipe_state.GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>().pDynamicState
+                                       : pipe_state.GetCreateInfo<VkRayTracingPipelineCreateInfoNV>().pDynamicState;
     if (dynamic_state_ci) {
         for (const VkDynamicState vk_dynamic_state :
              vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {

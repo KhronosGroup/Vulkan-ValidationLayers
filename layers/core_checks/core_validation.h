@@ -578,6 +578,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkCopyDescriptorSet* pDescriptorCopies, const Location& loc) const;
 
     bool ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
@@ -589,7 +590,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineShaderDynamicState(const vvl::Pipeline& pipeline, const vvl::CommandBuffer& cb_state,
                                                     const Location& loc, const vvl::DrawDispatchVuid& vuids) const;
     bool ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelinePreRasterState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineTessellationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline& pipeline, const safe_VkSubpassDescription2* subpass_desc,
