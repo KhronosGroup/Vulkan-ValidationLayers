@@ -77,8 +77,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerPushConstant) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     TEST_DESCRIPTION("Read after the valid pointer - use Push Constants to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
@@ -206,8 +205,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerDescriptor) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     TEST_DESCRIPTION("Read after the valid pointer - use Descriptor to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
