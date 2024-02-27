@@ -76,6 +76,10 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
         }
     }
 
+    // While these are split into the 4 sub-states from GPL, they are validated for normal pipelines too.
+    // These are VUs that fall strangly between both GPL and non-GPL pipelines
+    skip |= ValidateGraphicsPipelineVertexInputState(pipeline, create_info_loc);
+
     skip |= ValidateGraphicsPipelineRenderPass(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineLibrary(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline, create_info_loc);
@@ -104,33 +108,6 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
             }
             unique_stage_map[stage_ci.stage] = index;
             index++;
-        }
-    }
-
-    // Check if a Vertex Input State is used
-    // Need to make sure it has a vertex shader and if a GPL, that it contains a GPL vertex input state
-    // vkspec.html#pipelines-graphics-subsets-vertex-input
-    if ((pipeline.create_info_shaders & VK_SHADER_STAGE_VERTEX_BIT) && pipeline.OwnsSubState(pipeline.vertex_input_state)) {
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-            const auto *input_state = pipeline.InputState();
-            if (input_state) {
-                // Can use raw Pipeline state values because not using the stride (which can be dynamic with
-                // VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)
-                skip |= ValidatePipelineVertexDivisors(*input_state, pipeline.vertex_input_state->binding_descriptions,
-                                                       create_info_loc);
-            } else if (!pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pVertexInputState) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device,
-                                 create_info_loc.dot(Field::pVertexInputState), "is NULL.");
-            }
-        }
-
-        if (!pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pInputAssemblyState) {
-            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) ||
-                !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) ||
-                !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
-                !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted)
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031", device,
-                                 create_info_loc.dot(Field::pInputAssemblyState), "is NULL.");
         }
     }
 
@@ -488,6 +465,50 @@ static bool ComparePipelineFragmentShadingRateStateCreateInfo(VkPipelineFragment
     // Since this is chained in a pnext, we don't want to check the pNext/sType
     return (a.fragmentSize.width == b.fragmentSize.width) && (a.fragmentSize.height == b.fragmentSize.height) &&
            (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
+}
+
+// vkspec.html#pipelines-graphics-subsets-vertex-input
+bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+    bool skip = false;
+    // If using a mesh shader, all vertex input is ignored
+    if (!pipeline.OwnsSubState(pipeline.vertex_input_state) || (pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        return skip;
+    }
+
+    const bool ignore_vertex_input_state = pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    const bool ignore_input_assembly_state = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) &&
+                                             pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
+                                             pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+                                             phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
+
+    if (!ignore_vertex_input_state) {
+        skip |= ValidatePipelineVertexDivisors(pipeline, create_info_loc);
+    }
+
+    const auto *input_state = pipeline.InputState();
+    const auto *assembly_state = pipeline.InputAssemblyState();
+    const bool invalid_input_state = !ignore_vertex_input_state && !input_state;
+    const bool invalid_assembly_state = !ignore_input_assembly_state && !assembly_state;
+
+    if (invalid_input_state && invalid_assembly_state && pipeline.IsGraphicsLibrary()) {
+        // Failed to defined a Vertex Input State
+        if (!pipeline.pre_raster_state) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08898", device, create_info_loc,
+                             "pVertexInputState and pInputAssemblyState are both NULL so this is an invalid Vertex Input State (no "
+                             "dynamic state or mesh shaders were used to ignore them).");
+        } else if ((pipeline.active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08897", device, create_info_loc,
+                             "pVertexInputState and pInputAssemblyState are both NULL so this is an invalid Vertex Input State (no "
+                             "dynamic state were used to ignore them).");
+        }
+    } else if (invalid_input_state) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device, create_info_loc.dot(Field::pVertexInputState),
+                         "is NULL.");
+    } else if (invalid_assembly_state) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031", device,
+                         create_info_loc.dot(Field::pInputAssemblyState), "is NULL.");
+    }
+    return skip;
 }
 
 bool CoreChecks::ValidateGraphicsPipelineRenderPass(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
@@ -3926,17 +3947,25 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInputStateCreateInfo &input_state,
-                                                const std::vector<VkVertexInputBindingDescription> &binding_descriptions,
-                                                const Location &loc) const {
+bool CoreChecks::ValidatePipelineVertexDivisors(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
-    const auto divisor_state_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoKHR>(input_state.pNext);
+    const auto *input_state = pipeline.InputState();
+    if (!input_state) {
+        return skip;
+    }
+    const auto divisor_state_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoKHR>(input_state->pNext);
     if (!divisor_state_info) {
         return skip;
     }
+
+    const Location vertex_input_loc = create_info_loc.dot(Field::pVertexInputState);
+    // Can use raw Pipeline state values because not using the stride (which can be dynamic with
+    // VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)
+    const auto &binding_descriptions = pipeline.vertex_input_state->binding_descriptions;
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
     for (uint32_t j = 0; j < divisor_state_info->vertexBindingDivisorCount; j++) {
-        const Location divisor_loc = loc.pNext(Struct::VkVertexInputBindingDivisorDescriptionKHR, Field::pVertexBindingDivisors, j);
+        const Location divisor_loc =
+            vertex_input_loc.pNext(Struct::VkVertexInputBindingDivisorDescriptionKHR, Field::pVertexBindingDivisors, j);
         const auto *vibdd = &(divisor_state_info->pVertexBindingDivisors[j]);
         if (vibdd->binding >= device_limits->maxVertexInputBindings) {
             skip |= LogError("VUID-VkVertexInputBindingDivisorDescriptionKHR-binding-01869", device,

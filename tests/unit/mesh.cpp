@@ -188,10 +188,7 @@ TEST_F(NegativeMesh, BasicUsage) {
             helper.gp_ci_.pVertexInputState = nullptr;
             helper.gp_ci_.pInputAssemblyState = nullptr;
         };
-        CreatePipelineHelper::OneshotTest(
-            *this, break_vp3, kErrorBit,
-            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
-                                 "VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031"}));
+        CreatePipelineHelper::OneshotTest(*this, break_vp3, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097");
 
         // xfb with mesh shader
         const auto break_vp4 = [&](CreatePipelineHelper &helper) {
@@ -664,10 +661,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
             helper.gp_ci_.pVertexInputState = nullptr;
             helper.gp_ci_.pInputAssemblyState = nullptr;
         };
-        CreatePipelineHelper::OneshotTest(
-            *this, break_vp3, kErrorBit,
-            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
-                                 "VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031"}));
+        CreatePipelineHelper::OneshotTest(*this, break_vp3, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097");
     }
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
