@@ -202,7 +202,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
     const bool has_fragment_shader_state = pipe_state.OwnsSubState(pipe_state.fragment_shader_state);
     const bool has_fragment_output_state = pipe_state.OwnsSubState(pipe_state.fragment_output_state);
 
-    const auto *dynamic_state_ci = pipe_state.DynamicStateGraphics();
+    const auto *dynamic_state_ci = pipe_state.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pDynamicState;
     if (dynamic_state_ci) {
         for (const VkDynamicState vk_dynamic_state :
              vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {
@@ -361,7 +361,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
 static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
     CBDynamicFlags flags = 0;
 
-    const auto *dynamic_state_ci = pipe_state.DynamicStateRayTracing();
+    const auto *dynamic_state_ci = pipe_state.GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>().pDynamicState;
     if (dynamic_state_ci) {
         for (const VkDynamicState vk_dynamic_state :
              vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {
@@ -405,7 +405,6 @@ static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state
 }
 
 static bool IgnoreColorAttachments(const ValidationStateTracker *state_data, Pipeline &pipe_state) {
-    bool ignore = false;
     // If the libraries used to create this pipeline are ignoring color attachments, this pipeline should as well
     if (pipe_state.library_create_info) {
         for (uint32_t i = 0; i < pipe_state.library_create_info->libraryCount; i++) {
@@ -416,13 +415,10 @@ static bool IgnoreColorAttachments(const ValidationStateTracker *state_data, Pip
     // According to the spec, pAttachments is to be ignored if the pipeline is created with
     // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
     // and VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
-    if (pipe_state.ColorBlendState() && pipe_state.DynamicStateGraphics()) {
-        ignore = (pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-                  pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-                  pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
-                  pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
-    }
-    return ignore;
+    return pipe_state.ColorBlendState() && (pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+                                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+                                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
+                                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
 }
 
 static bool UsesShaderModuleId(const Pipeline &pipe_state) {
