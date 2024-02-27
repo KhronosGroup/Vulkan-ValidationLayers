@@ -863,6 +863,7 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
 
     pipeline_rendering_info.colorAttachmentCount = 2;
     {
+        // default attachmentCount is 1
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.pNext = &pipeline_rendering_info;
         pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -871,6 +872,21 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeDynamicRendering, ColorAttachmentMismatchDefault) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7586");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitRenderTarget();
+
+    // default attachmentCount is 1
+    CreatePipelineHelper pipe(*this);
+    // Not having VkPipelineRenderingCreateInfoKHR means colorAttachmentCount is zero
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
@@ -2689,6 +2705,7 @@ TEST_F(NegativeDynamicRendering, CreatePipelineWithoutFeature) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.cb_ci_.attachmentCount = 0;
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
@@ -6131,6 +6148,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
+    pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -6230,6 +6248,7 @@ TEST_F(NegativeDynamicRendering, MissingMultisampleState) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pMultisampleState = nullptr;
+    pipe.cb_ci_.attachmentCount = 0;
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026");

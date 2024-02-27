@@ -4780,6 +4780,7 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    pipe.cb_ci_.attachmentCount = 0;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4818,55 +4819,46 @@ TEST_F(NegativeDynamicState, MissingColorAttachmentBlendBit) {
     TEST_DESCRIPTION(
         "Dynamically enable blend for color attachment that does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT");
 
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
     RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     VkFormat format = VK_FORMAT_R32G32B32A32_SINT;
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
-
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0 ||
         (format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0) {
         GTEST_SKIP() << "Required foramt features not available";
     }
 
     vkt::Image image(*m_device, 32u, 32u, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
-    VkClearValue clear_value;
-    clear_value.color = {{0, 0, 0, 0}};
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = image_view;
-    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    color_attachment.clearValue = clear_value;
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
-    rendering_info.layerCount = 1u;
-    rendering_info.colorAttachmentCount = 1u;
-    rendering_info.pColorAttachments = &color_attachment;
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRendering(rendering_info);
+    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle());
     VkBool32 enable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 1u, &enable);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pColorBlendEnables-07470");
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRendering();
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -5406,6 +5398,7 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamplesWithMSRTSS) {
     pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 
     VkMultisampledRenderToSingleSampledInfoEXT msrtss_info = vku::InitStructHelper();

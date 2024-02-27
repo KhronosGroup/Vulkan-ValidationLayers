@@ -2650,11 +2650,27 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pip
 
 bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
-    const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
-    if (!rendering_struct || pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
+    if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
         return skip;
     }
+
     const auto color_blend_state = pipeline.ColorBlendState();
+    const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
+    if (!rendering_struct) {
+        // The spec says when thie struct is not included it is same as
+        // viewMask = 0, colorAttachmentCount = 0, formats = VK_FORMAT_UNDEFINED.
+        // Most VUs are worded around this, but some need to be validated here
+        if (pipeline.OwnsSubState(pipeline.fragment_output_state) && color_blend_state && color_blend_state->attachmentCount > 0) {
+            skip |= LogError(
+                "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
+                create_info_loc.dot(Field::pColorBlendState).dot(Field::attachmentCount),
+                "is %" PRIu32
+                ", but VkPipelineRenderingCreateInfo::colorAttachmentCount is zero because the pNext chain was not included.",
+                color_blend_state->attachmentCount);
+        }
+        return skip;
+    }
+
     const auto raster_state = pipeline.RasterizationState();
     const bool has_rasterization = raster_state && (raster_state->rasterizerDiscardEnable == VK_FALSE);
     if (has_rasterization) {
