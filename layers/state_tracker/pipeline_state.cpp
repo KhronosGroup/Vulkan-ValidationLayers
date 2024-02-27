@@ -51,6 +51,9 @@ Pipeline::CreateInfo::CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::sh
             use_color = (dynamic_rendering->colorAttachmentCount > 0);
             use_depth_stencil = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
                                 (dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
+        } else {
+            // if this is true, will be caught later by VU
+            use_color = ci.pColorBlendState && ci.pColorBlendState->attachmentCount > 0;
         }
     } else if (rpstate) {
         use_color = rpstate->UsesColorAttachment(ci.subpass);

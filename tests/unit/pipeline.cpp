@@ -2519,6 +2519,7 @@ TEST_F(NegativePipeline, NullRenderPass) {
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.cb_ci_.attachmentCount = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

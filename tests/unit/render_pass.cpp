@@ -3015,6 +3015,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     dr_pipe_helper.InitState();
     dr_pipe_helper.gp_ci_.renderPass = VK_NULL_HANDLE;
     dr_pipe_helper.pipe_ms_state_ci_ = ms_state;
+    dr_pipe_helper.cb_ci_.attachmentCount = 0;
     dr_pipe_helper.CreateGraphicsPipeline();
     begin_rendering_info.pNext = nullptr;
     color_attachment.resolveImageView = VK_NULL_HANDLE;
