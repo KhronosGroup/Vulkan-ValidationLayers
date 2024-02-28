@@ -45,8 +45,10 @@ struct CmdIndirectState;
 struct AccelerationStructureBuildValidationInfo;
 
 struct GpuVuid {
-    const char* uniform_access_oob = kVUIDUndefined;
-    const char* storage_access_oob = kVUIDUndefined;
+    const char* uniform_access_oob_06935 = kVUIDUndefined;
+    const char* storage_access_oob_06936 = kVUIDUndefined;
+    const char* uniform_access_oob_08612 = kVUIDUndefined;
+    const char* storage_access_oob_08613 = kVUIDUndefined;
     const char* invalid_descriptor = kVUIDUndefined;
     const char* count_exceeds_bufsize_1 = kVUIDUndefined;
     const char* count_exceeds_bufsize = kVUIDUndefined;

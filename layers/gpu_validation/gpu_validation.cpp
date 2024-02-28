@@ -566,6 +566,7 @@ gpuav::CommandResources gpuav::Validator::AllocateActionCommandResources(const V
     cmd_resources.output_buffer_desc_pool = output_buffer_desc_pool;
     cmd_resources.pipeline_bind_point = bind_point;
     cmd_resources.uses_robustness = uses_robustness;
+    cmd_resources.uses_shader_object = pipeline_state == nullptr;
     cmd_resources.command = loc.function;
     cmd_resources.desc_binding_index = di_buf_index;
     cmd_resources.desc_binding_list = &cb_node->di_input_buffer_list;

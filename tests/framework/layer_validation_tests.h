@@ -554,6 +554,8 @@ class ShaderObjectTest : public virtual VkLayerTest {
 class NegativeShaderObject : public ShaderObjectTest {};
 class PositiveShaderObject : public ShaderObjectTest {};
 
+class PositiveGpuAVShaderObject : public PositiveShaderObject, public PositiveGpuAV {};
+
 class ShaderInterfaceTest : public VkLayerTest {};
 class NegativeShaderInterface : public ShaderInterfaceTest {};
 class PositiveShaderInterface : public ShaderInterfaceTest {};
