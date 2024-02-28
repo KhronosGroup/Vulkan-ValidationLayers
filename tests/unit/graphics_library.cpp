@@ -1772,6 +1772,67 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGraphicsLibrary, IncompatibleLayoutsMultipleSubsets) {
+    TEST_DESCRIPTION("Link pre-raster state while creating FS state with invalid null DSL + shader stage bindings");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    // Prepare descriptors
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    OneOffDescriptorSet ds2(m_device, {
+                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                      });
+
+    // pipeline_layout_lib is used for library creation, pipeline_layout_exe is used at link time for the executable pipeline, and
+    // these layouts are incompatible
+    vkt::PipelineLayout pipeline_layout_lib(*m_device, {&ds.layout_}, {});
+    vkt::PipelineLayout pipeline_layout_exe(*m_device, {&ds2.layout_}, {});
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    vi_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.InitState();
+    fo_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper shader_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        std::vector<VkPipelineShaderStageCreateInfo> stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+        shader_lib.InitShaderLibInfo(stages);
+        shader_lib.InitState();
+        shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
+        shader_lib.CreateGraphicsPipeline();
+    }
+
+    VkPipeline libraries[3] = {
+        vi_lib.pipeline_,
+        shader_lib.pipeline_,
+        fo_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
+    exe_ci.layout = pipeline_layout_exe.handle();
+    exe_ci.renderPass = renderPass();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
+    vkt::Pipeline exe_pipe(*m_device, exe_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGraphicsLibrary, MissingLinkingLayout) {
     TEST_DESCRIPTION("Create an executable library with no layout at linking time");
 
@@ -2952,6 +3013,52 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateSampleMaskArrayNull) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    exe_pipe_ci.renderPass = renderPass();
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MultisampleStateMultipleSubsets) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7550");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper shader_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        std::vector<VkPipelineShaderStageCreateInfo> stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+        shader_lib.InitShaderLibInfo(stages);
+        shader_lib.InitState();
+        shader_lib.pipe_ms_state_ci_.minSampleShading = 0.2f;
+        shader_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.pipe_ms_state_ci_.minSampleShading = 0.5f;
+    frag_out_lib.pipe_ms_state_ci_.sampleShadingEnable = VK_TRUE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[3] = {
+        vertex_input_lib.pipeline_,
+        shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = shader_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();

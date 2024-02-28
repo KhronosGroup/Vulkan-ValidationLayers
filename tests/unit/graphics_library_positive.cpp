@@ -157,6 +157,47 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
+TEST_F(PositiveGraphicsLibrary, CombinedShaderSubsets) {
+    TEST_DESCRIPTION("Build Pre-Rasterization and Fragment Shader stage together");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper shader_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        std::vector<VkPipelineShaderStageCreateInfo> stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+        shader_lib.InitShaderLibInfo(stages);
+        shader_lib.InitState();
+        shader_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[3] = {
+        vertex_input_lib.pipeline_,
+        shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = shader_lib.gp_ci_.layout;
+    exe_pipe_ci.renderPass = renderPass();
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+}
+
 TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     TEST_DESCRIPTION("Make a draw with a pipeline layout derived from null DSLs");
 
