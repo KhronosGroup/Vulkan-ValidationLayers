@@ -139,13 +139,17 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.validate_descriptors) {
-        module.RunPassBindlessDescriptorPass();
+        module.RunPassBindlessDescriptor();
     }
 
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
         shaderInt64 && enabled_features.bufferDeviceAddress) {
         module.RunPassBufferDeviceAddress();
+    }
+
+    if (enabled_features.rayQuery && gpuav_settings.validate_ray_query) {
+        module.RunPassRayQuery();
     }
 
     for (const auto info : module.link_info_) {

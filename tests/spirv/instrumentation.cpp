@@ -23,6 +23,7 @@ static constexpr uint32_t kDefaultDescriptorSet = 3;
 static bool all_passes = false;
 static bool bindless_descriptor_pass = false;
 static bool buffer_device_address_pass = false;
+static bool ray_query_pass = false;
 
 void PrintUsage(const char* program) {
     printf(R"(
@@ -39,6 +40,8 @@ USAGE: %s <input> -o <output> <passes>
                Runs BindlessDescriptorPass
   --buffer-device-address
                Runs BufferDeviceAddressPass
+  --ray-query
+               Runs RayQueryPass
   -h, --help
                Print this help)");
     printf("\n");
@@ -64,6 +67,8 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
             bindless_descriptor_pass = true;
         } else if (0 == strcmp(cur_arg, "--buffer-device-address")) {
             buffer_device_address_pass = true;
+        } else if (0 == strcmp(cur_arg, "--ray-query")) {
+            ray_query_pass = true;
         } else if (0 == strncmp(cur_arg, "--", 2)) {
             printf("Unknown pass %s\n", cur_arg);
             PrintUsage(argv[0]);
@@ -109,10 +114,13 @@ int main(int argc, char** argv) {
 
     gpuav::spirv::Module module(spirv_data, kDefaultShaderId, kDefaultDescriptorSet);
     if (all_passes || bindless_descriptor_pass) {
-        module.RunPassBindlessDescriptorPass();
+        module.RunPassBindlessDescriptor();
     }
     if (all_passes || buffer_device_address_pass) {
         module.RunPassBufferDeviceAddress();
+    }
+    if (all_passes || ray_query_pass) {
+        module.RunPassRayQuery();
     }
 
     for (const auto info : module.link_info_) {

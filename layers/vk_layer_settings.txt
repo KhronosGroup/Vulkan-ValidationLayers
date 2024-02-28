@@ -82,9 +82,21 @@ khronos_validation.enables =
 
 # Check Draw/Dispatch/TraceRays Indirect Buffers
 # =====================
-# <LayerIdentifier>.validate_indirect_buffer
+# <LayerIdentifier>.gpuav_validate_indirect_buffer
 # Enable draw/dispatch/traceRays indirect checking
-#khronos_validation.validate_indirect_buffer = true
+#khronos_validation.gpuav_validate_indirect_buffer = true
+
+# Check copy commands
+# =====================
+# <LayerIdentifier>.gpuav_validate_copies
+# Enable copy commands checking
+#khronos_validation.gpuav_validate_copies = true
+
+# Validate RayQuery SPIR-V Instructions
+# =====================
+# <LayerIdentifier>.gpuav_validate_ray_query
+# Enable shader instrumentation on SPV_KHR_ray_query
+#khronos_validation.gpuav_validate_ray_query = true
 
 # Cache instrumented shaders rather than instrumenting them on every run
 # =====================

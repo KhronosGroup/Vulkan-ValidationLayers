@@ -894,7 +894,7 @@
                                             ]
                                         },
                                         {
-                                            "key": "validate_indirect_buffer",
+                                            "key": "gpuav_validate_indirect_buffer",
                                             "label": "Check Draw/Dispatch/TraceRays Indirect buffers",
                                             "description": "Enable draw/dispatch/traceRays indirect checking",
                                             "type": "BOOL",
@@ -914,9 +914,29 @@
                                             }
                                         },
                                         {
-                                            "key": "validate_copies",
+                                            "key": "gpuav_validate_copies",
                                             "label": "Check copy commands",
                                             "description": "Enable copy commands checking",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_validate_ray_query",
+                                            "label": "Validate RayQuery SPIR-V Instructions",
+                                            "description": "Enable shader instrumentation on SPV_KHR_ray_query",
                                             "type": "BOOL",
                                             "default": true,
                                             "platforms": [

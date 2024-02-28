@@ -68,8 +68,9 @@ class Module {
     void ToBinary(std::vector<uint32_t>& out);
 
     // Passes that can be ran
-    void RunPassBindlessDescriptorPass();
+    void RunPassBindlessDescriptor();
     void RunPassBufferDeviceAddress();
+    void RunPassRayQuery();
 
     // Helpers
     bool HasCapability(spv::Capability capability);

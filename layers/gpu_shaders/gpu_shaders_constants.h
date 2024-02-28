@@ -165,6 +165,8 @@ const int kInstBuffAddrUnallocOutDescPtrLo = kInstStageOutCnt + 1;
 const int kInstBuffAddrUnallocOutDescPtrHi = kInstStageOutCnt + 2;
 const int kInstBuffAddrUnallocOutCnt = kInstStageOutCnt + 3;
 
+const int kInstRayQueryOutParam0 = kInstStageOutCnt + 1;
+
 // Maximum Output Record Member Count
 const int kInstMaxOutCnt = kInstStageOutCnt + 6;
 
@@ -182,7 +184,16 @@ const int kInstErrorPreDispatchValidate = 6;
 const int kInstErrorBindlessDestroyed = 7;
 const int kInstErrorPreTraceRaysKhrValidate = 8;
 const int kInstErrorCopyBufferToImage = 9;
-const int kInstErrorMax = 9;
+const int kInstErrorRayQueryNegativeMin = 10;
+const int kInstErrorRayQueryNegativeMax = 11;
+const int kInstErrorRayQueryBothSkip = 12;
+const int kInstErrorRayQuerySkipCull = 13;
+const int kInstErrorRayQueryOpaque = 14;
+const int kInstErrorRayQueryMinMax = 15;
+const int kInstErrorRayQueryMinNaN = 16;
+const int kInstErrorRayQueryMaxNaN = 17;
+const int kInstErrorRayQueryOriginNaN = 18;
+const int kInstErrorRayQueryDirectionNaN = 19;
 
 // Direct Input Buffer Offsets
 //

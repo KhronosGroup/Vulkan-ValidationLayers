@@ -16,13 +16,13 @@
 
 #include <stdint.h>
 #include "pass.h"
-#include "function_basic_block.h"
 
 namespace gpuav {
 namespace spirv {
 
 class Module;
-struct Intruction;
+struct Function;
+struct BasicBlock;
 
 // Create a pass to instrument physical buffer address checking
 // This pass instruments all physical buffer address references to check that
@@ -58,9 +58,9 @@ class BufferDeviceAddressPass : public Pass {
     BufferDeviceAddressPass(Module& module) : Pass(module) {}
 
   private:
-    bool AnalyzeInstruction(const Function& function, const Instruction& inst) override;
-    uint32_t CreateFunctionCall(BasicBlock& block) override;
-    void Reset() override;
+    bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
+    uint32_t CreateFunctionCall(BasicBlock& block) final;
+    void Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();

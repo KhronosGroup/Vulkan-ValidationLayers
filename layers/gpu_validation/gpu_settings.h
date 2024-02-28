@@ -20,6 +20,7 @@ struct GpuAVSettings {
     bool validate_descriptors = true;
     bool validate_indirect_buffer = true;
     bool validate_copies = true;
+    bool validate_ray_query = true;
     bool vma_linear_output = true;
     bool warn_on_robust_oob = true;
     bool cache_instrumented_shaders = true;

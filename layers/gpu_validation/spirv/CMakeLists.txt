@@ -21,6 +21,8 @@ target_sources(gpu_av_spirv PRIVATE
     bindless_descriptor_pass.cpp
     buffer_device_address_pass.h
     buffer_device_address_pass.cpp
+    ray_query_pass.h
+    ray_query_pass.cpp
 
     # Framework
     instruction.h
