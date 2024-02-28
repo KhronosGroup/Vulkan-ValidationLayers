@@ -19,6 +19,7 @@
 
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"
+#include "ray_query_pass.h"
 
 namespace gpuav {
 namespace spirv {
@@ -161,13 +162,18 @@ void Module::AddCapability(spv::Capability capability) {
     }
 }
 
-void Module::RunPassBindlessDescriptorPass() {
+void Module::RunPassBindlessDescriptor() {
     BindlessDescriptorPass pass(*this);
     pass.Run();
 }
 
 void Module::RunPassBufferDeviceAddress() {
     BufferDeviceAddressPass pass(*this);
+    pass.Run();
+}
+
+void Module::RunPassRayQuery() {
+    RayQueryPass pass(*this);
     pass.Run();
 }
 
@@ -253,6 +259,7 @@ void Module::LinkFunction(const LinkInfo& info) {
     // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
     // A module can only have one OpMemoryModel
     memory_model_[0]->words_[1] = spv::AddressingModelPhysicalStorageBuffer64;
+    AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
 
     // find all constant and types, add any the module doesn't have
     uint32_t offset = 5;  // skip header

@@ -24,39 +24,20 @@ class Module;
 struct Function;
 struct BasicBlock;
 
-// Create a pass to instrument bindless descriptor checking
-// This pass instruments all bindless references to check that descriptor
-// array indices are inbounds, and if the descriptor indexing extension is
-// enabled, that the descriptor has been initialized. If the reference is
-// invalid, a record is written to the debug output buffer (if space allows)
-// and a null value is returned.
-class BindlessDescriptorPass : public Pass {
+// Create a pass to instrument SPV_KHR_ray_query instructions
+class RayQueryPass : public Pass {
   public:
-    BindlessDescriptorPass(Module& module) : Pass(module) {}
+    RayQueryPass(Module& module) : Pass(module) {}
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
     uint32_t CreateFunctionCall(BasicBlock& block) final;
     void Reset() final;
 
-    uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false);
-    uint32_t GetLastByte(BasicBlock& block);
-
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 
-    const Instruction* access_chain_inst_ = nullptr;
-    const Instruction* var_inst_ = nullptr;
-    const Instruction* image_inst_ = nullptr;
-
     const Instruction* target_instruction_ = nullptr;
-    uint32_t descriptor_set_ = 0;
-    uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;
-    uint32_t descriptor_offset_id_ = 0;
-
-    // < original ID, new CopyObject ID >
-    vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
 };
 
 }  // namespace spirv

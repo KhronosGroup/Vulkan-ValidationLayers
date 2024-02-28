@@ -436,13 +436,60 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
                     assert(false);
             }
         } break;
-#if 0
-        default: {
-            strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
-            out_vuid_msg = "UNASSIGNED-Internal Error";
-            assert(false);
+        case kInstErrorRayQueryNegativeMin: {
+            // TODO - Figure a way to properly use GLSL floatBitsToUint and print the float values
+            strm << "OpRayQueryInitializeKHR operand Ray Tmin value is negative. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349";
+            error_found = true;
         } break;
-#endif
+        case kInstErrorRayQueryNegativeMax: {
+            strm << "OpRayQueryInitializeKHR operand Ray Tmax value is negative. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryMinMax: {
+            strm << "OpRayQueryInitializeKHR operand Ray Tmax is less than RayTmin. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06350";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryMinNaN: {
+            strm << "OpRayQueryInitializeKHR operand Ray Tmin is NaN. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryMaxNaN: {
+            strm << "OpRayQueryInitializeKHR operand Ray Tmax is NaN. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryOriginNaN: {
+            strm << "OpRayQueryInitializeKHR operand Ray Origin contains a NaN. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryDirectionNaN: {
+            strm << "OpRayQueryInitializeKHR operand Ray Direction contains a NaN. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryBothSkip: {
+            const uint32_t value = debug_record[kInstRayQueryOutParam0];
+            strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06889";
+            error_found = true;
+        } break;
+        case kInstErrorRayQuerySkipCull: {
+            const uint32_t value = debug_record[kInstRayQueryOutParam0];
+            strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06890";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryOpaque: {
+            const uint32_t value = debug_record[kInstRayQueryOutParam0];
+            strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891";
+            error_found = true;
+        } break;
     }
     out_error_msg = strm.str();
     return error_found;

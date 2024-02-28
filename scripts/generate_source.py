@@ -371,6 +371,7 @@ def main(argv):
         'gpu_pre_copy_buffer_to_image_comp.h',
         'inst_buffer_device_address_comp.h',
         'inst_bindless_descriptor_comp.h',
+        'inst_ray_query_comp.h',
         'gpu_inst_shader_hash.h'
     ]
 

@@ -161,6 +161,12 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpArrayLength:
         case spv::OpBitcast:
         case spv::OpUConvert:
+        case spv::OpLogicalNot:
+        case spv::OpIsNan:
+        case spv::OpConvertFToU:
+        case spv::OpConvertFToS:
+        case spv::OpConvertSToF:
+        case spv::OpConvertUToF:
             swap(1);
             swap(3);
             break;
@@ -204,7 +210,6 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpLogicalNotEqual:
         case spv::OpLogicalOr:
         case spv::OpLogicalAnd:
-        case spv::OpLogicalNot:
         case spv::OpShiftRightLogical:
         case spv::OpShiftRightArithmetic:
         case spv::OpShiftLeftLogical:

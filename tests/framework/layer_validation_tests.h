@@ -295,7 +295,12 @@ class NegativeGpuAVOOB : public GpuAVOOBTest {
 };
 class PositiveGpuAVOOB : public GpuAVOOBTest {};
 
-class PositiveGpuAVRayQuery : public PositiveGpuAV {};
+class GpuAVRayQueryTest : public GpuAVTest {
+  public:
+    void InitGpuAVRayQuery();
+};
+class NegativeGpuAVRayQuery : public GpuAVRayQueryTest {};
+class PositiveGpuAVRayQuery : public GpuAVRayQueryTest {};
 
 class NegativeDebugPrintf : public VkLayerTest {
   public:
@@ -515,8 +520,8 @@ class NegativeRayTracingPipelineNV : public NegativeRayTracingPipeline {};
 class PositiveRayTracingPipelineNV : public PositiveRayTracingPipeline {};
 
 class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
-class PositiveGpuAVRayTracing : public GpuAVRayTracingTest {};
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
+class PositiveGpuAVRayTracing : public GpuAVRayTracingTest {};
 class NegativeGpuAVRayTracingNV : public NegativeGpuAVRayTracing {};
 
 class RenderPassTest : public VkLayerTest {};
