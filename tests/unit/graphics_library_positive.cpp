@@ -1328,7 +1328,12 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     pipe_ci.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe_ci.layout = pipe.gp_ci_.layout;
     pipe_ci.renderPass = renderPass();
-    vkt::Pipeline exe_pipe(*m_device, pipe_ci);
+    VkPipeline pipeline;
+    VkResult result = vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1u, &pipe_ci, nullptr, &pipeline);
+    ASSERT_TRUE(result == VK_SUCCESS || result == VK_PIPELINE_COMPILE_REQUIRED);
+    if (result == VK_SUCCESS) {
+        vk::DestroyPipeline(device(), pipeline, nullptr);
+    }
 }
 
 TEST_F(PositiveGraphicsLibrary, DepthStencilStateIgnored) {
