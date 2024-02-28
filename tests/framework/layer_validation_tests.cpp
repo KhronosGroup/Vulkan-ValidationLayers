@@ -98,30 +98,6 @@ bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, c
         return false;
     }
 
-#if 0  // Convinced this chunk doesn't currently add any additional info, but leaving in place because it may be
-       // necessary with future extensions
-
-    // Verify again using version 2, if supported, which *can* return more property data than the original...
-    // (It's not clear that this is any more definitive than using the original version - but no harm)
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR p_GetPDIFP2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(inst,
-                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    if (NULL != p_GetPDIFP2KHR) {
-        VkPhysicalDeviceImageFormatInfo2KHR fmt_info = vku::InitStructHelper();
-        fmt_info.format = info.format;
-        fmt_info.type = info.imageType;
-        fmt_info.tiling = info.tiling;
-        fmt_info.usage = info.usage;
-        fmt_info.flags = info.flags;
-
-        VkImageFormatProperties2KHR fmt_props = vku::InitStructHelper();
-        err = p_GetPDIFP2KHR(phy, &fmt_info, &fmt_props);
-        if (VK_SUCCESS != err) {
-            return false;
-        }
-    }
-#endif
-
     return true;
 }
 
