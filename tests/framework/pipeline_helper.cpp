@@ -214,6 +214,28 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     shader_stages_.clear();
 }
 
+void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo> &info, void *p_next) {
+    gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info->flags =
+        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+
+    gp_ci_ = vku::InitStructHelper(&gpl_info);
+    gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    gp_ci_.pViewportState = &vp_state_ci_;
+    gp_ci_.pViewportState = &vp_state_ci_;
+    gp_ci_.pRasterizationState = &rs_state_ci_;
+
+    // If using Dynamic Rendering, will need to be set to null
+    // otherwise needs to be shared across libraries in the same executable pipeline
+    gp_ci_.renderPass = layer_test_.renderPass();
+    gp_ci_.subpass = 0;
+
+    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+
+    gp_ci_.stageCount = info.size();
+    gp_ci_.pStages = info.data();
+}
+
 void CreatePipelineHelper::InitState() {
     descriptor_set_.reset(new OneOffDescriptorSet(device_, dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());

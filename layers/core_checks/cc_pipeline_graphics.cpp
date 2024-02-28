@@ -692,7 +692,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             if (!lib) {
                 continue;
             }
-            if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
+            if (lib->graphics_lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
                 pre_raster_info.init = GPLInitType::link_libraries;
                 const auto layout_state = lib->PreRasterPipelineLayoutState();
                 if (layout_state) {
@@ -701,7 +701,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 }
                 pre_raster_info.shading_rate_state =
                     vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(lib->PNext());
-            } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
+            }
+            if (lib->graphics_lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
                 frag_shader_info.init = GPLInitType::link_libraries;
                 const auto layout_state = lib->FragmentShaderPipelineLayoutState();
                 if (layout_state) {
@@ -711,7 +712,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 frag_shader_info.ms_state = lib->fragment_shader_state->ms_state.get()->ptr();
                 frag_shader_info.shading_rate_state =
                     vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(lib->PNext());
-            } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
+            }
+            if (lib->graphics_lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
                 frag_output_info.init = GPLInitType::link_libraries;
                 frag_output_info.ms_state = lib->fragment_output_state->ms_state.get()->ptr();
             }
@@ -1660,9 +1662,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
         }
 
         // If subpass uses a depth/stencil attachment, pDepthStencilState must be a pointer to a valid structure
-        const bool has_ds_state = (!pipeline.IsGraphicsLibrary() && pipeline.HasFullState()) ||
-                                  ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0);
-        if (has_ds_state) {
+        if (pipeline.fragment_shader_state) {
             if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
                 subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                 const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
@@ -1705,10 +1705,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
         }
 
         // If subpass uses color attachments, pColorBlendState must be valid pointer
-        const bool has_color_blend_state =
-            !pipeline.IsGraphicsLibrary() ||
-            ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0);
-        if (has_color_blend_state && subpass_desc) {
+        if (pipeline.fragment_output_state && subpass_desc && !pipeline.fragment_output_state->color_blend_state &&
+            !pipeline.IsColorBlendStateDynamic()) {
             uint32_t color_attachment_count = 0;
             for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
                 if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
@@ -1716,8 +1714,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
                 }
             }
 
-            if (pipeline.fragment_output_state && (color_attachment_count > 0) &&
-                !pipeline.fragment_output_state->color_blend_state && !pipeline.IsColorBlendStateDynamic()) {
+            if (color_attachment_count > 0) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09030", device,
                                  create_info_loc.dot(Field::pColorBlendState),
                                  "is NULL when rasterization is enabled and "

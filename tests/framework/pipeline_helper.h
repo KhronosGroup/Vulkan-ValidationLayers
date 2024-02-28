@@ -81,6 +81,9 @@ class CreatePipelineHelper {
 
     void InitFragmentOutputLibInfo(void *p_next = nullptr);
 
+    // Both Pre-Rasterization and Fragment Shader
+    void InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo> &info, void *p_next = nullptr);
+
     // Helper function to create a simple test case (positive or negative)
     //
     // info_override can be any callable that takes a CreatePipelineHeper &
