@@ -83,6 +83,11 @@
                 "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV": {
                     "deviceGeneratedCommands": true
                 },
+                "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV": {
+                    "deviceGeneratedCompute": true,
+                    "deviceGeneratedComputePipelines": true,
+                    "deviceGeneratedComputeCaptureReplay": true
+                },
                 "VkPhysicalDevicePrivateDataFeatures": {
                     "privateData": true
                 },
@@ -388,6 +393,9 @@
                 "VkPhysicalDeviceIndexTypeUint8FeaturesEXT": {
                     "indexTypeUint8": true
                 },
+                "VkPhysicalDeviceIndexTypeUint8FeaturesKHR": {
+                    "indexTypeUint8": true
+                },
                 "VkPhysicalDeviceShaderSMBuiltinsFeaturesNV": {
                     "shaderSMBuiltins": true
                 },
@@ -413,6 +421,14 @@
                     "texelBufferAlignment": true
                 },
                 "VkPhysicalDeviceLineRasterizationFeaturesEXT": {
+                    "rectangularLines": true,
+                    "bresenhamLines": true,
+                    "smoothLines": true,
+                    "stippledRectangularLines": true,
+                    "stippledBresenhamLines": true,
+                    "stippledSmoothLines": true
+                },
+                "VkPhysicalDeviceLineRasterizationFeaturesKHR": {
                     "rectangularLines": true,
                     "bresenhamLines": true,
                     "smoothLines": true,
@@ -655,6 +671,11 @@
                 "VkPhysicalDevicePipelineProtectedAccessFeaturesEXT": {
                     "pipelineProtectedAccess": true
                 },
+                "VkPhysicalDeviceMapMemoryPlacedFeaturesEXT": {
+                    "memoryMapPlaced": true,
+                    "memoryMapRangePlaced": true,
+                    "memoryUnmapReserve": true
+                },
                 "VkPhysicalDeviceInheritedViewportScissorFeaturesNV": {
                     "inheritedViewportScissor2D": true
                 },
@@ -790,6 +811,63 @@
                     "shaderTileImageColorReadAccess": true,
                     "shaderTileImageDepthReadAccess": true,
                     "shaderTileImageStencilReadAccess": true
+                },
+                "VkPhysicalDeviceDisplacementMicromapFeaturesNV": {
+                    "displacementMicromap": true
+                },
+                "VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV": {
+                    "shaderFloat16VectorAtomics": true
+                },
+                "VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV": {
+                    "extendedSparseAddressSpace": true
+                },
+                "VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV": {
+                    "descriptorPoolOverallocation": true
+                },
+                "VkPhysicalDeviceSchedulingControlsFeaturesARM": {
+                    "schedulingControls": true
+                },
+                "VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG": {
+                    "relaxedLineRasterization": true
+                },
+                "VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR": {
+                    "shaderMaximalReconvergence": true
+                },
+                "VkPhysicalDeviceShaderQuadControlFeaturesKHR": {
+                    "shaderQuadControl": true
+                },
+                "VkPhysicalDeviceShaderExpectAssumeFeaturesKHR": {
+                    "shaderExpectAssume": true
+                },
+                "VkPhysicalDeviceFrameBoundaryFeaturesEXT": {
+                    "frameBoundary": true
+                },
+                "VkPhysicalDeviceCubicWeightsFeaturesQCOM": {
+                    "selectableCubicWeights": true
+                },
+                "VkPhysicalDeviceCubicClampFeaturesQCOM": {
+                    "cubicRangeClamp": true
+                },
+                "VkPhysicalDeviceImageProcessing2FeaturesQCOM": {
+                    "textureBlockMatch2": true
+                },
+                "VkPhysicalDeviceYcbcrDegammaFeaturesQCOM": {
+                    "ycbcrDegamma": true
+                },
+                "VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM": {
+                    "multiviewPerViewRenderAreas": true
+                },
+                "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR": {
+                    "rayTracingPositionFetch": true
+                },
+                "VkPhysicalDevicePerStageDescriptorSetFeaturesNV": {
+                    "perStageDescriptorSet": true,
+                    "dynamicPipelineLayout": true
+                },
+                "VkPhysicalDeviceNestedCommandBufferFeaturesEXT": {
+                    "nestedCommandBuffer": true,
+                    "nestedCommandBufferRendering": true,
+                    "nestedCommandBufferSimultaneousUse": true
                 },
                 "VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT": {
                     "dynamicRenderingUnusedAttachments": true
@@ -1162,6 +1240,9 @@
                 "VkPhysicalDeviceExternalMemoryHostPropertiesEXT": {
                     "minImportedHostPointerAlignment": 4096
                 },
+                "VkPhysicalDeviceMapMemoryPlacedPropertiesEXT": {
+                    "minPlacedMemoryMapAlignment": 4096
+                },
                 "VkPhysicalDeviceConservativeRasterizationPropertiesEXT": {
                     "primitiveUnderestimation": true,
                     "conservativePointAndLineRasterization": true,
@@ -1393,6 +1474,7 @@
                 },
                 "VkPhysicalDeviceSubpassShadingPropertiesHUAWEI": {},
                 "VkPhysicalDeviceLineRasterizationPropertiesEXT": {},
+                "VkPhysicalDeviceLineRasterizationPropertiesKHR": {},
                 "VkPhysicalDeviceVulkan11Properties": {
                     "deviceLUIDValid": true,
                     "subgroupSize": 32,
@@ -1592,6 +1674,9 @@
                     "provokingVertexModePerPipeline": false,
                     "transformFeedbackPreservesTriangleFanProvokingVertex": true
                 },
+                "VkPhysicalDeviceNestedCommandBufferPropertiesEXT": {
+                    "maxCommandBufferNestingLevel": 2
+                },
                 "VkPhysicalDeviceDescriptorBufferPropertiesEXT": {
                     "maxDescriptorBufferBindings": 256,
                     "maxResourceDescriptorBufferBindings": 256,
@@ -1696,6 +1781,7 @@
                     "nullColorAttachmentWithExternalFormatResolve": false
                 },
                 "VkPhysicalDeviceOpticalFlowPropertiesNV": {},
+                "VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV": {},
                 "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM": {
                     "shaderCoreCount": 4294967000,
                     "shaderWarpsPerCore": 4294967000
@@ -1727,7 +1813,9 @@
                 "VK_ANDROID_external_memory_android_hardware_buffer": 1,
                 "VK_ANDROID_external_format_resolve": 1,
                 "VK_ARM_rasterization_order_attachment_access": 1,
+                "VK_ARM_scheduling_controls": 1,
                 "VK_ARM_shader_core_builtins": 1,
+                "VK_ARM_shader_core_properties": 1,
                 "VK_EXT_4444_formats": 1,
                 "VK_EXT_acquire_drm_display": 1,
                 "VK_EXT_acquire_xlib_display": 1,
@@ -1764,12 +1852,14 @@
                 "VK_EXT_extended_dynamic_state": 1,
                 "VK_EXT_extended_dynamic_state2": 1,
                 "VK_EXT_extended_dynamic_state3": 1,
+                "VK_EXT_external_memory_acquire_unmodified": 1,
                 "VK_EXT_external_memory_dma_buf": 1,
                 "VK_EXT_external_memory_host": 1,
                 "VK_EXT_filter_cubic": 1,
                 "VK_EXT_fragment_density_map": 1,
                 "VK_EXT_fragment_density_map2": 1,
                 "VK_EXT_fragment_shader_interlock": 1,
+                "VK_EXT_frame_boundary": 1,
                 "VK_EXT_full_screen_exclusive": 1,
                 "VK_EXT_global_priority": 1,
                 "VK_EXT_global_priority_query": 1,
@@ -1784,10 +1874,14 @@
                 "VK_EXT_image_robustness": 1,
                 "VK_EXT_image_view_min_lod": 1,
                 "VK_EXT_index_type_uint8": 1,
+                "VK_KHR_index_type_uint8": 1,
                 "VK_EXT_inline_uniform_block": 1,
                 "VK_EXT_legacy_dithering": 1,
                 "VK_EXT_line_rasterization": 1,
+                "VK_KHR_line_rasterization": 1,
                 "VK_EXT_load_store_op_none": 1,
+                "VK_KHR_load_store_op_none": 1,
+                "VK_EXT_map_memory_placed": 1,
                 "VK_EXT_memory_budget": 1,
                 "VK_EXT_memory_priority": 1,
                 "VK_EXT_mesh_shader": 1,
@@ -1796,6 +1890,7 @@
                 "VK_EXT_multi_draw": 1,
                 "VK_EXT_multisampled_render_to_single_sampled": 1,
                 "VK_EXT_mutable_descriptor_type": 1,
+                "VK_EXT_nested_command_buffer": 1,
                 "VK_EXT_non_seamless_cube_map": 1,
                 "VK_EXT_opacity_micromap": 1,
                 "VK_EXT_pageable_device_local_memory": 1,
@@ -1864,6 +1959,7 @@
                 "VK_HUAWEI_subpass_shading": 1,
                 "VK_IMG_filter_cubic": 1,
                 "VK_IMG_format_pvrtc": 1,
+                "VK_IMG_relaxed_line_rasterization": 1,
                 "VK_INTEL_performance_query": 1,
                 "VK_INTEL_shader_integer_functions2": 1,
                 "VK_KHR_16bit_storage": 1,
@@ -1927,6 +2023,7 @@
                 "VK_KHR_ray_query": 1,
                 "VK_KHR_ray_tracing_maintenance1": 1,
                 "VK_KHR_ray_tracing_pipeline": 1,
+                "VK_KHR_ray_tracing_position_fetch": 1,
                 "VK_KHR_relaxed_block_layout": 1,
                 "VK_KHR_sampler_mirror_clamp_to_edge": 1,
                 "VK_KHR_sampler_ycbcr_conversion": 1,
@@ -1934,11 +2031,14 @@
                 "VK_KHR_shader_atomic_int64": 1,
                 "VK_KHR_shader_clock": 1,
                 "VK_KHR_shader_draw_parameters": 1,
+                "VK_KHR_shader_expect_assume": 1,
                 "VK_KHR_shader_float16_int8": 1,
                 "VK_KHR_shader_float_controls": 1,
                 "VK_KHR_shader_float_controls2": 1,
                 "VK_KHR_shader_integer_dot_product": 1,
+                "VK_KHR_shader_maximal_reconvergence": 1,
                 "VK_KHR_shader_non_semantic_info": 1,
+                "VK_KHR_shader_quad_control": 1,
                 "VK_KHR_shader_subgroup_extended_types": 1,
                 "VK_KHR_shader_subgroup_uniform_control_flow": 1,
                 "VK_KHR_shader_subgroup_rotate": 1,
@@ -1987,13 +2087,17 @@
                 "VK_NV_coverage_reduction_mode": 1,
                 "VK_NV_dedicated_allocation": 1,
                 "VK_NV_dedicated_allocation_image_aliasing": 1,
+                "VK_NV_descriptor_pool_overallocation": 1,
                 "VK_NV_device_diagnostic_checkpoints": 1,
                 "VK_NV_device_diagnostics_config": 1,
                 "VK_NV_device_generated_commands": 1,
+                "VK_NV_device_generated_commands_compute": 1,
+                "VK_NV_displacement_micromap": 1,
                 "VK_NV_external_memory": 1,
                 "VK_NV_external_memory_capabilities": 1,
                 "VK_NV_external_memory_rdma": 1,
                 "VK_NV_external_memory_win32": 1,
+                "VK_NV_extended_sparse_address_space": 1,
                 "VK_NV_fill_rectangle": 1,
                 "VK_NV_fragment_coverage_to_color": 1,
                 "VK_NV_fragment_shader_barycentric": 1,
@@ -2003,9 +2107,12 @@
                 "VK_NV_glsl_shader": 1,
                 "VK_NV_inherited_viewport_scissor": 1,
                 "VK_NV_linear_color_attachment": 1,
+                "VK_NV_low_latency": 1,
+                "VK_NV_low_latency2": 1,
                 "VK_NV_memory_decompression": 1,
                 "VK_NV_mesh_shader": 1,
                 "VK_NV_optical_flow": 1,
+                "VK_NV_per_stage_descriptor_set": 1,
                 "VK_NV_present_barrier": 1,
                 "VK_NV_ray_tracing": 1,
                 "VK_NV_ray_tracing_invocation_reorder": 1,
@@ -2013,6 +2120,7 @@
                 "VK_NV_representative_fragment_test": 1,
                 "VK_NV_sample_mask_override_coverage": 1,
                 "VK_NV_scissor_exclusive": 1,
+                "VK_NV_shader_atomic_float16_vector": 1,
                 "VK_NV_shader_image_footprint": 1,
                 "VK_NV_shader_sm_builtins": 1,
                 "VK_NV_shader_subgroup_partitioned": 1,
@@ -2020,14 +2128,19 @@
                 "VK_NV_viewport_array2": 1,
                 "VK_NV_viewport_swizzle": 1,
                 "VK_NV_win32_keyed_mutex": 1,
+                "VK_QCOM_filter_cubic_clamp": 1,
+                "VK_QCOM_filter_cubic_weights": 1,
                 "VK_QCOM_fragment_density_map_offset": 1,
                 "VK_QCOM_image_processing": 1,
+                "VK_QCOM_image_processing2": 1,
                 "VK_QCOM_multiview_per_view_viewports": 1,
+                "VK_QCOM_multiview_per_view_render_areas": 1,
                 "VK_QCOM_render_pass_shader_resolve": 1,
                 "VK_QCOM_render_pass_store_ops": 1,
                 "VK_QCOM_render_pass_transform": 1,
                 "VK_QCOM_rotated_copy_commands": 1,
                 "VK_QCOM_tile_properties": 1,
+                "VK_QCOM_ycbcr_degamma": 1,
                 "VK_QNX_screen_surface": 1,
                 "VK_SEC_amigo_profiling": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
