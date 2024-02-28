@@ -1180,21 +1180,6 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
         vk::CreateAccelerationStructureNV(device(), &as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
-#if 0
-    // XXX Subtest disabled because this is the wrong VUID.
-    // No VUIDs currently exist to require memory is bound (spec bug).
-    // Invalid vertex buffer - no memory bound.
-    {
-        VkGeometryNV geometry = valid_geometry_triangles;
-        geometry.geometry.triangles.vertexData = unbound_buffer.handle();
-
-        VkAccelerationStructureCreateInfoNV as_create_info = GetCreateInfo(geometry);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGeometryTrianglesNV-vertexOffset-02428");
-        vk::CreateAccelerationStructureNV(device(), &as_create_info, nullptr, &as);
-        m_errorMonitor->VerifyFound();
-    }
-#endif
-
     // Invalid index offset - not multiple of index size.
     {
         VkGeometryNV geometry = valid_geometry_triangles;
