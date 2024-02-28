@@ -165,7 +165,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     m_commandBuffer->end();
     // Should get a warning since shader was instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-vkCmdDraw-None-08613");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-vkCmdDraw-storageBuffers-06936");
     m_commandBuffer->QueueCommandBuffer();
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();

@@ -414,9 +414,11 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
                          << " access out of bounds. Descriptor size is " << size << " and highest byte accessed was " << offset;
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
                         binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-                        out_vuid_msg = vuid.uniform_access_oob;
+                        out_vuid_msg =
+                            cmd_resources.uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
                     } else {
-                        out_vuid_msg = vuid.storage_access_oob;
+                        out_vuid_msg =
+                            cmd_resources.uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
                     }
                     error_found = true;
                     break;
@@ -425,9 +427,11 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
                          << " access out of bounds. Descriptor size is " << size << " texels and highest texel accessed was "
                          << offset;
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-                        out_vuid_msg = vuid.uniform_access_oob;
+                        out_vuid_msg =
+                            cmd_resources.uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
                     } else {
-                        out_vuid_msg = vuid.storage_access_oob;
+                        out_vuid_msg =
+                            cmd_resources.uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
                     }
                     error_found = true;
                     break;

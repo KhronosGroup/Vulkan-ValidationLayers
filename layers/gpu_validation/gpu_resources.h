@@ -64,6 +64,7 @@ class CommandResources {
     VkDescriptorPool output_buffer_desc_pool = VK_NULL_HANDLE;
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     bool uses_robustness = false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
+    bool uses_shader_object = false;       // Some VU are dependent if used with pipeline or shader object
     vvl::Func command = vvl::Func::Empty;  // Should probably use Location instead
     uint32_t desc_binding_index = vvl::kU32Max;// desc_binding is only used to help generate an error message
     std::vector<DescBindingInfo> *desc_binding_list = nullptr;
