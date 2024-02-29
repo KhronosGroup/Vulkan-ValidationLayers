@@ -633,6 +633,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
     uint32_t uniform_buffer_dynamic = pCreateInfo->bindingCount;
     uint32_t storage_buffer_dynamic = pCreateInfo->bindingCount;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    bool using_mutable_type = false;
 
     for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
         const Location binding_loc = create_info_loc.dot(Field::pBindings, i);
@@ -701,10 +702,13 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
             }
         }
 
-        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && binding_info.pImmutableSamplers != nullptr) {
-            skip |=
-                LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-04605", device, binding_loc.dot(Field::descriptorType),
-                         "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but pImmutableSamplers is not NULL.");
+        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+            using_mutable_type = true;
+            if (binding_info.pImmutableSamplers != nullptr) {
+                skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-04605", device,
+                                 binding_loc.dot(Field::descriptorType),
+                                 "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but pImmutableSamplers is not NULL.");
+            }
         }
 
         if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
@@ -757,6 +761,26 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                          "for push descriptor, total descriptor count in layout (%" PRIu64
                          ") must not be greater than maxPushDescriptors (%" PRIu32 ").",
                          total_descriptors, phys_dev_ext_props.push_descriptor_props.maxPushDescriptors);
+    }
+
+    // No point of checking for support if other VUs have been triggered already
+    if (!skip && IsExtEnabled(device_extensions.vk_khr_maintenance3)) {
+        VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+        if (IsExtEnabledByCreateinfo(device_extensions.vk_khr_maintenance3)) {
+            DispatchGetDescriptorSetLayoutSupportKHR(device, pCreateInfo, &support);
+        } else {
+            DispatchGetDescriptorSetLayoutSupport(device, pCreateInfo, &support);
+        }
+        if (!support.supported) {
+            std::stringstream error_str;
+            error_str << "was passed into vkGetDescriptorSetLayoutSupport and returned not supported";
+            if (using_mutable_type) {
+                error_str << " (verify mutable type are supported, not every driver supports mutable types such as "
+                             "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)";
+            }
+            skip |= LogError("VUID-vkCreateDescriptorSetLayout-support-09582", device, error_obj.location.dot(Field::pCreateInfo),
+                             "%s", error_str.str().c_str());
+        }
     }
 
     return skip;
