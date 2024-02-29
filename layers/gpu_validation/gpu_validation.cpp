@@ -1241,7 +1241,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
         VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
         shader_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
         shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        shader_ci.codeSize = sizeof(gpu_pre_draw_vert);
+        shader_ci.codeSize = gpu_pre_draw_vert_size * sizeof(uint32_t);
         shader_ci.pCode = gpu_pre_draw_vert;
         shader_ci.pName = "main";
         shader_ci.setLayoutCount = 1u;
@@ -1256,7 +1256,7 @@ gpuav::PreDrawResources::SharedResources *gpuav::Validator::GetSharedDrawIndirec
         }
     } else {
         VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-        shader_module_ci.codeSize = sizeof(gpu_pre_draw_vert);
+        shader_module_ci.codeSize = gpu_pre_draw_vert_size * sizeof(uint32_t);
         shader_module_ci.pCode = gpu_pre_draw_vert;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &shared_resources->shader_module);
         if (result != VK_SUCCESS) {
@@ -1319,7 +1319,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
         VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
         shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        shader_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
+        shader_ci.codeSize = gpu_pre_dispatch_comp_size * sizeof(uint32_t);
         shader_ci.pCode = gpu_pre_dispatch_comp;
         shader_ci.pName = "main";
         shader_ci.setLayoutCount = 1u;
@@ -1334,7 +1334,7 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
         }
     } else {
         VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-        shader_module_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
+        shader_module_ci.codeSize = gpu_pre_dispatch_comp_size * sizeof(uint32_t);
         shader_module_ci.pCode = gpu_pre_dispatch_comp;
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
@@ -1413,7 +1413,7 @@ gpuav::PreTraceRaysResources::SharedResources *gpuav::Validator::GetSharedTraceR
     }
 
     VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-    shader_module_ci.codeSize = sizeof(gpu_pre_trace_rays_rgen);
+    shader_module_ci.codeSize = gpu_pre_trace_rays_rgen_size * sizeof(uint32_t);
     shader_module_ci.pCode = gpu_pre_trace_rays_rgen;
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
@@ -1595,7 +1595,7 @@ gpuav::PreCopyBufferToImageResources::SharedResources *gpuav::Validator::GetShar
     }
 
     VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-    shader_module_ci.codeSize = sizeof(gpu_pre_copy_buffer_to_image_comp);
+    shader_module_ci.codeSize = gpu_pre_copy_buffer_to_image_comp_size * sizeof(uint32_t);
     shader_module_ci.pCode = gpu_pre_copy_buffer_to_image_comp;
     VkShaderModule validation_shader = VK_NULL_HANDLE;
     result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);

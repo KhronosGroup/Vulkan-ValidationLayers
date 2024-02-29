@@ -22,8 +22,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {inst_ray_query_comp, sizeof(inst_ray_query_comp) / sizeof(uint32_t), LinkFunctions::inst_ray_query, 0,
-                             "inst_ray_query"};
+static LinkInfo link_info = {inst_ray_query_comp, inst_ray_query_comp_size, LinkFunctions::inst_ray_query, 0, "inst_ray_query"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t RayQueryPass::GetLinkFunctionId() {

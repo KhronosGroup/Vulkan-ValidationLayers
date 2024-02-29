@@ -108,10 +108,7 @@ def write(words, filename, apiname, outdir = None):
         columns = ["0x%08x" % word for word in words[i:(i + COLUMNS)]]
         literals.append(" " * INDENT + ", ".join(columns) + ",")
 
-    header = """#include <stdint.h>
-#pragma once
-
-// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+    header = f"""// *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See generate_spirv.py for modifications
 
 /***************************************************************************
@@ -134,20 +131,61 @@ def write(words, filename, apiname, outdir = None):
 *
 ****************************************************************************/
 
+#pragma once
+
+#include <cstdint>
+
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-static const uint32_t %s[%d] = {
-%s
-};
-""" % (name, len(words), "\n".join(literals))
+extern const uint32_t {name}_size;
+extern const uint32_t {name}[];
+""" 
+
+    source = f"""// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See generate_spirv.py for modifications
+
+/***************************************************************************
+*
+* Copyright (c) 2021-2024 The Khronos Group Inc.
+* Copyright (c) 2021-2024 Valve Corporation
+* Copyright (c) 2021-2024 LunarG, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+****************************************************************************/
+
+#include "{name}.h"
+
+
+// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
+[[maybe_unused]] const uint32_t {name}_size = {len(words)};
+[[maybe_unused]] const uint32_t {name}[{len(words)}] = {{ {"\n".join(literals)} }};
+""" 
 
     if outdir:
-      out_file = os.path.join(outdir, f'layers/{apiname}/generated')
+      out_file_dir = os.path.join(outdir, f'layers/{apiname}/generated')
     else:
-      out_file = common_ci.RepoRelative(f'layers/{apiname}/generated')
-    out_file = os.path.join(out_file, name + '.h')
-    os.makedirs(os.path.dirname(out_file), exist_ok=True)
-    with open(out_file, "w") as f:
+      out_file_dir = common_ci.RepoRelative(f'layers/{apiname}/generated')
+    # SPIR-V words array is stored in source files and not in header files
+    # because of compiling issues that showed up with MSVC,
+    # where modifications in arrays stored in header files would not be noticed by the compiler
+    out_file_header = os.path.join(out_file_dir, name + '.h')
+    out_file_source = os.path.join(out_file_dir, name + '.cpp')
+    os.makedirs(os.path.dirname(out_file_header), exist_ok=True)
+    with open(out_file_header, "w") as f:
         print(header, end="", file=f)
+    with open(out_file_source, "w") as f:
+        print(source, end="", file=f)
+
 
 def write_inst_hash(generate_shaders, outdir=None):
     # Build a hash of the git hash for all instrumentation shaders

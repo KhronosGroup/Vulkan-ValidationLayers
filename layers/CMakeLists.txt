@@ -209,6 +209,16 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_counter_bodies.h
     ${API_TYPE}/generated/thread_safety_counter_definitions.h
     ${API_TYPE}/generated/thread_safety_counter_instances.h
+    ${API_TYPE}/generated/gpu_inst_shader_hash.h
+    ${API_TYPE}/generated/gpu_inst_shader_hash.h
+    ${API_TYPE}/generated/gpu_pre_copy_buffer_to_image_comp.h
+    ${API_TYPE}/generated/gpu_pre_copy_buffer_to_image_comp.cpp
+    ${API_TYPE}/generated/gpu_pre_dispatch_comp.h
+    ${API_TYPE}/generated/gpu_pre_dispatch_comp.cpp
+    ${API_TYPE}/generated/gpu_pre_draw_vert.h
+    ${API_TYPE}/generated/gpu_pre_draw_vert.cpp
+    ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.h
+    ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.cpp
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h
     gpu_validation/gpu_descriptor_set.cpp

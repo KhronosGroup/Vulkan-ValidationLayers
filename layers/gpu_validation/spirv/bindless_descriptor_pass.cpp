@@ -22,7 +22,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {inst_bindless_descriptor_comp, sizeof(inst_bindless_descriptor_comp) / sizeof(uint32_t),
+static LinkInfo link_info = {inst_bindless_descriptor_comp, inst_bindless_descriptor_comp_size,
                              LinkFunctions::inst_bindless_descriptor, 0, "inst_bindless_descriptor"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.

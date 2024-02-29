@@ -24,4 +24,4 @@
 
 #pragma once
 
-#define INST_SHADER_GIT_HASH "8882b601d9ca13ca1c1041dce380041cc7ff5d30"
+#define INST_SHADER_GIT_HASH "cd11e7dd635baa843b808e84eac587e430756bbc"
