@@ -3303,7 +3303,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                              string_VkImageCreateFlags(fragment_density_map_view_state->image_state->createInfo.flags).c_str());
         }
         int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
-        if (layer_count != 1) {
+        if (layer_count != 1 && !enabled_features.multiview) {
             const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908", objlist, view_loc,
                              "must have a layer count (%" PRId32 ") equal to 1.", layer_count);
