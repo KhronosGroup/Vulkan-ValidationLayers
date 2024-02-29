@@ -388,6 +388,13 @@ def main(argv):
     # The shaders requires glslangvalidator, so they are updated manually with generate_spirv when needed
     verify_exclude = [
         '.clang-format',
+        'gpu_pre_dispatch_comp.cpp',
+        'gpu_pre_draw_vert.cpp',
+        'gpu_pre_trace_rays_rgen.cpp',
+        'gpu_pre_copy_buffer_to_image_comp.cpp',
+        'inst_buffer_device_address_comp.cpp',
+        'inst_bindless_descriptor_comp.cpp',
+        'inst_ray_query_comp.cpp',
         'gpu_pre_dispatch_comp.h',
         'gpu_pre_draw_vert.h',
         'gpu_pre_trace_rays_rgen.h',

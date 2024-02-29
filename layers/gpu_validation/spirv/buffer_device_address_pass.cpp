@@ -22,7 +22,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {inst_buffer_device_address_comp, sizeof(inst_buffer_device_address_comp) / sizeof(uint32_t),
+static LinkInfo link_info = {inst_buffer_device_address_comp, inst_buffer_device_address_comp_size,
                              LinkFunctions::inst_buffer_device_address, 0, "inst_buffer_device_address"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
