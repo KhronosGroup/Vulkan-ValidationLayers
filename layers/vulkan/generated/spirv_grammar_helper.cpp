@@ -1303,6 +1303,12 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "RegisterMapInterfaceINTEL";
         case spv::ExecutionModeNamedBarrierCountINTEL:
             return "NamedBarrierCountINTEL";
+        case spv::ExecutionModeMaximumRegistersINTEL:
+            return "MaximumRegistersINTEL";
+        case spv::ExecutionModeMaximumRegistersIdINTEL:
+            return "MaximumRegistersIdINTEL";
+        case spv::ExecutionModeNamedMaximumRegistersINTEL:
+            return "NamedMaximumRegistersINTEL";
 
         default:
             return "Unknown Execution Mode";
