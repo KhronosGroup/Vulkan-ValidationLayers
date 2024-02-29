@@ -1926,3 +1926,26 @@ TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreAllState) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline(false);
 }
+
+TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitVertexInputLibInfo();
+    pipe.InitState();
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = nullptr;
+    pipe.CreateGraphicsPipeline(false);
+}
+
+TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitFragmentOutputLibInfo();
+    pipe.InitState();
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = nullptr;
+    pipe.CreateGraphicsPipeline(false);
+}

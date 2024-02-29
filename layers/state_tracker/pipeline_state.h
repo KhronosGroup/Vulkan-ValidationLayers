@@ -192,6 +192,9 @@ class Pipeline : public StateObject {
 
     bool IsGraphicsLibrary() const { return !HasFullState(); }
     bool HasFullState() const {
+        if (pipeline_type != VK_PIPELINE_BIND_POINT_GRAPHICS) {
+            return true;
+        }
         // First make sure that this pipeline is a "classic" pipeline, or is linked together with the appropriate sub-state
         // libraries
         if (graphics_lib_type && (graphics_lib_type != (VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
