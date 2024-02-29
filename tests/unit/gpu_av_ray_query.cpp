@@ -236,14 +236,14 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVRayQuery, ComputeTMinNaN) {
-    TEST_DESCRIPTION("Ray query with a Ray TMax less than Ray TMin");
+TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNaN) {
+    TEST_DESCRIPTION("Ray query with a Ray Origin as a NaN");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           float x;
@@ -275,8 +275,8 @@ TEST_F(NegativeGpuAVRayQuery, ComputeTMinNaN) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.memory().map());
-    uniform_buffer_ptr[0] = 1.0f;  // t_min
-    uniform_buffer_ptr[1] = 0.0f;  // t_max
+    uniform_buffer_ptr[0] = 1.0f;  // x
+    uniform_buffer_ptr[1] = 0.0f;  // y
     uniform_buffer.memory().unmap();
 
     m_commandBuffer->begin();
@@ -287,6 +287,62 @@ TEST_F(NegativeGpuAVRayQuery, ComputeTMinNaN) {
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351");
+    m_commandBuffer->QueueCommandBuffer(false);
+    m_device->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
+    TEST_DESCRIPTION("Ray query with a Ray Origin as a non finite value");
+    RETURN_IF_SKIP(InitGpuAVRayQuery());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+        layout(set = 0, binding = 1) uniform Uniforms {
+          float x;
+          float y;
+        } params;
+
+        void main() {
+            rayQueryEXT query;
+            // 1.0 / 0.0 will produce positive infinity
+            float bad = 1.0 / params.x;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0,bad,0), 1.0, vec3(0,0,1), 100);
+            rayQueryProceedEXT(query);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                              {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.InitState();
+    pipeline.CreateComputePipeline();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    pipeline.descriptor_set_->WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.memory().map());
+    uniform_buffer_ptr[0] = 0.0f;  // t_min
+    uniform_buffer_ptr[1] = 0.0f;  // t_max
+    uniform_buffer.memory().unmap();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348");
     m_commandBuffer->QueueCommandBuffer(false);
     m_device->wait();
     m_errorMonitor->VerifyFound();

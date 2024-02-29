@@ -163,6 +163,8 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpUConvert:
         case spv::OpLogicalNot:
         case spv::OpIsNan:
+        case spv::OpIsInf:
+        case spv::OpIsFinite:
         case spv::OpConvertFToU:
         case spv::OpConvertFToS:
         case spv::OpConvertSToF:
