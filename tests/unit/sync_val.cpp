@@ -6661,3 +6661,72 @@ TEST_F(NegativeSyncVal, QSWriteRacingRead) {
     compute_queue->wait();
     transfer_queue->wait();
 }
+
+TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
+    TEST_DESCRIPTION("Missing synchronization with draw command when render pass uses storeOp=NONE");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
+    const VkImageLayout input_attachment_layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(depth_format, input_attachment_layout, input_attachment_layout, VK_ATTACHMENT_LOAD_OP_LOAD,
+                                VK_ATTACHMENT_STORE_OP_NONE);
+    rp.AddAttachmentReference({0, input_attachment_layout});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    image.SetLayout(input_attachment_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    // Form an execution dependency with loadOp (EARLY_FRAGMENT_TESTS) but not with draw command (FRAGMENT_SHADER)
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT;
+    layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.dstAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.oldLayout = input_attachment_layout;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    // Fragment shader READs input attachment.
+    VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    OneOffDescriptorSet descriptor_set(m_device, {binding});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                            input_attachment_layout);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(*m_commandBuffer, 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+
+    // SYNC-HAZARD-WRITE-AFTER-READ hazard: transition should synchronize with draw command
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ");
+    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}

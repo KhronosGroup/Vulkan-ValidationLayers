@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "../framework/thread_helper.h"
 #include "../framework/queue_submit_context.h"
 
@@ -1427,4 +1428,78 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
 
     m_default_queue->wait();
     transfer_queue->wait();
+}
+
+// TODO:
+// It has to be this test found a bug in the existing code, so it's disabled until it's fixed.
+// Draw access happen-after loadOp access so it's enough to synchronize with FRAGMENT_SHADER read.
+// last_reads contains both loadOp read access and draw (fragment shader) read access. The code
+// synchronizes only with draw (FRAGMENT_SHADER) but not with loadOp (COLOR_ATTACHMENT_OUTPUT),
+// and the syncval complains that COLOR_ATTACHMENT_OUTPUT access is not synchronized.
+TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
+    TEST_DESCRIPTION("Synchronization with draw command when render pass uses storeOp=NONE");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
+    sync2_features.synchronization2 = VK_TRUE;
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkImageLayout input_attachment_layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, input_attachment_layout, input_attachment_layout, VK_ATTACHMENT_LOAD_OP_LOAD,
+                                VK_ATTACHMENT_STORE_OP_NONE);
+    rp.AddAttachmentReference({0, input_attachment_layout});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    image.SetLayout(input_attachment_layout);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    // Form an execution dependency with draw command (FRAGMENT_SHADER). Execution dependency is enough to sync with READ.
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+    layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.dstAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.oldLayout = input_attachment_layout;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    // Fragment shader READs input attachment.
+    VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    OneOffDescriptorSet descriptor_set(m_device, {binding});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                            input_attachment_layout);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp.Handle(), fb);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(*m_commandBuffer, 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+
+    // This waits for the FRAGMENT_SHADER read before starting with transition.
+    // If storeOp other than NONE was used we had to wait for it instead.
+    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
+    m_commandBuffer->end();
 }
