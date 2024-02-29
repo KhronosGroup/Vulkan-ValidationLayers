@@ -1426,4 +1426,5 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     vk::QueueSubmit2(*m_default_queue, 1, &submit2, VK_NULL_HANDLE);
 
     m_default_queue->wait();
+    transfer_queue->wait();
 }
