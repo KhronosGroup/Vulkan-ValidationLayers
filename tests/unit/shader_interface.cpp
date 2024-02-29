@@ -589,8 +589,6 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct64bit) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    // One for component 0 and 1
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
@@ -939,8 +937,6 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType64bit) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    // Depending on compiler sorting order, might report multiple 07754 VUs
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpEntryPoint-07754");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 

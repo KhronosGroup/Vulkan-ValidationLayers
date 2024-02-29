@@ -515,6 +515,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                                  location, component, string_VkShaderStageFlagBits(producer_stage),
                                  producer.DescribeType(output_var->type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
                                  consumer.DescribeType(input_var->type_id).c_str());
+                    break;  // Only need to report for the first component found
                 }
 
                 // Tessellation needs to match Patch vs Vertex
@@ -527,6 +528,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                                      " Tessellation Control is %s while Tessellation Evaluation is %s",
                                      location, component, input_var->is_patch ? "patch" : "vertex",
                                      output_var->is_patch ? "patch" : "vertex");
+                    break;  // Only need to report for the first component found
                 }
 
                 // If using maintenance4 need to check Vectors incase different sizes
