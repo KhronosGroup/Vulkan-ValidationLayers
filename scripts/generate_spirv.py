@@ -226,15 +226,21 @@ def main():
         if (filename.split(".")[-1] in shader_type):
             generate_shaders.append(os.path.join(gpu_shaders, filename))
 
+    # Spots external folder should be in
+    for path in ['external', 'Debug/64', 'Release/64']:
+        external_dir = common_ci.RepoRelative(path)
+        if os.path.isdir(external_dir):
+            break
+
     # default glslangValidator path
-    glslang_validator =  common_ci.RepoRelative('external/glslang/build/install/bin/glslangValidator')
+    glslang_validator =  common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslangValidator'))
     if args.glslang:
         glslang_validator = args.glslang
     if not os.path.isfile(glslang_validator):
         sys.exit("Cannot find glslangValidator " + glslang_validator)
 
     # default spirv-opt path
-    spirv_opt =  common_ci.RepoRelative('external/SPIRV-Tools/build/install/bin/spirv-opt')
+    spirv_opt =  common_ci.RepoRelative(os.path.join(external_dir, 'SPIRV-Tools/build/install/bin/spirv-opt'))
     if args.spirv_opt:
         spirv_opt = args.spirv_opt
     if not os.path.isfile(spirv_opt):
