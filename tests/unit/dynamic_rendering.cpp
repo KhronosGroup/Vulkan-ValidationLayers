@@ -3422,7 +3422,6 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     vkt::Image image2(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView image_view2 = image2.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
     rendering_fragment_density.imageView = image_view2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06109");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -3496,7 +3495,6 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentCreateFlags) {
 TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid layer count");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -3528,6 +3526,7 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-multiview-06127");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
