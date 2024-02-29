@@ -56,6 +56,14 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
             error = kInstErrorRayQueryDirectionNaN;
             break;
         }
+        if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
+            error = kInstErrorRayQueryOriginFinite;
+            break;
+        }
+        if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
+            error = kInstErrorRayQueryDirectionFinite;
+            break;
+        }
         if (ray_tmin < 0.0f) {
             error = kInstErrorRayQueryNegativeMin;
             break;

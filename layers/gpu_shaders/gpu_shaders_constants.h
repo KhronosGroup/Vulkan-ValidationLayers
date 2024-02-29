@@ -194,6 +194,8 @@ const int kInstErrorRayQueryMinNaN = 16;
 const int kInstErrorRayQueryMaxNaN = 17;
 const int kInstErrorRayQueryOriginNaN = 18;
 const int kInstErrorRayQueryDirectionNaN = 19;
+const int kInstErrorRayQueryOriginFinite = 20;
+const int kInstErrorRayQueryDirectionFinite = 21;
 
 // Direct Input Buffer Offsets
 //

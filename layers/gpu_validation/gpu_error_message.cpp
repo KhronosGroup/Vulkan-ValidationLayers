@@ -476,6 +476,16 @@ bool gpuav::Validator::GenerateValidationMessage(const uint32_t *debug_record, c
             out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
             error_found = true;
         } break;
+        case kInstErrorRayQueryOriginFinite: {
+            strm << "OpRayQueryInitializeKHR operand Ray Origin contains a non-finite value. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348";
+            error_found = true;
+        } break;
+        case kInstErrorRayQueryDirectionFinite: {
+            strm << "OpRayQueryInitializeKHR operand Ray Direction contains a non-finite value. ";
+            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348";
+            error_found = true;
+        } break;
         case kInstErrorRayQueryBothSkip: {
             const uint32_t value = debug_record[kInstRayQueryOutParam0];
             strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
