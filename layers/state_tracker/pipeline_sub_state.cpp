@@ -27,7 +27,7 @@ VkPipelineLayoutCreateFlags PipelineSubState::PipelineLayoutCreateFlags() const 
 VertexInputState::VertexInputState(const vvl::Pipeline &p, const safe_VkGraphicsPipelineCreateInfo &create_info)
     : PipelineSubState(p) {
     for (uint32_t i = 0; i < create_info.stageCount; i++) {
-        if (create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+        if (create_info.pStages && create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             return;  // if mesh shaders are used, all vertex input state is ignored
         }
     }

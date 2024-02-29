@@ -77,6 +77,11 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
         // shader stages need to be recorded in pipeline order
 
         for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
+            if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS && !pipe_state.fragment_shader_state &&
+                !pipe_state.pre_raster_state) {
+                break;  // pStages are ignored if not using one of these substates
+            }
+
             const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
             if (stage_ci.stage == stage) {
                 auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
@@ -171,6 +176,11 @@ StageStateVec Pipeline::GetStageStates(const ValidationStateTracker &state_data,
 
 static uint32_t GetCreateInfoShaders(const Pipeline &pipe_state) {
     uint32_t result = 0;
+    if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS && !pipe_state.fragment_shader_state &&
+        !pipe_state.pre_raster_state) {
+        return result;  // pStages are ignored if not using one of these substates
+    }
+
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
         result |= stage_ci.stage;
     }
@@ -425,9 +435,13 @@ static bool IgnoreColorAttachments(const ValidationStateTracker *state_data, Pip
 
 static bool UsesShaderModuleId(const Pipeline &pipe_state) {
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
-        const auto module_id_info = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
-        if (module_id_info && (module_id_info->identifierSize > 0)) {
-            return true;
+        // if using GPL, can have null pStages
+        if (stage_ci.ptr()) {
+            const auto module_id_info =
+                vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
+            if (module_id_info && (module_id_info->identifierSize > 0)) {
+                return true;
+            }
         }
     }
     return false;
