@@ -41,7 +41,7 @@
                 "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers",
                 "-DSPIRV_WERROR=OFF",
                 "-DSPIRV_SKIP_TESTS=ON",
-                "-DSPIRV_SKIP_EXECUTABLES=ON"
+                "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
             "commit": "1b643eac5d4062bbec48b912a1332e6909802479"
         },
