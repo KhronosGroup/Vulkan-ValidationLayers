@@ -91,8 +91,6 @@ uint32_t Pass::GetStageInfo(Function& function, spv::ExecutionModel execution_mo
 
     switch (execution_model) {
         case spv::ExecutionModelVertex: {
-            // stage_info[1] = create_load(spv::BuiltInVertexIndex);
-            // stage_info[2] = create_load(spv::BuiltInInstanceIndex);
             uint32_t load_id = create_load(spv::BuiltInVertexIndex);
             stage_info[1] = CastToUint32(load_id, block, &inst_it);
             load_id = create_load(spv::BuiltInInstanceIndex);
@@ -318,6 +316,17 @@ BasicBlockIt Pass::InjectFunctionCheck(Function* function, BasicBlockIt block_it
         function->ReplaceAllUsesWith(target_inst_id, phi_id);
         merge_block.CreateInstruction(spv::OpPhi,
                                       {phi_type.Id(), phi_id, target_inst_id, valid_block_label, null_id, invalid_block_label});
+    }
+
+    // When skipping some instructions, we need something valid to replace it
+    if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
+        // Currently assume the RayQuery and AS object were valid already
+        const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
+        const uint32_t float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
+        const uint32_t vec3_0_id = module_.type_manager_.GetConstantZeroVec3().Id();
+        invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR,
+                                        {target_inst.Operand(0), target_inst.Operand(1), uint32_0_id, uint32_0_id, vec3_0_id,
+                                         float32_0_id, vec3_0_id, float32_0_id});
     }
 
     invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});

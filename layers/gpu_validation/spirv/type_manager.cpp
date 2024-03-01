@@ -412,9 +412,9 @@ const Constant* TypeManager::FindConstantById(uint32_t id) const {
 
 const Constant& TypeManager::CreateConstantUInt32(uint32_t value) {
     const Type& type = GetTypeInt(32, 0);
-    const uint32_t type_id = module_.TakeNextId();
+    const uint32_t constant_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpConstant);
-    new_inst->Fill({type.Id(), type_id, value});
+    new_inst->Fill({type.Id(), constant_id, value});
     return AddConstant(std::move(new_inst), type);
 }
 
@@ -434,13 +434,39 @@ const Constant& TypeManager::GetConstantUInt32(uint32_t value) {
 // It is common to use uint32_t(0) as a default, so having it cached is helpful
 const Constant& TypeManager::GetConstantZeroUint32() {
     if (!uint_32bit_zero_constants_) {
-        const Type& uint32_type = GetTypeInt(32, 0);
-        uint_32bit_zero_constants_ = FindConstantInt32(uint32_type.Id(), 0);
+        const Type& uint_32_type = GetTypeInt(32, 0);
+        uint_32bit_zero_constants_ = FindConstantInt32(uint_32_type.Id(), 0);
         if (!uint_32bit_zero_constants_) {
             uint_32bit_zero_constants_ = &CreateConstantUInt32(0);
         }
     }
     return *uint_32bit_zero_constants_;
+}
+
+// It is common to use float(0) as a default, so having it cached is helpful
+const Constant& TypeManager::GetConstantZeroFloat32() {
+    if (!float_32bit_zero_constants_) {
+        const Type& float_32_type = GetTypeFloat(32);
+        float_32bit_zero_constants_ = FindConstantFloat32(float_32_type.Id(), 0);
+        if (!float_32bit_zero_constants_) {
+            const uint32_t constant_id = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(4, spv::OpConstant);
+            new_inst->Fill({float_32_type.Id(), constant_id, 0});
+            float_32bit_zero_constants_ = &AddConstant(std::move(new_inst), float_32_type);
+        }
+    }
+    return *float_32bit_zero_constants_;
+}
+
+const Constant& TypeManager::GetConstantZeroVec3() {
+    const Type& float_32_type = GetTypeFloat(32);
+    const Type& vec3_type = GetTypeVector(float_32_type, 3);
+    const uint32_t float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
+
+    const uint32_t constant_id = module_.TakeNextId();
+    auto new_inst = std::make_unique<Instruction>(6, spv::OpConstantComposite);
+    new_inst->Fill({vec3_type.Id(), constant_id, float32_0_id, float32_0_id, float32_0_id});
+    return AddConstant(std::move(new_inst), vec3_type);
 }
 
 const Constant& TypeManager::GetConstantNull(const Type& type) {
