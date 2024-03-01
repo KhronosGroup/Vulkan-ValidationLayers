@@ -1172,6 +1172,22 @@ void Pipeline::SetUniformBufferBinding(std::shared_ptr<vkt::Buffer> uniform_buff
     bindings_.emplace_back(uniform_buffer_binding);
 }
 
+void Pipeline::SetStorageBufferBinding(std::shared_ptr<vkt::Buffer> storage_buffer, uint32_t bind_point) {
+    if (storage_buffer_) {
+        // For now, no need to handle multiple calls to this function
+        assert(false);
+    }
+
+    storage_buffer_ = storage_buffer;
+
+    VkDescriptorSetLayoutBinding binding{};
+    binding.binding = bind_point;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    binding.descriptorCount = 1;
+    binding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+    bindings_.emplace_back(binding);
+}
+
 void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
 
 void Pipeline::SetRayGenShader(const char *glsl) {
@@ -1208,10 +1224,13 @@ void Pipeline::BuildPipeline() {
 
     size_t top_level_accel_struct_i = 0;
     for (const auto &binding : bindings_) {
-        if (binding.descriptorType & VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+        if (binding.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
             desc_set_->WriteDescriptorAccelStruct(binding.binding, 1, &tlas_vec_[top_level_accel_struct_i++]->GetDstAS()->handle());
-        } else if (binding.descriptorType & VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        } else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             desc_set_->WriteDescriptorBufferInfo(binding.binding, *uniform_buffer_, 0, uniform_buffer_->create_info().size);
+        } else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+            desc_set_->WriteDescriptorBufferInfo(binding.binding, *storage_buffer_, 0, storage_buffer_->create_info().size,
+                                                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
         } else {
             assert(false);
         }

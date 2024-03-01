@@ -300,6 +300,7 @@ class Pipeline {
     void InitLibraryInfo();
     void AddTopLevelAccelStructBinding(std::shared_ptr<as::BuildGeometryInfoKHR> tlas, uint32_t bind_point);
     void SetUniformBufferBinding(std::shared_ptr<vkt::Buffer> uniform_buffer, uint32_t bind_point);
+    void SetStorageBufferBinding(std::shared_ptr<vkt::Buffer> storage_buffer, uint32_t bind_point);
     void SetPushConstantRangeSize(uint32_t byte_size);
     void SetRayGenShader(const char* glsl);
     void AddMissShader(const char* glsl);
@@ -330,6 +331,7 @@ class Pipeline {
     uint32_t push_constant_range_size_ = 0;
     std::vector<std::shared_ptr<as::BuildGeometryInfoKHR>> tlas_vec_{};
     std::shared_ptr<vkt::Buffer> uniform_buffer_{};
+    std::shared_ptr<vkt::Buffer> storage_buffer_{};
     std::vector<VkDescriptorSetLayoutBinding> bindings_{};
     std::unique_ptr<OneOffDescriptorSet> desc_set_{};
     vkt::PipelineLayout pipeline_layout_{};

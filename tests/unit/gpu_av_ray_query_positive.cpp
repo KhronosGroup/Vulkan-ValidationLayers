@@ -268,10 +268,10 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
             gl_Position = vec4(1);
         }
     )glsl";
+    VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipeline(*this);
-    pipeline.vs_ = std::make_unique<VkShaderObj>(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
-    pipeline.shader_stages_ = {pipeline.vs_->GetStageCreateInfo(), pipeline.fs_->GetStageCreateInfo()};
+    pipeline.shader_stages_ = {vs.GetStageCreateInfo(), pipeline.fs_->GetStageCreateInfo()};
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
     pipeline.InitState();
     pipeline.CreateGraphicsPipeline();

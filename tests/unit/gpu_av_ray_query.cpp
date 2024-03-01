@@ -347,3 +347,178 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
     m_device->wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVRayQuery, ComputeUseQueryUninit) {
+    TEST_DESCRIPTION("rayQueryInitializeEXT is never called, make sure we don't hang with an uninit query object");
+    RETURN_IF_SKIP(InitGpuAVRayQuery());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+        layout(set = 0, binding = 1) buffer SSBO {
+          float x;
+          float y;
+        } params;
+
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0,1,0), params.x, vec3(0,0,1), 100);
+            rayQueryProceedEXT(query);
+            if (rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+                params.y = rayQueryGetIntersectionTEXT(query, true);
+            }
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                              {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.InitState();
+    pipeline.CreateComputePipeline();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    pipeline.descriptor_set_->WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    auto buffer_ptr = static_cast<float *>(buffer.memory().map());
+    buffer_ptr[0] = -4.0f;  // t_min
+    buffer.memory().unmap();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
+    m_commandBuffer->QueueCommandBuffer(false);
+    m_device->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninit) {
+    TEST_DESCRIPTION("rayQueryInitializeEXT is never called, make sure we don't hang with an uninit query object");
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitGpuAVRayQuery());
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    const char *ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(set = 0, binding = 1) buffer SSBO {
+            float x;
+            float y;
+        } params;
+
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0,1,0), params.x, vec3(0,0,1), 100);
+            rayQueryProceedEXT(query);
+            if (rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+                params.y = rayQueryGetIntersectionTEXT(query, true);
+            }
+        }
+    )glsl";
+    pipeline.SetRayGenShader(ray_gen);
+
+    auto buffer = std::make_shared<vkt::Buffer>(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto buffer_ptr = static_cast<float *>(buffer->memory().map());
+    buffer_ptr[0] = -16.0f;
+    buffer->memory().unmap();
+    pipeline.SetStorageBufferBinding(buffer, 1);
+
+    auto tlas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer));
+    pipeline.AddTopLevelAccelStructBinding(std::move(tlas), 0);
+    pipeline.Build();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                              &pipeline.GetDescriptorSet()->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
+    m_commandBuffer->QueueCommandBuffer(false);
+    m_device->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
+    TEST_DESCRIPTION("rayQueryInitializeEXT is never called, make sure we don't hang with an uninit query object");
+    RETURN_IF_SKIP(InitGpuAVRayQuery());
+    InitRenderTarget();
+
+    char const *fragment_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+        
+        layout(location=0) out vec4 color;
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+        layout(set = 0, binding = 1) uniform SSBO {
+            float x;
+        } params;
+
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0,1,0), params.x, vec3(0,0,1), 100);
+            rayQueryProceedEXT(query);
+            float x = 0.0;
+            if (rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+                x = rayQueryGetIntersectionTEXT(query, true);
+            }
+            color = vec4(x);
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipeline(*this);
+    pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                              {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipeline.InitState();
+    pipeline.CreateGraphicsPipeline();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
+    pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    pipeline.descriptor_set_->WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    auto buffer_ptr = static_cast<float *>(buffer.memory().map());
+    buffer_ptr[0] = -4.0f;  // t_min
+    buffer.memory().unmap();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
+    m_commandBuffer->QueueCommandBuffer(false);
+    m_device->wait();
+    m_errorMonitor->VerifyFound();
+}
