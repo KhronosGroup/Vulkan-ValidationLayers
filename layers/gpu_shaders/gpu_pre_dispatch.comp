@@ -1,6 +1,6 @@
-// Copyright (c) 2022 The Khronos Group Inc.
-// Copyright (c) 2022-2023 Valve Corporation
-// Copyright (c) 2022-2023 LunarG, Inc.
+// Copyright (c) 2022-2024 The Khronos Group Inc.
+// Copyright (c) 2022-2024 Valve Corporation
+// Copyright (c) 2022-2024 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ void main() {
     uint indirect_z = indirect_buffer[u_info.indirect_x_offset + 2];
 
     if (indirect_x > u_info.limit_x) {
-        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_x_error, indirect_x, 0);
+        gpuavLogError(kErrorGroupGpuPreDispatch, kErrorSubCodePreDispatchCountLimitX, indirect_x, 0);
     } else if (indirect_y > u_info.limit_y) {
-        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_y_error, indirect_y, 0);
+        gpuavLogError(kErrorGroupGpuPreDispatch, kErrorSubCodePreDispatchCountLimitY, indirect_y, 0);
     } else if (indirect_z > u_info.limit_z) {
-        gpuavLogError(kInstErrorPreDispatchValidate, pre_dispatch_count_exceeds_limit_z_error, indirect_z, 0);
+        gpuavLogError(kErrorGroupGpuPreDispatch, kErrorSubCodePreDispatchCountLimitZ, indirect_z, 0);
     }
 
 }

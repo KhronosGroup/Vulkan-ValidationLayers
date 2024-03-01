@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2022 The Khronos Group Inc.
-// Copyright (c) 2021-2023 Valve Corporation
-// Copyright (c) 2021-2023 LunarG, Inc.
+// Copyright (c) 2021-2024 The Khronos Group Inc.
+// Copyright (c) 2021-2024 Valve Corporation
+// Copyright (c) 2021-2024 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,35 +61,35 @@ layout(push_constant) uniform UniformInfo {
 
 void main() {
     if (gl_VertexIndex == 0) {
-        if (u_info.validation_select == pre_draw_select_count_buffer ||
-            u_info.validation_select == pre_draw_select_mesh_count_buffer) {
+        if (u_info.validation_select == kPreDrawSelectCountBuffer ||
+            u_info.validation_select == kPreDrawSelectMeshCountBuffer) {
             // Validate count buffer
             uint count_in = count_buffer[u_info.count_offset];
             if (count_in > u_info.max_writes) {
-                gpuavLogError(kInstErrorPreDrawValidate, pre_draw_count_exceeds_bufsize_error, count_in, 0);
+                gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawBufferSize, count_in, 0);
             }
             else if (count_in > u_info.count_limit) {
-                gpuavLogError(kInstErrorPreDrawValidate, pre_draw_count_exceeds_limit_error, count_in, 0);
+                gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawCountLimit, count_in, 0);
             }
-        } else if (u_info.validation_select == pre_draw_select_draw_buffer) {
+        } else if (u_info.validation_select == kPreDrawSelectDrawBuffer) {
             // Validate firstInstances
             uint fi_index = u_info.first_instance_offset;
             for (uint i = 0; i < u_info.draw_count; i++) {
                 if (draws_buffer[fi_index] != 0) {
-                    gpuavLogError(kInstErrorPreDrawValidate, pre_draw_first_instance_error, i, i);
+                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawFirstInstance, i, i);
                     break;
 				}
                 fi_index += u_info.draw_stride;
             }
         }
 
-        if (u_info.validation_select == pre_draw_select_mesh_count_buffer ||
-            u_info.validation_select == pre_draw_select_mesh_no_count) {
+        if (u_info.validation_select == kPreDrawSelectMeshCountBuffer ||
+            u_info.validation_select == kPreDrawSelectMeshNoCount) {
             // Validate mesh draw buffer
             uint draw_buffer_index = u_info.mesh_draw_buffer_offset;
             uint stride = u_info.mesh_draw_buffer_stride;
             uint draw_count;
-            if (u_info.validation_select == pre_draw_select_mesh_count_buffer)
+            if (u_info.validation_select == kPreDrawSelectMeshCountBuffer)
                 draw_count = count_buffer[u_info.count_offset];
             else
                 draw_count = u_info.mesh_draw_buffer_num_draws;
@@ -98,17 +98,17 @@ void main() {
                 uint count_y_in = draws_buffer[draw_buffer_index + 1];
                 uint count_z_in = draws_buffer[draw_buffer_index + 2];
                 if (count_x_in > u_info.max_workgroup_count_x) {
-                    gpuavLogError(kInstErrorPreDrawValidate, pre_draw_group_count_exceeds_limit_x_error, count_x_in, i);
+                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountX, count_x_in, i);
                 }
                 if (count_y_in > u_info.max_workgroup_count_y) {
-                    gpuavLogError(kInstErrorPreDrawValidate, pre_draw_group_count_exceeds_limit_y_error, count_y_in, i);
+                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountY, count_y_in, i);
                 }
                 if (count_z_in > u_info.max_workgroup_count_z) {
-                    gpuavLogError(kInstErrorPreDrawValidate, pre_draw_group_count_exceeds_limit_z_error, count_z_in, i);
+                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountZ, count_z_in, i);
                 }
                 uint total = count_x_in * count_y_in * count_z_in;
                 if (total > u_info.max_workgroup_total_count) {
-                    gpuavLogError(kInstErrorPreDrawValidate, pre_draw_group_count_exceeds_total_error, total, i);
+                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountTotal, total, i);
                 }
                 draw_buffer_index += stride;
             }

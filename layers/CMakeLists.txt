@@ -232,6 +232,7 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_validation.h
     gpu_validation/gpu_vuids.cpp
     gpu_validation/gpu_vuids.h
+    gpu_shaders/gpu_error_constants.h
     gpu_shaders/gpu_shaders_constants.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp

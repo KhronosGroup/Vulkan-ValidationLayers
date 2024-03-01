@@ -1,6 +1,6 @@
-// Copyright (c) 2022 The Khronos Group Inc.
-// Copyright (c) 2022-2023 Valve Corporation
-// Copyright (c) 2022-2023 LunarG, Inc.
+// Copyright (c) 2022-2024 The Khronos Group Inc.
+// Copyright (c) 2022-2024 Valve Corporation
+// Copyright (c) 2022-2024 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ void main() {
 
         Texel texel = SearchOobDepthValue(tid, region_i);
         if (texel.value < 0 || texel.value > 1) {
-            gpuavLogError(kInstErrorCopyBufferToImage, pre_copy_buffer_to_image_out_of_range_value, texel.byte_offset, 0);
+            gpuavLogError(kErrorGroupGpuCopyBufferToImage, kErrorSubCodePreCopyBufferToImageBufferTexel, texel.byte_offset, 0);
         }
     }
 }

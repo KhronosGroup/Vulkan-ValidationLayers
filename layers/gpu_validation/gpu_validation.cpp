@@ -34,6 +34,7 @@
 #include "state_tracker/chassis_modification_state.h"
 #include "state_tracker/render_pass_state.h"
 // Generated shaders
+#include "gpu_shaders/gpu_error_constants.h"
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
@@ -729,15 +730,14 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         draw_resources->indirect_buffer_size = bufsize;
 
         assert(phys_dev_props.limits.maxDrawIndirectCount > 0);
-        push_constants[0] =
-            (is_mesh_call) ? gpuav::glsl::pre_draw_select_mesh_count_buffer : gpuav::glsl::pre_draw_select_count_buffer;
+        push_constants[0] = (is_mesh_call) ? gpuav::glsl::kPreDrawSelectMeshCountBuffer : gpuav::glsl::kPreDrawSelectCountBuffer;
         push_constants[1] = phys_dev_props.limits.maxDrawIndirectCount;
         push_constants[2] = max_count;
         push_constants[3] = static_cast<uint32_t>((count_buffer_offset / sizeof(uint32_t)));
     } else if ((command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) &&
                !enabled_features.drawIndirectFirstInstance) {
         // Validate buffer for firstInstance check instead of count buffer check
-        push_constants[0] = glsl::pre_draw_select_draw_buffer;
+        push_constants[0] = glsl::kPreDrawSelectDrawBuffer;
         push_constants[1] = draw_count;
         if (command == Func::vkCmdDrawIndirect) {
             push_constants[2] =
@@ -753,7 +753,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
     if (is_mesh_call && phys_dev_props.limits.maxPushConstantsSize >= PreDrawResources::push_constant_words * sizeof(uint32_t)) {
         if (!is_count_call) {
             // Select was set in count check for count call
-            push_constants[0] = gpuav::glsl::pre_draw_select_mesh_no_count;
+            push_constants[0] = gpuav::glsl::kPreDrawSelectMeshNoCount;
         }
         const VkShaderStageFlags stages = pipeline_state->create_info_shaders;
         push_constants[4] = static_cast<uint32_t>(indirect_offset / sizeof(uint32_t));
