@@ -543,7 +543,9 @@ struct Module {
         bool has_shader_tile_image_stencil_read{false};
         bool has_shader_tile_image_color_read{false};
         // BuiltIn we just care about existing or not, don't have to be written to
+        // TODO - Make bitmask
         bool has_builtin_layer{false};
+        bool has_builtin_draw_index{false};
         bool has_builtin_workgroup_size{false};
         uint32_t builtin_workgroup_size_id = 0;
 

@@ -1077,15 +1077,18 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     }
 
     for (const Instruction* decoration_inst : builtin_decoration_inst) {
-        if (decoration_inst->GetBuiltIn() == spv::BuiltInLayer) {
+        const uint32_t built_in = decoration_inst->GetBuiltIn();
+        if (built_in == spv::BuiltInLayer) {
             has_builtin_layer = true;
-        } else if (decoration_inst->GetBuiltIn() == spv::BuiltInFullyCoveredEXT) {
+        } else if (built_in == spv::BuiltInFullyCoveredEXT) {
             if (stateless_data) {
                 stateless_data->has_builtin_fully_covered = true;
             }
-        } else if (decoration_inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
+        } else if (built_in == spv::BuiltInWorkgroupSize) {
             has_builtin_workgroup_size = true;
             builtin_workgroup_size_id = decoration_inst->Word(1);
+        } else if (built_in == spv::BuiltInDrawIndex) {
+            has_builtin_draw_index = true;
         }
     }
 

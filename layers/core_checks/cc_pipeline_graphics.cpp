@@ -94,6 +94,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineMeshTask(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineExternalFormatResolve(pipeline, subpass_desc, create_info_loc);
 
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) || pipeline.OwnsSubState(pipeline.fragment_shader_state)) {
@@ -1210,6 +1211,23 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+    bool skip = false;
+    const bool has_mesh = (pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) != 0;
+    const bool has_task = (pipeline.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
+    if (has_mesh && has_task) {
+        for (const auto &stage : pipeline.stage_states) {
+            if (stage.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT && stage.spirv_state->static_data_.has_builtin_draw_index) {
+                // VUID being made in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6560
+                skip |= LogError("UNASSIGNED-VkGraphicsPipelineCreateInfo-Mesh-DrawIndex", device, create_info_loc,
+                                 "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
+                                 "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
+            }
+        }
+    }
     return skip;
 }
 
