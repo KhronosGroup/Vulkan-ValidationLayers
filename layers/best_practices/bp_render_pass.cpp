@@ -674,7 +674,7 @@ void BestPractices::RecordCmdPushConstants(VkCommandBuffer commandBuffer, uint32
             cb_state->push_constant_data_set.resize(cb_state->push_constant_data.size(), 0);
         }
         std::fill(cb_state->push_constant_data_set.begin() + offset, cb_state->push_constant_data_set.begin() + offset + size,
-                    1);
+                  uint8_t(1));
     }
 }
 
