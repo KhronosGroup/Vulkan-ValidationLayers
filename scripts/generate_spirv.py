@@ -20,6 +20,7 @@
 
 import os
 import sys
+import shutil
 import subprocess
 import struct
 import re
@@ -227,23 +228,24 @@ def main():
             generate_shaders.append(os.path.join(gpu_shaders, filename))
 
     # Spots external folder should be in
-    for path in ['external', 'Debug/64', 'Release/64']:
+    for path in ['external/Debug/64', 'external/Release/64', 'external']:
         external_dir = common_ci.RepoRelative(path)
         if os.path.isdir(external_dir):
             break
 
     # default glslangValidator path
-    glslang_validator =  common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslangValidator'))
+    glslang = common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslang'))
     if args.glslang:
-        glslang_validator = args.glslang
-    if not os.path.isfile(glslang_validator):
-        sys.exit("Cannot find glslangValidator " + glslang_validator)
+        glslang = args.glslang
+    if not shutil.which(glslang):
+        sys.exit("Cannot find glslangValidator " + glslang)
+
 
     # default spirv-opt path
     spirv_opt =  common_ci.RepoRelative(os.path.join(external_dir, 'SPIRV-Tools/build/install/bin/spirv-opt'))
     if args.spirv_opt:
         spirv_opt = args.spirv_opt
-    if not os.path.isfile(spirv_opt):
+    if not shutil.which(spirv_opt):
         sys.exit("Cannot find spirv-opt " + spirv_opt)
 
     if args.shader:
@@ -252,7 +254,7 @@ def main():
         generate_shaders = [args.shader]
 
     for shader in generate_shaders:
-        words = compile(shader, glslang_validator, spirv_opt, args.targetenv)
+        words = compile(shader, glslang, spirv_opt, args.targetenv)
         write(words, shader, args.api, args.outdir)
 
     # Don't want to hash if just generating a single shader for testings
