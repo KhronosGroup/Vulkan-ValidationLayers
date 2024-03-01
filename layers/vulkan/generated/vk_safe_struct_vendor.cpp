@@ -15268,6 +15268,54 @@ void safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::initialize(
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::safe_VkPhysicalDeviceRawAccessChainsFeaturesNV(
+    const VkPhysicalDeviceRawAccessChainsFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), shaderRawAccessChains(in_struct->shaderRawAccessChains) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::safe_VkPhysicalDeviceRawAccessChainsFeaturesNV()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV), pNext(nullptr), shaderRawAccessChains() {}
+
+safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::safe_VkPhysicalDeviceRawAccessChainsFeaturesNV(
+    const safe_VkPhysicalDeviceRawAccessChainsFeaturesNV& copy_src) {
+    sType = copy_src.sType;
+    shaderRawAccessChains = copy_src.shaderRawAccessChains;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRawAccessChainsFeaturesNV& safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::operator=(
+    const safe_VkPhysicalDeviceRawAccessChainsFeaturesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderRawAccessChains = copy_src.shaderRawAccessChains;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::~safe_VkPhysicalDeviceRawAccessChainsFeaturesNV() { FreePnextChain(pNext); }
+
+void safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::initialize(const VkPhysicalDeviceRawAccessChainsFeaturesNV* in_struct,
+                                                                [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderRawAccessChains = in_struct->shaderRawAccessChains;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceRawAccessChainsFeaturesNV::initialize(const safe_VkPhysicalDeviceRawAccessChainsFeaturesNV* copy_src,
+                                                                [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    shaderRawAccessChains = copy_src->shaderRawAccessChains;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV(
     const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state,
     bool copy_pnext)

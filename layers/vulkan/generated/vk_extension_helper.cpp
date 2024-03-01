@@ -390,6 +390,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_QNX_external_memory_screen_buffer", vvl::Extension::_VK_QNX_external_memory_screen_buffer},
         {"VK_MSFT_layered_driver", vvl::Extension::_VK_MSFT_layered_driver},
         {"VK_NV_descriptor_pool_overallocation", vvl::Extension::_VK_NV_descriptor_pool_overallocation},
+        {"VK_NV_raw_access_chains", vvl::Extension::_VK_NV_raw_access_chains},
         {"VK_NV_shader_atomic_float16_vector", vvl::Extension::_VK_NV_shader_atomic_float16_vector},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},

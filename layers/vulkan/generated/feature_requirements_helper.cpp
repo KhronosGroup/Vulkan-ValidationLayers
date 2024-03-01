@@ -4268,6 +4268,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->rasterizationOrderStencilAttachmentAccess,
                     "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT::rasterizationOrderStencilAttachmentAccess"};
         }
+        case Feature::shaderRawAccessChains: {
+            auto vk_struct = const_cast<VkPhysicalDeviceRawAccessChainsFeaturesNV *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceRawAccessChainsFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceRawAccessChainsFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderRawAccessChains, "VkPhysicalDeviceRawAccessChainsFeaturesNV::shaderRawAccessChains"};
+        }
         case Feature::rayQuery: {
             auto vk_struct = const_cast<VkPhysicalDeviceRayQueryFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceRayQueryFeaturesKHR>(*inout_pnext_chain));

@@ -32,7 +32,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         self.capabilityExcludeList = [
             'ClusterCullingShadingHUAWEI',
             'TextureBlockMatch2QCOM',
-            'MaximallyReconvergesKHR'
+            'MaximallyReconvergesKHR',
+            'RawAccessChainsNV'
         ]
 
         # There are some enums that share the same value in the SPIR-V header.

@@ -18006,6 +18006,24 @@ struct safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV {
         return reinterpret_cast<VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV const*>(this);
     }
 };
+struct safe_VkPhysicalDeviceRawAccessChainsFeaturesNV {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 shaderRawAccessChains;
+
+    safe_VkPhysicalDeviceRawAccessChainsFeaturesNV(const VkPhysicalDeviceRawAccessChainsFeaturesNV* in_struct,
+                                                   PNextCopyState* copy_state = {}, bool copy_pnext = true);
+    safe_VkPhysicalDeviceRawAccessChainsFeaturesNV(const safe_VkPhysicalDeviceRawAccessChainsFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceRawAccessChainsFeaturesNV& operator=(const safe_VkPhysicalDeviceRawAccessChainsFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceRawAccessChainsFeaturesNV();
+    ~safe_VkPhysicalDeviceRawAccessChainsFeaturesNV();
+    void initialize(const VkPhysicalDeviceRawAccessChainsFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceRawAccessChainsFeaturesNV* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceRawAccessChainsFeaturesNV* ptr() { return reinterpret_cast<VkPhysicalDeviceRawAccessChainsFeaturesNV*>(this); }
+    VkPhysicalDeviceRawAccessChainsFeaturesNV const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceRawAccessChainsFeaturesNV const*>(this);
+    }
+};
 struct safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV {
     VkStructureType sType;
     void* pNext{};

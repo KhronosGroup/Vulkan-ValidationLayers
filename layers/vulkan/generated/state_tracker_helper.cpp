@@ -1490,6 +1490,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->descriptorPoolOverallocation |= enabled->descriptorPoolOverallocation == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV: {
+                const VkPhysicalDeviceRawAccessChainsFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRawAccessChainsFeaturesNV *>(pNext);
+                features->shaderRawAccessChains |= enabled->shaderRawAccessChains == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV: {
                 const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(pNext);
