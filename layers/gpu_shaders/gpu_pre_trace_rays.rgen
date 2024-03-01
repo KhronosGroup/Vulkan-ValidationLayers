@@ -1,6 +1,6 @@
-// Copyright (c) 2022 The Khronos Group Inc.
-// Copyright (c) 2022-2023 Valve Corporation
-// Copyright (c) 2022-2023 LunarG, Inc.
+// Copyright (c) 2022-2024 The Khronos Group Inc.
+// Copyright (c) 2022-2024 Valve Corporation
+// Copyright (c) 2022-2024 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ layout(push_constant) uniform UniformInfo {
 
 void main() {
     if (u_info.indirect_data.ray_query_dimensions.width > u_info.ray_query_width_limit) {
-        gpuavLogError(kInstErrorPreTraceRaysKhrValidate, pre_trace_rays_query_dimensions_exceeds_width_limit, u_info.indirect_data.ray_query_dimensions.width, 0);
+        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, u_info.indirect_data.ray_query_dimensions.width, 0);
     }
     if (u_info.indirect_data.ray_query_dimensions.height > u_info.ray_query_height_limit) {
-        gpuavLogError(kInstErrorPreTraceRaysKhrValidate, pre_trace_rays_query_dimensions_exceeds_height_limit, u_info.indirect_data.ray_query_dimensions.height, 0);
+        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, u_info.indirect_data.ray_query_dimensions.height, 0);
     }
     if (u_info.indirect_data.ray_query_dimensions.depth > u_info.ray_query_depth_limit) {
-        gpuavLogError(kInstErrorPreTraceRaysKhrValidate, pre_trace_rays_query_dimensions_exceeds_depth_limit, u_info.indirect_data.ray_query_dimensions.depth, 0);
+        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, u_info.indirect_data.ray_query_dimensions.depth, 0);
     }
 }

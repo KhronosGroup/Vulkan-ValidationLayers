@@ -159,16 +159,19 @@ class Validator : public gpu_tracker::Validator {
     // gpu_error_message.cpp
     // ---------------------
   public:
-    // Return true iff a error has been found in the internal call to GenerateValidationMessage
+    // Return true iff a error has been found
     bool AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources& cmd_resources,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer,
                                     const std::vector<DescSetState>& descriptor_sets, const Location& loc);
 
   private:
     // Return true iff an error has been found in debug_record, among the list of errors this function manages
-    bool GenerateValidationMessage(const uint32_t* debug_record, const CommandResources& cmd_resources,
-                                   const std::vector<DescSetState>& descriptor_sets, std::string& out_error_msg,
-                                   std::string& out_vuid_msg, bool& out_oob_access) const;
+    bool LogMessageInstBindlessDescriptor(const uint32_t* debug_record, std::string& out_error_msg, std::string& out_vuid_msg,
+                                          const CommandResources& cmd_resources, const std::vector<DescSetState>& descriptor_sets,
+                                          bool& out_oob_access) const;
+    bool LogMessageInstBufferDeviceAddress(const uint32_t* debug_record, std::string& out_error_msg, std::string& out_vuid_msg,
+                                           bool& out_oob_access) const;
+    bool LogMessageInstRayQuery(const uint32_t* debug_record, std::string& out_error_msg, std::string& out_vuid_msg) const;
 
     // gpu_setup.cpp
     // -------------

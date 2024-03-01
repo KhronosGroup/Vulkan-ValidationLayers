@@ -32,6 +32,7 @@
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
 // Generated shaders
+#include "gpu_shaders/gpu_error_constants.h"
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
