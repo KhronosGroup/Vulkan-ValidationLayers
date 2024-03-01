@@ -628,6 +628,8 @@ enum class Feature {
     rasterizationOrderDepthAttachmentAccess,
     // VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT
     rasterizationOrderStencilAttachmentAccess,
+    // VkPhysicalDeviceRawAccessChainsFeaturesNV
+    shaderRawAccessChains,
     // VkPhysicalDeviceRayQueryFeaturesKHR
     rayQuery,
     // VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV

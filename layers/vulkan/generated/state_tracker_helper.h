@@ -633,6 +633,8 @@ struct DeviceFeatures {
     bool rasterizationOrderDepthAttachmentAccess;
     // VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT
     bool rasterizationOrderStencilAttachmentAccess;
+    // VkPhysicalDeviceRawAccessChainsFeaturesNV
+    bool shaderRawAccessChains;
     // VkPhysicalDeviceRayQueryFeaturesKHR
     bool rayQuery;
     // VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
