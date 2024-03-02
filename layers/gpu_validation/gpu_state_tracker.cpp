@@ -354,7 +354,7 @@ void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, con
 void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::CreateDevice(pCreateInfo, loc);
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
-    auto chain_info = get_chain_info(pCreateInfo, VK_LOADER_DATA_CALLBACK);
+    auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
     assert(chain_info->u.pfnSetDeviceLoaderData);
     vkSetDeviceLoaderData = chain_info->u.pfnSetDeviceLoaderData;
 

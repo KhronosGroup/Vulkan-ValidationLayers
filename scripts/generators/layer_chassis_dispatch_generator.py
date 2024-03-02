@@ -295,7 +295,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             dispatch_table = 'instance_dispatch_table' if command.instance else 'device_dispatch_table'
 
             # first parameter is always dispatchable
-            out.append(f'auto layer_data = GetLayerDataPtr(get_dispatch_key({command.params[0].name}), layer_data_map);\n')
+            out.append(f'auto layer_data = GetLayerDataPtr(GetDispatchKey({command.params[0].name}), layer_data_map);\n')
             # Put all this together for the final down-chain call
             if not down_chain_call_only:
                 out.append(f'if (!wrap_handles) return layer_data->{dispatch_table}.{command.name[2:]}({paramstext});\n')

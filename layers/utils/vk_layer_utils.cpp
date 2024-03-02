@@ -22,55 +22,6 @@
 
 #include "vulkan/vulkan.h"
 
-static const uint8_t kUtF8OneByteCode = 0xC0;
-static const uint8_t kUtF8OneByteMask = 0xE0;
-static const uint8_t kUtF8TwoByteCode = 0xE0;
-static const uint8_t kUtF8TwoByteMask = 0xF0;
-static const uint8_t kUtF8ThreeByteCode = 0xF0;
-static const uint8_t kUtF8ThreeByteMask = 0xF8;
-static const uint8_t kUtF8DataByteCode = 0x80;
-static const uint8_t kUtF8DataByteMask = 0xC0;
-
-VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
-    VkStringErrorFlags result = VK_STRING_ERROR_NONE;
-    int num_char_bytes = 0;
-    int i, j;
-
-    for (i = 0; i <= max_length; i++) {
-        if (utf8[i] == 0) {
-            break;
-        } else if (i == max_length) {
-            result |= VK_STRING_ERROR_LENGTH;
-            break;
-        } else if ((utf8[i] >= 0xa) && (utf8[i] < 0x7f)) {
-            num_char_bytes = 0;
-        } else if ((utf8[i] & kUtF8OneByteMask) == kUtF8OneByteCode) {
-            num_char_bytes = 1;
-        } else if ((utf8[i] & kUtF8TwoByteMask) == kUtF8TwoByteCode) {
-            num_char_bytes = 2;
-        } else if ((utf8[i] & kUtF8ThreeByteMask) == kUtF8ThreeByteCode) {
-            num_char_bytes = 3;
-        } else {
-            result |= VK_STRING_ERROR_BAD_DATA;
-            break;
-        }
-
-        // Validate the following num_char_bytes of data
-        for (j = 0; (j < num_char_bytes) && (i < max_length); j++) {
-            if (++i == max_length) {
-                result |= VK_STRING_ERROR_LENGTH;
-                break;
-            }
-            if ((utf8[i] & kUtF8DataByteMask) != kUtF8DataByteCode) {
-                result |= VK_STRING_ERROR_BAD_DATA;
-                break;
-            }
-        }
-        if (result != VK_STRING_ERROR_NONE) break;
-    }
-    return result;
-}
-
 // Debug callbacks get created in three ways:
 //   o  Application-defined debug callbacks
 //   o  Through settings in a vk_layer_settings.txt file
@@ -156,7 +107,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     }
 }
 
-VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
+VkLayerInstanceCreateInfo *GetChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
     VkLayerInstanceCreateInfo *chain_info = (VkLayerInstanceCreateInfo *)pCreateInfo->pNext;
     while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
         chain_info = (VkLayerInstanceCreateInfo *)chain_info->pNext;
@@ -165,7 +116,7 @@ VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInf
     return chain_info;
 }
 
-VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
+VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
     VkLayerDeviceCreateInfo *chain_info = (VkLayerDeviceCreateInfo *)pCreateInfo->pNext;
     while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
         chain_info = (VkLayerDeviceCreateInfo *)chain_info->pNext;
@@ -190,4 +141,44 @@ std::string GetTempFilePath() {
     if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
     if (!tmp_path.size()) tmp_path = "/tmp";
     return tmp_path;
+}
+
+// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
+VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
+    // Return zero extent if mip level doesn't exist
+    if (mip_level >= ci.mipLevels) {
+        return VkExtent3D{0, 0, 0};
+    }
+
+    VkExtent3D extent = ci.extent;
+
+    // If multi-plane, adjust per-plane extent
+    const VkFormat format = ci.format;
+    if (vkuFormatIsMultiplane(format)) {
+        VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, static_cast<VkImageAspectFlagBits>(aspect_mask));
+        extent.width /= divisors.width;
+        extent.height /= divisors.height;
+    }
+
+    // Mip Maps
+    {
+        const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
+        const uint32_t min_size = 1 + corner;
+        const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
+        for (uint32_t *dim : dimensions) {
+            // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
+            if (*dim == 0) {
+                continue;
+            }
+            *dim >>= mip_level;
+            *dim = std::max(min_size, *dim);
+        }
+    }
+
+    // Image arrays have an effective z extent that isn't diminished by mip level
+    if (VK_IMAGE_TYPE_3D != ci.imageType) {
+        extent.depth = ci.arrayLayers;
+    }
+
+    return extent;
 }

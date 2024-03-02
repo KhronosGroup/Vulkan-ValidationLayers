@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2023 Valve Software
- * Copyright 2015-2022 Google Inc.
- * Copyright 2019-2023 LunarG, Inc.
+ * Copyright 2014-2024 Valve Software
+ * Copyright 2015-2024 Google Inc.
+ * Copyright 2019-2024 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -319,6 +319,18 @@ string ConfigFile::FindSettings() {
         settings_info.location.append("\\vk_layer_settings.txt");
     }
     return "vk_layer_settings.txt";
+}
+
+static inline std::string string_trim(const std::string &s) {
+    const char *whitespace = " \t\f\v\n\r";
+
+    const auto trimmed_beg = s.find_first_not_of(whitespace);
+    if (trimmed_beg == std::string::npos) return "";
+
+    const auto trimmed_end = s.find_last_not_of(whitespace);
+    assert(trimmed_end != std::string::npos && trimmed_beg <= trimmed_end);
+
+    return s.substr(trimmed_beg, trimmed_end - trimmed_beg + 1);
 }
 
 void ConfigFile::ParseFile(const char *filename) {

@@ -444,7 +444,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
                      string_VkDebugReportObjectTypeEXT(debug_object_type), FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
-        auto device_layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        auto device_layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
         auto obj_lifetimes_data = device_layer_data->GetValidationObject<ObjectLifetimes>();
         skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device, error_obj.location);
 
@@ -521,7 +521,7 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
 
 void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                                  const RecordObject &record_obj) {
-    auto instance_data = GetLayerDataPtr(get_dispatch_key(physical_device), layer_data_map);
+    auto instance_data = GetLayerDataPtr(GetDispatchKey(physical_device), layer_data_map);
     auto object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
     object_lifetimes->RecordDestroyObject(device, kVulkanObjectTypeDevice);
     DestroyLeakedDeviceObjects();
@@ -777,7 +777,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
     if (record_obj.result != VK_SUCCESS) return;
     CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator, record_obj.location);
 
-    auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    auto device_data = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     auto object_tracking = device_data->GetValidationObject<ObjectLifetimes>();
 
     object_tracking->device_createinfo_pnext = SafePnextCopy(pCreateInfo->pNext);
@@ -1458,7 +1458,7 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device
                 }
             };
 
-            auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+            auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
             if (wrap_handles) {
                 deferredOperation = layer_data->Unwrap(deferredOperation);
             }

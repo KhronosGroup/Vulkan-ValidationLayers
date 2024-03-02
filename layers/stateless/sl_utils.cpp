@@ -67,11 +67,60 @@ bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device
     return false;
 }
 
+static const uint8_t kUtF8OneByteCode = 0xC0;
+static const uint8_t kUtF8OneByteMask = 0xE0;
+static const uint8_t kUtF8TwoByteCode = 0xE0;
+static const uint8_t kUtF8TwoByteMask = 0xF0;
+static const uint8_t kUtF8ThreeByteCode = 0xF0;
+static const uint8_t kUtF8ThreeByteMask = 0xF8;
+static const uint8_t kUtF8DataByteCode = 0x80;
+static const uint8_t kUtF8DataByteMask = 0xC0;
+
+static VkStringErrorFlags ValidateVkString(const int max_length, const char *utf8) {
+    VkStringErrorFlags result = VK_STRING_ERROR_NONE;
+    int num_char_bytes = 0;
+    int i, j;
+
+    for (i = 0; i <= max_length; i++) {
+        if (utf8[i] == 0) {
+            break;
+        } else if (i == max_length) {
+            result |= VK_STRING_ERROR_LENGTH;
+            break;
+        } else if ((utf8[i] >= 0xa) && (utf8[i] < 0x7f)) {
+            num_char_bytes = 0;
+        } else if ((utf8[i] & kUtF8OneByteMask) == kUtF8OneByteCode) {
+            num_char_bytes = 1;
+        } else if ((utf8[i] & kUtF8TwoByteMask) == kUtF8TwoByteCode) {
+            num_char_bytes = 2;
+        } else if ((utf8[i] & kUtF8ThreeByteMask) == kUtF8ThreeByteCode) {
+            num_char_bytes = 3;
+        } else {
+            result |= VK_STRING_ERROR_BAD_DATA;
+            break;
+        }
+
+        // Validate the following num_char_bytes of data
+        for (j = 0; (j < num_char_bytes) && (i < max_length); j++) {
+            if (++i == max_length) {
+                result |= VK_STRING_ERROR_LENGTH;
+                break;
+            }
+            if ((utf8[i] & kUtF8DataByteMask) != kUtF8DataByteCode) {
+                result |= VK_STRING_ERROR_BAD_DATA;
+                break;
+            }
+        }
+        if (result != VK_STRING_ERROR_NONE) break;
+    }
+    return result;
+}
+
 static const int kMaxParamCheckerStringLength = 256;
 bool StatelessValidation::ValidateString(const Location &loc, const std::string &vuid, const char *validateString) const {
     bool skip = false;
 
-    VkStringErrorFlags result = vk_string_validate(kMaxParamCheckerStringLength, validateString);
+    VkStringErrorFlags result = ValidateVkString(kMaxParamCheckerStringLength, validateString);
 
     if (result == VK_STRING_ERROR_NONE) {
         return skip;
