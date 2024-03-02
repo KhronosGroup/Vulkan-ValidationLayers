@@ -18,6 +18,29 @@
 #include "../framework/shader_helper.h"
 #include "../layers/utils/vk_layer_utils.h"
 
+// Compute a binomial coefficient
+template <typename T>
+constexpr T binom(T n, T k) {
+    static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
+    static_assert(std::is_unsigned<T>::value, "Unsigned integer required.");
+    assert(n >= k);
+    if (n == 0) {
+        return 0;
+    }
+    if (k == 0) {
+        return 1;
+    }
+
+    T numerator = 1;
+    T denominator = 1;
+    for (T i = 1; i <= k; ++i) {
+        numerator *= n - i + 1;
+        denominator *= i;
+    }
+
+    return numerator / denominator;
+}
+
 TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     TEST_DESCRIPTION("Test barrier with access ACCELERATION_STRUCTURE bit.");
 

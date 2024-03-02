@@ -22,8 +22,6 @@
 #include <utility>
 #include <variant>
 
-#include <vulkan/utility/vk_format_utils.h>
-
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_layout_map.h"
 #include "utils/vk_layer_utils.h"
@@ -199,17 +197,17 @@ class Image : public Bindable {
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
-        return ::GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
+        return GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
     }
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const {
-        return ::GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
+        return GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
     }
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const {
-        return ::GetEffectiveExtent(createInfo, range);
+        return GetEffectiveExtent(createInfo, range.aspectMask, range.baseMipLevel);
     }
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {

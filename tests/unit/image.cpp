@@ -5523,7 +5523,9 @@ TEST_F(NegativeImage, SlicedUsage) {
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.levelCount = 1;
 
-    auto get_effective_depth = [&]() -> uint32_t { return GetEffectiveExtent(ci, ivci.subresourceRange).depth; };
+    auto get_effective_depth = [&]() -> uint32_t {
+        return GetEffectiveExtent(ci, ivci.subresourceRange.aspectMask, ivci.subresourceRange.baseMipLevel).depth;
+    };
 
     {
         sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;

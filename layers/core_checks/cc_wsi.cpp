@@ -1495,7 +1495,7 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice d
     bool skip = false;
 
     if (physical_device_count == 1) {
-        ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        ValidationObject *device_object = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
         skip |= ValidatePhysicalDeviceSurfaceSupport(device_object->physical_device, pSurfaceInfo->surface,
                                                      "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
                                                      error_obj.location);
@@ -1532,7 +1532,7 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice de
     bool skip = false;
 
     if (physical_device_count == 1) {
-        ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        ValidationObject *device_object = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
         skip |=
             ValidatePhysicalDeviceSurfaceSupport(device_object->physical_device, surface,
                                                  "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);

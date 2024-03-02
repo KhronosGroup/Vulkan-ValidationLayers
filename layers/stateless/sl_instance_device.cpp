@@ -19,6 +19,58 @@
 #include "stateless/stateless_validation.h"
 #include "generated/layer_chassis_dispatch.h"
 
+// Traits objects to allow string_join to operate on collections of const char *
+template <typename String>
+struct StringJoinSizeTrait {
+    static size_t size(const String &str) { return str.size(); }
+};
+
+template <>
+struct StringJoinSizeTrait<const char *> {
+    static size_t size(const char *str) {
+        if (!str) return 0;
+        return strlen(str);
+    }
+};
+// Similar to perl/python join
+//    * String must support size, reserve, append, and be default constructable
+//    * StringCollection must support size, const forward iteration, and store
+//      strings compatible with String::append
+//    * Accessor trait can be set if default accessors (compatible with string
+//      and const char *) don't support size(StringCollection::value_type &)
+//
+// Return type based on sep type
+template <typename String = std::string, typename StringCollection = std::vector<String>,
+          typename Accessor = StringJoinSizeTrait<typename StringCollection::value_type>>
+static inline String string_join(const String &sep, const StringCollection &strings) {
+    String joined;
+    const size_t count = strings.size();
+    if (!count) return joined;
+
+    // Prereserved storage, s.t. we will execute in linear time (avoids reallocation copies)
+    size_t reserve = (count - 1) * sep.size();
+    for (const auto &str : strings) {
+        reserve += Accessor::size(str);  // abstracted to allow const char * type in StringCollection
+    }
+    joined.reserve(reserve + 1);
+
+    // Seps only occur *between* strings entries, so first is special
+    auto current = strings.cbegin();
+    joined.append(*current);
+    ++current;
+    for (; current != strings.cend(); ++current) {
+        joined.append(sep);
+        joined.append(*current);
+    }
+    return joined;
+}
+
+// Requires StringCollection::value_type has a const char * constructor and is compatible the string_join::String above
+template <typename StringCollection = std::vector<std::string>, typename SepString = std::string>
+static inline SepString string_join(const char *sep, const StringCollection &strings) {
+    return string_join<SepString, StringCollection>(SepString(sep), strings);
+}
+
 template <typename ExtensionState>
 bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                                 vvl::Extension extension, const Location &extension_loc) const {
@@ -178,7 +230,7 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
 void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
                                                        const RecordObject &record_obj) {
-    auto instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
+    auto instance_data = GetLayerDataPtr(GetDispatchKey(*pInstance), layer_data_map);
     // Copy extension data into local object
     if (record_obj.result != VK_SUCCESS) return;
     this->instance_extensions = instance_data->instance_extensions;
@@ -264,7 +316,7 @@ void StatelessValidation::GetPhysicalDeviceProperties2(VkPhysicalDevice physical
 void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                      const RecordObject &record_obj) {
-    auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    auto device_data = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     if (record_obj.result != VK_SUCCESS) return;
     auto stateless_validation = device_data->GetValidationObject<StatelessValidation>();
 

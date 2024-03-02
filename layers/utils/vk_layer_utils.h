@@ -64,97 +64,11 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
     return d3;
 }
 
-// Traits objects to allow string_join to operate on collections of const char *
-template <typename String>
-struct StringJoinSizeTrait {
-    static size_t size(const String &str) { return str.size(); }
-};
-
-template <>
-struct StringJoinSizeTrait<const char *> {
-    static size_t size(const char *str) {
-        if (!str) return 0;
-        return strlen(str);
-    }
-};
-// Similar to perl/python join
-//    * String must support size, reserve, append, and be default constructable
-//    * StringCollection must support size, const forward iteration, and store
-//      strings compatible with String::append
-//    * Accessor trait can be set if default accessors (compatible with string
-//      and const char *) don't support size(StringCollection::value_type &)
-//
-// Return type based on sep type
-template <typename String = std::string, typename StringCollection = std::vector<String>,
-          typename Accessor = StringJoinSizeTrait<typename StringCollection::value_type>>
-static inline String string_join(const String &sep, const StringCollection &strings) {
-    String joined;
-    const size_t count = strings.size();
-    if (!count) return joined;
-
-    // Prereserved storage, s.t. we will execute in linear time (avoids reallocation copies)
-    size_t reserve = (count - 1) * sep.size();
-    for (const auto &str : strings) {
-        reserve += Accessor::size(str);  // abstracted to allow const char * type in StringCollection
-    }
-    joined.reserve(reserve + 1);
-
-    // Seps only occur *between* strings entries, so first is special
-    auto current = strings.cbegin();
-    joined.append(*current);
-    ++current;
-    for (; current != strings.cend(); ++current) {
-        joined.append(sep);
-        joined.append(*current);
-    }
-    return joined;
-}
-
-// Requires StringCollection::value_type has a const char * constructor and is compatible the string_join::String above
-template <typename StringCollection = std::vector<std::string>, typename SepString = std::string>
-static inline SepString string_join(const char *sep, const StringCollection &strings) {
-    return string_join<SepString, StringCollection>(SepString(sep), strings);
-}
-
-static inline std::string string_trim(const std::string &s) {
-    const char *whitespace = " \t\f\v\n\r";
-
-    const auto trimmed_beg = s.find_first_not_of(whitespace);
-    if (trimmed_beg == std::string::npos) return "";
-
-    const auto trimmed_end = s.find_last_not_of(whitespace);
-    assert(trimmed_end != std::string::npos && trimmed_beg <= trimmed_end);
-
-    return s.substr(trimmed_beg, trimmed_end - trimmed_beg + 1);
-}
-
-// Perl/Python style join operation for general types using stream semantics
-// Note: won't be as fast as string_join above, but simpler to use (and code)
-// Note: Modifiable reference doesn't match the google style but does match std style for stream handling and algorithms
-template <typename Stream, typename String, typename ForwardIt>
-Stream &stream_join(Stream &stream, const String &sep, ForwardIt first, ForwardIt last) {
-    if (first != last) {
-        stream << *first;
-        ++first;
-        while (first != last) {
-            stream << sep << *first;
-            ++first;
-        }
-    }
-    return stream;
-}
-
-// stream_join For whole collections with forward iterators
-template <typename Stream, typename String, typename Collection>
-Stream &stream_join(Stream &stream, const String &sep, const Collection &values) {
-    return stream_join(stream, sep, values.cbegin(), values.cend());
-}
-
 typedef void *dispatch_key;
-static inline dispatch_key get_dispatch_key(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
+static inline dispatch_key GetDispatchKey(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
 
-VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
-VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
+VkLayerInstanceCreateInfo *GetChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
+VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
 template <typename T>
 constexpr bool IsPowerOfTwo(T x) {
@@ -206,29 +120,6 @@ constexpr T Align(T x, T p2) {
 
 // Returns the 0-based index of the LSB. An input mask of 0 yields -1
 static inline int LeastSignificantBit(uint32_t mask) { return u_ffs(static_cast<int>(mask)) - 1; }
-
-// Compute a binomial coefficient
-template <typename T>
-constexpr T binom(T n, T k) {
-    static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
-    static_assert(std::is_unsigned<T>::value, "Unsigned integer required.");
-    assert(n >= k);
-    if (n == 0) {
-        return 0;
-    }
-    if (k == 0) {
-        return 1;
-    }
-
-    T numerator = 1;
-    T denominator = 1;
-    for (T i = 1; i <= k; ++i) {
-        numerator *= n - i + 1;
-        denominator *= i;
-    }
-
-    return numerator / denominator;
-}
 
 template <typename FlagBits, typename Flags>
 FlagBits LeastSignificantFlag(Flags flags) {
@@ -485,50 +376,7 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-[[nodiscard]] inline VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask,
-                                                   const uint32_t mip_level) {
-    // Return zero extent if mip level doesn't exist
-    if (mip_level >= ci.mipLevels) {
-        return VkExtent3D{0, 0, 0};
-    }
-
-    VkExtent3D extent = ci.extent;
-
-    // If multi-plane, adjust per-plane extent
-    const VkFormat format = ci.format;
-    if (vkuFormatIsMultiplane(format)) {
-        VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, static_cast<VkImageAspectFlagBits>(aspect_mask));
-        extent.width /= divisors.width;
-        extent.height /= divisors.height;
-    }
-
-    // Mip Maps
-    {
-        const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
-        const uint32_t min_size = 1 + corner;
-        const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
-        for (uint32_t *dim : dimensions) {
-            // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
-            if (*dim == 0) {
-                continue;
-            }
-            *dim >>= mip_level;
-            *dim = std::max(min_size, *dim);
-        }
-    }
-
-    // Image arrays have an effective z extent that isn't diminished by mip level
-    if (VK_IMAGE_TYPE_3D != ci.imageType) {
-        extent.depth = ci.arrayLayers;
-    }
-
-    return extent;
-}
-
-// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-[[nodiscard]] inline VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageSubresourceRange &range) {
-    return GetEffectiveExtent(ci, range.aspectMask, range.baseMipLevel);
-}
+VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
 
 // Calculates the number of mip levels a VkImageView references.
 constexpr uint32_t ResolveRemainingLevels(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
@@ -581,7 +429,6 @@ typedef VkFlags VkStringErrorFlags;
 
 void layer_debug_messenger_actions(debug_report_data *report_data, const char *layer_identifier);
 
-VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 std::string GetTempFilePath();
 
 // Aliases to avoid excessive typing. We can't easily auto these away because
