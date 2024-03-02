@@ -148,6 +148,8 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07337",
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07338",
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07339",
+    "VUID-VkRenderingInputAttachmentIndexInfoKHR-pDepthInputAttachmentIndex-parameter",
+    "VUID-VkRenderingInputAttachmentIndexInfoKHR-pStencilInputAttachmentIndex-parameter"
 
     // These VUs have "is not NULL it must be a pointer to a valid pointer to valid structure" language
     // There is no actual way to validate thsese

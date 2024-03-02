@@ -5197,16 +5197,15 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffe
     return skip;
 }
 
-bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& pLocationInfo,
-                                                         const LogObjectList objlist,
-                                                         const Location& loc_info) const {
+bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR &location_info,
+                                                         const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
 
-    if (pLocationInfo.pColorAttachmentLocations) {
+    if (location_info.pColorAttachmentLocations) {
         vvl::unordered_map<uint32_t, uint32_t> unique;
 
-        for (uint32_t i = 0; i < pLocationInfo.colorAttachmentCount; ++i) {
-            const uint32_t location = pLocationInfo.pColorAttachmentLocations[i];
+        for (uint32_t i = 0; i < location_info.colorAttachmentCount; ++i) {
+            const uint32_t location = location_info.pColorAttachmentLocations[i];
             const Location loc = loc_info.dot(Struct::VkRenderingAttachmentLocationInfoKHR, Field::pColorAttachmentLocations, i);
 
             if (!enabled_features.dynamicRenderingLocalRead && location != i) {
@@ -5233,11 +5232,11 @@ bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttach
         }
     }
 
-    if (pLocationInfo.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
+    if (location_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
         skip |= LogError("VUID-VkRenderingAttachmentLocationInfoKHR-colorAttachmentCount-09514", objlist,
                          loc_info.dot(Field::colorAttachmentCount),
                          "(%" PRIu32 ") is greater than the maxColorAttachments limit (%" PRIu32 ").",
-                         pLocationInfo.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
+                         location_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
     return skip;
@@ -5273,7 +5272,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandB
     if (pLocationInfo->colorAttachmentCount != rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
         skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510", objlist,
-                         error_obj.location.dot(Field::colorAttachmentCount),
+                         error_obj.location.dot(Field::pLocationInfo).dot(Field::colorAttachmentCount),
                          "= %" PRIu32 " is not equal to count specified in VkRenderingInfo (%" PRIu32 ").",
                          pLocationInfo->colorAttachmentCount, rp_state.createInfo.attachmentCount);
     }
@@ -5283,37 +5282,33 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandB
     return skip;
 }
 
-bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR &index_info,
                                                             const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
 
-    if (!pLocationInfo) {
-        return skip;
-    }
-
     if (!enabled_features.dynamicRenderingLocalRead) {
-        if (pLocationInfo->pDepthInputAttachmentIndex) {
-            if (*pLocationInfo->pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
+        if (index_info.pDepthInputAttachmentIndex) {
+            if (*index_info.pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09520", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pDepthInputAttachmentIndex, 0),
-                             "= %" PRIu32 " while must be VK_ATTACHMENT_UNUSED", *pLocationInfo->pDepthInputAttachmentIndex);
+                                 "= %" PRIu32 " while must be VK_ATTACHMENT_UNUSED", *index_info.pDepthInputAttachmentIndex);
             }
         }
-        if (pLocationInfo->pStencilInputAttachmentIndex) {
-            if (*pLocationInfo->pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
+        if (index_info.pStencilInputAttachmentIndex) {
+            if (*index_info.pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
                 skip |=
                     LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09521", objlist,
                              loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pStencilInputAttachmentIndex, 0),
-                             "= %" PRIu32 " while must be VK_ATTACHMENT_UNUSED", *pLocationInfo->pStencilInputAttachmentIndex);
+                             "= %" PRIu32 " while must be VK_ATTACHMENT_UNUSED", *index_info.pStencilInputAttachmentIndex);
             }
         }
     }
 
-    if (pLocationInfo->pColorAttachmentInputIndices) {
+    if (index_info.pColorAttachmentInputIndices) {
         std::map<uint32_t, uint32_t> unique;
 
-        for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
-            const uint32_t index = pLocationInfo->pColorAttachmentInputIndices[i];
+        for (uint32_t i = 0; i < index_info.colorAttachmentCount; ++i) {
+            const uint32_t index = index_info.pColorAttachmentInputIndices[i];
 
             if (index == VK_ATTACHMENT_UNUSED) {
                 continue;
@@ -5328,45 +5323,43 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInp
                 skip |=
                     LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09522", objlist,
                              loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pColorAttachmentInputIndices, i),
-                                 "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32, index,
-                                 unique[index], pLocationInfo->pColorAttachmentInputIndices[unique[index]]);
+                             "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32, index,
+                             unique[index], index_info.pColorAttachmentInputIndices[unique[index]]);
             } else
                 unique[index] = i;
         }
-        if (pLocationInfo->pDepthInputAttachmentIndex &&
-            *pLocationInfo->pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED &&
-            unique.find(*pLocationInfo->pDepthInputAttachmentIndex) != unique.end()) {
+        if (index_info.pDepthInputAttachmentIndex && *index_info.pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED &&
+            unique.find(*index_info.pDepthInputAttachmentIndex) != unique.end()) {
             const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pDepthInputAttachmentIndex, 0);
             skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09523", objlist, loc,
                              "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
-                             *pLocationInfo->pDepthInputAttachmentIndex, unique[*pLocationInfo->pDepthInputAttachmentIndex],
-                             pLocationInfo->pColorAttachmentInputIndices[unique[*pLocationInfo->pDepthInputAttachmentIndex]]);
+                             *index_info.pDepthInputAttachmentIndex, unique[*index_info.pDepthInputAttachmentIndex],
+                             index_info.pColorAttachmentInputIndices[unique[*index_info.pDepthInputAttachmentIndex]]);
         }
-        if (pLocationInfo->pStencilInputAttachmentIndex && 
-            *pLocationInfo->pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED &&
-            unique.find(*pLocationInfo->pStencilInputAttachmentIndex) != unique.end()) {
+        if (index_info.pStencilInputAttachmentIndex && *index_info.pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED &&
+            unique.find(*index_info.pStencilInputAttachmentIndex) != unique.end()) {
             const Location loc =
                 loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pStencilInputAttachmentIndex, 0);
             skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09524", objlist, loc,
                              "= %" PRIu32 " have same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
-                             *pLocationInfo->pStencilInputAttachmentIndex, unique[*pLocationInfo->pStencilInputAttachmentIndex],
-                             pLocationInfo->pColorAttachmentInputIndices[unique[*pLocationInfo->pStencilInputAttachmentIndex]]);
+                             *index_info.pStencilInputAttachmentIndex, unique[*index_info.pStencilInputAttachmentIndex],
+                             index_info.pColorAttachmentInputIndices[unique[*index_info.pStencilInputAttachmentIndex]]);
         }
     }
 
-    if (pLocationInfo->colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
+    if (index_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
         const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::colorAttachmentCount);
         skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfoKHR-colorAttachmentCount-09525", objlist, loc,
                          "= %" PRIu32 " must be less than or equal to maxColorAttachments = %" PRIu32 ".",
-                         pLocationInfo->colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
+                         index_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer, 
-                                                                         const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo,
-                                                                         const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo,
+    const ErrorObject &error_obj) const {
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
 
@@ -5389,8 +5382,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkComma
         skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-commandBuffer-09518", objlist, error_obj.location,
                          "vkCmdBeginRendering was not called.");
     }
-    if (pLocationInfo &&
-        pLocationInfo->colorAttachmentCount != rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
+    if (pLocationInfo->colorAttachmentCount != rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
         const Location loc = error_obj.location.dot(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::colorAttachmentCount);
 
@@ -5399,7 +5391,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkComma
                          pLocationInfo->colorAttachmentCount, rp_state.createInfo.attachmentCount);
     }
 
-    skip |= ValidateRenderingInputAttachmentIndicesKHR(pLocationInfo, commandBuffer, error_obj.location);
+    skip |= ValidateRenderingInputAttachmentIndicesKHR(*pLocationInfo, commandBuffer, error_obj.location);
 
     return skip;
 }

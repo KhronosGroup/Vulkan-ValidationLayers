@@ -57,24 +57,79 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLayout) {
                          "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09545");
 }
 
-TEST_F(NegativeDynamicRenderingLocalRead, CmdDraw) {
+TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorLocation) {
     TEST_DESCRIPTION("Validate that mapping is not applied in CmdDraw call if rendering is not started by vkCmdBeginRendering");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    AddRequiredFeature(vkt::Feature::shaderObject);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    VkFormat color_formats[2] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    uint32_t locations[] = {1, 0, 2};
+
+    VkRenderingAttachmentLocationInfoKHR pipeline_location_info = vku::InitStructHelper();
+    pipeline_location_info.colorAttachmentCount = 2;
+    pipeline_location_info.pColorAttachmentLocations = locations;
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper(&pipeline_location_info);
     pipeline_rendering_info.colorAttachmentCount = 2;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_formats[0];
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
 
     std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
 
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfoKHR color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachment[0];
+
+    m_commandBuffer->BeginRendering(rendering_info);
+
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 2;
+    location_info.pColorAttachmentLocations = &locations[1];
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09548");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorIndex) {
+    TEST_DESCRIPTION("Validate that mapping is not applied in CmdDraw call if rendering is not started by vkCmdBeginRendering");
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    uint32_t locations[] = {0, 1};
+    uint32_t inputs[] = {0, 1, 0};
+
+    VkRenderingInputAttachmentIndexInfoKHR inputs_info = vku::InitStructHelper();
+    inputs_info.colorAttachmentCount = 2;
+    inputs_info.pColorAttachmentInputIndices = inputs;
+
+    VkRenderingAttachmentLocationInfoKHR locations_info = vku::InitStructHelper(&inputs_info);
+    locations_info.colorAttachmentCount = 2;
+    locations_info.pColorAttachmentLocations = locations;
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper(&locations_info);
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
     VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
     cbi.attachmentCount = 2u;
     cbi.pAttachments = color_blend_attachments.data();
@@ -101,16 +156,17 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdDraw) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t locations[] = {1, 0};
-    VkRenderingAttachmentLocationInfoKHR location_info = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 2,
-                                                         &locations[0]};
-    VkRenderingInputAttachmentIndexInfoKHR input_info = {
-        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations[0], nullptr, nullptr};
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 2;
+    location_info.pColorAttachmentLocations = locations;
 
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &location_info);
-    vk::CmdSetRenderingInputAttachmentIndicesKHR(*m_commandBuffer, &input_info);
+    VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 2;
+    input_info.pColorAttachmentInputIndices = &inputs[1];
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09548");
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09549");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -118,12 +174,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdDraw) {
 
 TEST_F(NegativeDynamicRenderingLocalRead, CmdClearAttachments) {
     TEST_DESCRIPTION("Clear unmapped color attachment");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -151,9 +202,11 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdClearAttachments) {
     m_commandBuffer->BeginRendering(rendering_info);
 
     uint32_t location = VK_ATTACHMENT_UNUSED;
-    VkRenderingAttachmentLocationInfoKHR location_info = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 1,
-                                                          &location};
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &location_info);
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 1;
+    location_info.pColorAttachmentLocations = &location;
+
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
 
     VkClearAttachment clear_attachment;
     clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -165,7 +218,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdClearAttachments) {
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-colorAttachment-09503");
-    vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
 
@@ -174,11 +227,11 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderTileImageColorReadAccess);
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDeviceCreateInfo-pNext-pNext");
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -257,11 +310,11 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderTileImageColorReadAccess);
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDeviceCreateInfo-pNext-pNext");
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -318,12 +371,10 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
 TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
     TEST_DESCRIPTION("Test setting image memory barrier within BeginRenderning without dynamic rendering local read features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderTileImageColorReadAccess);
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDeviceCreateInfo-pNext-pNext");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
@@ -377,12 +428,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
 TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierFramebufferStagesOnly) {
     TEST_DESCRIPTION("Test barriers within render pass started by vkCmdBeginRendering specify only framebuffer stages.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -446,10 +493,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierRequireFeature) {
     TEST_DESCRIPTION(
         "Test setting image memory barrier within BeginRendering without dynamic rendering local read feature enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
@@ -494,12 +539,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierInProperLayout) {
         "Barrier within a render pass instance started with vkCmdBeginRendering, then the image must be in the "
         "VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR or VK_IMAGE_LAYOUT_GENERAL layout");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     InitRenderTarget();
 
     m_commandBuffer->begin();
@@ -559,14 +600,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierInProperLayout) {
 TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
     TEST_DESCRIPTION("Test setting initialLayout and finalLayout in attachment descriptor and reference against image usage.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     for (uint32_t i = 0; i < 3; i++) {
@@ -670,24 +706,20 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
 
 TEST_F(NegativeDynamicRenderingLocalRead, RemappingAtCreatePipeline) {
     TEST_DESCRIPTION("Color attachment count in Inputs Info must match to Rendering Create Info");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 0;
+    location_info.pColorAttachmentLocations = nullptr;
+
+    VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper(&location_info);
+    input_info.colorAttachmentCount = 0;
+    input_info.pColorAttachmentInputIndices = nullptr;
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper(&input_info);
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    VkRenderingAttachmentLocationInfoKHR location_info = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 0,
-                                                          nullptr};
-    VkRenderingInputAttachmentIndexInfoKHR input_info = {
-        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, &location_info, 0, nullptr, nullptr, nullptr};
-
-    pipeline_rendering_info.pNext = &input_info;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -702,28 +734,21 @@ TEST_F(NegativeDynamicRenderingLocalRead, RemappingAtCreatePipeline) {
 
 TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCount) {
     TEST_DESCRIPTION("colorAttachmentCount in Inputs Info must be less than maxColorAttachments");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
-
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     std::vector<uint32_t> input_attachment_indices(m_device->phy().limits_.maxColorAttachments + 1);
-    for (size_t i = 0; i < input_attachment_indices.size(); i++) input_attachment_indices[i] = static_cast<uint32_t>(i);
-    VkRenderingInputAttachmentIndexInfoKHR input_info = {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR,
-                                                         nullptr,
-                                                         static_cast<uint32_t>(input_attachment_indices.size()),
-                                                         input_attachment_indices.data(),
-                                                         nullptr,
-                                                         nullptr};
+    for (size_t i = 0; i < input_attachment_indices.size(); i++) {
+        input_attachment_indices[i] = static_cast<uint32_t>(i);
+    }
 
-    pipeline_rendering_info.pNext = &input_info;
+    VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = static_cast<uint32_t>(input_attachment_indices.size());
+    input_info.pColorAttachmentInputIndices = input_attachment_indices.data();
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper(&input_info);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -738,12 +763,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCou
 
 TEST_F(NegativeDynamicRenderingLocalRead, ColorAttachmentCountInPipelineRenderingCreateInfo) {
     TEST_DESCRIPTION("colorAttachmentCount must be less than or equal to maxColorAttachments in VkPipelineRenderingCreateInfo");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     std::vector<VkFormat> color_attachments(m_device->phy().limits_.maxColorAttachments + 1, VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -763,12 +783,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ColorAttachmentCountInPipelineRenderin
 
 TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndicesColorAttachmentCount) {
     TEST_DESCRIPTION("colorAttachmentCount must be equal to the value used to begin the current render pass instance");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -797,21 +812,18 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndicesColorAttachment
     m_commandBuffer->BeginRendering(rendering_info);
 
     uint32_t locations[] = {0};
-    VkRenderingInputAttachmentIndexInfoKHR input_info = {
-        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &locations[0], nullptr, nullptr};
+    VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 1;
+    input_info.pColorAttachmentInputIndices = locations;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-pInputAttachmentIndexInfo-09517");
-    vk::CmdSetRenderingInputAttachmentIndicesKHR(*m_commandBuffer, &input_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndices) {
     TEST_DESCRIPTION("Test CmdSetRenderingInputAttachmentIndicesKHR is called for render pass initiated by vkCmdBeginRendering");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -822,11 +834,12 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndices) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    VkRenderingInputAttachmentIndexInfoKHR input_info = {
-        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 0, nullptr, nullptr, nullptr};
+    VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 0;
+    input_info.pColorAttachmentInputIndices = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-commandBuffer-09518");
-    vk::CmdSetRenderingInputAttachmentIndicesKHR(*m_commandBuffer, &input_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -877,19 +890,14 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexSetToUnused) {
     for (uint32_t i = 0; i < 3; i++) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuids[i]);
-        vk::CmdSetRenderingInputAttachmentIndicesKHR(*m_commandBuffer, &input_info[i]);
+        vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info[i]);
         m_errorMonitor->VerifyFound();
     }
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
     TEST_DESCRIPTION("Color, depth and stencil attachment indices are set to unique values");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -927,19 +935,14 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
 
     for (uint32_t i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuids[i]);
-        vk::CmdSetRenderingInputAttachmentIndicesKHR(*m_commandBuffer, &input_info[i]);
+        vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info[i]);
         m_errorMonitor->VerifyFound();
     }
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachmentCount) {
     TEST_DESCRIPTION("colorAttachmentCount must be equal to the value used to begin the current render pass instance");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -968,11 +971,12 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachme
     m_commandBuffer->BeginRendering(rendering_info);
 
     uint32_t locations[] = {0};
-    VkRenderingAttachmentLocationInfoKHR LocationsInfo = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 1,
-                                                          &locations[0]};
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 1;
+    location_info.pColorAttachmentLocations = locations;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510");
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &LocationsInfo);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1004,28 +1008,27 @@ TEST_F(NegativeDynamicRenderingLocalRead, NewFunctionsReportErrorExtensionDisabl
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    VkRenderingAttachmentLocationInfoKHR location_info = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 0,
-                                                          nullptr};
-    VkRenderingInputAttachmentIndexInfoKHR input_info = {
-        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 0, nullptr, nullptr, nullptr};
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 0;
+    location_info.pColorAttachmentLocations = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRenderingAttachmentLocationsKHR-dynamicRenderingLocalRead-09509");
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &location_info);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
     m_errorMonitor->VerifyFound();
+
+    VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 0;
+    input_info.pColorAttachmentInputIndices = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516");
-    vk::CmdSetRenderingInputAttachmentIndicesKHR(*m_commandBuffer, &input_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, CmdSetRenderingAttachmentLocations) {
     TEST_DESCRIPTION("Test CmdSetRenderingAttachmentLocationsKHR is called for render pass initiated by vkCmdBeginRendering");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -1036,11 +1039,12 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetRenderingAttachmentLocations) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    VkRenderingAttachmentLocationInfoKHR LocationsInfo = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 0,
-                                                          nullptr};
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 0;
+    location_info.pColorAttachmentLocations = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRenderingAttachmentLocationsKHR-commandBuffer-09511");
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &LocationsInfo);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1080,25 +1084,21 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsValidity) {
     m_commandBuffer->BeginRendering(rendering_info);
 
     uint32_t color_attachment_locations[2] = {1, 1};
-    VkRenderingAttachmentLocationInfoKHR LocationsInfo = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr, 2,
-                                                          &color_attachment_locations[0]};
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 2;
+    location_info.pColorAttachmentLocations = color_attachment_locations;
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocationsKHR-dynamicRenderingLocalRead-09509");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentLocationInfoKHR-pColorAttachmentLocations-09513");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentLocationInfoKHR-dynamicRenderingLocalRead-09512");
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &LocationsInfo);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
     TEST_DESCRIPTION(
         "colorAttachmentCount must be less than or equal to maxColorAttachments. pColorAttachmentLocations[i] must be less than.");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
@@ -1121,14 +1121,17 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
     m_commandBuffer->BeginRendering(rendering_info);
 
     std::vector<uint32_t> color_attachment_locations(m_device->phy().limits_.maxColorAttachments + 1);
-    for (size_t i = 0; i < color_attachment_locations.size(); i++) color_attachment_locations[i] = static_cast<uint32_t>(i);
-    VkRenderingAttachmentLocationInfoKHR LocationsInfo = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR, nullptr,
-                                                          static_cast<uint32_t>(color_attachment_locations.size()),
-                                                          color_attachment_locations.data()};
+    for (size_t i = 0; i < color_attachment_locations.size(); i++) {
+        color_attachment_locations[i] = static_cast<uint32_t>(i);
+    }
+
+    VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = static_cast<uint32_t>(color_attachment_locations.size());
+    location_info.pColorAttachmentLocations = color_attachment_locations.data();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentLocationInfoKHR-colorAttachmentCount-09514");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentLocationInfoKHR-pColorAttachmentLocations-09515");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510");
-    vk::CmdSetRenderingAttachmentLocationsKHR(*m_commandBuffer, &LocationsInfo);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_commandBuffer->handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }

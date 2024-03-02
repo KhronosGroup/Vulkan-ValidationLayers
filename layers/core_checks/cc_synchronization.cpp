@@ -1568,54 +1568,34 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &layout_loc, V
     return skip;
 }
 
-std::vector<uint32_t> GetUsedAttachments(const std::shared_ptr<vvl::RenderPass> &rp_state) {
-    std::vector<uint32_t> attachments;
+std::vector<uint32_t> GetUsedAttachments(const vvl::CommandBuffer &cb_state) {
     std::set<uint32_t> unique;
 
-    if (rp_state->dynamic_rendering_attachment_location_info.get()) {
-        const auto &mapping = *rp_state->dynamic_rendering_attachment_location_info.get();
-
-        for (uint32_t i = 0; i < mapping.colorAttachmentCount; ++i) {
-            const uint32_t unmapped_color_attachment = mapping.pColorAttachmentLocations[i];
-
-            if (unmapped_color_attachment != VK_ATTACHMENT_UNUSED) {
-                unique.insert(unmapped_color_attachment);
-            }
-        }
-    } else {
-        const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
-        for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-            unique.insert(i);
-        }
-    }
-    if (rp_state->dynamic_rendering_input_attachment_input_info.get()) {
-        const auto &mapping = *rp_state->dynamic_rendering_input_attachment_input_info.get();
-
-        for (uint32_t i = 0; i < mapping.colorAttachmentCount; ++i) {
-            const uint32_t unmapped_color_attachment = mapping.pColorAttachmentInputIndices[i];
-
-            if (unmapped_color_attachment != VK_ATTACHMENT_UNUSED) {
-                unique.insert(unmapped_color_attachment);
-            }
-        }
-
-        if (mapping.pDepthInputAttachmentIndex) {
-            unique.insert(*mapping.pDepthInputAttachmentIndex);
-        }
-        if (mapping.pStencilInputAttachmentIndex) {
-            unique.insert(*mapping.pStencilInputAttachmentIndex);
-        }
-    } else {
-        const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
-        for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-            unique.insert(i);
+    for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); ++i) {
+        const uint32_t unmapped_color_attachment = cb_state.rendering_attachments.color_locations[i];
+        if (unmapped_color_attachment != VK_ATTACHMENT_UNUSED) {
+            unique.insert(unmapped_color_attachment);
         }
     }
 
+    for (size_t i = 0; i < cb_state.rendering_attachments.color_indexes.size(); ++i) {
+        const uint32_t unmapped_color_index = cb_state.rendering_attachments.color_indexes[i];
+        if (unmapped_color_index != VK_ATTACHMENT_UNUSED) {
+            unique.insert(unmapped_color_index);
+        }
+    }
+
+    if (cb_state.rendering_attachments.depth_index) {
+        unique.insert(*cb_state.rendering_attachments.depth_index);
+    }
+    if (cb_state.rendering_attachments.stencil_index) {
+        unique.insert(*cb_state.rendering_attachments.stencil_index);
+    }
+
+    std::vector<uint32_t> attachments;
     for (auto x : unique) {
         attachments.push_back(x);
     }
-
     return attachments;
 }
 
@@ -1725,7 +1705,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
             const auto &rp_state = cb_state.activeRenderPass;
             const auto &img_barrier_image = img_barrier.image;
             const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
-            std::vector<uint32_t> used_attachments(GetUsedAttachments(rp_state));
+            std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
 
             for (auto color_attachment_idx : used_attachments) {
                 if (color_attachment_idx >= rendering_info.colorAttachmentCount) {

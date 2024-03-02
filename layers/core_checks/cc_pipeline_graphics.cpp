@@ -2735,38 +2735,34 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                          create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
                          rendering_struct->colorAttachmentCount);
         }
-        if (pipeline.fragment_shader_state && pipeline.fragment_output_state &&
-            pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            const auto input_attachment_index = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline.PNext());
-            if (input_attachment_index && input_attachment_index->colorAttachmentCount != rendering_struct->colorAttachmentCount) {
-                const Location loc =
-                    create_info_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::colorAttachmentCount);
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531", device, loc,
-                                 "= %" PRIu32 " does not match VkPipelineRenderingCreateInfo.colorAttachmentCount = %" PRIu32 ".",
-                                 input_attachment_index->colorAttachmentCount, rendering_struct->colorAttachmentCount);
-            }
-
-            const auto attachment_location = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline.PNext());
-            if (attachment_location && attachment_location->colorAttachmentCount != rendering_struct->colorAttachmentCount) {
-                const Location loc =
-                    create_info_loc.pNext(Struct::VkRenderingAttachmentLocationInfoKHR, Field::colorAttachmentCount);
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09532", device, loc,
-                                 "= %" PRIu32 " does not match VkPipelineRenderingCreateInfo.colorAttachmentCount = %" PRIu32 ".",
-                                 attachment_location->colorAttachmentCount, rendering_struct->colorAttachmentCount);
-            }
-        }
-        if (enabled_features.dynamicRenderingLocalRead) {
+        if (pipeline.fragment_shader_state && pipeline.fragment_output_state) {
             const auto input_attachment_index =
                 vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline.PNext());
             if (input_attachment_index) {
                 skip |= ValidateRenderingInputAttachmentIndicesKHR(
-                    input_attachment_index, device, create_info_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR));
+                    *input_attachment_index, device, create_info_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR));
+                if (input_attachment_index->colorAttachmentCount != rendering_struct->colorAttachmentCount) {
+                    const Location loc =
+                        create_info_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::colorAttachmentCount);
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531", device, loc,
+                                 "= %" PRIu32 " does not match VkPipelineRenderingCreateInfo.colorAttachmentCount = %" PRIu32 ".",
+                                 input_attachment_index->colorAttachmentCount, rendering_struct->colorAttachmentCount);
+                }
             }
 
             const auto attachment_location = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline.PNext());
             if (attachment_location) {
                 skip |= ValidateRenderingAttachmentLocationsKHR(
                     *attachment_location, device, create_info_loc.pNext(Struct::VkRenderingAttachmentLocationInfoKHR));
+                if (attachment_location->colorAttachmentCount != rendering_struct->colorAttachmentCount) {
+                    const Location loc =
+                        create_info_loc.pNext(Struct::VkRenderingAttachmentLocationInfoKHR, Field::colorAttachmentCount);
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09532", device, loc,
+                                 "= %" PRIu32 " does not match VkPipelineRenderingCreateInfo.colorAttachmentCount = %" PRIu32 ".",
+                                 attachment_location->colorAttachmentCount, rendering_struct->colorAttachmentCount);
+                }
             }
         }
     }
