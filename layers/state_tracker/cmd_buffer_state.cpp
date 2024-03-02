@@ -180,6 +180,7 @@ void CommandBuffer::ResetCBState() {
     attachments_view_states.clear();
     activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
+    rendering_attachments.Reset();
     waitedEvents.clear();
     events.clear();
     writeEventsBeforeWait.clear();
@@ -598,6 +599,10 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     activeRenderPass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
     renderPassQueries.clear();
 
+    rendering_attachments.Reset();
+    rendering_attachments.color_locations.resize(pRenderingInfo->colorAttachmentCount);
+    rendering_attachments.color_indexes.resize(pRenderingInfo->colorAttachmentCount);
+
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
         active_render_pass_device_mask = chained_device_group_struct->deviceMask;
@@ -638,6 +643,10 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         auto &colorResolveAttachment = attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
         colorAttachment = nullptr;
         colorResolveAttachment = nullptr;
+
+        // Default from spec
+        rendering_attachments.color_locations[i] = i;
+        rendering_attachments.color_indexes[i] = i;
 
         if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
             auto res =
@@ -945,7 +954,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 auto inheritance_rendering_info =
                     vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
-                    activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info, beginInfo.pInheritanceInfo);
+                    activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
                 }
             }
 

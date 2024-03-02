@@ -143,12 +143,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDrawDynamicState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateDrawDynamicColorAttachmentLocations(const LogObjectList& objlist, const Location& loc,
-                                                     const safe_VkRenderingAttachmentLocationInfoKHR* location_current,
-                                                     const VkRenderingAttachmentLocationInfoKHR* location) const;
-    bool ValidateDrawDynamicInputAttachementIndices(const LogObjectList& objlist, const Location& loc,
-                                                    const safe_VkRenderingInputAttachmentIndexInfoKHR* input_current,
-                                                    const VkRenderingInputAttachmentIndexInfoKHR* input) const;
+    bool ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
+                                                 const Location& loc, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
+                                                   const Location& loc, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateRayTracingDynamicStateSetStatus(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
                                VkPipelineStageFlags2KHR stageMask) const;
@@ -2412,13 +2410,13 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                    const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
                                                    uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
-    bool ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& pLocationInfo,
+    bool ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& location_info,
                                                  const LogObjectList objlist, const Location& loc_info) const;
     bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                               const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
                                                               const ErrorObject& error_obj) const override;
 
-    bool ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+    bool ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR& index_info,
                                                     const LogObjectList objlist, const Location& loc_info) const;
     bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
                                                                  const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,

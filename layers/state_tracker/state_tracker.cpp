@@ -1895,8 +1895,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
             const bool rasterization_enabled = vvl::Pipeline::EnablesRasterizationStates(*this, create_info);
             const bool has_fragment_output_state =
                 vvl::Pipeline::ContainsSubState(this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
-            render_pass = std::make_shared<vvl::RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state,
-                                                            &create_info);
+            render_pass = std::make_shared<vvl::RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state);
         } else {
             const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
             const bool has_link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext) != nullptr;
@@ -5168,9 +5167,10 @@ void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocationsKHR
     VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfoKHR *pLocationInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
-    if (cb_state->activeRenderPass) {
-        cb_state->activeRenderPass->dynamic_rendering_attachment_location_info =
-            std::make_shared<safe_VkRenderingAttachmentLocationInfoKHR>(pLocationInfo, (PNextCopyState *)0, false);
+    cb_state->rendering_attachments.set_color_locations = true;
+    cb_state->rendering_attachments.color_locations.resize(pLocationInfo->colorAttachmentCount);
+    for (size_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
+        cb_state->rendering_attachments.color_locations[i] = pLocationInfo->pColorAttachmentLocations[i];
     }
 }
 
@@ -5178,10 +5178,13 @@ void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndices
     const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
-    if (cb_state->activeRenderPass) {
-        cb_state->activeRenderPass->dynamic_rendering_input_attachment_input_info =
-            std::make_shared<safe_VkRenderingInputAttachmentIndexInfoKHR>(pLocationInfo, (PNextCopyState *)0, false);
+    cb_state->rendering_attachments.set_color_indexes = true;
+    cb_state->rendering_attachments.color_indexes.resize(pLocationInfo->colorAttachmentCount);
+    for (size_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
+        cb_state->rendering_attachments.color_indexes[i] = pLocationInfo->pColorAttachmentInputIndices[i];
     }
+    cb_state->rendering_attachments.depth_index = pLocationInfo->pDepthInputAttachmentIndex;
+    cb_state->rendering_attachments.stencil_index = pLocationInfo->pStencilInputAttachmentIndex;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer,

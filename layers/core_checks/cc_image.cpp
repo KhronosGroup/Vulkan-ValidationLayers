@@ -1091,17 +1091,16 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
         if (cb_state.activeRenderPass->UsesDynamicRendering()) {
             uint32_t colorAttachment = clear_desc->colorAttachment;
-            const auto *attachment_location_info = cb_state.activeRenderPass->dynamic_rendering_attachment_location_info.get();
-            if (attachment_location_info && attachment_location_info->pColorAttachmentLocations &&
-                colorAttachment < attachment_location_info->colorAttachmentCount) {
-                colorAttachment = attachment_location_info->pColorAttachmentLocations[colorAttachment];
 
-                if (colorAttachment == VK_ATTACHMENT_UNUSED) {
+            for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); i++) {
+                if (cb_state.rendering_attachments.color_locations[i] == VK_ATTACHMENT_UNUSED) {
                     const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->VkHandle());
-                    skip |= LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
-                                     "cannot be cleared due to mapped to VK_ATTACHMENT_UNUSED.");
-
-                    continue;
+                    skip |=
+                        LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
+                                 "cannot be cleared because VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%zu] "
+                                 "is VK_ATTACHMENT_UNUSED.",
+                                 i);
+                    break;
                 }
             }
 

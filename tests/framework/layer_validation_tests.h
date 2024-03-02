@@ -376,12 +376,13 @@ class NegativeDeviceQueue : public VkLayerTest {};
 class DynamicRenderingTest : public VkLayerTest {
   public:
     void InitBasicDynamicRendering();
+    void InitBasicDynamicRenderingLocalRead();
 };
 class NegativeDynamicRendering : public DynamicRenderingTest {};
 class PositiveDynamicRendering : public DynamicRenderingTest {};
 
-class NegativeDynamicRenderingLocalRead : public NegativeDynamicRendering {};
-class PositiveDynamicRenderingLocalRead : public PositiveDynamicRendering {};
+class NegativeDynamicRenderingLocalRead : public DynamicRenderingTest {};
+class PositiveDynamicRenderingLocalRead : public DynamicRenderingTest {};
 
 class DynamicStateTest : public VkLayerTest {
   public:

@@ -433,69 +433,9 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     }
 
     if (pipeline_state && cb_state.activeRenderPass->UsesDynamicRendering() &&
-        IsExtEnabled(device_extensions.vk_ext_shader_object) && !last_bound_state.IsAnyGraphicsShaderBound()) {
-        const auto& rp_state = cb_state.activeRenderPass;
-        const safe_VkRenderingAttachmentLocationInfoKHR* location_current =
-            rp_state->dynamic_rendering_attachment_location_info.get();
-        const safe_VkRenderingInputAttachmentIndexInfoKHR* input_current =
-            rp_state->dynamic_rendering_input_attachment_input_info.get();
-
-        if (location_current) {
-            safe_VkRenderingAttachmentLocationInfoKHR location_pipeline = [&]() -> safe_VkRenderingAttachmentLocationInfoKHR {
-                safe_VkRenderingAttachmentLocationInfoKHR result;
-                const VkRenderingAttachmentLocationInfoKHR* location_pipeline =
-                    vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(
-                        pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pNext);
-                if (location_pipeline) {
-                    result = safe_VkRenderingAttachmentLocationInfoKHR(location_pipeline, {}, false);
-                } else {
-                    if (cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr()) {
-                        const VkPipelineRenderingCreateInfo* rendering_info =
-                            cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr();
-
-                        result.colorAttachmentCount = rendering_info->colorAttachmentCount;
-                        result.pColorAttachmentLocations = nullptr;
-                    } else {
-                        result.colorAttachmentCount = 0;
-                        result.pColorAttachmentLocations = nullptr;
-                    }
-                }
-                return result;
-            }();
-
-            skip |= ValidateDrawDynamicColorAttachmentLocations(cb_state.Handle(), loc, location_current, location_pipeline.ptr());
-        }
-        if (input_current) {
-            safe_VkRenderingInputAttachmentIndexInfoKHR input_pipeline =
-                [&]() -> safe_VkRenderingInputAttachmentIndexInfoKHR {
-                safe_VkRenderingInputAttachmentIndexInfoKHR result;
-
-                const VkRenderingInputAttachmentIndexInfoKHR* location_pipeline =
-                    vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(
-                        pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pNext);
-                if (location_pipeline) {
-                    result = safe_VkRenderingInputAttachmentIndexInfoKHR (location_pipeline, {}, false);
-                } else {
-                    if (cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr()) {
-                        const VkPipelineRenderingCreateInfo* rendering_info =
-                            cb_state.activeRenderPass->dynamic_pipeline_rendering_create_info.ptr();
-
-                        result.colorAttachmentCount = rendering_info->colorAttachmentCount;
-                        result.pColorAttachmentInputIndices = nullptr;
-                        result.pDepthInputAttachmentIndex = nullptr;
-                        result.pStencilInputAttachmentIndex = nullptr;
-                    } else {
-                        result.colorAttachmentCount = 0;
-                        result.pColorAttachmentInputIndices = nullptr;
-                        result.pDepthInputAttachmentIndex = nullptr;
-                        result.pStencilInputAttachmentIndex = nullptr;
-                    }
-                }
-
-                return result;
-            }();
-            skip |= ValidateDrawDynamicInputAttachementIndices(cb_state.Handle(), loc, input_current, input_pipeline.ptr());
-        }
+        (!IsExtEnabled(device_extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
+        skip |= ValidateDrawRenderingAttachmentLocation(cb_state, *pipeline_state, loc, vuid);
+        skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, loc, vuid);
     }
 
     return skip;
@@ -1046,107 +986,130 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicColorAttachmentLocations(const LogObjectList& objlist, const Location& loc,
-                                                             const safe_VkRenderingAttachmentLocationInfoKHR* location_current,
-                                                             const VkRenderingAttachmentLocationInfoKHR* location) const {
-    std::ostringstream oss;
-    const bool inherited = loc.function == Func::vkCmdExecuteCommands;
-    const char* inh = inherited ? "VkCommandBufferInheritanceInfo" : "VkGraphicsPipelineCreateInfo";
-    const char* vuid = inherited ? "VUID-vkCmdExecuteCommands-pCommandBuffers-09504" : "VUID-vkCmdDraw-None-09548";
+bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
+                                                         const Location& loc, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
+    if (!cb_state.rendering_attachments.set_color_locations) {
+        return skip;
+    }
+    const uint32_t color_attachment_count = (uint32_t)cb_state.rendering_attachments.color_locations.size();
 
-    if (location) {
-        if (location_current) {
-            if (location_current->colorAttachmentCount == location->colorAttachmentCount) {
-                for (uint32_t i = 0; i < location_current->colorAttachmentCount; ++i) {
-                    const uint32_t u = location->pColorAttachmentLocations ? location->pColorAttachmentLocations[i] : i;
-                    if (location_current->pColorAttachmentLocations[i] != u) {
-                        oss << "current pColorAttachmentLocations[" << i << "]=" << location_current->pColorAttachmentLocations[i]
-                            << " != chained to " << inh << " pColorAttachmentLocations[" << i << "]=" << u << ",";
-                    }
-                }
-                if (!oss.str().empty()) {
-                    const std::string s = oss.str();
-                    oss.str(s.substr(0, s.size() - 1));
-                }
-            } else {
-                oss << "Current colorAttachmentCount (" << location_current->colorAttachmentCount
-                    << ") is not equal to set in chain to " << inh << " (" << location->colorAttachmentCount << ").";
+    // Default from spec
+    uint32_t pipeline_color_count = 0;
+    const uint32_t* pipeline_color_locations = nullptr;
+    if (const auto* pipeline_location_info =
+            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline_state.PNext())) {
+        pipeline_color_count = pipeline_location_info->colorAttachmentCount;
+        pipeline_color_locations = pipeline_location_info->pColorAttachmentLocations;
+    } else if (const auto* pipeline_rendering_create_info = pipeline_state.GetPipelineRenderingCreateInfo()) {
+        pipeline_color_count = pipeline_rendering_create_info->colorAttachmentCount;
+    } else {
+        return skip;  // hit dynamic rendering that is not using local read
+    }
+
+    if (pipeline_color_count != color_attachment_count) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, loc,
+                        "The pipeline VkRenderingAttachmentLocationInfoKHR::colorAttachmentCount is %" PRIu32
+                        " but vkCmdSetRenderingAttachmentLocationsKHR last set colorAttachmentCount to %" PRIu32 "",
+                        pipeline_color_count, color_attachment_count);
+    } else if (pipeline_color_locations) {
+        for (uint32_t i = 0; i < pipeline_color_count; i++) {
+            if (pipeline_color_locations[i] != cb_state.rendering_attachments.color_locations[i]) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+                skip = LogError(
+                    vuid.dynamic_rendering_local_location_09548, objlist, loc,
+                    "The pipeline VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%" PRIu32 "] is %" PRIu32
+                    " but vkCmdSetRenderingAttachmentLocationsKHR last set pColorAttachmentLocations[%" PRIu32 "] to %" PRIu32 "",
+                    i, pipeline_color_locations[i], i, cb_state.rendering_attachments.color_locations[i]);
+                break;
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
+                                                           const Location& loc, const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+    if (!cb_state.rendering_attachments.set_color_indexes) {
+        return skip;
+    }
+
+    const uint32_t color_index_count = (uint32_t)cb_state.rendering_attachments.color_indexes.size();
+
+    // Default from spec
+    uint32_t pipeline_color_count = 0;
+    const uint32_t* pipeline_color_indexes = nullptr;
+    const uint32_t* pipeline_depth_index = nullptr;
+    const uint32_t* pipeline_stencil_index = nullptr;
+    if (const auto* pipeline_index_info =
+            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline_state.PNext())) {
+        pipeline_color_count = pipeline_index_info->colorAttachmentCount;
+        pipeline_color_indexes = pipeline_index_info->pColorAttachmentInputIndices;
+        pipeline_depth_index = pipeline_index_info->pDepthInputAttachmentIndex;
+        pipeline_stencil_index = pipeline_index_info->pStencilInputAttachmentIndex;
+    } else if (const auto* pipeline_rendering_create_info = pipeline_state.GetPipelineRenderingCreateInfo()) {
+        pipeline_color_count = pipeline_rendering_create_info->colorAttachmentCount;
+    } else {
+        return skip;  // hit dynamic rendering that is not using local read
+    }
+
+    if (pipeline_color_count != color_index_count) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, loc,
+                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::colorAttachmentCount is %" PRIu32
+                        " but vkCmdSetRenderingInputAttachmentIndicesKHR last set colorAttachmentCount to %" PRIu32 "",
+                        pipeline_color_count, color_index_count);
+    } else if (pipeline_color_indexes) {
+        for (uint32_t i = 0; i < pipeline_color_count; i++) {
+            if (pipeline_color_indexes[i] != cb_state.rendering_attachments.color_indexes[i]) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+                skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, loc,
+                                "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pColorAttachmentInputIndices[%" PRIu32
+                                "] is %" PRIu32
+                                " but vkCmdSetRenderingInputAttachmentIndicesKHR last set pColorAttachmentInputIndices[%" PRIu32
+                                "] to %" PRIu32 "",
+                                i, pipeline_color_indexes[i], i, cb_state.rendering_attachments.color_indexes[i]);
+                break;
             }
         }
     }
 
-    const std::string message = oss.str();
-
-    if (!message.empty()) {
-        skip = LogError(vuid, objlist, loc, "%s", message.c_str());
+    if ((!pipeline_depth_index || !cb_state.rendering_attachments.depth_index) &&
+        (pipeline_depth_index != cb_state.rendering_attachments.depth_index)) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, loc,
+                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pDepthInputAttachmentIndex is 0x%p but "
+                        "vkCmdSetRenderingInputAttachmentIndicesKHR last set pDepthInputAttachmentIndex to 0x%p",
+                        pipeline_depth_index, cb_state.rendering_attachments.depth_index);
+    } else if (pipeline_depth_index && cb_state.rendering_attachments.depth_index &&
+               (*pipeline_depth_index != *cb_state.rendering_attachments.depth_index)) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, loc,
+                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pDepthInputAttachmentIndex value is %" PRIu32
+                        " but vkCmdSetRenderingInputAttachmentIndicesKHR last set pDepthInputAttachmentIndex value to %" PRIu32 "",
+                        *pipeline_depth_index, *cb_state.rendering_attachments.depth_index);
     }
 
+    if ((!pipeline_stencil_index || !cb_state.rendering_attachments.stencil_index) &&
+        (pipeline_stencil_index != cb_state.rendering_attachments.stencil_index)) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, loc,
+                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex is 0x%p but "
+                        "vkCmdSetRenderingInputAttachmentIndicesKHR last set pStencilInputAttachmentIndex to 0x%p",
+                        pipeline_stencil_index, cb_state.rendering_attachments.stencil_index);
+    } else if (pipeline_stencil_index && cb_state.rendering_attachments.stencil_index &&
+               (*pipeline_stencil_index != *cb_state.rendering_attachments.stencil_index)) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        skip =
+            LogError(vuid.dynamic_rendering_local_index_09549, objlist, loc,
+                     "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex value is %" PRIu32
+                     " but vkCmdSetRenderingInputAttachmentIndicesKHR last set pStencilInputAttachmentIndex value to %" PRIu32 "",
+                     *pipeline_stencil_index, *cb_state.rendering_attachments.stencil_index);
+    }
     return skip;
 }
-
-bool CoreChecks::ValidateDrawDynamicInputAttachementIndices(const LogObjectList& objlist, const Location& loc,
-                                                            const safe_VkRenderingInputAttachmentIndexInfoKHR* input_current,
-                                                            const VkRenderingInputAttachmentIndexInfoKHR* input) const {
-    std::ostringstream oss;
-    const bool inherited = loc.function == Func::vkCmdExecuteCommands;
-    const char* inh = inherited ? "VkCommandBufferInheritanceInfo" : "VkGraphicsPipelineCreateInfo";
-    const char* vuid = inherited ? "VUID-vkCmdExecuteCommands-pCommandBuffers-09505" : "VUID-vkCmdDraw-None-09549";
-    bool skip = false;
-    auto match_ptrs = [](const uint32_t* a, const uint32_t* b) {
-        if (a == nullptr && b == nullptr) {
-            return true;
-        }
-        if (a != nullptr && b != nullptr && *a == *b) {
-            return true;
-        }
-        return false;
-    };
-
-    if (input) {
-        if (input_current) {
-            if (input_current->colorAttachmentCount == input->colorAttachmentCount) {
-                for (uint32_t i = 0; i < input_current->colorAttachmentCount; ++i) {
-                    const uint32_t u = input->pColorAttachmentInputIndices ? input->pColorAttachmentInputIndices[i] : i;
-                    if (input_current->pColorAttachmentInputIndices[i] != u) {
-                        oss << "current pColorAttachmentInputIndices[" << i
-                            << "]=" << input_current->pColorAttachmentInputIndices[i] << " != chained to " << inh
-                            << " pColorAttachmentInputIndices[" << i << "]=" << u << ",";
-                    }
-                }
-                if (!oss.str().empty()) {
-                    const std::string s = oss.str();
-                    oss.str(s.substr(0, s.size() - 1));
-                }
-                if (!match_ptrs(input_current->pDepthInputAttachmentIndex, input->pDepthInputAttachmentIndex)) {
-                    oss << "Current pDepthInputAttachmentIndex=" << input_current->pDepthInputAttachmentIndex;
-                    if (input_current->pDepthInputAttachmentIndex) oss << " value " << *input_current->pDepthInputAttachmentIndex;
-                    oss << ", set in chain " << inh << " pDepthInputAttachmentIndex=" << input->pDepthInputAttachmentIndex;
-                    if (input->pDepthInputAttachmentIndex) oss << " value " << *input->pDepthInputAttachmentIndex;
-                }
-                if (!match_ptrs(input_current->pStencilInputAttachmentIndex, input->pStencilInputAttachmentIndex)) {
-                    oss << "Current pStencilInputAttachmentIndex=" << input_current->pStencilInputAttachmentIndex;
-                    if (input_current->pStencilInputAttachmentIndex)
-                        oss << " value " << *input_current->pStencilInputAttachmentIndex;
-                    oss << ", set in chain " << inh << " pStencilInputAttachmentIndex=" << input->pStencilInputAttachmentIndex;
-                    if (input->pStencilInputAttachmentIndex) oss << " value " << *input->pStencilInputAttachmentIndex;
-                }
-            } else {
-                oss << "Current colorAttachmentCount (" << input_current->colorAttachmentCount
-                    << ") is not equal to set in chain to " << inh << " (" << input->colorAttachmentCount << ").";
-            }
-        }
-    }
-
-    const std::string message = oss.str();
-
-    if (!message.empty()) {
-        skip = LogError(vuid, objlist, loc, "%s", message.c_str());
-    }
-
-    return skip;
-}
-
 
 bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;

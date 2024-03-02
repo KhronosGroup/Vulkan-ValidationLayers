@@ -276,6 +276,7 @@ class CommandBuffer : public RefcountedStateObject {
         uint32_t exclusive_scissor_first;
         uint32_t exclusive_scissor_count;
         std::vector<VkRect2D> exclusive_scissors;
+
         // When the Command Buffer resets, the value most things in this struct don't matter because if they are read without
         // setting the state, it will fail in ValidateDynamicStateIsSet() for us. Some values (ex. the bitset) are tracking in
         // replacement for static_status/dynamic_status so this needs to reset along with those
@@ -378,6 +379,24 @@ class CommandBuffer : public RefcountedStateObject {
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<QFOImageTransferBarrier> qfo_transfer_image_barriers;
+
+    // VK_KHR_dynamic_rendering_local_read works like dynamic state, but lives for the rendering lifetime only
+    struct RenderingAttachment {
+        // VkRenderingAttachmentLocationInfoKHR
+        bool set_color_locations = false;
+        std::vector<uint32_t> color_locations;
+        // VkRenderingInputAttachmentIndexInfoKHR
+        bool set_color_indexes = false;
+        std::vector<uint32_t> color_indexes;
+        const uint32_t *depth_index = nullptr;
+        const uint32_t *stencil_index = nullptr;
+        void Reset() {
+            color_locations.clear();
+            color_indexes.clear();
+            depth_index = nullptr;
+            stencil_index = nullptr;
+        }
+    } rendering_attachments;
 
     vvl::unordered_set<VkEvent> waitedEvents;
     std::vector<VkEvent> writeEventsBeforeWait;
