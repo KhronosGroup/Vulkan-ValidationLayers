@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gpu_error_constants.h"
+#include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
 
 #define ERROR_RECORD_WORDS_COUNT kHeaderErrorGroupOffset + 4

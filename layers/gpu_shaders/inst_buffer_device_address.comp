@@ -26,7 +26,7 @@
 #error No extension available for 64-bit integers.
 #endif
 
-#include "gpu_error_constants.h"
+#include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
 
 layout(set = kDefaultDescriptorSet, binding = 0, std430) buffer inst_OutputBuffer {
