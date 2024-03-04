@@ -34,7 +34,7 @@
 #include "state_tracker/chassis_modification_state.h"
 #include "state_tracker/render_pass_state.h"
 // Generated shaders
-#include "gpu_shaders/gpu_error_constants.h"
+#include "gpu_shaders/gpu_error_header.h"
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"

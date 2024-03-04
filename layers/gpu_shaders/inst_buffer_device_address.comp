@@ -62,17 +62,19 @@ bool inst_buffer_device_address(const uint inst_num, const uvec4 stage_info, con
     uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
     if ((write_pos + rec_len) <= uint(inst_output_buffer.data.length()))
     {
-        inst_output_buffer.data[write_pos + 0u] = rec_len;
-        inst_output_buffer.data[write_pos + 1u] = kLinkShaderId;
-        inst_output_buffer.data[write_pos + 2u] = inst_num;
-        inst_output_buffer.data[write_pos + 3u] = stage_info.x;
-        inst_output_buffer.data[write_pos + 4u] = stage_info.y;
-        inst_output_buffer.data[write_pos + 5u] = stage_info.z;
-        inst_output_buffer.data[write_pos + 6u] = stage_info.w;
-        inst_output_buffer.data[write_pos + 7u] = kErrorGroupInstBufferDeviceAddress;
-        inst_output_buffer.data[write_pos + 8u] = kErrorSubCodeBufferDeviceAddressUnallocRef;
-        inst_output_buffer.data[write_pos + 9u] = uint(addr);
-        inst_output_buffer.data[write_pos + 10u] = uint(addr >> 32u);
+        inst_output_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = rec_len;
+        inst_output_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
+        inst_output_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
+        inst_output_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
+        inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+        inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+        inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+
+        inst_output_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBufferDeviceAddress;
+        inst_output_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = kErrorSubCodeBufferDeviceAddressUnallocRef;
+        
+        inst_output_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
+        inst_output_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
     }
 
     return false;

@@ -17,7 +17,7 @@
 #include "gpu_error_constants.h"
 #include "gpu_shaders_constants.h"
 
-#define ERROR_RECORD_WORDS_COUNT kErrorGroup + 4
+#define ERROR_RECORD_WORDS_COUNT kHeaderErrorGroupOffset + 4
 
 layout(set = 0, binding = 0) buffer OutputBuffer {
     uint flags;
@@ -29,8 +29,8 @@ void gpuavLogError(uint error_group, uint error_sub_code, uint param_0, uint par
     uint vo_idx = atomicAdd(output_buffer_count, ERROR_RECORD_WORDS_COUNT);
     if (vo_idx + ERROR_RECORD_WORDS_COUNT > output_buffer.length()) return;
 
-    output_buffer[vo_idx + kErrorGroup] = error_group;
-    output_buffer[vo_idx + kErrorSubCode] = error_sub_code;
-    output_buffer[vo_idx + kPreActionOutParam0] = param_0;
-    output_buffer[vo_idx + kPreActionOutParam1] = param_1;
+    output_buffer[vo_idx + kHeaderErrorGroupOffset] = error_group;
+    output_buffer[vo_idx + kHeaderErrorSubCodeOffset] = error_sub_code;
+    output_buffer[vo_idx + kPreActionParamOffset_0] = param_0;
+    output_buffer[vo_idx + kPreActionParamOffset_1] = param_1;
 }

@@ -32,7 +32,7 @@
 #include "gpu_vuids.h"
 #include "containers/custom_containers.h"
 // Generated shaders
-#include "gpu_shaders/gpu_error_constants.h"
+#include "gpu_shaders/gpu_error_header.h"
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
@@ -162,7 +162,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
                    "Use of descriptor buffers will result in no descriptor checking");
     }
 
-    output_buffer_size = sizeof(uint32_t) * (glsl::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
+    output_buffer_size = sizeof(uint32_t) * (glsl::kMaxErrorRecordSize + spvtools::kDebugOutputDataOffset);
 
     if (gpuav_settings.validate_descriptors && !force_buffer_device_address) {
         gpuav_settings.validate_descriptors = false;
