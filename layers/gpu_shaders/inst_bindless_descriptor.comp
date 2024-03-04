@@ -165,20 +165,22 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         uint rec_len = 14u;
         uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
         if ((write_pos + rec_len) <= uint(inst_output_buffer.data.length())) {
-            inst_output_buffer.data[write_pos + 0u] = rec_len;
-            inst_output_buffer.data[write_pos + 1u] = kLinkShaderId;
-            inst_output_buffer.data[write_pos + 2u] = inst_num;
-            inst_output_buffer.data[write_pos + 3u] = stage_info.x;
-            inst_output_buffer.data[write_pos + 4u] = stage_info.y;
-            inst_output_buffer.data[write_pos + 5u] = stage_info.z;
-            inst_output_buffer.data[write_pos + 6u] = stage_info.w;
-            inst_output_buffer.data[write_pos + 7u] = kErrorGroupInstBindlessDescriptor;
-            inst_output_buffer.data[write_pos + 8u] = error;
-            inst_output_buffer.data[write_pos + 9u] = desc_set;
-            inst_output_buffer.data[write_pos + 10u] = binding;
-            inst_output_buffer.data[write_pos + 11u] = desc_index;
-            inst_output_buffer.data[write_pos + 12u] = param_0;
-            inst_output_buffer.data[write_pos + 13u] = param_1;
+            inst_output_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = rec_len;
+            inst_output_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
+            inst_output_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
+            inst_output_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
+            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+
+            inst_output_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBindlessDescriptor;
+            inst_output_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
+            
+            inst_output_buffer.data[write_pos + kInstBindlessDescSetOffset] = desc_set;
+            inst_output_buffer.data[write_pos + kInstBindlessDescBindingOffset] = binding;
+            inst_output_buffer.data[write_pos + kInstBindlessDescIndexOffset] = desc_index;
+            inst_output_buffer.data[write_pos + kInstBindlessCustom_0] = param_0;
+            inst_output_buffer.data[write_pos + kInstBindlessCustom_1] = param_1;
         }
         return false;
     }
