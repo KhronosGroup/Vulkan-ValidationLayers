@@ -172,8 +172,10 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             inst_output_buffer.data[write_pos + 4u] = stage_info.y;
             inst_output_buffer.data[write_pos + 5u] = stage_info.z;
             inst_output_buffer.data[write_pos + 6u] = stage_info.w;
+
             inst_output_buffer.data[write_pos + 7u] = kErrorGroupInstBindlessDescriptor;
             inst_output_buffer.data[write_pos + 8u] = error;
+            
             inst_output_buffer.data[write_pos + 9u] = desc_set;
             inst_output_buffer.data[write_pos + 10u] = binding;
             inst_output_buffer.data[write_pos + 11u] = desc_index;

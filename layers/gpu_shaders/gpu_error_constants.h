@@ -19,200 +19,150 @@
 #ifndef GPU_ERROR_CONSTANTS_H
 #define GPU_ERROR_CONSTANTS_H
 
+#include "gpu_error_codes.h"
+
 #ifdef __cplusplus
 namespace gpuav {
 namespace glsl {
 #endif
 
-// Common Stream Record Offsets
+// GPU-AV Error record structure:
+// ------------------------------
+
+// /---------------------------------
+// | Error header
+// | 	- Record size
+// |	- Shader Id
+// |	- Instruction Id
+// |	- Shader stage Id
+// |	- Shader stage info (3 integers)
+// | 	- Error group (Id unique to the shader/instrumentation code that wrote the error)
+// |	- subcode (maps to VUIDs)
+// | --------------------------------
+// | Error specific parameters
+// \---------------------------------
 //
-// The following are offsets to fields which are common to all records written
-// to the output stream.
-//
+// The size of these parts depends on the validation being done.
+
+// Error Header offsets:
+// ---------------------
+// The following are offsets to fields common to all records
+
 // Each record first contains the size of the record in 32-bit words, including
 // the size word.
-const int kInstCommonOutSize = 0;
+const int kHeaderErrorRecordSizeOffset = 0;
 
 // This is the shader id passed by the layer when the instrumentation pass is
 // created.
-const int kInstCommonOutShaderId = 1;
+const int kHeaderShaderIdOffset = 1;
 
 // This is the ordinal position of the instruction within the SPIR-V shader
 // which generated the validation error.
-const int kInstCommonOutInstructionIdx = 2;
+const int kHeaderInstructionIdOffset = 2;
 
 // This is the stage which generated the validation error. This word is used
 // to determine the contents of the next two words in the record.
-// 0:Vert, 1:TessCtrl, 2:TessEval, 3:Geom, 4:Frag, 5:Compute
-const int kInstCommonOutStageIdx = 3;
-const int kInstCommonOutCnt = 4;
+const int kHeaderStageIdOffset = 3;  // Values come from SpvExecutionModel (See spirv.h):
+const int kHeaderStageInfoOffset_0 = 4;
+const int kHeaderStageInfoOffset_1 = 5;
+const int kHeaderStageInfoOffset_2 = 6;
 
-// Size of Common and Stage-specific Members
-const int kInstStageOutCnt = kInstCommonOutCnt + 3;
-
-// This identifies the validation error
-// We use groups to more easily mangage the many int values not conflicting
-const int kErrorGroup = kInstStageOutCnt;
-const int kErrorSubCode = kErrorGroup + 1;
-
-// Maximum Output Record Member Count
-const int kInstMaxOutCnt = kErrorSubCode + 6;
-
-// Stage-specific Stream Record Offsets
-//
+// Stage-specific Error record offsets
+// ---
 // Each stage will contain different values in the next set of words of the
 // record used to identify which instantiation of the shader generated the
 // validation error.
 //
 // Vertex Shader Output Record Offsets
-const int kInstVertOutVertexIndex = kInstCommonOutCnt;
-const int kInstVertOutInstanceIndex = kInstCommonOutCnt + 1;
-const int kInstVertOutUnused = kInstCommonOutCnt + 2;
+const int kHeaderVertexIndexOffset = kHeaderStageInfoOffset_0;
+const int kHeaderVertInstanceIndexOffset = kHeaderStageInfoOffset_1;
 
 // Frag Shader Output Record Offsets
-const int kInstFragOutFragCoordX = kInstCommonOutCnt;
-const int kInstFragOutFragCoordY = kInstCommonOutCnt + 1;
-const int kInstFragOutUnused = kInstCommonOutCnt + 2;
+const int kHeaderFragCoordXOffset = kHeaderStageInfoOffset_0;
+const int kHeaderFragCoordYOffset = kHeaderStageInfoOffset_1;
 
 // Compute Shader Output Record Offsets
-const int kInstCompOutGlobalInvocationIdX = kInstCommonOutCnt;
-const int kInstCompOutGlobalInvocationIdY = kInstCommonOutCnt + 1;
-const int kInstCompOutGlobalInvocationIdZ = kInstCommonOutCnt + 2;
+const int kHeaderInvocationIdXOffset = kHeaderStageInfoOffset_0;
+const int kHeaderInvocationIdYOffset = kHeaderStageInfoOffset_1;
+const int kHeaderInvocationIdZOffset = kHeaderStageInfoOffset_2;
 
 // Tessellation Control Shader Output Record Offsets
-const int kInstTessCtlOutInvocationId = kInstCommonOutCnt;
-const int kInstTessCtlOutPrimitiveId = kInstCommonOutCnt + 1;
-const int kInstTessCtlOutUnused = kInstCommonOutCnt + 2;
+const int kHeaderTessCltInvocationIdOffset = kHeaderStageInfoOffset_0;
+const int kHeaderTessCtlPrimitiveIdOffset = kHeaderStageInfoOffset_1;
 
 // Tessellation Eval Shader Output Record Offsets
-const int kInstTessEvalOutPrimitiveId = kInstCommonOutCnt;
-const int kInstTessEvalOutTessCoordU = kInstCommonOutCnt + 1;
-const int kInstTessEvalOutTessCoordV = kInstCommonOutCnt + 2;
+const int kHeaderTessEvalPrimitiveIdOffset = kHeaderStageInfoOffset_0;
+const int kHeaderTessEvalCoordUOffset = kHeaderStageInfoOffset_1;
+const int kHeaderTessEvalCoordVOffset = kHeaderStageInfoOffset_2;
 
 // Geometry Shader Output Record Offsets
-const int kInstGeomOutPrimitiveId = kInstCommonOutCnt;
-const int kInstGeomOutInvocationId = kInstCommonOutCnt + 1;
-const int kInstGeomOutUnused = kInstCommonOutCnt + 2;
+const int kHeaderGeomPrimitiveIdOffset = kHeaderStageInfoOffset_0;
+const int kHeaderGeomInvocationIdOffset = kHeaderStageInfoOffset_1;
 
 // Ray Tracing Shader Output Record Offsets
-const int kInstRayTracingOutLaunchIdX = kInstCommonOutCnt;
-const int kInstRayTracingOutLaunchIdY = kInstCommonOutCnt + 1;
-const int kInstRayTracingOutLaunchIdZ = kInstCommonOutCnt + 2;
+const int kHeaderRayTracingLaunchIdXOffset = kHeaderStageInfoOffset_0;
+const int kHeaderRayTracingLaunchIdYOffset = kHeaderStageInfoOffset_1;
+const int kHeaderRayTracingLaunchIdZOffset = kHeaderStageInfoOffset_2;
 
 // Mesh Shader Output Record Offsets
-const int kInstMeshOutGlobalInvocationIdX = kInstCommonOutCnt;
-const int kInstMeshOutGlobalInvocationIdY = kInstCommonOutCnt + 1;
-const int kInstMeshOutGlobalInvocationIdZ = kInstCommonOutCnt + 2;
+const int kHeaderMeshGlobalInvocationIdXOffset = kHeaderStageInfoOffset_0;
+const int kHeaderMeshGlobalInvocationIdYOffset = kHeaderStageInfoOffset_1;
+const int kHeaderMeshGlobalInvocationIdZOffset = kHeaderStageInfoOffset_2;
 
 // Task Shader Output Record Offsets
-const int kInstTaskOutGlobalInvocationIdX = kInstCommonOutCnt;
-const int kInstTaskOutGlobalInvocationIdY = kInstCommonOutCnt + 1;
-const int kInstTaskOutGlobalInvocationIdZ = kInstCommonOutCnt + 2;
+const int kHeaderTaskGlobalInvocationIdXOffset = kHeaderStageInfoOffset_0;
+const int kHeaderTaskGlobalInvocationIdYOffset = kHeaderStageInfoOffset_1;
+const int kHeaderTaskGlobalInvocationIdZOffset = kHeaderStageInfoOffset_2;
 
-// Error Group
-//
-// These will match one-for-one with the file found in gpu_shader folder
-const int kErrorGroupInstBindlessDescriptor = 1;
-const int kErrorGroupInstBufferDeviceAddress = 2;
-const int kErrorGroupInstRayQuery = 3;
-const int kErrorGroupGpuPreDraw = 4;
-const int kErrorGroupGpuPreDispatch = 5;
-const int kErrorGroupGpuPreTraceRays = 6;
-const int kErrorGroupGpuCopyBufferToImage = 7;
+// This identifies the validation error
+// We use groups to more easily mangage the many int values not conflicting
+const int kHeaderErrorGroupOffset = 7;
+const int kHeaderErrorSubCodeOffset = 8;
 
-// Bindless Descriptor
-//
-const int kErrorSubCodeBindlessDescriptorBounds = 1;
-const int kErrorSubCodeBindlessDescriptorUninit = 2;
-const int kErrorSubCodeBindlessDescriptorOOB = 3;
-const int kErrorSubCodeBindlessDescriptorDestroyed = 4;
+const int kHeaderSize = 9;
+
+// Error specific parameters offsets:
+// ----------------------------------
 
 // A bindless bounds error will output the index and the bound.
-const int kInstBindlessBoundsOutDescSet = kErrorSubCode + 1;
-const int kInstBindlessBoundsOutDescBinding = kErrorSubCode + 2;
-const int kInstBindlessBoundsOutDescIndex = kErrorSubCode + 3;
-const int kInstBindlessBoundsOutDescBound = kErrorSubCode + 4;
-const int kInstBindlessBoundsOutUnused = kErrorSubCode + 5;
-const int kInstBindlessBoundsOutCnt = kErrorSubCode + 6;
+const int kInstBindlessBoundsDescSetOffset = kHeaderSize;
+const int kInstBindlessBoundsDescBindingOffset = kHeaderSize + 1;
+const int kInstBindlessBoundsDescIndexOffset = kHeaderSize + 2;
+const int kInstBindlessBoundsDescBoundOffset = kHeaderSize + 3;
+const int kInstBindlessBoundsUnusedOffset = kHeaderSize + 4;
+const int kInstBindlessBoundsCntOffset = kHeaderSize + 5;
 
 // A descriptor uninitialized error will output the index.
-const int kInstBindlessUninitOutDescSet = kErrorSubCode + 1;
-const int kInstBindlessUninitOutBinding = kErrorSubCode + 2;
-const int kInstBindlessUninitOutDescIndex = kErrorSubCode + 3;
-const int kInstBindlessUninitOutUnused = kErrorSubCode + 4;
-const int kInstBindlessUninitOutUnused2 = kErrorSubCode + 5;
-const int kInstBindlessUninitOutCnt = kErrorSubCode + 6;
+const int kInstBindlessUninitDescSetOffset = kHeaderSize;
+const int kInstBindlessUninitBindingOffset = kHeaderSize + 1;
+const int kInstBindlessUninitDescIndexOffset = kHeaderSize + 2;
+const int kInstBindlessUninitUnusedOffset = kHeaderSize + 3;
+const int kInstBindlessUninitOutUnused2 = kHeaderSize + 4;
+const int kInstBindlessUninitCntOffset = kHeaderSize + 5;
 
 // A buffer out-of-bounds error will output the descriptor
 // index, the buffer offset and the buffer size
-const int kInstBindlessBuffOOBOutDescSet = kErrorSubCode + 1;
-const int kInstBindlessBuffOOBOutDescBinding = kErrorSubCode + 2;
-const int kInstBindlessBuffOOBOutDescIndex = kErrorSubCode + 3;
-const int kInstBindlessBuffOOBOutBuffOff = kErrorSubCode + 4;
-const int kInstBindlessBuffOOBOutBuffSize = kErrorSubCode + 5;
-const int kInstBindlessBuffOOBOutCnt = kErrorSubCode + 6;
-
-// Buffer Device Address
-//
-const int kErrorSubCodeBufferDeviceAddressUnallocRef = 1;
+const int kInstBindlessBuffOOBDescSetOffset = kHeaderSize;
+const int kInstBindlessBuffOOBDescBindingOffset = kHeaderSize + 1;
+const int kInstBindlessBuffOOBDescIndexOffset = kHeaderSize + 2;
+const int kInstBindlessBuffOOBBuffOffOffset = kHeaderSize + 3;
+const int kInstBindlessBuffOOBBuffSizeOffset = kHeaderSize + 4;
+const int kInstBindlessBuffOOBCntOffset = kHeaderSize + 5;
 
 // A buffer address unalloc error will output the 64-bit pointer in
 // two 32-bit pieces, lower bits first.
-const int kInstBuffAddrUnallocOutDescPtrLo = kErrorSubCode + 1;
-const int kInstBuffAddrUnallocOutDescPtrHi = kErrorSubCode + 2;
-const int kInstBuffAddrUnallocOutCnt = kErrorSubCode + 3;
+const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
+const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
+const int kInstBuffAddrUnallocCntOffset = kHeaderSize + 2;
 
-// Ray Query
-//
-const int kErrorSubCodeRayQueryNegativeMin = 1;
-const int kErrorSubCodeRayQueryNegativeMax = 2;
-const int kErrorSubCodeRayQueryBothSkip = 3;
-const int kErrorSubCodeRayQuerySkipCull = 4;
-const int kErrorSubCodeRayQueryOpaque = 5;
-const int kErrorSubCodeRayQueryMinMax = 6;
-const int kErrorSubCodeRayQueryMinNaN = 7;
-const int kErrorSubCodeRayQueryMaxNaN = 8;
-const int kErrorSubCodeRayQueryOriginNaN = 9;
-const int kErrorSubCodeRayQueryDirectionNaN = 10;
-const int kErrorSubCodeRayQueryOriginFinite = 11;
-const int kErrorSubCodeRayQueryDirectionFinite = 12;
-
-const int kInstRayQueryOutParam0 = kErrorSubCode + 1;
+const int kInstRayQueryParamOffset_0 = kHeaderSize;
 
 // Used by all "Pre" shaders
-const int kPreActionOutParam0 = kErrorSubCode + 1;
-const int kPreActionOutParam1 = kErrorSubCode + 2;
+const int kPreActionParamOffset_0 = kHeaderSize;
+const int kPreActionParamOffset_1 = kHeaderSize + 1;
 
-// Pre Draw
-//
-const int kErrorSubCodePreDrawBufferSize = 1;
-const int kErrorSubCodePreDrawCountLimit = 2;
-const int kErrorSubCodePreDrawFirstInstance = 3;
-const int kErrorSubCodePreDrawGroupCountX = 4;
-const int kErrorSubCodePreDrawGroupCountY = 5;
-const int kErrorSubCodePreDrawGroupCountZ = 6;
-const int kErrorSubCodePreDrawGroupCountTotal = 7;
-
-const int kPreDrawSelectCountBuffer = 1;
-const int kPreDrawSelectDrawBuffer = 2;
-const int kPreDrawSelectMeshCountBuffer = 3;
-const int kPreDrawSelectMeshNoCount = 4;
-
-// Pre Dispatch
-//
-const int kErrorSubCodePreDispatchCountLimitX = 1;
-const int kErrorSubCodePreDispatchCountLimitY = 2;
-const int kErrorSubCodePreDispatchCountLimitZ = 3;
-
-// Pre Tracy Rays
-//
-const int kErrorSubCodePreTraceRaysLimitWidth = 1;
-const int kErrorSubCodePreTraceRaysLimitHeight = 2;
-const int kErrorSubCodePreTraceRaysLimitDepth = 3;
-
-// Pre Copy Buffer To Image
-//
-const int kErrorSubCodePreCopyBufferToImageBufferTexel = 1;
+// Maximum record size
+const int kMaxErrorRecordSize = kHeaderSize + 7;
 
 #ifdef __cplusplus
 }  // namespace glsl

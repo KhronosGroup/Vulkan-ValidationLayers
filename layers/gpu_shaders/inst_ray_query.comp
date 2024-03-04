@@ -120,8 +120,10 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
             inst_output_buffer.data[write_pos + 4u] = stage_info.y;
             inst_output_buffer.data[write_pos + 5u] = stage_info.z;
             inst_output_buffer.data[write_pos + 6u] = stage_info.w;
+
             inst_output_buffer.data[write_pos + 7u] = kErrorGroupInstRayQuery;
             inst_output_buffer.data[write_pos + 8u] = error;
+            
             inst_output_buffer.data[write_pos + 9u] = param_0;
         }
         return false;

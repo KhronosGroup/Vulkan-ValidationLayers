@@ -162,7 +162,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
                    "Use of descriptor buffers will result in no descriptor checking");
     }
 
-    output_buffer_size = sizeof(uint32_t) * (glsl::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
+    output_buffer_size = sizeof(uint32_t) * (glsl::kMaxErrorRecordSize + spvtools::kDebugOutputDataOffset);
 
     if (gpuav_settings.validate_descriptors && !force_buffer_device_address) {
         gpuav_settings.validate_descriptors = false;
