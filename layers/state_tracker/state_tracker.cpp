@@ -2245,7 +2245,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         cb_state->dynamic_state_status.pipeline.reset();
 
         if (!pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-            !pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+            !pipe_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipe_state->vertex_input_state) {
             for (const auto &description : pipe_state->vertex_input_state->binding_descriptions) {
                 cb_state->current_vertex_buffer_binding_info[description.binding].stride = description.stride;
             }
