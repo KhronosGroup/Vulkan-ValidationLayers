@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
- * Copyright (C) 2019-2023 Google Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (C) 2019-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2033,3 +2033,11 @@ void consolidate(RangeMap &map) {
 }
 
 }  // namespace sparse_container
+
+// Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
+static inline sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
+    int64_t intersection_min = std::max(x, y);
+    int64_t intersection_max = std::min(x + static_cast<int64_t>(x_size), y + static_cast<int64_t>(y_size));
+
+    return {intersection_min, intersection_max};
+}
