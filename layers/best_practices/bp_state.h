@@ -195,6 +195,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     RenderPassState render_pass_state;
     CommandBufferStateNV nv;
     uint64_t num_submits = 0;
+    bool uses_vertex_buffer = false;
 
     std::vector<uint8_t> push_constant_data_set;
     void UnbindResources() { push_constant_data_set.clear(); }
