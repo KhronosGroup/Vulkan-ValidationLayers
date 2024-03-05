@@ -320,7 +320,6 @@ TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-    pipe.InitState();
     pipe.CreateComputePipeline();
 }
 
@@ -397,7 +396,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
 
     {
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
@@ -417,7 +415,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         )glsl";
         CreateComputePipelineHelper cs_pipeline(*this);
         cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-        cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
                                          VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
@@ -437,7 +434,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         )glsl";
         CreateComputePipelineHelper cs_pipeline(*this);
         cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-        cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02759");
@@ -451,7 +447,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         subgroup_properties.maxSubgroupSize >= 16) {
         subgroup_size_control.requiredSubgroupSize = 10;  // non-power of 2
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = 0;
@@ -464,7 +459,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     if (subgroup_properties.minSubgroupSize > 1) {
         subgroup_size_control.requiredSubgroupSize = 1;  // below min
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = 0;
@@ -477,7 +471,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     {
         subgroup_size_control.requiredSubgroupSize = subgroup_properties.maxSubgroupSize * 2;  // above max
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = 0;
@@ -518,7 +511,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesNotEnabled) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.InitState();
     pipe.LateBindPipelineInfo();
     pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
 
@@ -568,7 +560,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierGraphics) {
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -610,10 +601,11 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
     stage_ci.module = VK_NULL_HANDLE;
     stage_ci.pName = "main";
 
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.cp_ci_.stage = stage_ci;
-    pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
+    pipe.cp_ci_.layout = pipeline_layout.handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
     pipe.CreateComputePipeline(false);
@@ -660,7 +652,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlStage) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.shader_stages_[0].flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-08988");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -757,7 +748,6 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-        pipe.InitState();
         pipe.LateBindPipelineInfo();
         pipe.cp_ci_.stage.pNext = &subgroup_size_control;
         if (size * size * 2 > m_device->phy().limits_.maxComputeWorkGroupInvocations) {
@@ -783,7 +773,6 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-        pipe.InitState();
         pipe.LateBindPipelineInfo();
         pipe.cp_ci_.stage.pNext = &subgroup_size_control;
         pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
@@ -888,7 +877,6 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
     VkShaderObj mesh_shader(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.LateBindPipelineInfo();
     pipe.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo()};
     pipe.shader_stages_[0].pNext = &subgroup_size_control;
@@ -909,7 +897,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeature) {
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.LateBindPipelineInfo();
     pipe.cp_ci_.stage.pNext = &subgroup_size_control;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");

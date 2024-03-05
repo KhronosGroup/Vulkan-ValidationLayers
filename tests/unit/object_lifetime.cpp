@@ -329,7 +329,6 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        pipe.InitState();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
         err = pipe.CreateGraphicsPipeline();
@@ -556,7 +555,6 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     pipe.dsl_bindings_ = {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Update descriptor with image and sampler
@@ -645,7 +643,6 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
-    helper.InitState();
     helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
     helper.CreateGraphicsPipeline();
 
@@ -753,7 +750,6 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
@@ -819,7 +815,6 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
     VkPipeline delete_this_pipeline;
     {  // Scope pipeline so it will be auto-deleted
         CreatePipelineHelper pipe(*this);
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         delete_this_pipeline = pipe.pipeline_;
@@ -867,7 +862,6 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     pipe.dsl_bindings_ = {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -936,7 +930,6 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     pipe.dsl_bindings_ = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
-    pipe.InitState();
     err = pipe.CreateGraphicsPipeline();
     if (err != VK_SUCCESS) {
         GTEST_SKIP() << "Unable to compile shader";
@@ -992,7 +985,6 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     pipe.dsl_bindings_ = {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);

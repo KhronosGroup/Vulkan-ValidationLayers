@@ -1149,7 +1149,6 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
     tess_ci.patchControlPoints = 4u;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
                            pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
@@ -1205,7 +1204,6 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
     tess_ci.patchControlPoints = 4u;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
                            pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
@@ -1310,7 +1308,6 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
     VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-geometryStreams-02321");
@@ -1506,7 +1503,6 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
         tess_ci.patchControlPoints = 4u;
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitState();
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         pipe.tess_ci_ = tess_ci;
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tesc.GetStageCreateInfo(), tese.GetStageCreateInfo(),

@@ -39,8 +39,8 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
-    CreatePipelineHelper pipe1(*this, 2);
-    CreatePipelineHelper pipe2(*this, 2);
+    CreatePipelineHelper pipe1(*this);
+    CreatePipelineHelper pipe2(*this);
     for (uint32_t i = 0; i < 2; i++)
     {
         CreatePipelineHelper* pipe = (i == 0) ? &pipe1 : &pipe2;
@@ -62,9 +62,12 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
         pipeline_rendering_info.colorAttachmentCount = 2;
         pipeline_rendering_info.pColorAttachmentFormats = color_formats;
 
-        pipe->InitState();
+        VkPipelineColorBlendAttachmentState cb_attachments[2];
+        memset(cb_attachments, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
         pipe->ds_ci_ = vku::InitStructHelper();
         pipe->gp_ci_.pNext = &pipeline_rendering_info;
+        pipe->cb_ci_.attachmentCount = 2;
+        pipe->cb_ci_.pAttachments = cb_attachments;
         pipe->CreateGraphicsPipeline();
     }
 

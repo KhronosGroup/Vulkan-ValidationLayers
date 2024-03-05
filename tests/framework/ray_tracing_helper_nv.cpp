@@ -162,15 +162,6 @@ void RayTracingPipelineHelper::InitInfo() {
     InitPipelineCacheInfo();
 }
 
-void RayTracingPipelineHelper::InitState() {
-    descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
-    ASSERT_TRUE(descriptor_set_->Initialized());
-
-    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_});
-
-    InitPipelineCache();
-}
-
 void RayTracingPipelineHelper::InitPipelineCache() {
     if (pipeline_cache_ != VK_NULL_HANDLE) {
         vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
@@ -181,6 +172,11 @@ void RayTracingPipelineHelper::InitPipelineCache() {
 
 void RayTracingPipelineHelper::LateBindPipelineInfo(bool isKHR) {
     // By value or dynamically located items must be late bound
+    descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
+    ASSERT_TRUE(descriptor_set_->Initialized());
+
+    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_});
+
     if (isKHR) {
         rp_ci_KHR_.layout = pipeline_layout_.handle();
         rp_ci_KHR_.stageCount = shader_stages_.size();
@@ -193,6 +189,7 @@ void RayTracingPipelineHelper::LateBindPipelineInfo(bool isKHR) {
 }
 
 VkResult RayTracingPipelineHelper::CreateNVRayTracingPipeline(bool do_late_bind) {
+    InitPipelineCache();
     if (do_late_bind) {
         LateBindPipelineInfo();
     }

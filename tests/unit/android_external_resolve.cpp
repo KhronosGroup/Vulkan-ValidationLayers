@@ -796,10 +796,8 @@ TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamples) {
     rp.AddResolveAttachment(1);
     rp.CreateRenderPass();
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &external_format;
-    pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+    CreatePipelineHelper pipe(*this, &external_format);
+    pipe.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe.gp_ci_.renderPass = rp.Handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09313");
@@ -831,10 +829,8 @@ TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamplesDynamicRender
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &pipeline_rendering_info;
-    pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09304");
     pipe.CreateGraphicsPipeline();
@@ -1077,10 +1073,8 @@ TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
-    pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
@@ -1164,7 +1158,6 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
@@ -1271,9 +1264,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrierUnused) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &external_format;
+    CreatePipelineHelper pipe(*this, &external_format);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 

@@ -12,10 +12,12 @@
 
 #include "pipeline_helper.h"
 
-CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count)
-    : cb_attachments_(color_attachments_count), layer_test_(test) {
+CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
     // default VkDevice, can be overwritten if multi-device tests
     device_ = layer_test_.DeviceObj();
+
+    gp_ci_ = vku::InitStructHelper();
+    gp_ci_.pNext = pNext;
 
     // InitDescriptorSetInfo
     dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -27,11 +29,11 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
     // InitMultisampleInfo
-    pipe_ms_state_ci_ = vku::InitStructHelper();
-    pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    pipe_ms_state_ci_.sampleShadingEnable = VK_FALSE;
-    pipe_ms_state_ci_.minSampleShading = 1.0;
-    pipe_ms_state_ci_.pSampleMask = nullptr;
+    ms_ci_ = vku::InitStructHelper();
+    ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_ci_.sampleShadingEnable = VK_FALSE;
+    ms_ci_.minSampleShading = 1.0;
+    ms_ci_.pSampleMask = nullptr;
 
     // InitPipelineLayoutInfo
     pipeline_layout_ci_ = vku::InitStructHelper();
@@ -73,13 +75,12 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     cb_ci_ = vku::InitStructHelper();
     cb_ci_.logicOpEnable = VK_FALSE;
     cb_ci_.logicOp = VK_LOGIC_OP_COPY;  // ignored if enable is VK_FALSE above
-    cb_ci_.attachmentCount = cb_attachments_.size();
-    cb_ci_.pAttachments = cb_attachments_.data();
+    cb_ci_.attachmentCount = 1;
+    cb_ci_.pAttachments = &cb_attachments_;
     for (int i = 0; i < 4; i++) {
         cb_ci_.blendConstants[0] = 1.0F;
     }
 
-    // InitPipelineCacheInfo
     pc_ci_ = vku::InitStructHelper();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
@@ -98,14 +99,13 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     //    VkPipelineRasterizationStateCreateInfo
     //    VkPipelineMultisampleStateCreateInfo
     //    VkPipelineColorBlendStateCreateInfo
-    gp_ci_ = vku::InitStructHelper();
     gp_ci_.layout = VK_NULL_HANDLE;
     gp_ci_.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
     gp_ci_.pVertexInputState = &vi_ci_;
     gp_ci_.pInputAssemblyState = &ia_ci_;
     gp_ci_.pTessellationState = nullptr;
     gp_ci_.pViewportState = &vp_state_ci_;
-    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.pMultisampleState = &ms_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
     gp_ci_.pDepthStencilState = nullptr;
     gp_ci_.pColorBlendState = &cb_ci_;
@@ -189,7 +189,7 @@ void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreate
     gp_ci_.subpass = 0;
 
     // TODO if renderPass is null, MS info is not needed
-    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.pMultisampleState = &ms_ci_;
 
     gp_ci_.stageCount = 1;  // default is just the Fragment shader
     gp_ci_.pStages = info;
@@ -202,7 +202,7 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     gp_ci_.pColorBlendState = &cb_ci_;
-    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.pMultisampleState = &ms_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
 
     // If using Dynamic Rendering, will need to be set to null
@@ -230,22 +230,10 @@ void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCr
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
 
-    gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.pMultisampleState = &ms_ci_;
 
     gp_ci_.stageCount = info.size();
     gp_ci_.pStages = info.data();
-}
-
-void CreatePipelineHelper::InitState() {
-    descriptor_set_.reset(new OneOffDescriptorSet(device_, dsl_bindings_));
-    ASSERT_TRUE(descriptor_set_->Initialized());
-
-    const std::vector<VkPushConstantRange> push_ranges(
-        pipeline_layout_ci_.pPushConstantRanges,
-        pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-    pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
-
-    InitPipelineCache();
 }
 
 void CreatePipelineHelper::InitPipelineCache() {
@@ -259,6 +247,19 @@ void CreatePipelineHelper::InitPipelineCache() {
 void CreatePipelineHelper::LateBindPipelineInfo() {
     // By value or dynamically located items must be late bound
     if (gp_ci_.layout == VK_NULL_HANDLE) {
+        // Create a default descriptor and pipeline layout
+        if (pipeline_layout_.handle() == VK_NULL_HANDLE) {
+            if (!descriptor_set_) {
+                // User can pass in own bindings
+                descriptor_set_.reset(new OneOffDescriptorSet(device_, dsl_bindings_));
+                ASSERT_TRUE(descriptor_set_->Initialized());
+            }
+
+            const std::vector<VkPushConstantRange> push_ranges(
+                pipeline_layout_ci_.pPushConstantRanges,
+                pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
+            pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+        }
         gp_ci_.layout = pipeline_layout_.handle();
     }
     if (gp_ci_.stageCount == 0) {
@@ -277,13 +278,20 @@ void CreatePipelineHelper::LateBindPipelineInfo() {
 }
 
 VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind) {
+    InitPipelineCache();
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
     return vk::CreateGraphicsPipelines(device_->handle(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
 }
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : layer_test_(test) {
+CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
+    // default VkDevice, can be overwritten if multi-device tests
+    device_ = layer_test_.DeviceObj();
+
+    cp_ci_ = vku::InitStructHelper();
+    cp_ci_.pNext = pNext;
+
     // InitDescriptorSetInfo
     dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
@@ -300,19 +308,17 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : la
 
     InitShaderInfo();
 
-    cp_ci_ = vku::InitStructHelper();
     cp_ci_.flags = 0;
     cp_ci_.layout = VK_NULL_HANDLE;
 }
 
 CreateComputePipelineHelper::~CreateComputePipelineHelper() {
-    VkDevice device = layer_test_.device();
     if (pipeline_cache_ != VK_NULL_HANDLE) {
-        vk::DestroyPipelineCache(device, pipeline_cache_, nullptr);
+        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
         pipeline_cache_ = VK_NULL_HANDLE;
     }
     if (pipeline_ != VK_NULL_HANDLE) {
-        vk::DestroyPipeline(device, pipeline_, nullptr);
+        vk::DestroyPipeline(device_->handle(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
 }
@@ -322,39 +328,42 @@ void CreateComputePipelineHelper::InitShaderInfo() {
     // We shouldn't need a fragment shader but add it to be able to run on more devices
 }
 
-void CreateComputePipelineHelper::InitState() {
-    descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
-    ASSERT_TRUE(descriptor_set_->Initialized());
-
-    const std::vector<VkPushConstantRange> push_ranges(
-        pipeline_layout_ci_.pPushConstantRanges,
-        pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
-
-    InitPipelineCache();
-}
-
 void CreateComputePipelineHelper::InitPipelineCache() {
     if (pipeline_cache_ != VK_NULL_HANDLE) {
-        vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
+        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
     }
-    VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    VkResult err = vk::CreatePipelineCache(device_->handle(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_EQ(VK_SUCCESS, err);
 }
 
 void CreateComputePipelineHelper::LateBindPipelineInfo() {
     // By value or dynamically located items must be late bound
     if (cp_ci_.layout == VK_NULL_HANDLE) {
+        // Create a default descriptor and pipeline layout
+        if (pipeline_layout_.handle() == VK_NULL_HANDLE) {
+            if (!descriptor_set_) {
+                // User can pass in own bindings
+                descriptor_set_.reset(new OneOffDescriptorSet(device_, dsl_bindings_));
+                ASSERT_TRUE(descriptor_set_->Initialized());
+            }
+
+            const std::vector<VkPushConstantRange> push_ranges(
+                pipeline_layout_ci_.pPushConstantRanges,
+                pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
+            pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+        }
+
         cp_ci_.layout = pipeline_layout_.handle();
     }
     cp_ci_.stage = cs_.get()->GetStageCreateInfo();
 }
 
 VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind) {
+    InitPipelineCache();
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    return vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
+    return vk::CreateComputePipelines(device_->handle(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
 }
 
 void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer) {

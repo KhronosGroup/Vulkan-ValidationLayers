@@ -50,7 +50,6 @@ TEST_F(PositiveVertexInput, AttributeMatrixType) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
     /* expect success */
 }
@@ -89,7 +88,6 @@ TEST_F(PositiveVertexInput, AttributeArrayType) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -138,7 +136,6 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -199,7 +196,6 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -252,7 +248,6 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -304,7 +299,6 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -365,12 +359,16 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     rp.AddColorAttachment(1);
     rp.CreateRenderPass();
 
-    CreatePipelineHelper pipe(*this, 2);
-    pipe.InitState();
+    VkPipelineColorBlendAttachmentState cb_attachments[2];
+    memset(cb_attachments, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
+    cb_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    cb_attachments[0].blendEnable = VK_FALSE;
+
+    CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.renderPass = rp.Handle();
-    pipe.cb_attachments_[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
-    pipe.cb_attachments_[0].blendEnable = VK_FALSE;
+    pipe.cb_ci_.attachmentCount = 2;
+    pipe.cb_ci_.pAttachments = cb_attachments;
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
@@ -428,7 +426,6 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -463,7 +460,6 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -525,7 +521,6 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -558,7 +553,6 @@ TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
 }
@@ -588,7 +582,6 @@ TEST_F(PositiveVertexInput, VertexAttributeDivisorFirstInstance) {
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.vi_ci_.pNext = &pvids_ci;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexBindingDescriptions = &vibd;
@@ -624,7 +617,6 @@ TEST_F(PositiveVertexInput, VertextBindingNonLinear) {
     pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -649,7 +641,6 @@ TEST_F(PositiveVertexInput, VertextBindingDynamicState) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.CreateGraphicsPipeline();
 
@@ -710,7 +701,6 @@ TEST_F(PositiveVertexInput, VertexStrideDynamicStride) {
     pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.CreateGraphicsPipeline();
 
@@ -737,7 +727,6 @@ TEST_F(PositiveVertexInput, VertexStrideDoubleDynamicStride) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.CreateGraphicsPipeline();
@@ -808,7 +797,6 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
     pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
-    pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
 }
@@ -307,15 +306,12 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     CreatePipelineHelper pipeline_helper_c(*this);  // layout_c and range_c
     pipeline_helper_a.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline_helper_a.pipeline_layout_ci_ = pipeline_layout_info_a;
-    pipeline_helper_a.InitState();
     pipeline_helper_a.CreateGraphicsPipeline();
     pipeline_helper_b.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline_helper_b.pipeline_layout_ci_ = pipeline_layout_info_b;
-    pipeline_helper_b.InitState();
     pipeline_helper_b.CreateGraphicsPipeline();
     pipeline_helper_c.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline_helper_c.pipeline_layout_ci_ = pipeline_layout_info_c;
-    pipeline_helper_c.InitState();
     pipeline_helper_c.CreateGraphicsPipeline();
 
     // Easier to see in command buffers
@@ -443,14 +439,12 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     CreatePipelineHelper pipeline_unused(*this);
     pipeline_unused.shader_stages_ = {vsUnused.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline_unused.pipeline_layout_ci_ = pipeline_layout_info;
-    pipeline_unused.InitState();
     pipeline_unused.CreateGraphicsPipeline();
 
     // Shader never had a reference
     CreatePipelineHelper pipeline_empty(*this);
     pipeline_empty.shader_stages_ = {vsEmpty.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline_empty.pipeline_layout_ci_ = pipeline_layout_info;
-    pipeline_empty.InitState();
     pipeline_empty.CreateGraphicsPipeline();
 
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -500,7 +494,6 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
@@ -556,7 +549,6 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
@@ -642,7 +634,6 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -700,7 +691,6 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
@@ -736,7 +726,6 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
 }
@@ -777,7 +766,6 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
 }

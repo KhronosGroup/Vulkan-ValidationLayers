@@ -34,7 +34,6 @@ TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -60,7 +59,6 @@ TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     pipe.vp_state_ci_.viewportCount = 0;
     pipe.vp_state_ci_.scissorCount = 0;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -84,7 +82,6 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe.InitState();
     pipe.gp_ci_.pVertexInputState = &vi_ci;  // ignored
     pipe.CreateGraphicsPipeline();
 
@@ -138,7 +135,6 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
-    pipe.InitState();
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.CreateGraphicsPipeline();
 
@@ -197,9 +193,7 @@ TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     std::vector<VkRect2D> discard_rectangles(4);
     discard_rect_ci.pDiscardRectangles = discard_rectangles.data();
 
-    CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.pNext = &discard_rect_ci;
-    pipe.InitState();
+    CreatePipelineHelper pipe(*this, &discard_rect_ci);
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -231,7 +225,6 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
 
     // Create a render pass without any color attachments
     VkAttachmentReference attach = {};
@@ -309,7 +302,6 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = ds_state;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -352,7 +344,6 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = ds_state;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -378,11 +369,9 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_no_dynamic(*this);
-    pipe_no_dynamic.InitState();
     pipe_no_dynamic.CreateGraphicsPipeline();
 
     vkt::CommandBuffer command_buffer(*m_device, m_commandPool);
@@ -404,12 +393,10 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
 
     CreatePipelineHelper pipe_line(*this);
     pipe_line.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
-    pipe_line.InitState();
     pipe_line.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_blend(*this);
     pipe_blend.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
-    pipe_blend.InitState();
     pipe_blend.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -441,7 +428,6 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -483,7 +469,6 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
 
     // Create a pipeline with a dynamically set depth bias
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
@@ -536,7 +521,6 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
 
     // Create a pipeline with a dynamically set depth bias
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
@@ -599,7 +583,6 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
 
     // Create a pipeline with a dynamically set depth bias
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
@@ -659,8 +642,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
-    pipe.pipe_ms_state_ci_ = ms_state_ci;
-    pipe.InitState();
+    pipe.ms_ci_ = ms_state_ci;
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -681,7 +663,6 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -721,7 +702,6 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnored) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
     pipe.gp_ci_.pMultisampleState = nullptr;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -742,7 +722,6 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnoredAlphaToOne) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
     pipe.gp_ci_.pMultisampleState = nullptr;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -766,7 +745,6 @@ TEST_F(PositiveDynamicState, InputAssemblyStateIgnored) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     pipe.gp_ci_.pInputAssemblyState = nullptr;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -781,7 +759,6 @@ TEST_F(PositiveDynamicState, ViewportStateIgnored) {
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
     pipe.gp_ci_.pViewportState = nullptr;
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     pipe.CreateGraphicsPipeline();
@@ -811,10 +788,9 @@ TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
     VkPipelineColorBlendAttachmentState att_state = {};
     att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     att_state.blendEnable = VK_TRUE;
-    pipe.cb_attachments_[0] = att_state;
+    pipe.cb_attachments_ = att_state;
     pipe.gp_ci_.pColorBlendState = nullptr;
 
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -834,7 +810,6 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.ds_ci_.depthTestEnable = VK_TRUE;  // ignored
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
@@ -863,7 +838,6 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.vp_state_ci_.viewportCount = 2u;
     pipe.vp_state_ci_.scissorCount = 2u;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
@@ -928,7 +902,6 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

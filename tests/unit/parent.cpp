@@ -608,7 +608,6 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, nullptr, &pipeline_exe_features);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     VkPipelineExecutableInfoKHR pipeline_exe_info = vku::InitStructHelper();

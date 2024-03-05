@@ -35,7 +35,6 @@ TEST_F(PositiveAndroidExternalResolve, NoResolve) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -110,9 +109,7 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &external_format;
+    CreatePipelineHelper pipe(*this, &external_format);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }
@@ -382,9 +379,7 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &external_format;
+    CreatePipelineHelper pipe(*this, &external_format);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 

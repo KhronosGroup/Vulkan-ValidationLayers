@@ -113,7 +113,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet empty_ds(m_device, {});
@@ -167,7 +166,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.pAttachments = nullptr;
     pipe.gp_ci_.pDynamicState = &dynamic_create_info;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -212,7 +210,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, PipelineLibraryNoRendering) {
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-    pre_raster_lib.InitState();
     pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pre_raster_lib.CreateGraphicsPipeline();
@@ -250,7 +247,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
                                                              {VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4}};
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, push_constant_ranges);
     pipe.CreateGraphicsPipeline();

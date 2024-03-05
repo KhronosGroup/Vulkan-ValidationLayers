@@ -70,7 +70,6 @@ TEST_F(PositiveGpuAVOOB, Basic) {
 
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
@@ -126,7 +125,6 @@ TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -186,7 +184,6 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -276,12 +273,10 @@ TEST_F(PositiveGpuAVOOB, GPL) {
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
-    vi.InitState();
     vi.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
-    pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
     pre_raster.CreateGraphicsPipeline(false);
 

@@ -74,7 +74,6 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();

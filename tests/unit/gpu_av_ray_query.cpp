@@ -29,7 +29,7 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           float t_min;
@@ -38,7 +38,7 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
 
         void main() {
             rayQueryEXT query;
-            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0),
               trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max);
             rayQueryProceedEXT(query);
         }
@@ -48,7 +48,6 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -84,7 +83,7 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           float t_min;
@@ -93,7 +92,7 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
 
         void main() {
             rayQueryEXT query;
-            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0),
               trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max);
             rayQueryProceedEXT(query);
         }
@@ -103,7 +102,6 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -139,7 +137,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           uint ray_query_flags;
@@ -156,7 +154,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -208,7 +205,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -263,7 +259,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNaN) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -319,7 +314,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -376,7 +370,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeUseQueryUninit) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);
@@ -468,7 +461,7 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
     char const *fragment_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(location=0) out vec4 color;
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform SSBO {
@@ -493,7 +486,6 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
     pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateGraphicsPipeline();
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_commandBuffer);

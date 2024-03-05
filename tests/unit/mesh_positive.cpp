@@ -44,7 +44,6 @@ TEST_F(PositiveMesh, BasicUsage) {
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.gp_ci_.pInputAssemblyState = nullptr;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -102,9 +101,6 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     helper.gp_ci_.pVertexInputState = nullptr;
     helper.gp_ci_.pInputAssemblyState = nullptr;
-
-    helper.InitState();
-
     helper.CreateGraphicsPipeline();
 }
 
@@ -150,9 +146,6 @@ TEST_F(PositiveMesh, PointSize) {
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     helper.gp_ci_.pVertexInputState = nullptr;
     helper.gp_ci_.pInputAssemblyState = nullptr;
-
-    helper.InitState();
-
     helper.CreateGraphicsPipeline();
 }
 
@@ -315,7 +308,6 @@ TEST_F(PositiveMesh, PrimitiveTopology) {
     VkShaderObj ms(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;  // requires primitiveTopologyListRestart
     pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;

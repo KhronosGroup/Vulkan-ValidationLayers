@@ -61,11 +61,9 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     pipeline_robustness_ci.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
     pipeline_robustness_ci.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
 
-    CreatePipelineHelper robust_pipe(*this);
-    robust_pipe.InitState();
+    CreatePipelineHelper robust_pipe(*this, &pipeline_robustness_ci);
     robust_pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     robust_pipe.gp_ci_.layout = pipeline_layout.handle();
-    robust_pipe.gp_ci_.pNext = &pipeline_robustness_ci;
     robust_pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -126,7 +124,6 @@ TEST_F(NegativeGpuAVOOB, Basic) {
 
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
@@ -211,7 +208,6 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     VkShaderObj fs(this, fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout.handle();
 
@@ -435,12 +431,10 @@ TEST_F(NegativeGpuAVOOB, GPL) {
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
-    vi.InitState();
     vi.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
-    pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
     pre_raster.CreateGraphicsPipeline(false);
 
@@ -576,12 +570,10 @@ TEST_F(NegativeGpuAVOOB, GPLIndependentSets) {
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
-    vi.InitState();
     vi.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
-    pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout_vs.handle();
     pre_raster.CreateGraphicsPipeline(false);
 
@@ -698,7 +690,6 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -740,7 +731,6 @@ void NegativeGpuAVOOB::ComputeStorageBufferTest(const char *expected_error, cons
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -826,7 +816,6 @@ TEST_F(NegativeGpuAVOOB, TexelFetch) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -881,7 +870,6 @@ TEST_F(NegativeGpuAVOOB, ImageLoad) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -932,7 +920,6 @@ TEST_F(NegativeGpuAVOOB, ImageStore) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
@@ -989,7 +976,6 @@ TEST_F(NegativeGpuAVOOB, Geometry) {
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
@@ -1047,7 +1033,6 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
     pipe.tess_ci_ = tess_ci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
@@ -1106,7 +1091,6 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
     pipe.tess_ci_ = tess_ci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),

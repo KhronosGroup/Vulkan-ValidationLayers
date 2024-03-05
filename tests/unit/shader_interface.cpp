@@ -1097,7 +1097,6 @@ TEST_F(NegativeShaderInterface, InputOutputMismatch) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
     pipe.CreateGraphicsPipeline();
@@ -1311,7 +1310,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputLocation0) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.pipe_ms_state_ci_ = ms_state_ci;
+        helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
@@ -1338,7 +1337,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputNoAlpha) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.pipe_ms_state_ci_ = ms_state_ci;
+        helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
@@ -1364,7 +1363,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageArrayIndex) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.pipe_ms_state_ci_ = ms_state_ci;
+        helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
@@ -1390,7 +1389,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageArrayVec3) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.pipe_ms_state_ci_ = ms_state_ci;
+        helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
@@ -1530,7 +1529,7 @@ TEST_F(NegativeShaderInterface, CreatePipelineFragmentOutputNotWritten) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.cb_attachments_[0].colorWriteMask = 1;
+        helper.cb_attachments_.colorWriteMask = 1;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "Undefined-Value-ShaderInputNotProduced");
 }

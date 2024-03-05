@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
- * Copyright (c) 2020-2023 Google, Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -114,7 +113,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
         void main() {})glsl";
         VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
         CreatePipelineHelper mesh_pipe(*this);
-        mesh_pipe.InitState();
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
         mesh_pipe.CreateGraphicsPipeline();
         vkt::Buffer mesh_draw_buffer(*m_device, 2 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -187,7 +185,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimitSubmit2) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -247,7 +244,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -341,7 +337,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         void main() {})glsl";
         VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
         CreatePipelineHelper mesh_pipe(*this);
-        mesh_pipe.InitState();
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
         mesh_pipe.CreateGraphicsPipeline();
         vkt::Buffer mesh_draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -433,7 +428,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         void main() {})glsl";
     VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper mesh_pipe(*this);
-    mesh_pipe.InitState();
     mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     mesh_pipe.CreateGraphicsPipeline();
     // 012 456 8910
@@ -494,7 +488,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     )glsl";
     VkShaderObj task_shader(this, task_shader_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper task_pipe(*this);
-    task_pipe.InitState();
     task_pipe.shader_stages_[0] = task_shader.GetStageCreateInfo();
     task_pipe.shader_stages_[1] = mesh_shader.GetStageCreateInfo();
     task_pipe.CreateGraphicsPipeline();
@@ -577,7 +570,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -671,7 +663,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     indirect_buffer.memory().unmap();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();

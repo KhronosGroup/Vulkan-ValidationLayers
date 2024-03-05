@@ -922,12 +922,10 @@ TEST_F(NegativeMesh, DrawCmds) {
     vkt::Buffer count_buffer(*m_device, buffer_create_info);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe1(*this);
-    pipe1.InitState();
     pipe1.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1072,7 +1070,6 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     vkt::Buffer buffer(*m_device, buffer_create_info);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -1173,12 +1170,10 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     vkt::Buffer count_buffer(*m_device, buffer_create_info);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe1(*this);
-    pipe1.InitState();
     pipe1.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1367,7 +1362,6 @@ TEST_F(NegativeMesh, MeshShaderConservativeRasterization) {
     conservative_state.conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.rs_state_ci_.pNext = &conservative_state;
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -1412,7 +1406,6 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     VkShaderObj ms(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 

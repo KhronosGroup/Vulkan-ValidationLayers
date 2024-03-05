@@ -323,10 +323,8 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
     vkt::CommandBuffer commandBuffer(*m_device, &commandPool);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitState();
     g_pipe.CreateGraphicsPipeline();
     CreateComputePipelineHelper c_pipe(*this);
-    c_pipe.InitState();
     c_pipe.CreateComputePipeline();
 
     // Get implicit VU because using Transfer only instead of a Graphics-only or Compute-only queue

@@ -66,7 +66,6 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -123,7 +122,6 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
@@ -271,7 +269,6 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
@@ -358,7 +355,6 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
@@ -467,7 +463,6 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     secondary.end();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -489,13 +484,11 @@ TEST_F(NegativeTransformFeedback, BindPipeline) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe_one(*this);
-    pipe_one.InitState();
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     pipe_one.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe_one.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_two(*this);
-    pipe_two.InitState();
     pipe_two.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -518,7 +511,6 @@ TEST_F(NegativeTransformFeedback, EndRenderPass) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
@@ -554,7 +546,6 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
 
     {
         CreatePipelineHelper pipeline(*this);
-        pipeline.InitState();
         pipeline.CreateGraphicsPipeline();
 
         m_commandBuffer->begin();
@@ -609,7 +600,6 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
 
     CreatePipelineHelper pipeline(*this);
     pipeline.device_ = &test_device;
-    pipeline.InitState();
     pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipeline.gp_ci_.layout = pipelineLayout.handle();
     pipeline.gp_ci_.renderPass = renderpass.handle();
@@ -646,7 +636,6 @@ TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
     CreatePipelineHelper pipe(*this);
     VkPipelineRasterizationStateStreamCreateInfoEXT rasterization_state_stream_ci = vku::InitStructHelper();
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324");
     pipe.CreateGraphicsPipeline();
@@ -1030,7 +1019,6 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     VkPipelineRasterizationStateStreamCreateInfoEXT rasterization_state_stream_ci = vku::InitStructHelper();
     rasterization_state_stream_ci.rasterizationStream = transfer_feedback_props.maxTransformFeedbackStreams;
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
-    pipe.InitState();
 
     if (transfer_feedback_props.transformFeedbackRasterizationStreamSelect) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -1083,7 +1071,6 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp.handle();
-    pipe.InitState();
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
     pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
@@ -1104,7 +1091,6 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1129,7 +1115,6 @@ TEST_F(NegativeTransformFeedback, XfbExecutionModeCommand) {
 
     // default Vertex shader will not have Xfb
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1152,7 +1137,6 @@ TEST_F(NegativeTransformFeedback, XfbExecutionModePipeline) {
     VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02318");

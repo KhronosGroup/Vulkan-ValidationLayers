@@ -357,7 +357,6 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
@@ -631,7 +630,6 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout2});
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
@@ -819,7 +817,6 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &ds_layout_unused});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
@@ -896,7 +893,6 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitState();
         pipe.shader_stages_[1] = fs.GetStageCreateInfo();
         pipe.gp_ci_.layout = pipeline_layout.handle();
         pipe.CreateGraphicsPipeline();
@@ -1060,7 +1056,6 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     VkShaderObj fs(this, frag_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
     pipe.gp_ci_.renderPass = rp.Handle();

@@ -1121,7 +1121,6 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.InitState();
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationInfo-offset-00773");
     pipe.CreateGraphicsPipeline();
@@ -1194,7 +1193,6 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeZero) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -2073,7 +2071,6 @@ TEST_F(NegativeShaderSpirv, DISABLED_ImageFormatTypeMismatchWithZeroExtend) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipe.InitState();
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2108,7 +2105,6 @@ TEST_F(NegativeShaderSpirv, DISABLED_SpecConstantTextureIndex) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL_GRAPHICS, nullptr}};
-    pipe.InitState();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

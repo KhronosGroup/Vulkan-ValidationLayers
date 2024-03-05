@@ -39,7 +39,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 
         void main() {
@@ -52,7 +52,6 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     CreateComputePipelineHelper pipeline(*this);
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
@@ -78,7 +77,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           float t_min;
@@ -87,7 +86,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
 
         void main() {
             rayQueryEXT query;
-            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0),
               trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max);
             rayQueryProceedEXT(query);
         }
@@ -97,7 +96,6 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
@@ -146,7 +144,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           uint ray_query_flags;
@@ -163,7 +161,6 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
@@ -203,7 +200,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     char const *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
         layout(set = 0, binding = 1) uniform Uniforms {
           uint ray_query_flags;
@@ -220,7 +217,6 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                               {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateComputePipeline();
 
     // Add TLAS binding
@@ -258,7 +254,7 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     char const *vertex_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
-        
+
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 
         void main() {
@@ -273,7 +269,6 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     CreatePipelineHelper pipeline(*this);
     pipeline.shader_stages_ = {vs.GetStageCreateInfo(), pipeline.fs_->GetStageCreateInfo()};
     pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
-    pipeline.InitState();
     pipeline.CreateGraphicsPipeline();
 
     // Add TLAS binding
