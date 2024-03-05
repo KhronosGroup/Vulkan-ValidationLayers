@@ -983,8 +983,7 @@ class CoreChecks : public ValidationStateTracker {
                                          const ErrorObject& error_obj) const override;
 
     bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, bool is_image_disjoint,
-                                 const Location& loc,
-                                 const char* vuid = "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect") const;
+                                 const Location& loc, const char* vuid) const;
 
     bool ValidateCreateImageViewSubresourceRange(const vvl::Image& image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange, const Location& loc) const;

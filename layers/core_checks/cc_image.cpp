@@ -1958,7 +1958,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     // Validate correct image aspect bits for desired formats and format consistency
-    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_format, aspect_mask, image_state.disjoint, error_obj.location);
+    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_format, aspect_mask, image_state.disjoint, error_obj.location,
+                                    "UNASSIGNED-vkCreateImageView-InvalidImageAspect");
 
     // Valdiate Image/ImageView type compatibility #resources-image-views-compatibility
     switch (image_type) {

@@ -2284,7 +2284,7 @@ TEST_F(NegativeImage, ImageViewAspect) {
     // Cause an error by setting an invalid image aspect
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
-    CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-vkCreateImageView-InvalidImageAspect");
 }
 
 TEST_F(NegativeImage, GetImageSubresourceLayout) {
@@ -3528,7 +3528,7 @@ TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
     image_view_create_info.subresourceRange.layerCount = 1;
     image_view_create_info.subresourceRange.levelCount = 1;
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-vkCreateImageView-InvalidImageAspect");
 }
 
 TEST_F(NegativeImage, CornerSampledImageNV) {
@@ -4901,7 +4901,7 @@ TEST_F(NegativeImage, ColorWthDepthAspect) {
     civ_ci.subresourceRange.levelCount = 1;
     civ_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkCreateImageView-InvalidImageAspect");
     vkt::ImageView color_image_view(*m_device, civ_ci);
     m_errorMonitor->VerifyFound();
 }
