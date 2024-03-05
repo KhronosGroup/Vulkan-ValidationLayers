@@ -28,33 +28,20 @@
 bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const {
     bool skip = false;
     const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
-    if (cb_state) {
-        const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-        // Verify vertex binding
-        if (pipeline_state && pipeline_state->vertex_input_state &&
-            pipeline_state->vertex_input_state->binding_descriptions.empty() &&
-            !cb_state->current_vertex_buffer_binding_info.empty()) {
-            skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), loc,
-                                          "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
-                                          FormatHandle(cb_state->Handle()).c_str(), FormatHandle(pipeline_state->Handle()).c_str());
-        }
-
-        const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        if (pipe) {
-            const auto& rp_state = pipe->RenderPassState();
-            if (rp_state) {
-                for (uint32_t i = 0; i < rp_state->createInfo.subpassCount; ++i) {
-                    const auto& subpass = rp_state->createInfo.pSubpasses[i];
-                    const auto* ds_state = pipe->DepthStencilState();
-                    const uint32_t depth_stencil_attachment =
-                        GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
-                    const auto* raster_state = pipe->RasterizationState();
-                    if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && raster_state &&
-                        raster_state->depthBiasEnable == VK_TRUE) {
-                        skip |= LogWarning(kVUID_BestPractices_DepthBiasNoAttachment, cb_state->Handle(), loc,
-                                           "depthBiasEnable == VK_TRUE without a depth-stencil attachment.");
-                    }
+    const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (pipe) {
+        const auto& rp_state = pipe->RenderPassState();
+        if (rp_state) {
+            for (uint32_t i = 0; i < rp_state->createInfo.subpassCount; ++i) {
+                const auto& subpass = rp_state->createInfo.pSubpasses[i];
+                const auto* ds_state = pipe->DepthStencilState();
+                const uint32_t depth_stencil_attachment =
+                    GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
+                const auto* raster_state = pipe->RasterizationState();
+                if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && raster_state &&
+                    raster_state->depthBiasEnable == VK_TRUE) {
+                    skip |= LogWarning(kVUID_BestPractices_DepthBiasNoAttachment, cb_state->Handle(), loc,
+                                       "depthBiasEnable == VK_TRUE without a depth-stencil attachment.");
                 }
             }
         }
@@ -96,6 +83,12 @@ void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_
         }
         // No need to touch the same attachments over and over.
         cb_state->render_pass_state.drawTouchAttachments = false;
+    }
+
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
+    if (pipeline_state && pipeline_state->vertex_input_state && !pipeline_state->vertex_input_state->binding_descriptions.empty()) {
+        cb_state->uses_vertex_buffer = true;
     }
 }
 
@@ -687,4 +680,16 @@ void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
                                                      const RecordObject& record_obj) {
     const auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     ValidateBoundDescriptorSets(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
+}
+
+bool BestPractices::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+
+    if (!cb_state->current_vertex_buffer_binding_info.empty() && !cb_state->uses_vertex_buffer) {
+        skip |= LogPerformanceWarning(kVUID_BestPractices_DrawState_VtxIndexOutOfBounds, cb_state->Handle(), error_obj.location,
+                                      "Vertex buffers was bound to %s but no draws had a pipeline that used the vertex buffer.",
+                                      FormatHandle(cb_state->Handle()).c_str());
+    }
+    return skip;
 }

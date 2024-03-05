@@ -264,3 +264,43 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7636");
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkVertexInputBindingDescription input_binding = {0, 32, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib;
+    memset(&input_attrib, 0, sizeof(input_attrib));
+    input_attrib.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    input_attrib.location = 4;
+
+    CreatePipelineHelper pipe0(*this);
+    pipe0.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe0.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe0.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe0.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe0.InitState();
+    pipe0.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitState();
+    pipe1.CreateGraphicsPipeline();
+
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
