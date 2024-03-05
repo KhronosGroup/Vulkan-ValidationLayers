@@ -20,6 +20,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "containers/range_vector.h"
 #include "vulkan/vulkan.h"
 
 // Debug callbacks get created in three ways:
@@ -181,4 +182,10 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
     }
 
     return extent;
+}
+
+// Returns true if [x, x + x_size) and [y, y + y_size) overlap
+bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
+    auto intersection = GetRangeIntersection(x, x_size, y, y_size);
+    return intersection.non_empty();
 }

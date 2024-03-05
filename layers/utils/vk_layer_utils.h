@@ -30,7 +30,6 @@
 #include <vulkan/utility/vk_format_utils.h>
 
 #include "cast_utils.h"
-#include "containers/range_vector.h"
 #include "generated/vk_extension_helper.h"
 #include "error_message/logging.h"
 
@@ -642,6 +641,8 @@ static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) 
     return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
 }
 
+bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size);
+
 namespace vvl {
 
 static inline void ToLower(std::string &str) {
@@ -676,17 +677,3 @@ template <typename>
 inline constexpr bool dependent_false_v = false;
 
 }  // namespace vvl
-
-// Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
-static inline sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    int64_t intersection_min = std::max(x, y);
-    int64_t intersection_max = std::min(x + static_cast<int64_t>(x_size), y + static_cast<int64_t>(y_size));
-
-    return {intersection_min, intersection_max};
-}
-
-// Returns true if [x, x + x_size) and [y, y + y_size) overlap
-static inline bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    auto intersection = GetRangeIntersection(x, x_size, y, y_size);
-    return intersection.non_empty();
-}
