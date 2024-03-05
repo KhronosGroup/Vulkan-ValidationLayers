@@ -2406,8 +2406,9 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, image_loc, mem_barrier, image_data->Handle(),
                                              image_data->createInfo.sharingMode);
 
-        skip |= ValidateImageAspectMask(image_data->VkHandle(), image_data->createInfo.format,
-                                        mem_barrier.subresourceRange.aspectMask, image_data->disjoint, image_loc);
+        skip |=
+            ValidateImageAspectMask(image_data->VkHandle(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
+                                    image_data->disjoint, image_loc, "UNASSIGNED-ImageBarrier-InvalidImageAspect");
 
         skip |= ValidateImageBarrierSubresourceRange(image_data->createInfo, mem_barrier.subresourceRange, objects,
                                                      barrier_loc.dot(Field::subresourceRange));
