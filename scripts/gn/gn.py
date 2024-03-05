@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright 2023 The Khronos Group Inc.
-# Copyright 2023 Valve Corporation
-# Copyright 2023 LunarG, Inc.
+# Copyright 2023-2024 The Khronos Group Inc.
+# Copyright 2023-2024 Valve Corporation
+# Copyright 2023-2024 LunarG, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,24 +16,24 @@ def RepoRelative(path):
 def BuildGn():
     if not os.path.exists(RepoRelative("depot_tools")):
         clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'.split(" ")
-        subprocess.call(clone_cmd)
+        subprocess.check_call(clone_cmd)
 
     os.environ['PATH'] = os.environ.get('PATH') + ":" + RepoRelative("depot_tools")
 
     # Updating Repo Dependencies and GN Toolchain
     update_cmd = './scripts/gn/update_deps.sh'
-    subprocess.call(update_cmd)
+    subprocess.check_call(update_cmd)
 
     gn_check_cmd = 'gn gen --check out/Debug'.split(" ")
-    subprocess.call(gn_check_cmd)
+    subprocess.check_call(gn_check_cmd)
 
     # Generating Ninja Files
     gn_gen_cmd = 'gn gen out/Debug'.split(" ")
-    subprocess.call(gn_gen_cmd)
+    subprocess.check_call(gn_gen_cmd)
 
     # Running Ninja Build
     ninja_build_cmd = 'ninja -C out/Debug'.split(" ")
-    subprocess.call(ninja_build_cmd)
+    subprocess.check_call(ninja_build_cmd)
 
 #
 # Module Entrypoint
