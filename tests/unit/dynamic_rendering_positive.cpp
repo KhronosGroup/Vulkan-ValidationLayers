@@ -712,6 +712,21 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveDynamicRendering, IgnoreUnusedColorAttachment) {
+    TEST_DESCRIPTION("Case from https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6518");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.pColorBlendState = nullptr;
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     TEST_DESCRIPTION(
         "Draw with Dynamic Rendering with attachment specified as VK_NULL_HANDLE in VkRenderingInfoKHR, and with corresponding "

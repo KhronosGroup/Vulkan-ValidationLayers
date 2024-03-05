@@ -2729,11 +2729,16 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
 
         if (pipeline.fragment_output_state && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
             !pipeline.IsColorBlendStateDynamic()) {
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, create_info_loc.dot(Field::pColorBlendState),
-                         "is NULL, but %s is %" PRIu32 ".",
-                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
-                         rendering_struct->colorAttachmentCount);
+            for (const auto [i, format] :
+                 vvl::enumerate(rendering_struct->pColorAttachmentFormats, rendering_struct->colorAttachmentCount)) {
+                if (*format != VK_FORMAT_UNDEFINED) {
+                    skip |= LogError(
+                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, create_info_loc.dot(Field::pColorBlendState),
+                        "is NULL, but %s is %" PRIu32 " and pColorAttachmentFormats[%" PRIu32 "] is %s.",
+                        create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
+                        rendering_struct->colorAttachmentCount, i, string_VkFormat(*format));
+                }
+            }
         }
         if (pipeline.fragment_shader_state && pipeline.fragment_output_state) {
             const auto input_attachment_index =
