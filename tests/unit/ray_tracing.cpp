@@ -3490,6 +3490,9 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 

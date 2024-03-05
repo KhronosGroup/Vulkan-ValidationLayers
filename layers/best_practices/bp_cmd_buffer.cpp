@@ -65,7 +65,9 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (!cb_state) return;
 
+    // reset
     cb_state->num_submits = 0;
+    cb_state->uses_vertex_buffer = false;
 }
 
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
