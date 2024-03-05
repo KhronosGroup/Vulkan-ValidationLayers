@@ -446,7 +446,6 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     vkt::Framebuffer fb(*m_device, rp.handle(), 1u, &imageView.handle());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -602,8 +601,6 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs_fail.GetStageCreateInfo()};
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = rp.handle();
-        g_pipe.InitState();
-
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
         g_pipe.CreateGraphicsPipeline();
@@ -624,8 +621,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = rp.handle();
-        g_pipe.InitState();
-        ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
+        g_pipe.CreateGraphicsPipeline();
 
         g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -746,13 +742,11 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     CreatePipelineHelper pipe1(*this);
     pipe1.gp_ci_.renderPass = render_pass.handle();
     pipe1.gp_ci_.subpass = 0;
-    pipe1.InitState();
     pipe1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe2(*this);
     pipe2.gp_ci_.renderPass = render_pass.handle();
     pipe2.gp_ci_.subpass = 1;
-    pipe2.InitState();
     pipe2.CreateGraphicsPipeline();
 
     VkClearValue clear_value = {};
@@ -1213,7 +1207,6 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
     pipe.gp_ci_.renderPass = rp.handle();
@@ -1263,9 +1256,8 @@ TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
     ms_state.alphaToOneEnable = VK_FALSE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = rp.Handle();
-    pipe.pipe_ms_state_ci_ = ms_state;
+    pipe.ms_ci_ = ms_state;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

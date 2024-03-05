@@ -141,7 +141,6 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -222,7 +221,6 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

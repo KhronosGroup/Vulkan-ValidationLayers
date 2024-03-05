@@ -977,10 +977,8 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     dyn_state_ci.dynamicStateCount = 2;
     dyn_state_ci.pDynamicStates = dyn_states;
 
-    CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.pNext = &discard_rectangle_state;
+    CreatePipelineHelper pipe(*this, &discard_rectangle_state);
     pipe.gp_ci_.pDynamicState = &dyn_state_ci;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     vk::BeginCommandBuffer(secondary.handle(), &cbbi);
@@ -994,7 +992,6 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
 
         CreatePipelineHelper pipe2(*this);
         pipe2.gp_ci_.pDynamicState = &dyn_state_ci;
-        pipe2.InitState();
         pipe2.CreateGraphicsPipeline();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04809");
         vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);

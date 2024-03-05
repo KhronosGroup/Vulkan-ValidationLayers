@@ -168,7 +168,6 @@ TEST_F(NegativeRayTracingPipelineNV, BindPoint) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

@@ -1787,7 +1787,6 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
@@ -1869,7 +1868,6 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     vkt::Framebuffer fb(*m_device, rp1.handle(), 1u, &iv.handle(), 128, 128);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp2.handle();
     pipe.CreateGraphicsPipeline();
@@ -2499,7 +2497,6 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
@@ -2898,9 +2895,8 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     ms_state.alphaToOneEnable = VK_FALSE;
 
     CreatePipelineHelper pipe_helper(*this);
-    pipe_helper.InitState();
     pipe_helper.gp_ci_.renderPass = test_rp.handle();
-    pipe_helper.pipe_ms_state_ci_ = ms_state;
+    pipe_helper.ms_ci_ = ms_state;
 
     // ms_render_to_ss.rasterizationSamples != ms_state.rasterizationSamples
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854");
@@ -2908,7 +2904,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     m_errorMonitor->VerifyFound();
 
     // Actually create a usable pipeline
-    pipe_helper.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+    pipe_helper.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe_helper.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
@@ -3012,9 +3008,8 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     // Positive Test: Image view with VK_SAMPLE_COUNT_1_BIT should not get error 07285 in pipeline created with attachment with
     // VK_SAMPLE_COUNT_2_BIT
     CreatePipelineHelper dr_pipe_helper(*this);
-    dr_pipe_helper.InitState();
     dr_pipe_helper.gp_ci_.renderPass = VK_NULL_HANDLE;
-    dr_pipe_helper.pipe_ms_state_ci_ = ms_state;
+    dr_pipe_helper.ms_ci_ = ms_state;
     dr_pipe_helper.cb_ci_.attachmentCount = 0;
     dr_pipe_helper.CreateGraphicsPipeline();
     begin_rendering_info.pNext = nullptr;
@@ -3028,8 +3023,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
 
     // Positive Test: Same as previous test but using render pass and should not get error 07284
     CreatePipelineHelper test_pipe(*this);
-    test_pipe.InitState();
-    test_pipe.pipe_ms_state_ci_ = ms_state;
+    test_pipe.ms_ci_ = ms_state;
     test_pipe.CreateGraphicsPipeline();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.pipeline_);
@@ -3411,7 +3405,6 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
     clear_values[1].color = {{0, 0, 0, 0}};
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = render_pass2.handle();
     pipe.CreateGraphicsPipeline();
 

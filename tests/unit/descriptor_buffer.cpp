@@ -843,7 +843,6 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     ASSERT_EQ(VK_SUCCESS, pipe.CreateComputePipeline());
 
     m_commandBuffer->begin();
@@ -901,7 +900,6 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    pipe.InitState();
     ASSERT_EQ(VK_SUCCESS, pipe.CreateComputePipeline());
 
     m_commandBuffer->begin();

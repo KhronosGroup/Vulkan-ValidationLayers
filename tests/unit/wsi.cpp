@@ -3339,7 +3339,6 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &image_view_handle, 1, 1);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 

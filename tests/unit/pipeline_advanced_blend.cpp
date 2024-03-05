@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -121,7 +121,6 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     color_blend_advanced.srcPremultiplied = VK_FALSE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.cb_ci_.pNext = &color_blend_advanced;
     if (!blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426");
@@ -165,7 +164,6 @@ TEST_F(NegativePipelineAdvancedBlend, AllOperations) {
     color_blend_state.pAttachments = &attachment_state;
     pipe.gp_ci_.pColorBlendState = &color_blend_state;
 
-    pipe.InitState();
     // When using profiles, advancedBlendMaxColorAttachments might be zero
     m_errorMonitor->SetUnexpectedError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");

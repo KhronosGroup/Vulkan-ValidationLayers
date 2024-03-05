@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2023 The Khronos Group Inc.
- * Copyright (c) 2020-2023 Valve Corporation
- * Copyright (c) 2020-2023 LunarG, Inc.
- * Copyright (c) 2020-2023 Google, Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 Valve Corporation
+ * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,6 @@ TEST_F(NegativeDebugPrintf, BasicCompute) {
         )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
@@ -164,7 +163,6 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.gp_ci_.layout = pipeline_layout.handle();
@@ -274,7 +272,6 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         VkShaderObj vs_int64(this, shader_source_int64, VK_SHADER_STAGE_VERTEX_BIT);
 
         CreatePipelineHelper pipe2(*this);
-        pipe2.InitState();
         pipe2.shader_stages_ = {vs_int64.GetStageCreateInfo()};
         pipe2.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
         pipe2.gp_ci_.layout = pipeline_layout.handle();
@@ -367,7 +364,6 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo()};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
@@ -470,7 +466,6 @@ TEST_F(NegativeDebugPrintf, GPL) {
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
-    vi.InitState();
     vi.CreateGraphicsPipeline(false);
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
@@ -479,7 +474,6 @@ TEST_F(NegativeDebugPrintf, GPL) {
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
     pre_raster.CreateGraphicsPipeline(false);
 
@@ -737,7 +731,6 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
-    vi.InitState();
     vi.CreateGraphicsPipeline(false);
 
     static const char vertshader[] = R"glsl(
@@ -764,7 +757,6 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     VkRect2D scissor = {{0, 0}, {1, 1}};
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
-    pre_raster.InitState();
     pre_raster.vp_state_ci_.pViewports = &viewport;
     pre_raster.vp_state_ci_.pScissors = &scissor;
     pre_raster.gp_ci_.layout = vs_layout;
@@ -877,7 +869,6 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
-    vi.InitState();
     vi.CreateGraphicsPipeline(false);
 
     static const char vertshader[] = R"glsl(
@@ -904,7 +895,6 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     VkRect2D scissor = {{0, 0}, {1, 1}};
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
-    pre_raster.InitState();
     pre_raster.vp_state_ci_.pViewports = &viewport;
     pre_raster.vp_state_ci_.pScissors = &scissor;
     pre_raster.gp_ci_.layout = vs_layout;

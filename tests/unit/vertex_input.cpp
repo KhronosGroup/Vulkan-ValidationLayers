@@ -549,7 +549,6 @@ TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex_state_ci = vku::InitStructHelper();
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
     pipe.rs_state_ci_.pNext = &provoking_vertex_state_ci;
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883");
@@ -582,17 +581,14 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex_state_ci = vku::InitStructHelper();
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
     pipe1.rs_state_ci_.pNext = &provoking_vertex_state_ci;
-    pipe1.InitState();
     pipe1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe2(*this);
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
     pipe2.rs_state_ci_.pNext = &provoking_vertex_state_ci;
-    pipe2.InitState();
     pipe2.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe3(*this);
-    pipe3.InitState();
     pipe3.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -637,7 +633,6 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -674,7 +669,6 @@ TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
     pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -702,7 +696,6 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.CreateGraphicsPipeline();
 
@@ -808,7 +801,6 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     vi_state.pVertexAttributeDescriptions = &input_attribs[0];
 
     CreatePipelineHelper pipe1(*this);
-    pipe1.InitState();
     pipe1.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe1.vi_ci_ = vi_state;
     pipe1.CreateGraphicsPipeline();
@@ -816,7 +808,6 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     input_binding.stride = 6;
 
     CreatePipelineHelper pipe2(*this);
-    pipe2.InitState();
     pipe2.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe2.vi_ci_ = vi_state;
     pipe2.CreateGraphicsPipeline();
@@ -864,7 +855,6 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -896,7 +886,6 @@ TEST_F(NegativeVertexInput, VertexStride) {
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -921,7 +910,6 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicInput) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.CreateGraphicsPipeline();
 
@@ -971,7 +959,6 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
     pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.CreateGraphicsPipeline();
 
@@ -1008,7 +995,6 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStrideArray) {
     pipe.vi_ci_.pVertexBindingDescriptions = bindings;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.vi_ci_.pVertexAttributeDescriptions = attributes;
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.CreateGraphicsPipeline();
 
@@ -1038,7 +1024,6 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.CreateGraphicsPipeline();
@@ -1229,7 +1214,6 @@ TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1284,7 +1268,6 @@ TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1337,7 +1320,6 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1362,7 +1344,6 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatchDynamic) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
@@ -1456,7 +1437,6 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929");
     pipe.CreateGraphicsPipeline();
@@ -1492,7 +1472,6 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930");
     pipe.CreateGraphicsPipeline();
@@ -1528,7 +1507,6 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198");
     pipe.CreateGraphicsPipeline();
@@ -1593,7 +1571,6 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 4
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 7
     pipe.CreateGraphicsPipeline();
@@ -1634,7 +1611,6 @@ TEST_F(NegativeVertexInput, UnsupportedDivisor) {
     input_vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.vi_ci_.pNext = &vertex_input_divisor_state;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1u;
     pipe.vi_ci_.pVertexBindingDescriptions = &input_vertex_binding_description;
@@ -1683,7 +1659,6 @@ TEST_F(NegativeVertexInput, UnsupportedDynamicStateDivisor) {
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.CreateGraphicsPipeline();
 
@@ -1740,7 +1715,6 @@ TEST_F(NegativeVertexInput, BindVertexBufferNullDraw) {
     pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1769,7 +1743,6 @@ TEST_F(NegativeVertexInput, VertextBufferDestroyed) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

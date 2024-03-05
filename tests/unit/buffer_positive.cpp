@@ -193,7 +193,6 @@ TEST_F(PositiveBuffer, IndexBufferNull) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

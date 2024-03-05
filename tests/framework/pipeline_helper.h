@@ -28,16 +28,14 @@ class CreatePipelineHelper {
     VkPipelineVertexInputStateCreateInfo vi_ci_ = {};
     VkPipelineInputAssemblyStateCreateInfo ia_ci_ = {};
     VkPipelineTessellationStateCreateInfo tess_ci_ = {};
-    VkViewport viewport_ = {};
-    VkRect2D scissor_ = {};
     VkPipelineViewportStateCreateInfo vp_state_ci_ = {};
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci_ = {};
+    VkPipelineMultisampleStateCreateInfo ms_ci_ = {};
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
     vkt::PipelineLayout pipeline_layout_;
     VkPipelineDynamicStateCreateInfo dyn_state_ci_ = {};
     VkPipelineRasterizationStateCreateInfo rs_state_ci_ = {};
     VkPipelineRasterizationLineStateCreateInfoKHR line_state_ci_ = {};
-    std::vector<VkPipelineColorBlendAttachmentState> cb_attachments_ = {};
+    VkPipelineColorBlendAttachmentState cb_attachments_ = {};
     VkPipelineColorBlendStateCreateInfo cb_ci_ = {};
     VkPipelineDepthStencilStateCreateInfo ds_ci_ = {};
     VkGraphicsPipelineCreateInfo gp_ci_ = {};
@@ -50,16 +48,13 @@ class CreatePipelineHelper {
     vkt::Device *device_;
     std::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
     // advantage of taking a VkLayerTest over vkt::Device is we can get the default renderpass from InitRenderTarget
-    CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count = 1u);
+    CreatePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
     ~CreatePipelineHelper();
 
     VkPipeline Handle() { return pipeline_; }
     void InitShaderInfo();
     void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
 
-    // TDB -- add control for optional and/or additional initialization
-    void InitState();
-    void InitPipelineCache();
     void LateBindPipelineInfo();
     VkResult CreateGraphicsPipeline(bool do_late_bind = true);
 
@@ -92,7 +87,6 @@ class CreatePipelineHelper {
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const ErrorContainer &errors) {
         CreatePipelineHelper helper(test);
         info_override(helper);
-        helper.InitState();
 
         for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateGraphicsPipeline();
@@ -123,8 +117,12 @@ class CreatePipelineHelper {
     void AddDynamicState(VkDynamicState dynamic_state);
 
   private:
+    void InitPipelineCache();
     // Hold some state for making certain pipeline creations easier
     std::vector<VkDynamicState> dynamic_states_;
+
+    VkViewport viewport_ = {};
+    VkRect2D scissor_ = {};
 };
 
 class CreateComputePipelineHelper {
@@ -140,14 +138,12 @@ class CreateComputePipelineHelper {
     std::unique_ptr<VkShaderObj> cs_;
     bool override_skip_ = false;
     VkLayerTest &layer_test_;
-    CreateComputePipelineHelper(VkLayerTest &test);
+    vkt::Device *device_;
+    CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
     ~CreateComputePipelineHelper();
 
     void InitShaderInfo();
 
-    // TDB -- add control for optional and/or additional initialization
-    void InitState();
-    void InitPipelineCache();
     void LateBindPipelineInfo();
     VkResult CreateComputePipeline(bool do_late_bind = true);
 
@@ -165,7 +161,6 @@ class CreateComputePipelineHelper {
             helper.override_skip_ = false;  // reset
             return;
         }
-        helper.InitState();
 
         for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateComputePipeline();
@@ -184,6 +179,9 @@ class CreateComputePipelineHelper {
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags) {
         OneshotTest(test, info_override, flags, std::vector<std::string>{});
     }
+
+  private:
+    void InitPipelineCache();
 };
 
 // Set all dynamic states needed when using shader objects

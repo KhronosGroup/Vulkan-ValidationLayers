@@ -336,7 +336,6 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Make calls to valid commands
@@ -374,7 +373,6 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Make calls to valid commands
@@ -418,7 +416,6 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Make calls to valid commands
@@ -908,7 +905,6 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Try existing VUID checks
@@ -950,7 +946,6 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Try existing VUID checks
@@ -1053,7 +1048,6 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     VkFormat format = VK_FORMAT_R32G32B32A32_SINT;
@@ -1123,7 +1117,6 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
@@ -1188,7 +1181,6 @@ TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

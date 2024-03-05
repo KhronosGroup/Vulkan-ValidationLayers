@@ -323,7 +323,6 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
@@ -573,7 +572,6 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     ds_ci.depthCompareOp = VK_COMPARE_OP_LESS;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
@@ -703,7 +701,6 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
-    helper.InitState();
     helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
     helper.gp_ci_.renderPass = render_pass.handle();
     helper.CreateGraphicsPipeline();
@@ -778,7 +775,6 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     ds_state.front.writeMask = 0x1;
     ds_state.back.writeMask = 0x1;
     CreatePipelineHelper helper(*this);
-    helper.InitState();
     helper.gp_ci_.pDepthStencilState = &ds_state;
     helper.gp_ci_.renderPass = rp.Handle();
     helper.CreateGraphicsPipeline();

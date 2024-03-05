@@ -227,9 +227,8 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     pipe_cb_state_ci.pAttachments = &blend_att;
 
     CreatePipelineHelper pipe(*this);
-    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
+    pipe.ms_ci_ = pipe_ms_state_ci;
     pipe.cb_ci_ = pipe_cb_state_ci;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
@@ -288,8 +287,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     pipe_ms_state_ci.pSampleMask = NULL;
 
     CreatePipelineHelper pipe(*this);
-    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
-    pipe.InitState();
+    pipe.ms_ci_ = pipe_ms_state_ci;
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -431,13 +429,11 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
 
     auto test_pipelines = [&](VkConstantBufferObj& ibo, size_t index_count, bool expect_error) -> void {
         CreatePipelineHelper pipe(*this);
-        pipe.InitState();
         pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
         pipe.CreateGraphicsPipeline();
 
         // pipeline with primitive restarts enabled
         CreatePipelineHelper pr_pipe(*this);
-        pr_pipe.InitState();
         pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
         pr_pipe.CreateGraphicsPipeline();
 
@@ -503,7 +499,6 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -621,7 +616,6 @@ TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
     pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_.depthBiasConstantFactor = 0.0f;
     pipe.rs_state_ci_.depthBiasSlopeFactor = 0.0f;
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCreatePipelines-depthbias-zero");
     pipe.CreateGraphicsPipeline();
@@ -709,13 +703,11 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     CreatePipelineHelper pipe_depth_only(*this);
     pipe_depth_only.gp_ci_.pColorBlendState = &cb_depth_only_ci;
     pipe_depth_only.gp_ci_.pDepthStencilState = &ds_depth_only_ci;
-    pipe_depth_only.InitState();
     pipe_depth_only.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_depth_equal(*this);
     pipe_depth_equal.gp_ci_.pColorBlendState = &cb_depth_equal_ci;
     pipe_depth_equal.gp_ci_.pDepthStencilState = &ds_depth_equal_ci;
-    pipe_depth_equal.InitState();
     pipe_depth_equal.CreateGraphicsPipeline();
 
     // create a simple index buffer
@@ -764,50 +756,46 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
-    VkShaderObj compute_4_1_1(this,
-                              "#version 320 es\n"
-                              "\n"
-                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
-                              "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT);
+    {
+        char const* csSource = R"glsl(
+            #version 450
+            layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;
+            void main(){}
+        )glsl";
 
-    VkShaderObj compute_4_1_3(this,
-                              "#version 320 es\n"
-                              "\n"
-                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;\n\n"
-                              "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT);
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.CreateComputePipeline();
+    }
 
-    VkShaderObj compute_16_8_1(this,
-                               "#version 320 es\n"
-                               "\n"
-                               "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
-                               "void main() {}\n",
-                               VK_SHADER_STAGE_COMPUTE_BIT);
+    {
+        char const* csSource = R"glsl(
+            #version 450
+            layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;
+            void main(){}
+        )glsl";
 
-    CreateComputePipelineHelper pipe(*this);
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        // this pipeline should cause a warning due to bad work group alignment
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    auto makePipelineWithShader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
-        pipe.InitState();
-        pipe.cp_ci_.stage = stage;
-        pipe.dsl_bindings_ = {};
-        pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
+    {
+        char const* csSource = R"glsl(
+            #version 450
+            layout(local_size_x = 16, local_size_y = 9, local_size_z = 1) in;
+            void main(){}
+        )glsl";
 
-        pipe.CreateComputePipeline(false);
-    };
-
-    // these two pipelines should not cause any warning
-    makePipelineWithShader(pipe, compute_4_1_1.GetStageCreateInfo());
-
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateComputePipelines-compute-work-group-size");
-    makePipelineWithShader(pipe, compute_16_8_1.GetStageCreateInfo());
-
-    // this pipeline should cause a warning due to bad work group alignment
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
-    makePipelineWithShader(pipe, compute_4_1_3.GetStageCreateInfo());
-    m_errorMonitor->VerifyFound();
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateComputePipelines-compute-work-group-size");
+        pipe.CreateComputePipeline();
+    }
 }
 
 TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
@@ -817,49 +805,46 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
-    VkShaderObj compute_4_1_1(this,
-                              "#version 320 es\n"
-                              "\n"
-                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
-                              "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkShaderObj compute_4_1_3(this,
-                              "#version 320 es\n"
-                              "\n"
-                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;\n\n"
-                              "void main() {}\n",
-                              VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkShaderObj compute_16_8_1(this,
-                               "#version 320 es\n"
-                               "\n"
-                               "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
-                               "void main() {}\n",
-                               VK_SHADER_STAGE_COMPUTE_BIT);
-
-    CreateComputePipelineHelper pipe(*this);
-
-    auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
-        pipe.InitState();
-        pipe.cp_ci_.stage = stage;
-        pipe.dsl_bindings_ = {};
-        pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
-
-        pipe.CreateComputePipeline(false);
-    };
-
     // these two pipelines should not cause any warning
-    make_pipeline_with_shader(pipe, compute_4_1_1.GetStageCreateInfo());
+    {
+        char const* csSource = R"glsl(
+            #version 450
+            layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;
+            void main(){}
+        )glsl";
 
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
-    make_pipeline_with_shader(pipe, compute_4_1_3.GetStageCreateInfo());
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.CreateComputePipeline();
+    }
+
+    {
+        char const* csSource = R"glsl(
+            #version 450
+            layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;
+            void main(){}
+        )glsl";
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
+        pipe.CreateComputePipeline();
+    }
 
     // this pipeline should cause a warning due to the total workgroup count
+    {
+        char const* csSource = R"glsl(
+            #version 450
+            layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
+            void main(){}
+        )glsl";
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCreateComputePipelines-compute-work-group-size");
-    make_pipeline_with_shader(pipe, compute_16_8_1.GetStageCreateInfo());
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "BestPractices-vkCreateComputePipelines-compute-work-group-size");
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
@@ -895,16 +880,14 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
                                           "}\n",
                                           VK_SHADER_STAGE_COMPUTE_BIT);
 
-    CreateComputePipelineHelper pipe(*this);
-
-    auto make_pipeline_with_shader = [this](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
+    auto make_pipeline_with_shader = [this](const VkPipelineShaderStageCreateInfo& stage) {
+        CreateComputePipelineHelper pipe(*this);
         VkDescriptorSetLayoutBinding sampler_binding = {};
         sampler_binding.binding = 0;
         sampler_binding.descriptorCount = 1;
         sampler_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         sampler_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-        pipe.InitState();
         auto ds_layout = std::unique_ptr<vkt::DescriptorSetLayout>(new vkt::DescriptorSetLayout(*m_device, {sampler_binding}));
         auto pipe_layout = std::unique_ptr<vkt::PipelineLayout>(new vkt::PipelineLayout(*m_device, {ds_layout.get()}));
         pipe.cp_ci_.stage = stage;
@@ -914,21 +897,20 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
     };
 
     auto* this_ptr = this;  // Required for older compilers with c++20 compatibility
-    auto test_spatial_locality = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage,
-                                     bool positive_test) {
+    auto test_spatial_locality = [=](const VkPipelineShaderStageCreateInfo& stage, bool positive_test) {
         if (!positive_test) {
             this_ptr->m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                                            "BestPractices-vkCreateComputePipelines-compute-spatial-locality");
         }
-        make_pipeline_with_shader(pipe, stage);
+        make_pipeline_with_shader(stage);
         if (!positive_test) {
             this_ptr->m_errorMonitor->VerifyFound();
         }
     };
 
-    test_spatial_locality(pipe, compute_sampler_2d_8_8_1.GetStageCreateInfo(), true);
-    test_spatial_locality(pipe, compute_sampler_1d_64_1_1.GetStageCreateInfo(), true);
-    test_spatial_locality(pipe, compute_sampler_2d_64_1_1.GetStageCreateInfo(), false);
+    test_spatial_locality(compute_sampler_2d_8_8_1.GetStageCreateInfo(), true);
+    test_spatial_locality(compute_sampler_1d_64_1_1.GetStageCreateInfo(), true);
+    test_spatial_locality(compute_sampler_2d_64_1_1.GetStageCreateInfo(), false);
 }
 
 TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
@@ -967,8 +949,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     graphics_pipeline.dyn_state_ci_ = vku::InitStructHelper();
     graphics_pipeline.dyn_state_ci_.dynamicStateCount = 1;
     graphics_pipeline.dyn_state_ci_.pDynamicStates = &ds;
-
-    graphics_pipeline.InitState();
 
     graphics_pipeline.gp_ci_.renderPass = renderpasses[1];
     graphics_pipeline.gp_ci_.flags = 0;
@@ -1063,8 +1043,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
 
     CreatePipelineHelper graphics_pipeline(*this);
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
-    graphics_pipeline.InitState();
+    graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
 
     graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
     graphics_pipeline.gp_ci_.flags = 0;
@@ -1158,8 +1137,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
 
     CreatePipelineHelper graphics_pipeline(*this);
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
-    graphics_pipeline.InitState();
+    graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
 
     graphics_pipeline.gp_ci_.renderPass = rp.handle();
     graphics_pipeline.gp_ci_.flags = 0;
@@ -1261,8 +1239,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     graphics_pipeline.dsl_bindings_[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     graphics_pipeline.dsl_bindings_[1].binding = 10;
     graphics_pipeline.dsl_bindings_[1].descriptorCount = 4;
-    graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
-    graphics_pipeline.InitState();
+    graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
 
     graphics_pipeline.gp_ci_.renderPass = rp.handle();
     graphics_pipeline.gp_ci_.flags = 0;
@@ -1492,8 +1469,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     InitRenderTarget(1, &ds_view.handle());
 
     CreatePipelineHelper pipe_all(*this);
-    pipe_all.InitState();
-    pipe_all.cb_attachments_[0].colorWriteMask = 0xf;
+    pipe_all.cb_attachments_.colorWriteMask = 0xf;
     pipe_all.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
     pipe_all.gp_ci_.pDepthStencilState = &pipe_all.ds_ci_;
     pipe_all.ds_ci_.depthTestEnable = VK_TRUE;
@@ -1501,23 +1477,20 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     pipe_all.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_color(*this);
-    pipe_color.InitState();
-    pipe_color.cb_attachments_[0].colorWriteMask = 0xf;
+    pipe_color.cb_attachments_.colorWriteMask = 0xf;
     pipe_color.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
     pipe_color.gp_ci_.pDepthStencilState = &pipe_color.ds_ci_;
     pipe_color.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_depth(*this);
-    pipe_depth.InitState();
-    pipe_depth.cb_attachments_[0].colorWriteMask = 0;
+    pipe_depth.cb_attachments_.colorWriteMask = 0;
     pipe_depth.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
     pipe_depth.gp_ci_.pDepthStencilState = &pipe_depth.ds_ci_;
     pipe_depth.ds_ci_.depthTestEnable = VK_TRUE;
     pipe_depth.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_stencil(*this);
-    pipe_stencil.InitState();
-    pipe_stencil.cb_attachments_[0].colorWriteMask = 0;
+    pipe_stencil.cb_attachments_.colorWriteMask = 0;
     pipe_stencil.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
     pipe_stencil.gp_ci_.pDepthStencilState = &pipe_stencil.ds_ci_;
     pipe_stencil.ds_ci_.stencilTestEnable = VK_TRUE;

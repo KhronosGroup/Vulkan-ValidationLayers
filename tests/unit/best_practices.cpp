@@ -419,8 +419,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     pipe_ms_state_ci.pSampleMask = NULL;
 
     CreatePipelineHelper pipe(*this);
-    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
-    pipe.InitState();
+    pipe.ms_ci_ = pipe_ms_state_ci;
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -717,7 +716,6 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
 
     CreatePipelineHelper pipe(*this);
     pipe.vi_ci_ = vi_state_ci;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
@@ -792,15 +790,13 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 
     CreatePipelineHelper pipe_masked(*this);
-    pipe_masked.InitState();
     pipe_masked.gp_ci_.renderPass = rp.Handle();
-    pipe_masked.cb_attachments_[0].colorWriteMask = 0;
+    pipe_masked.cb_attachments_.colorWriteMask = 0;
     pipe_masked.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_writes(*this);
-    pipe_writes.InitState();
     pipe_writes.gp_ci_.renderPass = rp.Handle();
-    pipe_writes.cb_attachments_[0].colorWriteMask = 0xf;
+    pipe_writes.cb_attachments_.colorWriteMask = 0xf;
     pipe_writes.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1141,7 +1137,6 @@ TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_.depthBiasConstantFactor = 1.0f;
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1234,7 +1229,6 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
@@ -1889,7 +1883,6 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     pipe.dsl_bindings_[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -2150,7 +2143,6 @@ TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
     RETURN_IF_SKIP(InitState());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
@@ -2261,7 +2253,6 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(data)};
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
@@ -2316,7 +2307,6 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint8_t) * 3};
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
@@ -2383,7 +2373,6 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
     vkt::RenderPass render_pass(*m_device, rpci);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.renderPass = render_pass.handle();
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "BestPractices-Shader-MissingInputAttachment");

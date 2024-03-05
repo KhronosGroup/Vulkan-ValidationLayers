@@ -38,7 +38,6 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
         GTEST_SKIP() << "maxMultiviewInstanceIndex is uint32_t max";
     }
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -234,7 +233,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     {
         // No need to create individual pipelines for each subpass since we are checking no bound pipeline
         CreatePipelineHelper pipe(*this);
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         m_commandBuffer->begin();
@@ -268,7 +266,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         CreatePipelineHelper pipe(*this);
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
         pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
@@ -331,7 +328,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
@@ -405,7 +401,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
@@ -479,7 +474,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
         pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
         pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
@@ -557,7 +551,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
         pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
         pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
@@ -650,7 +643,6 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp.Handle();
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -943,14 +935,12 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     // Create a graphics pipeline with rp[1]
     CreatePipelineHelper pipe_1(*this);
-    pipe_1.InitState();
     pipe_1.gp_ci_.layout = pipeline_layout.handle();
     pipe_1.gp_ci_.renderPass = rp[1].handle();
     pipe_1.CreateGraphicsPipeline();
 
     // Create a graphics pipeline with rp[2]
     CreatePipelineHelper pipe_2(*this);
-    pipe_2.InitState();
     pipe_2.gp_ci_.layout = pipeline_layout.handle();
     pipe_2.gp_ci_.renderPass = rp[2].handle();
     pipe_2.CreateGraphicsPipeline();
@@ -958,12 +948,10 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     CreatePipelineHelper pipe2_1(*this);
     CreatePipelineHelper pipe2_2(*this);
     if (rp2Supported) {
-        pipe2_1.InitState();
         pipe2_1.gp_ci_.layout = pipeline_layout.handle();
         pipe2_1.gp_ci_.renderPass = rp[1].handle();
         pipe2_1.CreateGraphicsPipeline();
 
-        pipe2_2.InitState();
         pipe2_2.gp_ci_.layout = pipeline_layout.handle();
         pipe2_2.gp_ci_.renderPass = rp[2].handle();
         pipe2_2.CreateGraphicsPipeline();
@@ -1163,7 +1151,6 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         pipe.gp_ci_.pInputAssemblyState = &iasci;
         pipe.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
         pipe.shader_stages_.emplace_back(tes.GetStageCreateInfo());
-        pipe.InitState();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047");
         pipe.CreateGraphicsPipeline();
@@ -1191,7 +1178,6 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         pipe.cb_ci_.attachmentCount = 1;
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        pipe.InitState();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048");
         pipe.CreateGraphicsPipeline();
@@ -1225,9 +1211,7 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.CreateGraphicsPipeline();
 
     vkt::Image img(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

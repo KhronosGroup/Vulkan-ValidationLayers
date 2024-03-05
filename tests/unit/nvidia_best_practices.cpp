@@ -63,7 +63,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
 
 TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -92,7 +92,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
 
 TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -124,7 +124,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
 
 TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     if (!m_device->phy().features().sparseBinding) {
         GTEST_SKIP() << "Test requires sparseBinding";
@@ -293,7 +293,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 
 TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
     memory_ai.allocationSize = 0x100000;
@@ -318,7 +318,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
 
 TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
     memory_ai.allocationSize = 0x100000;
@@ -350,7 +350,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
 
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
@@ -427,7 +427,7 @@ static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorTy
 
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkDescriptorSetLayoutBinding separate_bindings[] = {
         CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_SAMPLER, 0),
@@ -470,7 +470,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
 
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkDescriptorSetLayoutBinding large_bindings[] = {
         { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
@@ -548,16 +548,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
 
-    CreatePipelineHelper vsPipe(*this);
+    CreatePipelineHelper vsPipe(*this, &pipeline_rendering_info);
     vsPipe.shader_stages_ = {vs.GetStageCreateInfo()};
-    vsPipe.InitState();
-    vsPipe.gp_ci_.pNext = &pipeline_rendering_info;
     vsPipe.CreateGraphicsPipeline();
 
-    CreatePipelineHelper vgsPipe(*this);
+    CreatePipelineHelper vgsPipe(*this, &pipeline_rendering_info);
     vgsPipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo()};
-    vgsPipe.InitState();
-    vgsPipe.gp_ci_.pNext = &pipeline_rendering_info;
     vgsPipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -660,9 +656,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = vku::InitStructHelper();
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.ds_ci_ = depth_stencil_state_ci;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
@@ -1061,7 +1055,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
 
 TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
-    InitState();
+    RETURN_IF_SKIP(InitState());
 
     VkCommandPoolCreateInfo command_pool_ci = vku::InitStructHelper();
     command_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;

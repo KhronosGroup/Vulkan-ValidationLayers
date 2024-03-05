@@ -80,7 +80,6 @@ TEST_F(PositiveGpuAV, RobustBuffer) {
 
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
@@ -201,7 +200,6 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     CreateComputePipelineHelper pipe1(*this);
     pipe1.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe1.cp_ci_.layout = pipeline_layout.handle();
-    pipe1.InitState();
     pipe1.CreateComputePipeline();
 
     m_commandBuffer->begin();
@@ -311,7 +309,6 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         // We should still be able to use the layout and create a temporary uninstrumented shader module
         pipe.cp_ci_.layout = pl_layout.handle();
-        pipe.InitState();
         pipe.CreateComputePipeline();
 
         m_commandBuffer->begin();
@@ -338,7 +335,6 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.cp_ci_.layout = pipeline_layout.handle();
-        pipe.InitState();
         pipe.CreateComputePipeline();
 
         m_commandBuffer->begin();
@@ -394,7 +390,6 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     VkBufferUsageFlags buffer_usage =
@@ -711,7 +706,6 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     features.pEnabledValidationFeatures = enabled;
     VkShaderObj fs(this, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", &features);
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_.clear();
     pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
     pipe.shader_stages_.push_back(fs.GetStageCreateInfo());
@@ -794,7 +788,6 @@ TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
@@ -860,7 +853,6 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
@@ -897,7 +889,6 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     draw_buffer.memory().unmap();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();

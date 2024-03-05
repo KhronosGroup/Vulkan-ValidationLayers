@@ -977,9 +977,8 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.renderPass = render_pass.handle();
-    pipe.cb_attachments_[0] = pcbas;
+    pipe.cb_attachments_ = pcbas;
     pipe.CreateGraphicsPipeline();
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
@@ -1208,7 +1207,6 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Create a protected command buffer/pool to use

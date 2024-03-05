@@ -238,7 +238,6 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_FALSE};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452");
     pipe.CreateGraphicsPipeline();
@@ -279,7 +278,6 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription-stride-04456");
     pipe.CreateGraphicsPipeline();
@@ -318,7 +316,6 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 1, &vertex_attrib};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457");
@@ -363,7 +360,6 @@ TEST_F(NegativePortabilitySubset, RasterizationState) {
 
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.polygonMode = VK_POLYGON_MODE_POINT;
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458");
     pipe.CreateGraphicsPipeline();
@@ -396,7 +392,6 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
-    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
     pipe.CreateGraphicsPipeline();
@@ -422,28 +417,27 @@ TEST_F(NegativePortabilitySubset, ColorBlendAttachmentState) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
-    pipe.InitState();
+    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    pipe.cb_attachments_[0].dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    pipe.cb_attachments_[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
     pipe.CreateGraphicsPipeline();
@@ -521,7 +515,6 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.tess_ci_ = tsci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo()};
-    pipe.InitState();
 
     // Attempt to use isolines in the TES shader when not available
     {
@@ -588,8 +581,6 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         raster_pipe.ia_ci_ = iasci;
         raster_pipe.tess_ci_ = tsci;
         raster_pipe.shader_stages_ = {vs_obj.GetStageCreateInfo(), fs_obj.GetStageCreateInfo()};
-        raster_pipe.InitState();
-
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325");
         raster_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();

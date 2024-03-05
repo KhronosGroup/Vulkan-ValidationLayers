@@ -114,7 +114,6 @@ TEST_F(NegativeCommand, IndexBufferNotBound) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -134,7 +133,6 @@ TEST_F(NegativeCommand, IndexBufferDestroyed) {
     vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -155,7 +153,6 @@ TEST_F(NegativeCommand, IndexBufferSizeOffset) {
     vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -193,7 +190,6 @@ TEST_F(NegativeCommand, MissingClearAttachment) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -874,7 +870,6 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -894,7 +889,6 @@ TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -4575,7 +4569,6 @@ TEST_F(NegativeCommand, MultiDraw) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Try existing VUID checks
@@ -4653,7 +4646,6 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Try existing VUID checks
@@ -4693,7 +4685,6 @@ TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Try existing VUID checks
@@ -4727,7 +4718,6 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Try existing VUID checks
@@ -4765,7 +4755,6 @@ TEST_F(NegativeCommand, MultiDrawFeatures) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -4789,7 +4778,6 @@ TEST_F(NegativeCommand, IndirectDraw) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -4846,7 +4834,6 @@ TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand) * 3, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -4880,7 +4867,6 @@ TEST_F(NegativeCommand, StrideMultiDrawIndirect) {
                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     CreatePipelineHelper helper(*this);
-    helper.InitState();
     helper.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -4938,7 +4924,6 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -5013,7 +4998,6 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -5110,7 +5094,6 @@ TEST_F(NegativeCommand, DrawIndirectCountFeature) {
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     // Make calls to valid commands but without the drawIndirectCount feature set
@@ -5343,13 +5326,11 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
 
     vpsi.viewportCount = vp_count;
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.vp_state_ci_ = vpci;
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_dynamic(*this);
-    pipe_dynamic.InitState();
     pipe_dynamic.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe_dynamic.vp_state_ci_ = vpci;
     pipe_dynamic.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
@@ -5431,8 +5412,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     CreatePipelineHelper g_pipe(*this);
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    g_pipe.InitState();
-    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
+    g_pipe.CreateGraphicsPipeline();
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler_reduction.handle());
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -5516,8 +5496,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     CreatePipelineHelper g_pipe(*this);
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    g_pipe.InitState();
-    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
+    g_pipe.CreateGraphicsPipeline();
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler.handle());
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -5708,8 +5687,7 @@ TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
-    pipe.cb_attachments_[0].blendEnable = VK_TRUE;
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -6394,21 +6372,18 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_disabled_state_info.back.writeMask = 0;
 
     CreatePipelineHelper depth_pipe(*this);
-    depth_pipe.InitState();
     depth_pipe.LateBindPipelineInfo();
     depth_pipe.gp_ci_.renderPass = rp.Handle();
     depth_pipe.gp_ci_.pDepthStencilState = &depth_state_info;
     depth_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_pipe(*this);
-    stencil_pipe.InitState();
     stencil_pipe.LateBindPipelineInfo();
     stencil_pipe.gp_ci_.renderPass = rp.Handle();
     stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_disabled_pipe(*this);
-    stencil_disabled_pipe.InitState();
     stencil_disabled_pipe.LateBindPipelineInfo();
     stencil_disabled_pipe.gp_ci_.renderPass = rp.Handle();
     stencil_disabled_pipe.gp_ci_.pDepthStencilState = &stencil_disabled_state_info;
@@ -6416,7 +6391,6 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
 
     CreatePipelineHelper stencil_dynamic_pipe(*this);
     stencil_dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
-    stencil_dynamic_pipe.InitState();
     stencil_dynamic_pipe.LateBindPipelineInfo();
     stencil_dynamic_pipe.gp_ci_.renderPass = rp.Handle();
     stencil_dynamic_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;

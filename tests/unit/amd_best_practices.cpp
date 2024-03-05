@@ -41,7 +41,6 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
                                                  "BestPractices-vkCreatePipelines-multiple-pipelines-caches");
         }
         CreatePipelineHelper pipe(*this);
-        pipe.InitState();
         pipe.CreateGraphicsPipeline();
         pipeline_Array[i] = pipe.pipeline_;
         if (i == 1) {
@@ -223,7 +222,6 @@ TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-CreatePipelines-AvoidPrimitiveRestart");
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.ia_ci_.primitiveRestartEnable = true;
     pipe.CreateGraphicsPipeline();
 
@@ -251,7 +249,6 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
     dynamic_state_info.pDynamicStates = dynamic_states_array;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.dyn_state_ci_ = dynamic_state_info;
     pipe.CreateGraphicsPipeline();
 
@@ -690,8 +687,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     vkt::Buffer vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
-    pipe.InitState();
+    pipe.ms_ci_ = pipe_ms_state_ci;
     pipe.CreateGraphicsPipeline();
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
@@ -743,16 +739,6 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
-    CreateComputePipelineHelper pipe(*this);
-
-    auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
-        pipe.InitState();
-        pipe.cp_ci_.stage = stage;
-        pipe.dsl_bindings_ = {};
-        pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
-        pipe.CreateComputePipeline(false);
-    };
-
     // workgroup size = 4
     {
         VkShaderObj compute_4_1_1(this,
@@ -762,7 +748,9 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
                                   "void main() {}\n",
                                   VK_SHADER_STAGE_COMPUTE_BIT);
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-LocalWorkgroup-Multiple64");
-        make_pipeline_with_shader(pipe, compute_4_1_1.GetStageCreateInfo());
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cp_ci_.stage = compute_4_1_1.GetStageCreateInfo();
+        pipe.CreateComputePipeline();
         m_errorMonitor->VerifyFound();
     }
 
@@ -774,7 +762,9 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
                                   "layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;\n\n"
                                   "void main() {}\n",
                                   VK_SHADER_STAGE_COMPUTE_BIT);
-        make_pipeline_with_shader(pipe, compute_8_8_1.GetStageCreateInfo());
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cp_ci_.stage = compute_8_8_1.GetStageCreateInfo();
+        pipe.CreateComputePipeline();
     }
 
     // workgroup size = 128
@@ -785,6 +775,8 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
                                    "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
                                    "void main() {}\n",
                                    VK_SHADER_STAGE_COMPUTE_BIT);
-        make_pipeline_with_shader(pipe, compute_16_8_1.GetStageCreateInfo());
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cp_ci_.stage = compute_16_8_1.GetStageCreateInfo();
+        pipe.CreateComputePipeline();
     }
 }

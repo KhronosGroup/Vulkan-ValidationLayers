@@ -100,10 +100,8 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
     }
     RETURN_IF_SKIP(InitState(nullptr, &pipeline_robustness_features));
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     VkPipelineRobustnessCreateInfoEXT pipeline_robustness_info = vku::InitStructHelper();
+    CreateComputePipelineHelper pipe(*this, &pipeline_robustness_info);
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
     pipe.CreateComputePipeline();
 }

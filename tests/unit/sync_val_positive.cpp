@@ -109,8 +109,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = render_pass;
-    pipe.InitState();
-    ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
+    pipe.CreateGraphicsPipeline();
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
@@ -371,7 +370,6 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     OneOffDescriptorSet set(m_device, {binding});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -1484,7 +1482,6 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.gp_ci_.renderPass = rp.Handle();

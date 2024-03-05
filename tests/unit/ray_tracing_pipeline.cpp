@@ -1041,7 +1041,6 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupStackSize) {
     RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622");
@@ -1087,7 +1086,6 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {
     RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     int data = 0;
@@ -1105,7 +1103,6 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeCaptureReplay) {
     RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.CreateComputePipeline();
 
     int data = 0;
