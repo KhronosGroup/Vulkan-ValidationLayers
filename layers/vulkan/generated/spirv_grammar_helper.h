@@ -343,6 +343,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpConvertSamplerToUNV:
         case spv::OpConvertUToSampledImageNV:
         case spv::OpConvertSampledImageToUNV:
+        case spv::OpRawAccessChainNV:
         case spv::OpSubgroupShuffleINTEL:
         case spv::OpSubgroupShuffleDownINTEL:
         case spv::OpSubgroupShuffleUpINTEL:
@@ -743,6 +744,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpConvertSamplerToUNV:
         case spv::OpConvertUToSampledImageNV:
         case spv::OpConvertSampledImageToUNV:
+        case spv::OpRawAccessChainNV:
         case spv::OpSubgroupShuffleINTEL:
         case spv::OpSubgroupShuffleDownINTEL:
         case spv::OpSubgroupShuffleUpINTEL:
