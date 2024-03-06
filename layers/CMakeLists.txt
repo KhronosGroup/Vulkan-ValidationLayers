@@ -67,6 +67,7 @@ target_sources(VkLayer_utils PRIVATE
     utils/ray_tracing_utils.h
     utils/vk_layer_utils.cpp
     utils/vk_layer_utils.h
+    utils/vk_safe_struct_manual.cpp
     vk_layer_config.h
     vk_layer_config.cpp
 )
@@ -207,12 +208,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_counter_bodies.h
     ${API_TYPE}/generated/thread_safety_counter_definitions.h
     ${API_TYPE}/generated/thread_safety_counter_instances.h
-    ${API_TYPE}/generated/vk_safe_struct_utils.cpp
-    ${API_TYPE}/generated/vk_safe_struct_core.cpp
-    ${API_TYPE}/generated/vk_safe_struct_khr.cpp
-    ${API_TYPE}/generated/vk_safe_struct_ext.cpp
-    ${API_TYPE}/generated/vk_safe_struct_vendor.cpp
-    ${API_TYPE}/generated/vk_safe_struct.h
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h
     gpu_validation/gpu_descriptor_set.cpp

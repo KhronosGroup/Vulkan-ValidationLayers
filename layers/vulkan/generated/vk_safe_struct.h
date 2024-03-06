@@ -4796,105 +4796,6 @@ struct safe_VkDisplayPresentInfoKHR {
     VkDisplayPresentInfoKHR* ptr() { return reinterpret_cast<VkDisplayPresentInfoKHR*>(this); }
     VkDisplayPresentInfoKHR const* ptr() const { return reinterpret_cast<VkDisplayPresentInfoKHR const*>(this); }
 };
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-struct safe_VkXlibSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext{};
-    VkXlibSurfaceCreateFlagsKHR flags;
-    Display* dpy{};
-    Window window;
-
-    safe_VkXlibSurfaceCreateInfoKHR(const VkXlibSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
-                                    bool copy_pnext = true);
-    safe_VkXlibSurfaceCreateInfoKHR(const safe_VkXlibSurfaceCreateInfoKHR& copy_src);
-    safe_VkXlibSurfaceCreateInfoKHR& operator=(const safe_VkXlibSurfaceCreateInfoKHR& copy_src);
-    safe_VkXlibSurfaceCreateInfoKHR();
-    ~safe_VkXlibSurfaceCreateInfoKHR();
-    void initialize(const VkXlibSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkXlibSurfaceCreateInfoKHR* copy_src, PNextCopyState* copy_state = {});
-    VkXlibSurfaceCreateInfoKHR* ptr() { return reinterpret_cast<VkXlibSurfaceCreateInfoKHR*>(this); }
-    VkXlibSurfaceCreateInfoKHR const* ptr() const { return reinterpret_cast<VkXlibSurfaceCreateInfoKHR const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
-struct safe_VkXcbSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext{};
-    VkXcbSurfaceCreateFlagsKHR flags;
-    xcb_connection_t* connection{};
-    xcb_window_t window;
-
-    safe_VkXcbSurfaceCreateInfoKHR(const VkXcbSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
-                                   bool copy_pnext = true);
-    safe_VkXcbSurfaceCreateInfoKHR(const safe_VkXcbSurfaceCreateInfoKHR& copy_src);
-    safe_VkXcbSurfaceCreateInfoKHR& operator=(const safe_VkXcbSurfaceCreateInfoKHR& copy_src);
-    safe_VkXcbSurfaceCreateInfoKHR();
-    ~safe_VkXcbSurfaceCreateInfoKHR();
-    void initialize(const VkXcbSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkXcbSurfaceCreateInfoKHR* copy_src, PNextCopyState* copy_state = {});
-    VkXcbSurfaceCreateInfoKHR* ptr() { return reinterpret_cast<VkXcbSurfaceCreateInfoKHR*>(this); }
-    VkXcbSurfaceCreateInfoKHR const* ptr() const { return reinterpret_cast<VkXcbSurfaceCreateInfoKHR const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-struct safe_VkWaylandSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext{};
-    VkWaylandSurfaceCreateFlagsKHR flags;
-    struct wl_display* display{};
-    struct wl_surface* surface{};
-
-    safe_VkWaylandSurfaceCreateInfoKHR(const VkWaylandSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
-                                       bool copy_pnext = true);
-    safe_VkWaylandSurfaceCreateInfoKHR(const safe_VkWaylandSurfaceCreateInfoKHR& copy_src);
-    safe_VkWaylandSurfaceCreateInfoKHR& operator=(const safe_VkWaylandSurfaceCreateInfoKHR& copy_src);
-    safe_VkWaylandSurfaceCreateInfoKHR();
-    ~safe_VkWaylandSurfaceCreateInfoKHR();
-    void initialize(const VkWaylandSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkWaylandSurfaceCreateInfoKHR* copy_src, PNextCopyState* copy_state = {});
-    VkWaylandSurfaceCreateInfoKHR* ptr() { return reinterpret_cast<VkWaylandSurfaceCreateInfoKHR*>(this); }
-    VkWaylandSurfaceCreateInfoKHR const* ptr() const { return reinterpret_cast<VkWaylandSurfaceCreateInfoKHR const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-struct safe_VkAndroidSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext{};
-    VkAndroidSurfaceCreateFlagsKHR flags;
-    struct ANativeWindow* window{};
-
-    safe_VkAndroidSurfaceCreateInfoKHR(const VkAndroidSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
-                                       bool copy_pnext = true);
-    safe_VkAndroidSurfaceCreateInfoKHR(const safe_VkAndroidSurfaceCreateInfoKHR& copy_src);
-    safe_VkAndroidSurfaceCreateInfoKHR& operator=(const safe_VkAndroidSurfaceCreateInfoKHR& copy_src);
-    safe_VkAndroidSurfaceCreateInfoKHR();
-    ~safe_VkAndroidSurfaceCreateInfoKHR();
-    void initialize(const VkAndroidSurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkAndroidSurfaceCreateInfoKHR* copy_src, PNextCopyState* copy_state = {});
-    VkAndroidSurfaceCreateInfoKHR* ptr() { return reinterpret_cast<VkAndroidSurfaceCreateInfoKHR*>(this); }
-    VkAndroidSurfaceCreateInfoKHR const* ptr() const { return reinterpret_cast<VkAndroidSurfaceCreateInfoKHR const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-struct safe_VkWin32SurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext{};
-    VkWin32SurfaceCreateFlagsKHR flags;
-    HINSTANCE hinstance;
-    HWND hwnd;
-
-    safe_VkWin32SurfaceCreateInfoKHR(const VkWin32SurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {},
-                                     bool copy_pnext = true);
-    safe_VkWin32SurfaceCreateInfoKHR(const safe_VkWin32SurfaceCreateInfoKHR& copy_src);
-    safe_VkWin32SurfaceCreateInfoKHR& operator=(const safe_VkWin32SurfaceCreateInfoKHR& copy_src);
-    safe_VkWin32SurfaceCreateInfoKHR();
-    ~safe_VkWin32SurfaceCreateInfoKHR();
-    void initialize(const VkWin32SurfaceCreateInfoKHR* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkWin32SurfaceCreateInfoKHR* copy_src, PNextCopyState* copy_state = {});
-    VkWin32SurfaceCreateInfoKHR* ptr() { return reinterpret_cast<VkWin32SurfaceCreateInfoKHR*>(this); }
-    VkWin32SurfaceCreateInfoKHR const* ptr() const { return reinterpret_cast<VkWin32SurfaceCreateInfoKHR const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 struct safe_VkQueueFamilyQueryResultStatusPropertiesKHR {
     VkStructureType sType;
     void* pNext{};
@@ -9641,44 +9542,6 @@ struct safe_VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG {
         return reinterpret_cast<VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG const*>(this);
     }
 };
-#ifdef VK_USE_PLATFORM_IOS_MVK
-struct safe_VkIOSSurfaceCreateInfoMVK {
-    VkStructureType sType;
-    const void* pNext{};
-    VkIOSSurfaceCreateFlagsMVK flags;
-    const void* pView{};
-
-    safe_VkIOSSurfaceCreateInfoMVK(const VkIOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {},
-                                   bool copy_pnext = true);
-    safe_VkIOSSurfaceCreateInfoMVK(const safe_VkIOSSurfaceCreateInfoMVK& copy_src);
-    safe_VkIOSSurfaceCreateInfoMVK& operator=(const safe_VkIOSSurfaceCreateInfoMVK& copy_src);
-    safe_VkIOSSurfaceCreateInfoMVK();
-    ~safe_VkIOSSurfaceCreateInfoMVK();
-    void initialize(const VkIOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkIOSSurfaceCreateInfoMVK* copy_src, PNextCopyState* copy_state = {});
-    VkIOSSurfaceCreateInfoMVK* ptr() { return reinterpret_cast<VkIOSSurfaceCreateInfoMVK*>(this); }
-    VkIOSSurfaceCreateInfoMVK const* ptr() const { return reinterpret_cast<VkIOSSurfaceCreateInfoMVK const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_MACOS_MVK
-struct safe_VkMacOSSurfaceCreateInfoMVK {
-    VkStructureType sType;
-    const void* pNext{};
-    VkMacOSSurfaceCreateFlagsMVK flags;
-    const void* pView{};
-
-    safe_VkMacOSSurfaceCreateInfoMVK(const VkMacOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {},
-                                     bool copy_pnext = true);
-    safe_VkMacOSSurfaceCreateInfoMVK(const safe_VkMacOSSurfaceCreateInfoMVK& copy_src);
-    safe_VkMacOSSurfaceCreateInfoMVK& operator=(const safe_VkMacOSSurfaceCreateInfoMVK& copy_src);
-    safe_VkMacOSSurfaceCreateInfoMVK();
-    ~safe_VkMacOSSurfaceCreateInfoMVK();
-    void initialize(const VkMacOSSurfaceCreateInfoMVK* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkMacOSSurfaceCreateInfoMVK* copy_src, PNextCopyState* copy_state = {});
-    VkMacOSSurfaceCreateInfoMVK* ptr() { return reinterpret_cast<VkMacOSSurfaceCreateInfoMVK*>(this); }
-    VkMacOSSurfaceCreateInfoMVK const* ptr() const { return reinterpret_cast<VkMacOSSurfaceCreateInfoMVK const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_MACOS_MVK
 struct safe_VkDebugUtilsLabelEXT {
     VkStructureType sType;
     const void* pNext{};
@@ -11469,25 +11332,6 @@ struct safe_VkImagePipeSurfaceCreateInfoFUCHSIA {
     }
 };
 #endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_METAL_EXT
-struct safe_VkMetalSurfaceCreateInfoEXT {
-    VkStructureType sType;
-    const void* pNext{};
-    VkMetalSurfaceCreateFlagsEXT flags;
-    const CAMetalLayer* pLayer{};
-
-    safe_VkMetalSurfaceCreateInfoEXT(const VkMetalSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {},
-                                     bool copy_pnext = true);
-    safe_VkMetalSurfaceCreateInfoEXT(const safe_VkMetalSurfaceCreateInfoEXT& copy_src);
-    safe_VkMetalSurfaceCreateInfoEXT& operator=(const safe_VkMetalSurfaceCreateInfoEXT& copy_src);
-    safe_VkMetalSurfaceCreateInfoEXT();
-    ~safe_VkMetalSurfaceCreateInfoEXT();
-    void initialize(const VkMetalSurfaceCreateInfoEXT* in_struct, PNextCopyState* copy_state = {});
-    void initialize(const safe_VkMetalSurfaceCreateInfoEXT* copy_src, PNextCopyState* copy_state = {});
-    VkMetalSurfaceCreateInfoEXT* ptr() { return reinterpret_cast<VkMetalSurfaceCreateInfoEXT*>(this); }
-    VkMetalSurfaceCreateInfoEXT const* ptr() const { return reinterpret_cast<VkMetalSurfaceCreateInfoEXT const*>(this); }
-};
-#endif  // VK_USE_PLATFORM_METAL_EXT
 struct safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT {
     VkStructureType sType;
     void* pNext{};

@@ -24,22 +24,48 @@ from generators.vulkan_object import Struct, Member
 from generators.base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
-# Determine if a structure needs a safe_struct helper function
-# That is, it has an sType or one of its members is a pointer
-def needSafeStruct(struct: Struct) -> bool:
-    if 'VkBase' in struct.name:
-        return False #  Ingore structs like VkBaseOutStructure
-    if struct.sType is not None:
-        return True
-    for member in struct.members:
-        if member.pointer:
-            return True
-    return False
-
 class SafeStructOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
+        # Will skip completly, mainly used for things that have no one consuming the safe struct
+        self.no_autogen = [
+            # These WSI struct have nothing deep to copy, except the WSI releated field which we can't make a copy
+            'VkXlibSurfaceCreateInfoKHR',
+            'VkXcbSurfaceCreateInfoKHR',
+            'VkWaylandSurfaceCreateInfoKHR',
+            'VkAndroidSurfaceCreateInfoKHR',
+            'VkWin32SurfaceCreateInfoKHR',
+            'VkIOSSurfaceCreateInfoMVK',
+            'VkMacOSSurfaceCreateInfoMVK',
+            'VkMetalSurfaceCreateInfoEXT'
+        ]
+
+        # Will skip generating the source logic (to be implemented in vk_safe_struct_manual.cpp)
+        # The header will still be generated
+        self.manual_source = [
+            # This needs to know if we're doing a host or device build, logic becomes complex and very specialized
+            'VkAccelerationStructureBuildGeometryInfoKHR',
+            'VkAccelerationStructureGeometryKHR',
+            # Have a pUsageCounts and ppUsageCounts that is not currently handled in the generated code
+            'VkMicromapBuildInfoEXT',
+            'VkAccelerationStructureTrianglesOpacityMicromapEXT',
+            'VkAccelerationStructureTrianglesDisplacementMicromapNV',
+            # The VkDescriptorType field needs to handle every type which is something best done manually
+            'VkDescriptorDataEXT',
+             # Special case because its pointers may be non-null but ignored
+            'VkGraphicsPipelineCreateInfo',
+            # Special case because it has custom construct parameters
+            'VkPipelineViewportStateCreateInfo',
+        ]
+
+        # For abstract types just want to save the pointer away
+        # since we cannot make a copy.
+        self.abstract_types = [
+            'AHardwareBuffer',
+        ]
+
+        # Will update the the function interface
         self.custom_construct_params = {
             # safe_VkGraphicsPipelineCreateInfo needs to know if subpass has color and\or depth\stencil attachments to use its pointers
             'VkGraphicsPipelineCreateInfo' :
@@ -56,8 +82,21 @@ class SafeStructOutputGenerator(BaseGenerator):
             # safe_VkDescriptorDataEXT needs to know what field of union is intialized
             'VkDescriptorDataEXT' :
                 ', const VkDescriptorType type',
-            'VkPipelineRenderingCreateInfo' : ''
         }
+
+    # Determine if a structure needs a safe_struct helper function
+    # That is, it has an sType or one of its members is a pointer
+    def needSafeStruct(self, struct: Struct) -> bool:
+        if struct.name in self.no_autogen:
+            return False
+        if 'VkBase' in struct.name:
+            return False #  Ingore structs like VkBaseOutStructure
+        if struct.sType is not None:
+            return True
+        for member in struct.members:
+            if member.pointer:
+                return True
+        return False
 
     def containsObjectHandle(self, member: Member) -> bool:
         if member.type in self.vk.handles:
@@ -137,7 +176,7 @@ class SafeStructOutputGenerator(BaseGenerator):
             \n''')
 
         guard_helper = PlatformGuardHelper()
-        for struct in [x for x in self.vk.structs.values() if needSafeStruct(x)]:
+        for struct in [x for x in self.vk.structs.values() if self.needSafeStruct(x)]:
             out.extend(guard_helper.add_guard(struct.protect))
             out.append(f'{"union" if struct.union else "struct"} safe_{struct.name} {{\n')
             # Can only initialize first member of an Union
@@ -145,7 +184,7 @@ class SafeStructOutputGenerator(BaseGenerator):
             copy_pnext = ', bool copy_pnext = true' if struct.sType is not None else ''
             for member in struct.members:
                 if member.type in self.vk.structs:
-                    if needSafeStruct(self.vk.structs[member.type]):
+                    if self.needSafeStruct(self.vk.structs[member.type]):
                         if member.pointer:
                             pointer = '*' * member.cDeclaration.count('*')
                             brackets = '' if struct.union else '{}'
@@ -348,44 +387,11 @@ void FreePnextChain(const void *pNext) {
         out.append('''
             #include "vk_safe_struct.h"
             #include <vulkan/utility/vk_struct_helper.hpp>
-            #include "utils/vk_layer_utils.h"
 
-            #include <cstddef>
-            #include <cassert>
             #include <cstring>
-            #include <vector>
-
-            #include <vulkan/vk_layer.h>
             ''')
 
-        custom_definitions = {
-            # as_geom_khr_host_alloc maps a VkAccelerationStructureGeometryKHR to its host allocated instance array, if the user supplied such an array.
-            'VkAccelerationStructureGeometryKHR': '''
-                struct ASGeomKHRExtraData {
-                    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
-                        ptr(alloc),
-                        primitiveOffset(primOffset),
-                        primitiveCount(primCount)
-                    {}
-                    ~ASGeomKHRExtraData() {
-                        if (ptr)
-                            delete[] ptr;
-                    }
-                    uint8_t *ptr;
-                    uint32_t primitiveOffset;
-                    uint32_t primitiveCount;
-                };
-
-                vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;
-            '''
-            }
-
-        custom_defeault_construct_txt = {
-                'VkDescriptorDataEXT' : '''
-                    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
-                    *pType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-                '''
-            }
+        custom_defeault_construct_txt = {}
 
         custom_construct_txt = {
                 # VkWriteDescriptorSet is special case because pointers may be non-null but ignored
@@ -435,91 +441,6 @@ void FreePnextChain(const void *pNext) {
                         memcpy((void *)pCode, (void *)in_struct->pCode, codeSize);
                     }
                 ''',
-                # VkGraphicsPipelineCreateInfo is special case because its pointers may be non-null but ignored
-                'VkGraphicsPipelineCreateInfo' : '''
-                    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
-                    if (stageCount && in_struct->pStages) {
-                        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
-                        for (uint32_t i = 0; i < stageCount; ++i) {
-                            pStages[i].initialize(&in_struct->pStages[i]);
-                        }
-                    }
-                    if (in_struct->pVertexInputState)
-                        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);
-                    else
-                        pVertexInputState = nullptr;
-                    if (in_struct->pInputAssemblyState)
-                        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(in_struct->pInputAssemblyState);
-                    else
-                        pInputAssemblyState = nullptr;
-                    bool has_tessellation_stage = false;
-                    if (stageCount && pStages)
-                        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
-                            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
-                                has_tessellation_stage = true;
-                    if (in_struct->pTessellationState && has_tessellation_stage)
-                        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
-                    else
-                        pTessellationState = nullptr; // original pTessellationState pointer ignored
-                    bool is_dynamic_has_rasterization = false;
-                    if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
-                        for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
-                            if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
-                                is_dynamic_has_rasterization = true;
-                    }
-                    const bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
-                    if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {
-                        bool is_dynamic_viewports = false;
-                        bool is_dynamic_scissors = false;
-                        if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
-                            for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_viewports; ++i)
-                                if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_VIEWPORT)
-                                    is_dynamic_viewports = true;
-                            for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_scissors; ++i)
-                                if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_SCISSOR)
-                                    is_dynamic_scissors = true;
-                        }
-                        pViewportState = new safe_VkPipelineViewportStateCreateInfo(in_struct->pViewportState, is_dynamic_viewports, is_dynamic_scissors);
-                    } else
-                        pViewportState = nullptr; // original pViewportState pointer ignored
-                    if (in_struct->pRasterizationState)
-                        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);
-                    else
-                        pRasterizationState = nullptr;
-                    if (in_struct->pMultisampleState && (renderPass != VK_NULL_HANDLE || has_rasterization || is_graphics_library))
-                        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);
-                    else
-                        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
-                    // needs a tracked subpass state uses_depthstencil_attachment
-                    if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))
-                        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);
-                    else
-                        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
-                    // needs a tracked subpass state usesColorAttachment
-                    if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))
-                        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);
-                    else
-                        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
-                    if (in_struct->pDynamicState)
-                        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(in_struct->pDynamicState);
-                    else
-                        pDynamicState = nullptr;
-                ''',
-                 # VkPipelineViewportStateCreateInfo is special case because its pointers may be non-null but ignored
-                'VkPipelineViewportStateCreateInfo' : '''
-                    if (in_struct->pViewports && !is_dynamic_viewports) {
-                        pViewports = new VkViewport[in_struct->viewportCount];
-                        memcpy ((void *)pViewports, (void *)in_struct->pViewports, sizeof(VkViewport)*in_struct->viewportCount);
-                    }
-                    else
-                        pViewports = nullptr;
-                    if (in_struct->pScissors && !is_dynamic_scissors) {
-                        pScissors = new VkRect2D[in_struct->scissorCount];
-                        memcpy ((void *)pScissors, (void *)in_struct->pScissors, sizeof(VkRect2D)*in_struct->scissorCount);
-                    }
-                    else
-                        pScissors = nullptr;
-                ''',
                 # VkFrameBufferCreateInfo is special case because its pAttachments pointer may be non-null but ignored
                 'VkFramebufferCreateInfo' : '''
                     if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
@@ -538,111 +459,6 @@ void FreePnextChain(const void *pNext) {
                             pImmutableSamplers[i] = in_struct->pImmutableSamplers[i];
                         }
                     }
-                ''',
-                'VkAccelerationStructureBuildGeometryInfoKHR': '''
-                    if (geometryCount) {
-                        if ( in_struct->ppGeometries) {
-                            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];
-                            for (uint32_t i = 0; i < geometryCount; ++i) {
-                                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i], is_host, &build_range_infos[i]);
-                            }
-                        } else {
-                            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];
-                            for (uint32_t i = 0; i < geometryCount; ++i) {
-                                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i], is_host, &build_range_infos[i]);
-                            }
-                        }
-                    }
-                ''',
-                'VkAccelerationStructureGeometryKHR': '''
-                    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
-                        if (geometry.instances.arrayOfPointers) {
-                            size_t pp_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
-                            size_t p_array_size = build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
-                            size_t array_size = build_range_info->primitiveOffset + pp_array_size + p_array_size;
-                            uint8_t *allocation = new uint8_t[array_size];
-                            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + build_range_info->primitiveOffset);
-                            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + build_range_info->primitiveOffset + pp_array_size);
-                            for (uint32_t i = 0; i < build_range_info->primitiveCount; ++i) {
-                                const uint8_t *byte_ptr = reinterpret_cast<const uint8_t *>(in_struct->geometry.instances.data.hostAddress);
-                                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(byte_ptr + build_range_info->primitiveOffset)[i]);
-                                ppInstances[i] = &pInstances[i];
-                            }
-                            geometry.instances.data.hostAddress = allocation;
-                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
-                        } else {
-                            const auto primitive_offset = build_range_info->primitiveOffset;
-                            const auto primitive_count = build_range_info->primitiveCount;
-                            size_t array_size = primitive_offset + primitive_count * sizeof(VkAccelerationStructureInstanceKHR);
-                            uint8_t *allocation = new uint8_t[array_size];
-                            auto host_address = static_cast<const uint8_t*>(in_struct->geometry.instances.data.hostAddress);
-                            memcpy(allocation + primitive_offset, host_address + primitive_offset, primitive_count * sizeof(VkAccelerationStructureInstanceKHR));
-                            geometry.instances.data.hostAddress = allocation;
-                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
-                        }
-                    }
-                ''',
-                'VkMicromapBuildInfoEXT': '''
-                    if (in_struct->pUsageCounts) {
-                        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
-                        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
-                    }
-                    if (in_struct->ppUsageCounts) {
-                        VkMicromapUsageEXT** pointer_array  = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
-                        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
-                            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
-                        }
-                        ppUsageCounts = pointer_array;
-                    }
-                ''',
-                'VkAccelerationStructureTrianglesOpacityMicromapEXT': '''
-                    if (in_struct->pUsageCounts) {
-                        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
-                        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
-                    }
-                    if (in_struct->ppUsageCounts) {
-                        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
-                        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
-                            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
-                        }
-                        ppUsageCounts = pointer_array;
-                    }
-                ''',
-                'VkAccelerationStructureTrianglesDisplacementMicromapNV': '''
-                    if (in_struct->pUsageCounts) {
-                        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
-                        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
-                    }
-                    if (in_struct->ppUsageCounts) {
-                        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
-                        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
-                            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
-                        }
-                        ppUsageCounts = pointer_array;
-                    }
-                ''',
-                'VkDescriptorDataEXT' : '''
-                    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
-
-                    switch (type) {
-                        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;
-                        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*in_struct->pSampler); break;
-                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*in_struct->pCombinedImageSampler); break;
-                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = in_struct->pSampledImage ? new VkDescriptorImageInfo(*in_struct->pSampledImage) : nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = in_struct->pStorageImage ? new VkDescriptorImageInfo(*in_struct->pStorageImage) : nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*in_struct->pInputAttachmentImage); break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = in_struct->pUniformTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformTexelBuffer) : nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = in_struct->pStorageTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageTexelBuffer) : nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = in_struct->pUniformBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformBuffer) : nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = in_struct->pStorageBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageBuffer) : nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = in_struct->accelerationStructure; break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = in_struct->accelerationStructure; break;
-                        default:                                            break;
-                    }
-
-                    *pType = type;
                 ''',
                 'VkPipelineRenderingCreateInfo': '''
                     bool custom_init = copy_state && copy_state->init;
@@ -664,81 +480,6 @@ void FreePnextChain(const void *pNext) {
             }
 
         custom_copy_txt = {
-                # VkGraphicsPipelineCreateInfo is special case because it has custom construct parameters
-                'VkGraphicsPipelineCreateInfo' : '''
-                    pNext = SafePnextCopy(copy_src.pNext);
-                    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
-                    if (stageCount && copy_src.pStages) {
-                        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
-                        for (uint32_t i = 0; i < stageCount; ++i) {
-                            pStages[i].initialize(&copy_src.pStages[i]);
-                        }
-                    }
-                    if (copy_src.pVertexInputState)
-                        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);
-                    else
-                        pVertexInputState = nullptr;
-                    if (copy_src.pInputAssemblyState)
-                        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src.pInputAssemblyState);
-                    else
-                        pInputAssemblyState = nullptr;
-                    bool has_tessellation_stage = false;
-                    if (stageCount && pStages)
-                        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
-                            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
-                                has_tessellation_stage = true;
-                    if (copy_src.pTessellationState && has_tessellation_stage)
-                        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
-                    else
-                        pTessellationState = nullptr; // original pTessellationState pointer ignored
-                    bool is_dynamic_has_rasterization = false;
-                    if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {
-                        for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
-                            if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
-                                is_dynamic_has_rasterization = true;
-                    }
-                    const bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
-                    if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {
-                        pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
-                    } else
-                        pViewportState = nullptr; // original pViewportState pointer ignored
-                    if (copy_src.pRasterizationState)
-                        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src.pRasterizationState);
-                    else
-                        pRasterizationState = nullptr;
-                    if (copy_src.pMultisampleState && (has_rasterization || is_graphics_library))
-                        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src.pMultisampleState);
-                    else
-                        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
-                    if (copy_src.pDepthStencilState && (has_rasterization || is_graphics_library))
-                        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src.pDepthStencilState);
-                    else
-                        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
-                    if (copy_src.pColorBlendState && (has_rasterization || is_graphics_library))
-                        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src.pColorBlendState);
-                    else
-                        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
-                    if (copy_src.pDynamicState)
-                        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src.pDynamicState);
-                    else
-                        pDynamicState = nullptr;
-                ''',
-                 # VkPipelineViewportStateCreateInfo is special case because it has custom construct parameters
-                'VkPipelineViewportStateCreateInfo' : '''
-                    pNext = SafePnextCopy(copy_src.pNext);
-                    if (copy_src.pViewports) {
-                        pViewports = new VkViewport[copy_src.viewportCount];
-                        memcpy ((void *)pViewports, (void *)copy_src.pViewports, sizeof(VkViewport)*copy_src.viewportCount);
-                    }
-                    else
-                        pViewports = nullptr;
-                    if (copy_src.pScissors) {
-                        pScissors = new VkRect2D[copy_src.scissorCount];
-                        memcpy ((void *)pScissors, (void *)copy_src.pScissors, sizeof(VkRect2D)*copy_src.scissorCount);
-                    }
-                    else
-                        pScissors = nullptr;
-                ''',
                 'VkFramebufferCreateInfo' : '''
                     pNext = SafePnextCopy(copy_src.pNext);
                     if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
@@ -747,72 +488,6 @@ void FreePnextChain(const void *pNext) {
                             pAttachments[i] = copy_src.pAttachments[i];
                         }
                     }
-                ''',
-                'VkAccelerationStructureBuildGeometryInfoKHR': '''
-                    if (geometryCount) {
-                        if ( copy_src.ppGeometries) {
-                            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];
-                            for (uint32_t i = 0; i < geometryCount; ++i) {
-                                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(*copy_src.ppGeometries[i]);
-                            }
-                        } else {
-                            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];
-                            for (uint32_t i = 0; i < geometryCount; ++i) {
-                                pGeometries[i] = safe_VkAccelerationStructureGeometryKHR(copy_src.pGeometries[i]);
-                            }
-                        }
-                    }
-                ''',
-                'VkAccelerationStructureGeometryKHR': '''
-                    pNext = SafePnextCopy(copy_src.pNext);
-                    auto src_iter = as_geom_khr_host_alloc.find(&copy_src);
-                    if (src_iter != as_geom_khr_host_alloc.end()) {
-                        auto &src_alloc = src_iter->second;
-                        if (geometry.instances.arrayOfPointers) {
-                            size_t pp_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR*);
-                            size_t p_array_size = src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
-                            size_t array_size = src_alloc->primitiveOffset + pp_array_size + p_array_size;
-                            uint8_t *allocation = new uint8_t[array_size];
-                            VkAccelerationStructureInstanceKHR **ppInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR **>(allocation + src_alloc->primitiveOffset);
-                            VkAccelerationStructureInstanceKHR *pInstances = reinterpret_cast<VkAccelerationStructureInstanceKHR *>(allocation + src_alloc->primitiveOffset + pp_array_size);
-                            for (uint32_t i = 0; i < src_alloc->primitiveCount; ++i) {
-                                pInstances[i] = *(reinterpret_cast<VkAccelerationStructureInstanceKHR * const*>(src_alloc->ptr + src_alloc->primitiveOffset)[i]);
-                                ppInstances[i] = &pInstances[i];
-                            }
-                            geometry.instances.data.hostAddress = allocation;
-                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
-                        } else {
-                            size_t array_size = src_alloc->primitiveOffset + src_alloc->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
-                            uint8_t *allocation = new uint8_t[array_size];
-                            memcpy(allocation, src_alloc->ptr, array_size);
-                            geometry.instances.data.hostAddress = allocation;
-                            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));
-                        }
-                    }
-                ''',
-                'VkDescriptorDataEXT' : '''
-                    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
-                    VkDescriptorType type = *(VkDescriptorType*)&copy_src.type_at_end[sizeof(VkDescriptorDataEXT)];
-
-                    switch (type) {
-                        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;
-                        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*copy_src.pSampler); break;
-                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*copy_src.pCombinedImageSampler); break;
-                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = new VkDescriptorImageInfo(*copy_src.pSampledImage); break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = new VkDescriptorImageInfo(*copy_src.pStorageImage); break;
-                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*copy_src.pInputAttachmentImage); break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformTexelBuffer); break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageTexelBuffer); break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformBuffer); break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageBuffer); break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = copy_src.accelerationStructure; break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = copy_src.accelerationStructure; break;
-                        default:                                            break;
-                    }
-
-                    *pType = type;
                 ''',
                 'VkPipelineRenderingCreateInfo': '''
                     if (copy_src.pColorAttachmentFormats) {
@@ -827,87 +502,7 @@ void FreePnextChain(const void *pNext) {
                     if (pCode)
                         delete[] reinterpret_cast<const uint8_t *>(pCode);
                 ''',
-                'VkAccelerationStructureBuildGeometryInfoKHR' : '''
-                    if (ppGeometries) {
-                        for (uint32_t i = 0; i < geometryCount; ++i) {
-                             delete ppGeometries[i];
-                        }
-                        delete[] ppGeometries;
-                    } else if(pGeometries) {
-                        delete[] pGeometries;
-                    }
-                ''',
-                'VkAccelerationStructureGeometryKHR': '''
-                    auto iter = as_geom_khr_host_alloc.pop(this);
-                    if (iter != as_geom_khr_host_alloc.end()) {
-                        delete iter->second;
-                    }
-                ''',
-                'VkMicromapBuildInfoEXT': '''
-                    if (pUsageCounts)
-                        delete[] pUsageCounts;
-                    if (ppUsageCounts) {
-                        for (uint32_t i = 0; i < usageCountsCount; ++i) {
-                             delete ppUsageCounts[i];
-                        }
-                        delete[] ppUsageCounts;
-                    }
-                ''',
-                'VkAccelerationStructureTrianglesOpacityMicromapEXT': '''
-                    if (pUsageCounts)
-                        delete[] pUsageCounts;
-                    if (ppUsageCounts) {
-                        for (uint32_t i = 0; i < usageCountsCount; ++i) {
-                             delete ppUsageCounts[i];
-                        }
-                        delete[] ppUsageCounts;
-                    }
-                ''',
-                'VkAccelerationStructureTrianglesDisplacementMicromapNV': '''
-                    if (pUsageCounts)
-                        delete[] pUsageCounts;
-                    if (ppUsageCounts) {
-                        for (uint32_t i = 0; i < usageCountsCount; ++i) {
-                             delete ppUsageCounts[i];
-                        }
-                        delete[] ppUsageCounts;
-                    }
-                ''',
-                'VkDescriptorDataEXT' : '''
-                    VkDescriptorType& thisType = *(VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];
-
-                    switch (thisType) {
-                        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;
-                        case VK_DESCRIPTOR_TYPE_SAMPLER:                    delete pSampler;              pSampler              = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     delete pCombinedImageSampler; pCombinedImageSampler = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              delete pSampledImage;         pSampledImage         = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              delete pStorageImage;         pStorageImage         = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           delete pInputAttachmentImage; pInputAttachmentImage = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       delete pUniformTexelBuffer;   pUniformTexelBuffer   = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       delete pStorageTexelBuffer;   pStorageTexelBuffer   = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             delete pUniformBuffer;        pUniformBuffer        = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             delete pStorageBuffer;        pStorageBuffer        = nullptr; break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = 0ull; break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = 0ull; break;
-                        default:                                            break;
-                    }
-
-                    thisType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-                '''
             }
-
-        wsiStructs = [
-            'VkXlibSurfaceCreateInfoKHR',
-            'VkXcbSurfaceCreateInfoKHR',
-            'VkWaylandSurfaceCreateInfoKHR',
-            'VkAndroidSurfaceCreateInfoKHR',
-            'VkWin32SurfaceCreateInfoKHR',
-            'VkIOSSurfaceCreateInfoMVK',
-            'VkMacOSSurfaceCreateInfoMVK',
-            'VkMetalSurfaceCreateInfoEXT'
-        ]
 
         member_init_transforms = {
             'queueFamilyIndexCount': lambda m: f'{m.name}(0)'
@@ -927,14 +522,6 @@ void FreePnextChain(const void *pNext) {
             'pQueueFamilyIndices': qfi_construct
         }
 
-        # For abstract types just want to save the pointer away
-        # since we cannot make a copy.
-        abstractTypes = [
-            'AHardwareBuffer',
-            'ANativeWindow',
-            'CAMetalLayer'
-        ]
-
         # Find what types of safe structs need to be generated based on output file name
         splitRegex = r'.*';
         if self.filename.endswith('_khr.cpp'):
@@ -947,7 +534,8 @@ void FreePnextChain(const void *pNext) {
             splitRegex = r'.*[a-z0-9]$'
 
         guard_helper = PlatformGuardHelper()
-        for struct in [x for x in self.vk.structs.values() if needSafeStruct(x) and x.name not in wsiStructs and re.match(splitRegex, x.name)]:
+
+        for struct in [x for x in self.vk.structs.values() if self.needSafeStruct(x) and x.name not in self.manual_source and re.match(splitRegex, x.name)]:
             out.extend(guard_helper.add_guard(struct.protect))
 
             init_list = ''          # list of members in struct constructor initializer
@@ -968,7 +556,7 @@ void FreePnextChain(const void *pNext) {
                     if (copy_pnext) {
                         pNext = SafePnextCopy(in_struct->pNext, copy_state);
                     }'''
-                if member.type in self.vk.structs and needSafeStruct(self.vk.structs[member.type]):
+                if member.type in self.vk.structs and self.needSafeStruct(self.vk.structs[member.type]):
                     m_type = f'safe_{member.type}'
                 if member.pointer and 'safe_' not in m_type and 'PFN_' not in member.type and not self.typeContainsObjectHandle(member.type, False):
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
@@ -1019,7 +607,7 @@ void FreePnextChain(const void *pNext) {
                     else:
                         default_init_list += f'\n{member.name}(nullptr),'
                         init_list += f'\n{member.name}(nullptr),'
-                        if m_type in abstractTypes:
+                        if m_type in self.abstract_types:
                             construct_txt += f'{member.name} = in_struct->{member.name};\n'
                         else:
                             init_func_txt += f'{member.name} = nullptr;\n'
@@ -1064,7 +652,7 @@ void FreePnextChain(const void *pNext) {
                         init_list += f'\n{member.name}(nullptr),'
                         init_func_txt += f'{member.name} = nullptr;\n'
                         array_element = f'in_struct->{member.name}[i]'
-                        if member.type in self.vk.structs and needSafeStruct(self.vk.structs[member.type]):
+                        if member.type in self.vk.structs and self.needSafeStruct(self.vk.structs[member.type]):
                             array_element = f'{member.type}(&in_struct->safe_{member.name}[i])'
                         construct_txt += f'if ({member.length} && in_struct->{member.name}) {{\n'
                         construct_txt += f'    {member.name} = new {m_type}[{member.length}];\n'
@@ -1104,9 +692,6 @@ void FreePnextChain(const void *pNext) {
                             default_init_list += f'\n{member.name}(),'
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
-
-            if struct.name in custom_definitions:
-                out.append(custom_definitions[struct.name])
 
             if struct.name in custom_construct_txt:
                 construct_txt = custom_construct_txt[struct.name]
@@ -1201,49 +786,4 @@ void FreePnextChain(const void *pNext) {
                 ''')
         out.extend(guard_helper.add_guard(None))
 
-        if self.filename.endswith('_khr.cpp'):
-            out.append('''
-                void safe_VkRayTracingPipelineCreateInfoCommon::initialize(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
-                    safe_VkRayTracingPipelineCreateInfoNV nvStruct;
-                    nvStruct.initialize(pCreateInfo);
-
-                    sType = nvStruct.sType;
-
-                    // Take ownership of the pointer and null it out in nvStruct
-                    pNext = nvStruct.pNext;
-                    nvStruct.pNext = nullptr;
-
-                    flags = nvStruct.flags;
-                    stageCount = nvStruct.stageCount;
-
-                    pStages = nvStruct.pStages;
-                    nvStruct.pStages = nullptr;
-
-                    groupCount = nvStruct.groupCount;
-                    maxRecursionDepth = nvStruct.maxRecursionDepth;
-                    layout = nvStruct.layout;
-                    basePipelineHandle = nvStruct.basePipelineHandle;
-                    basePipelineIndex = nvStruct.basePipelineIndex;
-
-                    assert(pGroups == nullptr);
-                    if (nvStruct.groupCount && nvStruct.pGroups) {
-                        pGroups = new safe_VkRayTracingShaderGroupCreateInfoKHR[groupCount];
-                        for (uint32_t i = 0; i < groupCount; ++i) {
-                            pGroups[i].sType = nvStruct.pGroups[i].sType;
-                            pGroups[i].pNext = nvStruct.pGroups[i].pNext;
-                            pGroups[i].type = nvStruct.pGroups[i].type;
-                            pGroups[i].generalShader = nvStruct.pGroups[i].generalShader;
-                            pGroups[i].closestHitShader = nvStruct.pGroups[i].closestHitShader;
-                            pGroups[i].anyHitShader = nvStruct.pGroups[i].anyHitShader;
-                            pGroups[i].intersectionShader = nvStruct.pGroups[i].intersectionShader;
-                            pGroups[i].intersectionShader = nvStruct.pGroups[i].intersectionShader;
-                            pGroups[i].pShaderGroupCaptureReplayHandle = nullptr;
-                        }
-                    }
-                }
-
-                void safe_VkRayTracingPipelineCreateInfoCommon::initialize(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo) {
-                    safe_VkRayTracingPipelineCreateInfoKHR::initialize(pCreateInfo);
-                }
-                ''')
         self.write("".join(out))
