@@ -1714,6 +1714,8 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
 TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     TEST_DESCRIPTION("Test unsupported pipeline statistics queries");
 
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+
     RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> graphics_queue_family_index =

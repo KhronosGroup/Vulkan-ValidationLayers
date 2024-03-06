@@ -4175,6 +4175,9 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
     }
 
     for (const auto &stage : pipeline.stage_states) {
+        // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
+        if (!stage.spirv_state) continue;
+
         if (stage.spirv_state->static_data_.has_builtin_layer) {
             const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059"
                                                  : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06050";

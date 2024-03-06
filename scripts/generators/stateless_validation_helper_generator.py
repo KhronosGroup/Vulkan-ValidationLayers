@@ -295,8 +295,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             out.append(prototype)
         out.extend(guard_helper.add_guard(None))
 
-        for struct in [self.vk.structs[x] for x in self.generateStructHelper]:
-            out.append(f'bool Validate{struct.name[2:]}(const {struct.name} &info, const Location &loc) const;')
+        for struct_name in self.generateStructHelper:
+            out.append(f'bool Validate{struct_name[2:]}(const {struct_name} &info, const Location &loc) const;')
 
         self.write("".join(out))
 
@@ -504,8 +504,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     cExpression += f' && loc.function == vvl::Func::{command.name}'
                 out.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, {{{", ".join(outExpression)}}});\n')
 
-            if command.alias:
+            if command.alias and command.alias in self.vk.commands:
                 # For alias that are promoted, just point to new function, ErrorObject will allow us to distinguish the caller
+                # Note that we can only do this if the promoted version is part of the target API
                 paramList = [param.name for param in command.params]
                 paramList.append('error_obj')
                 params = ', '.join(paramList)
@@ -527,17 +528,26 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         out.append(line)
                 # Insert call to custom-written function if present
                 if command.name in self.functions_with_manual_checks:
+                    manualCheckCmd = command.name
+                # We also have to consider aliases here as the promoted version may not be part of the target API
+                elif command.alias in self.functions_with_manual_checks:
+                    manualCheckCmd = command.alias
+                else:
+                    manualCheckCmd = None
+                if manualCheckCmd:
                     # Generate parameter list for manual fcn and down-chain calls
                     params_text = ', '.join([x.name for x in command.params]) + ', error_obj'
-                    out.append(f'    if (!skip) skip |= manual_PreCallValidate{command.name[2:]}({params_text});\n')
+                    out.append(f'    if (!skip) skip |= manual_PreCallValidate{manualCheckCmd[2:]}({params_text});\n')
             out.append('return skip;\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None, extra_newline=True))
 
-        for struct in [self.vk.structs[x] for x in self.generateStructHelper]:
-            out.append(f'bool StatelessValidation::Validate{struct.name[2:]}(const {struct.name} &info, const Location &loc) const {{\n')
+        for struct_name in self.generateStructHelper:
+            out.append(f'bool StatelessValidation::Validate{struct_name[2:]}(const {struct_name} &info, const Location &loc) const {{\n')
             out.append('    bool skip = false;\n')
-            out.extend(self.expandStructCode(struct.name, struct.name, 'loc', 'info.', '', []))
+            # Only generate validation code if the structure actually exists in the target API
+            if struct_name in self.vk.structs:
+                out.extend(self.expandStructCode(struct_name, struct_name, 'loc', 'info.', '', []))
             out.append('    return skip;\n')
             out.append('}\n')
 

@@ -968,6 +968,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
@@ -1086,6 +1087,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
 
 TEST_F(NegativeFragmentShadingRate, LoadOpClear) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
