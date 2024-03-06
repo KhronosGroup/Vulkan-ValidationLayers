@@ -47,9 +47,10 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     // parent types without locking every weak_ptr.
     using NodeMap = unordered_map<VulkanTypedHandle, std::weak_ptr<StateObject>>;
     using NodeList = small_vector<std::shared_ptr<StateObject>, 4, uint32_t>;
+    using IdType = uint32_t;
 
     template <typename Handle>
-    StateObject(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false) {}
+    StateObject(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false), id_(0) {}
 
     // because shared_from_this() does not work from the constructor, this 2nd phase
     // constructor is where a state object should call AddParent() on its child nodes.
@@ -65,6 +66,12 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     virtual void Destroy();
 
     bool Destroyed() const { return destroyed_; }
+
+    // Some drivers may reuse vulkan handles, which can confuse some parts of validation that cache state.
+    // Add a unique id to help detect this condition. SetId() should only be called by the state tracker during
+    // object creation.
+    void SetId(IdType id) { id_ = id; }
+    IdType GetId() const { return id_; }
 
     // returns true if this vulkan object or any it uses have been destroyed
     virtual bool Invalid() const { return Destroyed(); }
@@ -107,7 +114,7 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     // Set to true when the API-level object is destroyed, but this object may
     // hang around until its shared_ptr refcount goes to zero.
     std::atomic<bool> destroyed_;
-
+    IdType id_;
   private:
     ReadLockGuard ReadLockTree() const { return ReadLockGuard(tree_lock_); }
     WriteLockGuard WriteLockTree() { return WriteLockGuard(tree_lock_); }

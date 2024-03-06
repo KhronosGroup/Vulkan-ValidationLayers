@@ -277,6 +277,7 @@ class ValidationStateTracker : public ValidationObject {
     void Add(std::shared_ptr<State>&& state_object) {
         auto& map = GetStateMap<State>();
         auto handle = state_object->Handle().template Cast<HandleType>();
+        state_object->SetId(object_id_++);
         // Finish setting up the object node tree, which cannot be done from the state object contructors
         // due to use of shared_from_this()
         state_object->LinkChildNodes();
@@ -1915,6 +1916,8 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, vvl::Surface, surface_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, vvl::DisplayMode, display_mode_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
+
+    std::atomic<vvl::StateObject::IdType> object_id_{1}; // 0 is an invalid id
 
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.
     // At 256GB allocated/sec  ( > 8GB at 30Hz), will overflow in just over 2 years
