@@ -255,6 +255,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         'spirv_validation_helper.cpp' : {
             'generator' : SpirvValidationHelperOutputGenerator,
             'genCombined': False,
+            'options' : [grammar],
         },
         'spirv_grammar_helper.h' : {
             'generator' : SpirvGrammarHelperOutputGenerator,

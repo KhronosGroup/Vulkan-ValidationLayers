@@ -16,33 +16,36 @@
 
 import sys
 import os
+import json
 from generators.vulkan_object import SpirvEnables
 from generators.base_generator import BaseGenerator
 
 #
 # Generate SPIR-V validation for SPIR-V extensions and capabilities
 class SpirvValidationHelperOutputGenerator(BaseGenerator):
-    def __init__(self):
+    def __init__(self, grammar):
         BaseGenerator.__init__(self)
 
         # Sometimes the Vulkan-Headers XML will mention new SPIR-V capability or extensions
-        # That require an update of the SPIRV-Headers which might not be ready to pull in.
-        # These 2 arrays SHOULD be empty when possible and when the SPIR-V Headers are updated these
-        # should be attempted to be cleared
-        self.capabilityExcludeList = [
-            'ClusterCullingShadingHUAWEI',
-            'TextureBlockMatch2QCOM',
-            'MaximallyReconvergesKHR',
-            'RawAccessChainsNV'
-        ]
-
-        # There are some enums that share the same value in the SPIR-V header.
-        # This array remove the duplicate to not print out, usually due to being the older value given
-        self.capabilityAliasList = [
-          'ShaderViewportIndexLayerNV',
-          'ShadingRateNV',
-          'FragmentBarycentricNV',
-        ]
+        # that require an update of the SPIRV-Headers which might not be ready to pull in.
+        # Get the list of safe enum values to use from the SPIR-V grammar
+        self.capabilityList = []
+        self.capabilityAliasList = []
+        with open(grammar) as grammar_file:
+            grammar_dict = json.load(grammar_file)
+        for kind in grammar_dict['operand_kinds']:
+            if kind['kind'] == 'Capability':
+                enum_values = set()
+                for enum in kind['enumerants']:
+                    # Skip capabilities specific to OpenCL
+                    if enum.get('capabilities') == ['Kernel']:
+                        continue
+                    # Detect aliases
+                    if enum['value'] in enum_values:
+                        self.capabilityAliasList.append(enum['enumerant'])
+                    self.capabilityList.append(enum['enumerant'])
+                    enum_values.add(enum['value'])
+                break
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
         # but the XML can still list them. This list all promoted structs to ignore since they are aliased.
@@ -187,7 +190,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilities = {\n')
         for spirv in [x for x in self.vk.spirv if x.capability]:
             for enable in [x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]:
-                if spirv.name in self.capabilityExcludeList:
+                if spirv.name not in self.capabilityList:
                     out.append('    // Not found in current SPIR-V Headers\n    //')
                 out.append(f'    {{spv::Capability{spirv.name}, {self.createMapValue(spirv.name, enable, False)}}},\n')
         out.append('};\n')
@@ -209,10 +212,10 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         # Creates the Enum string helpers for better error messages. Same idea of vk_enum_string_helper.h but for SPIR-V
         out.append('static inline const char* string_SpvCapability(uint32_t input_value) {\n')
         out.append('    switch ((spv::Capability)input_value) {\n')
-        for spirv in [x for x in self.vk.spirv if x.capability]:
-            if (spirv.name not in self.capabilityAliasList) and (spirv.name not in self.capabilityExcludeList):
-                out.append(f'         case spv::Capability{spirv.name}:\n')
-                out.append(f'            return "{spirv.name}";\n')
+        for name in self.capabilityList:
+            if name not in self.capabilityAliasList:
+                out.append(f'         case spv::Capability{name}:\n')
+                out.append(f'            return "{name}";\n')
         out.append('        default:\n')
         out.append('            return \"Unhandled OpCapability\";\n')
         out.append('    };\n')
@@ -241,7 +244,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     static const vvl::unordered_map<uint32_t, std::string_view> table {
 ''')
-        for spirv in [x for x in self.vk.spirv if x.capability and x.name not in self.capabilityExcludeList]:
+        for spirv in [x for x in self.vk.spirv if x.capability and x.name in self.capabilityList]:
             requirment = ''
             for index, enable in enumerate([x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]):
                 requirment += ' OR ' if (index != 0) else ''
