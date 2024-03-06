@@ -39,8 +39,8 @@ using DescriptorBindingInfo = std::pair<uint32_t, std::vector<DescriptorRequirem
 
 class DescriptorValidator {
  public:
-   DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb, vvl::DescriptorSet& set, VkFramebuffer fb,
-                       const Location& l);
+   DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb, vvl::DescriptorSet& set, uint32_t set_index,
+                       VkFramebuffer fb, const Location& l);
 
    template <typename T>
    std::string FormatHandle(T&& h) const {
@@ -79,6 +79,7 @@ class DescriptorValidator {
     ValidationStateTracker& dev_state;
     vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
+    const uint32_t set_index;
     const VkFramebuffer framebuffer;
     const Location& loc;
     const DrawDispatchVuid& vuids;

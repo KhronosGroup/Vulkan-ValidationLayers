@@ -188,14 +188,15 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         for (auto &di_info : di_input_buffer_list) {
             Location draw_loc(vvl::Func::vkCmdDraw);
             // For each descriptor set ...
-            for (auto &set : di_info.descriptor_set_buffers) {
+            for (uint32_t i = 0;  i < di_info.descriptor_set_buffers.size(); i++) {
+                auto &set = di_info.descriptor_set_buffers[i];
                 if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                     continue;
                 }
                 validated_desc_sets.emplace(set.state->VkHandle());
                 assert(set.output_state);
 
-                vvl::DescriptorValidator context(state_, *this, *set.state, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
+                vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
                 auto used_descs = set.output_state->UsedDescriptors(*set.state);
                 // For each used binding ...
                 for (const auto &u : used_descs) {

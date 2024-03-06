@@ -1635,7 +1635,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                              set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                         if (need_validate) {
-                            skip |= ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
+                            skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
                                                       loc, vuid);
                         }
                     }
@@ -1707,7 +1707,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                              set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                         if (need_validate) {
-                            skip |= ValidateDrawState(*descriptor_set, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
+                            skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets, cb_state,
                                                       loc, vuid);
                         }
                     }

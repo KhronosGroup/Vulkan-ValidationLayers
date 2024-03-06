@@ -28,8 +28,8 @@
 #include "drawdispatch/drawdispatch_vuids.h"
 
 vvl::DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, vvl::CommandBuffer &cb, vvl::DescriptorSet &set,
-                                              VkFramebuffer fb, const Location &l)
-    : dev_state(dev), cb_state(cb), descriptor_set(set), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
+                                              uint32_t set_index_, VkFramebuffer fb, const Location &l)
+    : dev_state(dev), cb_state(cb), descriptor_set(set), set_index(set_index_), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
 
 template <typename T>
 bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding) const {
@@ -524,15 +524,6 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 
             bool descriptor_read_from = false;
             bool descriptor_written_to = false;
-            uint32_t set_index = std::numeric_limits<uint32_t>::max();
-            for (uint32_t i = 0; i < cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set.size(); ++i) {
-                const auto &set = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set[i];
-                if (set.bound_descriptor_set.get() == &(descriptor_set)) {
-                    set_index = i;
-                    break;
-                }
-            }
-            assert(set_index != std::numeric_limits<uint32_t>::max());
             const auto pipeline = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             for (const auto &stage : pipeline->stage_states) {
                 if (!stage.entrypoint) {
