@@ -721,7 +721,6 @@ TEST_F(PositiveDynamicRendering, IgnoreUnusedColorAttachment) {
     pipeline_rendering_info.pColorAttachmentFormats = color_formats;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitState();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.pColorBlendState = nullptr;
     pipe.CreateGraphicsPipeline();
