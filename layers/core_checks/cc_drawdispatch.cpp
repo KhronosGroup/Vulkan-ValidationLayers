@@ -1774,6 +1774,9 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     if (!cb_state.unprotected) {
         if (pipeline) {
             for (const auto &stage : pipeline->stage_states) {
+                // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
+                if (!stage.spirv_state) continue;
+
                 if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
                     skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), loc,
                                      "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",

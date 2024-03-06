@@ -132,6 +132,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             # Need empty functions to resolve all template variations
             if len(enum.fieldExtensions) <= len(enum.extensions):
                 out.append(f'template<> vvl::Extensions ValidationObject::GetEnumExtensions({enum.name} value) const {{ return {{}}; }}\n')
+                out.extend(guard_helper.add_guard(None, extra_newline=True))
                 continue
 
             out.append(f'template<> vvl::Extensions ValidationObject::GetEnumExtensions({enum.name} value) const {{\n')

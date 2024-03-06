@@ -122,15 +122,15 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'valid_enum_values.h' : {
             'generator' : ValidEnumValuesOutputGenerator,
-            'genCombined': False,
+            'genCombined': True,
         },
         'valid_enum_values.cpp' : {
             'generator' : ValidEnumValuesOutputGenerator,
-            'genCombined': False,
+            'genCombined': True,
         },
         'valid_flag_values.cpp' : {
             'generator' : ValidFlagValuesOutputGenerator,
-            'genCombined': False,
+            'genCombined': True,
         },
         'object_tracker.h' : {
             'generator' : ObjectTrackerOutputGenerator,
@@ -245,11 +245,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'sync_validation_types.h' : {
             'generator' : SyncValidationOutputGenerator,
-            'genCombined': False,
+            'genCombined': True,
         },
         'sync_validation_types.cpp' : {
             'generator' : SyncValidationOutputGenerator,
-            'genCombined': False,
+            'genCombined': True,
             'regenerate' : True
         },
         'spirv_validation_helper.cpp' : {

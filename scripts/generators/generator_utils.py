@@ -78,7 +78,7 @@ class PlatformGuardHelper():
     def add_guard(self, guard, extra_newline = False):
         out = []
         if self.current_guard is not guard and self.current_guard is not None:
-                out.append(f'#endif  // {self.current_guard}\n')
+            out.append(f'#endif  // {self.current_guard}\n')
         if extra_newline:
             out.append('\n')
         if self.current_guard is not guard and guard is not None:

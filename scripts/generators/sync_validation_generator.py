@@ -498,7 +498,8 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3640#note_434212
         stageToAccessMap['VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR'].append('VK_ACCESS_2_SHADER_STORAGE_READ_BIT')
         # Micro map, like AS Build, is a non *_STAGE_BIT that can have SHADER_READ
-        stageToAccessMap['VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT'].append('VK_ACCESS_2_SHADER_STORAGE_READ_BIT')
+        if 'VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT' in stageToAccessMap:
+            stageToAccessMap['VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT'].append('VK_ACCESS_2_SHADER_STORAGE_READ_BIT')
 
         for stage in [x for x in self.stages if x in stageToAccessMap]:
             mini_stage = stage.lstrip()
