@@ -766,7 +766,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
 //  This includes validating that all descriptors in the given bindings are updated,
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
-bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const BindingVariableMap &bindings,
+bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t set_index, const BindingVariableMap &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const vvl::CommandBuffer &cb_state,
                                    const Location &loc, const vvl::DrawDispatchVuid &vuids) const {
     bool result = false;
@@ -775,7 +775,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const Bi
     // descriptors, via the non-const version of ValidateBinding(), this code uses the const path only even it gives up
     // non-const versions of its state objects here.
     const vvl::DescriptorValidator desc_val(const_cast<CoreChecks &>(*this), const_cast<vvl::CommandBuffer &>(cb_state),
-                                            const_cast<DescriptorSet &>(descriptor_set), framebuffer, loc);
+                                            const_cast<DescriptorSet &>(descriptor_set), set_index, framebuffer, loc);
 
     for (const auto &binding_pair : bindings) {
         const auto *binding = descriptor_set.GetBinding(binding_pair.first);
