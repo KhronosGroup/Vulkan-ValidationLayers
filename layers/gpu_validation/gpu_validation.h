@@ -371,8 +371,8 @@ class Validator : public gpu_tracker::Validator {
     void TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state);
 
     bool UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer& cb_state, const Location& image_loc,
-                                           const ImageBarrier& img_barrier, const CommandBufferImageLayoutMap& current_map,
-                                           CommandBufferImageLayoutMap& layout_updates) const;
+                                           const ImageBarrier& img_barrier, const vvl::CommandBuffer::ImageLayoutMap& current_map,
+                                           vvl::CommandBuffer::ImageLayoutMap& layout_updates) const;
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,

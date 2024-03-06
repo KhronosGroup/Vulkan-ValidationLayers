@@ -1602,12 +1602,12 @@ std::vector<uint32_t> GetUsedAttachments(const vvl::CommandBuffer &cb_state) {
 // Verify image barriers are compatible with the images they reference.
 bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
                                           const ImageBarrier &img_barrier,
-                                          CommandBufferImageLayoutMap &layout_updates_state) const {
+                                          vvl::CommandBuffer::ImageLayoutMap &layout_updates_state) const {
     bool skip = false;
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
-    const CommandBufferImageLayoutMap &current_map = cb_state.GetImageSubresourceLayoutMap();
+    const auto &current_map = cb_state.GetImageSubresourceLayoutMap();
 
     {
         auto image_state = Get<vvl::Image>(img_barrier.image);
@@ -2426,7 +2426,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
 
     // Tracks duplicate layout transition for image barriers.
     // Keeps state between ValidateBarriersToImages calls.
-    CommandBufferImageLayoutMap layout_updates_state;
+    vvl::CommandBuffer::ImageLayoutMap layout_updates_state;
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
@@ -2455,7 +2455,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
 
     // Tracks duplicate layout transition for image barriers.
     // Keeps state between ValidateBarriersToImages calls.
-    CommandBufferImageLayoutMap layout_updates_state;
+    vvl::CommandBuffer::ImageLayoutMap layout_updates_state;
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
