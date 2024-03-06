@@ -1250,7 +1250,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 
-            const auto &sub_layout_map = sub_layout_map_entry.second->GetLayoutMap();
+            const auto &sub_layout_map = sub_layout_map_entry.second.map->GetLayoutMap();
             const auto &cb_layout_map = cb_subres_map->GetLayoutMap();
             for (sparse_container::parallel_iterator<const ImageSubresourceLayoutMap::LayoutMap> iter(sub_layout_map, cb_layout_map,
                                                                                                       0);

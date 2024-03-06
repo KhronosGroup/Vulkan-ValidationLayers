@@ -124,17 +124,19 @@ enum class CbState {
     InvalidIncomplete,  // fouled before recording was completed
 };
 
-typedef vvl::unordered_map<VkImage, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
-
-typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
-    CommandBufferAliasedLayoutMap;
 
 namespace vvl {
 
 class CommandBuffer : public RefcountedStateObject {
     using Func = vvl::Func;
-
   public:
+    struct LayoutState {
+        StateObject::IdType id;
+        std::shared_ptr<ImageSubresourceLayoutMap> map;
+    };
+    using ImageLayoutMap = vvl::unordered_map<VkImage, LayoutState>;
+    using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>;
+
     VkCommandBufferAllocateInfo createInfo = {};
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
@@ -405,8 +407,8 @@ class CommandBuffer : public RefcountedStateObject {
     vvl::unordered_set<QueryObject> startedQueries;
     vvl::unordered_set<QueryObject> updatedQueries;
     vvl::unordered_set<QueryObject> renderPassQueries;
-    CommandBufferImageLayoutMap image_layout_map;
-    CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
+    ImageLayoutMap image_layout_map;
+    AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
     vvl::unordered_map<uint32_t, vvl::VertexBufferBinding> current_vertex_buffer_binding_info;
     vvl::IndexBufferBinding index_buffer_binding;
@@ -496,7 +498,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     std::shared_ptr<const ImageSubresourceLayoutMap> GetImageSubresourceLayoutMap(VkImage image) const;
     std::shared_ptr<ImageSubresourceLayoutMap> GetImageSubresourceLayoutMap(const vvl::Image &image_state);
-    const CommandBufferImageLayoutMap &GetImageSubresourceLayoutMap() const;
+    const ImageLayoutMap &GetImageSubresourceLayoutMap() const;
 
     const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
         return qfo_transfer_image_barriers;

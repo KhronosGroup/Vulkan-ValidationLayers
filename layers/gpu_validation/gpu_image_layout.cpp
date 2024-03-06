@@ -80,12 +80,12 @@ struct GlobalLayoutUpdater {
 void gpuav::Validator::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
         const auto image = layout_map_entry.first;
-        const auto subres_map = layout_map_entry.second;
+        const auto subres_map = layout_map_entry.second.map;
         if (!subres_map) {
             continue;
         }
         auto image_state = Get<vvl::Image>(image);
-        if (image_state) {
+        if (image_state && image_state->GetId() == layout_map_entry.second.id) {
             auto guard = image_state->layout_range_map->WriteLock();
             sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
         }
