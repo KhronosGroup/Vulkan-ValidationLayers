@@ -843,6 +843,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpConvertSampledImageToUNV";
         case spv::OpSamplerImageAddressingModeNV:
             return "OpSamplerImageAddressingModeNV";
+        case spv::OpRawAccessChainNV:
+            return "OpRawAccessChainNV";
         case spv::OpSubgroupShuffleINTEL:
             return "OpSubgroupShuffleINTEL";
         case spv::OpSubgroupShuffleDownINTEL:
@@ -2306,6 +2308,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpConvertUToSampledImageNV, {{OperandKind::Id}}},
         {spv::OpConvertSampledImageToUNV, {{OperandKind::Id}}},
         {spv::OpSamplerImageAddressingModeNV, {{OperandKind::Literal}}},
+        {spv::OpRawAccessChainNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpSubgroupShuffleINTEL, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupShuffleDownINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupShuffleUpINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
