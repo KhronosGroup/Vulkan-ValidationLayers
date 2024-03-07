@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2020-2023 The Khronos Group Inc.
+ * Copyright (c) 2020-2024 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -372,8 +372,6 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "Addresses";
         case spv::CapabilityLinkage:
             return "Linkage";
-        case spv::CapabilityKernel:
-            return "Kernel";
         case spv::CapabilityFloat16:
             return "Float16";
         case spv::CapabilityFloat64:
@@ -382,10 +380,6 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "Int64";
         case spv::CapabilityInt64Atomics:
             return "Int64Atomics";
-        case spv::CapabilityImageReadWrite:
-            return "ImageReadWrite";
-        case spv::CapabilityImageMipmap:
-            return "ImageMipmap";
         case spv::CapabilityGroups:
             return "Groups";
         case spv::CapabilityAtomicStorage:
@@ -460,10 +454,6 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "StorageImageWriteWithoutFormat";
         case spv::CapabilityMultiViewport:
             return "MultiViewport";
-        case spv::CapabilitySubgroupDispatch:
-            return "SubgroupDispatch";
-        case spv::CapabilityPipeStorage:
-            return "PipeStorage";
         case spv::CapabilityGroupNonUniform:
             return "GroupNonUniform";
         case spv::CapabilityGroupNonUniformVote:
@@ -674,88 +664,18 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "RayTracingDisplacementMicromapNV";
         case spv::CapabilityRawAccessChainsNV:
             return "RawAccessChainsNV";
-        case spv::CapabilitySubgroupShuffleINTEL:
-            return "SubgroupShuffleINTEL";
-        case spv::CapabilitySubgroupBufferBlockIOINTEL:
-            return "SubgroupBufferBlockIOINTEL";
-        case spv::CapabilitySubgroupImageBlockIOINTEL:
-            return "SubgroupImageBlockIOINTEL";
-        case spv::CapabilitySubgroupImageMediaBlockIOINTEL:
-            return "SubgroupImageMediaBlockIOINTEL";
-        case spv::CapabilityRoundToInfinityINTEL:
-            return "RoundToInfinityINTEL";
-        case spv::CapabilityFloatingPointModeINTEL:
-            return "FloatingPointModeINTEL";
         case spv::CapabilityIntegerFunctions2INTEL:
             return "IntegerFunctions2INTEL";
         case spv::CapabilityFunctionPointersINTEL:
             return "FunctionPointersINTEL";
-        case spv::CapabilityIndirectReferencesINTEL:
-            return "IndirectReferencesINTEL";
-        case spv::CapabilityAsmINTEL:
-            return "AsmINTEL";
         case spv::CapabilityAtomicFloat32MinMaxEXT:
             return "AtomicFloat32MinMaxEXT";
         case spv::CapabilityAtomicFloat64MinMaxEXT:
             return "AtomicFloat64MinMaxEXT";
         case spv::CapabilityAtomicFloat16MinMaxEXT:
             return "AtomicFloat16MinMaxEXT";
-        case spv::CapabilityVectorComputeINTEL:
-            return "VectorComputeINTEL";
-        case spv::CapabilityVectorAnyINTEL:
-            return "VectorAnyINTEL";
         case spv::CapabilityExpectAssumeKHR:
             return "ExpectAssumeKHR";
-        case spv::CapabilitySubgroupAvcMotionEstimationINTEL:
-            return "SubgroupAvcMotionEstimationINTEL";
-        case spv::CapabilitySubgroupAvcMotionEstimationIntraINTEL:
-            return "SubgroupAvcMotionEstimationIntraINTEL";
-        case spv::CapabilitySubgroupAvcMotionEstimationChromaINTEL:
-            return "SubgroupAvcMotionEstimationChromaINTEL";
-        case spv::CapabilityVariableLengthArrayINTEL:
-            return "VariableLengthArrayINTEL";
-        case spv::CapabilityFunctionFloatControlINTEL:
-            return "FunctionFloatControlINTEL";
-        case spv::CapabilityFPGAMemoryAttributesINTEL:
-            return "FPGAMemoryAttributesINTEL";
-        case spv::CapabilityArbitraryPrecisionIntegersINTEL:
-            return "ArbitraryPrecisionIntegersINTEL";
-        case spv::CapabilityArbitraryPrecisionFloatingPointINTEL:
-            return "ArbitraryPrecisionFloatingPointINTEL";
-        case spv::CapabilityUnstructuredLoopControlsINTEL:
-            return "UnstructuredLoopControlsINTEL";
-        case spv::CapabilityFPGALoopControlsINTEL:
-            return "FPGALoopControlsINTEL";
-        case spv::CapabilityKernelAttributesINTEL:
-            return "KernelAttributesINTEL";
-        case spv::CapabilityFPGAKernelAttributesINTEL:
-            return "FPGAKernelAttributesINTEL";
-        case spv::CapabilityFPGAMemoryAccessesINTEL:
-            return "FPGAMemoryAccessesINTEL";
-        case spv::CapabilityFPGAClusterAttributesINTEL:
-            return "FPGAClusterAttributesINTEL";
-        case spv::CapabilityLoopFuseINTEL:
-            return "LoopFuseINTEL";
-        case spv::CapabilityFPGADSPControlINTEL:
-            return "FPGADSPControlINTEL";
-        case spv::CapabilityMemoryAccessAliasingINTEL:
-            return "MemoryAccessAliasingINTEL";
-        case spv::CapabilityFPGAInvocationPipeliningAttributesINTEL:
-            return "FPGAInvocationPipeliningAttributesINTEL";
-        case spv::CapabilityFPGABufferLocationINTEL:
-            return "FPGABufferLocationINTEL";
-        case spv::CapabilityArbitraryPrecisionFixedPointINTEL:
-            return "ArbitraryPrecisionFixedPointINTEL";
-        case spv::CapabilityUSMStorageClassesINTEL:
-            return "USMStorageClassesINTEL";
-        case spv::CapabilityRuntimeAlignedAttributeINTEL:
-            return "RuntimeAlignedAttributeINTEL";
-        case spv::CapabilityIOPipesINTEL:
-            return "IOPipesINTEL";
-        case spv::CapabilityBlockingPipesINTEL:
-            return "BlockingPipesINTEL";
-        case spv::CapabilityFPGARegINTEL:
-            return "FPGARegINTEL";
         case spv::CapabilityDotProductInputAll:
             return "DotProductInputAll";
         case spv::CapabilityDotProductInput4x8Bit:
@@ -778,40 +698,10 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "AtomicFloat32AddEXT";
         case spv::CapabilityAtomicFloat64AddEXT:
             return "AtomicFloat64AddEXT";
-        case spv::CapabilityLongCompositesINTEL:
-            return "LongCompositesINTEL";
-        case spv::CapabilityOptNoneINTEL:
-            return "OptNoneINTEL";
         case spv::CapabilityAtomicFloat16AddEXT:
             return "AtomicFloat16AddEXT";
-        case spv::CapabilityDebugInfoModuleINTEL:
-            return "DebugInfoModuleINTEL";
-        case spv::CapabilityBFloat16ConversionINTEL:
-            return "BFloat16ConversionINTEL";
-        case spv::CapabilitySplitBarrierINTEL:
-            return "SplitBarrierINTEL";
-        case spv::CapabilityFPGAClusterAttributesV2INTEL:
-            return "FPGAClusterAttributesV2INTEL";
-        case spv::CapabilityFPGAKernelAttributesv2INTEL:
-            return "FPGAKernelAttributesv2INTEL";
-        case spv::CapabilityFPMaxErrorINTEL:
-            return "FPMaxErrorINTEL";
-        case spv::CapabilityFPGALatencyControlINTEL:
-            return "FPGALatencyControlINTEL";
-        case spv::CapabilityFPGAArgumentInterfacesINTEL:
-            return "FPGAArgumentInterfacesINTEL";
-        case spv::CapabilityGlobalVariableHostAccessINTEL:
-            return "GlobalVariableHostAccessINTEL";
-        case spv::CapabilityGlobalVariableFPGADecorationsINTEL:
-            return "GlobalVariableFPGADecorationsINTEL";
         case spv::CapabilityGroupUniformArithmeticKHR:
             return "GroupUniformArithmeticKHR";
-        case spv::CapabilityMaskedGatherScatterINTEL:
-            return "MaskedGatherScatterINTEL";
-        case spv::CapabilityCacheControlsINTEL:
-            return "CacheControlsINTEL";
-        case spv::CapabilityRegisterLimitsINTEL:
-            return "RegisterLimitsINTEL";
         default:
             return "Unhandled OpCapability";
     };

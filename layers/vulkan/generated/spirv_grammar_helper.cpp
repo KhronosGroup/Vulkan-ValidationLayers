@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2024 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -505,16 +505,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpImageSparseRead";
         case spv::OpSizeOf:
             return "OpSizeOf";
-        case spv::OpTypePipeStorage:
-            return "OpTypePipeStorage";
-        case spv::OpConstantPipeStorage:
-            return "OpConstantPipeStorage";
-        case spv::OpCreatePipeFromPipeStorage:
-            return "OpCreatePipeFromPipeStorage";
-        case spv::OpGetKernelLocalSizeForSubgroupCount:
-            return "OpGetKernelLocalSizeForSubgroupCount";
-        case spv::OpGetKernelMaxNumSubgroups:
-            return "OpGetKernelMaxNumSubgroups";
         case spv::OpModuleProcessed:
             return "OpModuleProcessed";
         case spv::OpExecutionModeId:
@@ -845,26 +835,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpSamplerImageAddressingModeNV";
         case spv::OpRawAccessChainNV:
             return "OpRawAccessChainNV";
-        case spv::OpSubgroupShuffleINTEL:
-            return "OpSubgroupShuffleINTEL";
-        case spv::OpSubgroupShuffleDownINTEL:
-            return "OpSubgroupShuffleDownINTEL";
-        case spv::OpSubgroupShuffleUpINTEL:
-            return "OpSubgroupShuffleUpINTEL";
-        case spv::OpSubgroupShuffleXorINTEL:
-            return "OpSubgroupShuffleXorINTEL";
-        case spv::OpSubgroupBlockReadINTEL:
-            return "OpSubgroupBlockReadINTEL";
-        case spv::OpSubgroupBlockWriteINTEL:
-            return "OpSubgroupBlockWriteINTEL";
-        case spv::OpSubgroupImageBlockReadINTEL:
-            return "OpSubgroupImageBlockReadINTEL";
-        case spv::OpSubgroupImageBlockWriteINTEL:
-            return "OpSubgroupImageBlockWriteINTEL";
-        case spv::OpSubgroupImageMediaBlockReadINTEL:
-            return "OpSubgroupImageMediaBlockReadINTEL";
-        case spv::OpSubgroupImageMediaBlockWriteINTEL:
-            return "OpSubgroupImageMediaBlockWriteINTEL";
         case spv::OpUCountLeadingZerosINTEL:
             return "OpUCountLeadingZerosINTEL";
         case spv::OpUCountTrailingZerosINTEL:
@@ -897,12 +867,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpConstantFunctionPointerINTEL";
         case spv::OpFunctionPointerCallINTEL:
             return "OpFunctionPointerCallINTEL";
-        case spv::OpAsmTargetINTEL:
-            return "OpAsmTargetINTEL";
-        case spv::OpAsmINTEL:
-            return "OpAsmINTEL";
-        case spv::OpAsmCallINTEL:
-            return "OpAsmCallINTEL";
         case spv::OpAtomicFMinEXT:
             return "OpAtomicFMinEXT";
         case spv::OpAtomicFMaxEXT:
@@ -915,30 +879,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpDecorateString";
         case spv::OpMemberDecorateString:
             return "OpMemberDecorateString";
-        case spv::OpVariableLengthArrayINTEL:
-            return "OpVariableLengthArrayINTEL";
-        case spv::OpSaveMemoryINTEL:
-            return "OpSaveMemoryINTEL";
-        case spv::OpRestoreMemoryINTEL:
-            return "OpRestoreMemoryINTEL";
-        case spv::OpLoopControlINTEL:
-            return "OpLoopControlINTEL";
-        case spv::OpAliasDomainDeclINTEL:
-            return "OpAliasDomainDeclINTEL";
-        case spv::OpAliasScopeDeclINTEL:
-            return "OpAliasScopeDeclINTEL";
-        case spv::OpAliasScopeListDeclINTEL:
-            return "OpAliasScopeListDeclINTEL";
-        case spv::OpPtrCastToCrossWorkgroupINTEL:
-            return "OpPtrCastToCrossWorkgroupINTEL";
-        case spv::OpCrossWorkgroupCastToPtrINTEL:
-            return "OpCrossWorkgroupCastToPtrINTEL";
-        case spv::OpReadPipeBlockingINTEL:
-            return "OpReadPipeBlockingINTEL";
-        case spv::OpWritePipeBlockingINTEL:
-            return "OpWritePipeBlockingINTEL";
-        case spv::OpFPGARegINTEL:
-            return "OpFPGARegINTEL";
         case spv::OpRayQueryGetRayTMinKHR:
             return "OpRayQueryGetRayTMinKHR";
         case spv::OpRayQueryGetRayFlagsKHR:
@@ -975,24 +915,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpRayQueryGetIntersectionWorldToObjectKHR";
         case spv::OpAtomicFAddEXT:
             return "OpAtomicFAddEXT";
-        case spv::OpTypeBufferSurfaceINTEL:
-            return "OpTypeBufferSurfaceINTEL";
-        case spv::OpTypeStructContinuedINTEL:
-            return "OpTypeStructContinuedINTEL";
-        case spv::OpConstantCompositeContinuedINTEL:
-            return "OpConstantCompositeContinuedINTEL";
-        case spv::OpSpecConstantCompositeContinuedINTEL:
-            return "OpSpecConstantCompositeContinuedINTEL";
-        case spv::OpCompositeConstructContinuedINTEL:
-            return "OpCompositeConstructContinuedINTEL";
-        case spv::OpConvertFToBF16INTEL:
-            return "OpConvertFToBF16INTEL";
-        case spv::OpConvertBF16ToFINTEL:
-            return "OpConvertBF16ToFINTEL";
-        case spv::OpControlBarrierArriveINTEL:
-            return "OpControlBarrierArriveINTEL";
-        case spv::OpControlBarrierWaitINTEL:
-            return "OpControlBarrierWaitINTEL";
         case spv::OpGroupIMulKHR:
             return "OpGroupIMulKHR";
         case spv::OpGroupFMulKHR:
@@ -1009,10 +931,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpGroupLogicalOrKHR";
         case spv::OpGroupLogicalXorKHR:
             return "OpGroupLogicalXorKHR";
-        case spv::OpMaskedGatherINTEL:
-            return "OpMaskedGatherINTEL";
-        case spv::OpMaskedScatterINTEL:
-            return "OpMaskedScatterINTEL";
 
         default:
             return "Unknown Opcode";
@@ -2139,11 +2057,6 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpNoLine, {{}}},
         {spv::OpImageSparseRead, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpSizeOf, {{OperandKind::Id}}},
-        {spv::OpTypePipeStorage, {{}}},
-        {spv::OpConstantPipeStorage, {{OperandKind::Literal, OperandKind::Literal, OperandKind::Literal}}},
-        {spv::OpCreatePipeFromPipeStorage, {{OperandKind::Id}}},
-        {spv::OpGetKernelLocalSizeForSubgroupCount, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpGetKernelMaxNumSubgroups, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpModuleProcessed, {{OperandKind::LiteralString}}},
         {spv::OpExecutionModeId, {{OperandKind::Id, OperandKind::ValueEnum}}},
         {spv::OpDecorateId, {{OperandKind::Id, OperandKind::ValueEnum}}},
@@ -2309,16 +2222,6 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpConvertSampledImageToUNV, {{OperandKind::Id}}},
         {spv::OpSamplerImageAddressingModeNV, {{OperandKind::Literal}}},
         {spv::OpRawAccessChainNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
-        {spv::OpSubgroupShuffleINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupShuffleDownINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupShuffleUpINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupShuffleXorINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupBlockReadINTEL, {{OperandKind::Id}}},
-        {spv::OpSubgroupBlockWriteINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupImageBlockReadINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupImageBlockWriteINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupImageMediaBlockReadINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpSubgroupImageMediaBlockWriteINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpUCountLeadingZerosINTEL, {{OperandKind::Id}}},
         {spv::OpUCountTrailingZerosINTEL, {{OperandKind::Id}}},
         {spv::OpAbsISubINTEL, {{OperandKind::Id, OperandKind::Id}}},
@@ -2335,27 +2238,12 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpUMul32x16INTEL, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpConstantFunctionPointerINTEL, {{OperandKind::Id}}},
         {spv::OpFunctionPointerCallINTEL, {{OperandKind::Id}}},
-        {spv::OpAsmTargetINTEL, {{OperandKind::LiteralString}}},
-        {spv::OpAsmINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::LiteralString, OperandKind::LiteralString}}},
-        {spv::OpAsmCallINTEL, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpAtomicFMinEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpAtomicFMaxEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpAssumeTrueKHR, {{OperandKind::Id}}},
         {spv::OpExpectKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpDecorateString, {{OperandKind::Id, OperandKind::ValueEnum}}},
         {spv::OpMemberDecorateString, {{OperandKind::Id, OperandKind::Literal, OperandKind::ValueEnum}}},
-        {spv::OpVariableLengthArrayINTEL, {{OperandKind::Id}}},
-        {spv::OpSaveMemoryINTEL, {{}}},
-        {spv::OpRestoreMemoryINTEL, {{OperandKind::Id}}},
-        {spv::OpLoopControlINTEL, {{OperandKind::Literal}}},
-        {spv::OpAliasDomainDeclINTEL, {{OperandKind::Id}}},
-        {spv::OpAliasScopeDeclINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpAliasScopeListDeclINTEL, {{OperandKind::Id}}},
-        {spv::OpPtrCastToCrossWorkgroupINTEL, {{OperandKind::Id}}},
-        {spv::OpCrossWorkgroupCastToPtrINTEL, {{OperandKind::Id}}},
-        {spv::OpReadPipeBlockingINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpWritePipeBlockingINTEL, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpFPGARegINTEL, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpRayQueryGetRayTMinKHR, {{OperandKind::Id}}},
         {spv::OpRayQueryGetRayFlagsKHR, {{OperandKind::Id}}},
         {spv::OpRayQueryGetIntersectionTKHR, {{OperandKind::Id, OperandKind::Id}}},
@@ -2374,15 +2262,6 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpRayQueryGetIntersectionObjectToWorldKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpRayQueryGetIntersectionWorldToObjectKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpAtomicFAddEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpTypeBufferSurfaceINTEL, {{OperandKind::ValueEnum}}},
-        {spv::OpTypeStructContinuedINTEL, {{OperandKind::Id}}},
-        {spv::OpConstantCompositeContinuedINTEL, {{OperandKind::Id}}},
-        {spv::OpSpecConstantCompositeContinuedINTEL, {{OperandKind::Id}}},
-        {spv::OpCompositeConstructContinuedINTEL, {{OperandKind::Id}}},
-        {spv::OpConvertFToBF16INTEL, {{OperandKind::Id}}},
-        {spv::OpConvertBF16ToFINTEL, {{OperandKind::Id}}},
-        {spv::OpControlBarrierArriveINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpControlBarrierWaitINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupIMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupBitwiseAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
@@ -2391,8 +2270,6 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGroupLogicalAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalOrKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalXorKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
-        {spv::OpMaskedGatherINTEL, {{OperandKind::Id, OperandKind::Literal, OperandKind::Id, OperandKind::Id}}},
-        {spv::OpMaskedScatterINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Literal, OperandKind::Id}}},
     };  // clang-format on
 
     auto info = kOperandTable.find(opcode);
