@@ -321,18 +321,10 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformBufferStandardLayout);
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
 
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceUniformBufferStandardLayoutFeatures uniform_buffer_standard_layout_features = vku::InitStructHelper();
-    VkPhysicalDeviceScalarBlockLayoutFeatures scalar_block_layout_features =
-        vku::InitStructHelper(&uniform_buffer_standard_layout_features);
-    GetPhysicalDeviceFeatures2(scalar_block_layout_features);
-    if (scalar_block_layout_features.scalarBlockLayout == VK_FALSE ||
-        uniform_buffer_standard_layout_features.uniformBufferStandardLayout == VK_FALSE) {
-        GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported Skipping";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &scalar_block_layout_features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1933,15 +1925,9 @@ TEST_F(PositiveShaderSpirv, PhysicalStorageBufferGlslang6) {
     TEST_DESCRIPTION("Taken from glslang spv.bufferhandle6.frag test");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
 
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (VK_TRUE != features12.bufferDeviceAddress) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    RETURN_IF_SKIP(Init());
 
     char const *fsSource = R"glsl(
         #version 450 core

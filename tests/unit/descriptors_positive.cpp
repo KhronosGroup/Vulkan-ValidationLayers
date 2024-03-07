@@ -1077,13 +1077,8 @@ TEST_F(PositiveDescriptors, VariableDescriptorCount) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(descriptor_indexing_features);
-    if (!descriptor_indexing_features.descriptorBindingVariableDescriptorCount) {
-        GTEST_SKIP() << "descriptorBindingVariableDescriptorCount not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &descriptor_indexing_features));
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.

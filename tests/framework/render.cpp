@@ -591,30 +591,6 @@ VkFormat VkRenderFramework::GetRenderTargetFormat() {
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
-    if (!features && !create_device_pnext) {
-        if (feature_requirements_.HasFeatures2()) {
-            if (vk::GetPhysicalDeviceFeatures2KHR) {
-                vk::GetPhysicalDeviceFeatures2KHR(gpu(), feature_requirements_.GetFeatures2());
-            } else {
-                vk::GetPhysicalDeviceFeatures2(gpu(), feature_requirements_.GetFeatures2());
-            }
-        } else {
-            GetPhysicalDeviceFeatures(feature_requirements_.GetFeatures());
-        }
-
-        if (const char *f = feature_requirements_.AnyRequiredFeatureDisabled()) {
-            GTEST_SKIP() << "Required feature " << f << " is not available on device, skipping test";
-        }
-
-        feature_requirements_.EnforceDisableFeatures();
-
-        if (feature_requirements_.HasFeatures2()) {
-            create_device_pnext = feature_requirements_.GetFeatures2();
-        } else {
-            features = feature_requirements_.GetFeatures();
-        }
-    }
-    VkPhysicalDeviceVulkan12Features vk12_features = vku::InitStructHelper();
     const auto ExtensionIncludedInDeviceApiVersion = [&](const char *extension) {
         if (IsPromotedDeviceExtension(extension)) {
             // Replicate the core entry points into the extension entry points
@@ -622,34 +598,17 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
             // Handle special cases which did not have a feature flag in the extension
             // but do have one in their core promoted form
-            static const std::unordered_map<std::string, std::vector<size_t>> vk12_ext_feature_offsets = {
-                {
-                    VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
-                    { offsetof(VkPhysicalDeviceVulkan12Features, drawIndirectCount) }
-                },
-                {
-                    VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
-                    { offsetof(VkPhysicalDeviceVulkan12Features, samplerFilterMinmax) }
-                },
-                {
-                    VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-                    {
-                        offsetof(VkPhysicalDeviceVulkan12Features, shaderOutputViewportIndex),
-                        offsetof(VkPhysicalDeviceVulkan12Features, shaderOutputLayer)
-                    }
-                }
-            };
-            auto it = vk12_ext_feature_offsets.find(extension);
-            if (it != vk12_ext_feature_offsets.end()) {
-                auto vk12_features_ptr = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(create_device_pnext);
-                if (vk12_features_ptr == nullptr) {
-                    vk12_features_ptr = &vk12_features;
-                    vk12_features.pNext = create_device_pnext;
-                    create_device_pnext = vk12_features_ptr;
-                }
-                const VkBool32 enabled = VK_TRUE;
-                for (const auto offset : it->second) {
-                    std::memcpy(((uint8_t *)vk12_features_ptr) + offset, &enabled, sizeof(enabled));
+            static const std::unordered_map<std::string, std::vector<vkt::Feature>> vk12_ext_features = {
+                {VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, {vkt::Feature::drawIndirectCount}},
+                {VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, {vkt::Feature::samplerFilterMinmax}},
+                {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+                 {vkt::Feature::shaderOutputViewportIndex, vkt::Feature::shaderOutputLayer}},
+                {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, {vkt::Feature::descriptorIndexing}},
+                {VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, {vkt::Feature::scalarBlockLayout}}};
+            auto it = vk12_ext_features.find(extension);
+            if (it != vk12_ext_features.end()) {
+                for (const auto feature : it->second) {
+                    AddRequiredFeature(feature);
                 }
             }
 
@@ -675,6 +634,40 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     }
 
     RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
+
+    // Apply required features after we are done with handling promoted extensions
+    if (!features) {
+        if (feature_requirements_.HasFeatures2()) {
+            if (vk::GetPhysicalDeviceFeatures2KHR) {
+                vk::GetPhysicalDeviceFeatures2KHR(gpu(), feature_requirements_.GetFeatures2());
+            } else {
+                vk::GetPhysicalDeviceFeatures2(gpu(), feature_requirements_.GetFeatures2());
+            }
+        } else {
+            GetPhysicalDeviceFeatures(feature_requirements_.GetFeatures());
+        }
+
+        if (const char *f = feature_requirements_.AnyRequiredFeatureDisabled()) {
+            GTEST_SKIP() << "Required feature " << f << " is not available on device, skipping test";
+        }
+
+        feature_requirements_.EnforceDisableFeatures();
+
+        if (feature_requirements_.HasFeatures2()) {
+            if (create_device_pnext) {
+                // Chain to the end of the list
+                VkBaseOutStructure *p = reinterpret_cast<VkBaseOutStructure *>(create_device_pnext);
+                while (p->pNext != nullptr) {
+                    p = p->pNext;
+                }
+                p->pNext = reinterpret_cast<VkBaseOutStructure *>(feature_requirements_.GetFeatures2());
+            } else {
+                create_device_pnext = feature_requirements_.GetFeatures2();
+            }
+        } else {
+            features = feature_requirements_.GetFeatures();
+        }
+    }
 
     m_device = new vkt::Device(gpu_, m_device_extension_names, features, create_device_pnext);
 
