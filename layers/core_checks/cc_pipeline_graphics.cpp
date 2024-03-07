@@ -547,6 +547,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
     }
 
+    if (!pipeline.fragment_shader_state && !pipeline.pre_raster_state && pipeline.shader_stages_ci.size() > 0) {
+        skip |= LogError("UNASSIGNED-VkGraphicsPipelineCreateInfo-pStages", device, create_info_loc.dot(Field::stageCount),
+                         "is %zu, but the pipeline does not have a pre-rasterization or fragment shader state.",
+                         pipeline.shader_stages_ci.size());
+    }
+
     const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
     const bool is_create_library = (pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
 

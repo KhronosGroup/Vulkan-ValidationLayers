@@ -3107,3 +3107,28 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentOutput) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitVertexInputLibInfo();
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-pStages");
+    pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitFragmentOutputLibInfo();
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-pStages");
+    pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
