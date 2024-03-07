@@ -1657,11 +1657,10 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
     const bool has_khr_indirect = IsExtensionsEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        features12.drawIndirectCount = VK_TRUE;
+        AddRequiredFeature(vkt::Feature::drawIndirectCount);
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |

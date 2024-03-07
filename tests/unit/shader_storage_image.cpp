@@ -51,6 +51,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
                OpDecorate %12 Binding 0
                OpDecorate %22 BuiltIn WorkgroupSize
                OpDecorate %12 NonReadable
+               OpDecorate %12 NonWritable
           %2 = OpTypeVoid
           %3 = OpTypeFunction %2
           %6 = OpTypeFloat 32
@@ -507,6 +508,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
                OpDecorate %12 DescriptorSet 0
                OpDecorate %12 Binding 0
                OpDecorate %22 BuiltIn WorkgroupSize
+               OpDecorate %12 NonWritable
           %2 = OpTypeVoid
           %3 = OpTypeFunction %2
           %6 = OpTypeFloat 32

@@ -4877,6 +4877,14 @@ TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
     TEST_DESCRIPTION("Use partially bound descriptor flag without feature.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddDisabledFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
+    AddDisabledFeature(vkt::Feature::descriptorBindingStorageImageUpdateAfterBind);
+    AddDisabledFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    AddDisabledFeature(vkt::Feature::descriptorBindingStorageTexelBufferUpdateAfterBind);
+    AddDisabledFeature(vkt::Feature::descriptorBindingUniformTexelBufferUpdateAfterBind);
+    AddDisabledFeature(vkt::Feature::descriptorBindingUpdateUnusedWhilePending);
+    AddDisabledFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
     RETURN_IF_SKIP(Init());
 
     VkDescriptorBindingFlagsEXT flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;

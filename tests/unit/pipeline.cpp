@@ -231,7 +231,10 @@ TEST_F(NegativePipeline, BadPipelineObject) {
         GTEST_SKIP() << VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME << " is enabled, but the drawIndirectCount is not supported.";
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    if (features12.drawIndirectCount) {
+        AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    }
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // Attempt to bind an invalid Pipeline to a valid Command Buffer

@@ -265,13 +265,9 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
     TEST_DESCRIPTION("Create a shader that requires scalar block layout.");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
 
-    VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_features = vku::InitStructHelper(NULL);
-    GetPhysicalDeviceFeatures2(scalar_block_features);
-    VkPhysicalDeviceFeatures2 set_features2 = vku::InitStructHelper(&scalar_block_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &set_features2));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Vertex shader requiring scalar layout.
