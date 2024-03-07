@@ -23,7 +23,7 @@
 
 // NOLINTBEGIN
 
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.h>
 #include "vk_object_types.h"
 
 // Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version

@@ -245,7 +245,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-            #include <vulkan/vulkan_core.h>
+            #include <vulkan/vulkan.h>
             #include "vk_object_types.h"
 
             ''')
