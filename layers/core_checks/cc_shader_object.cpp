@@ -311,12 +311,11 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
                 if (stage_state.entrypoint->execution_mode.output_vertices != vvl::kU32Max &&
                     (stage_state.entrypoint->execution_mode.output_vertices == 0u ||
-                     stage_state.entrypoint->execution_mode.output_vertices >= phys_dev_props.limits.maxTessellationPatchSize)) {
-                    skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08453", device, create_info_loc.dot(Field::pCode),
-                                     "is using patch size %" PRIu32
-                                     ", which is not greater than 0 and less than maxTessellationPatchSize (%" PRIu32 ").",
-                                     stage_state.entrypoint->execution_mode.output_vertices,
-                                     phys_dev_props.limits.maxTessellationPatchSize);
+                     stage_state.entrypoint->execution_mode.output_vertices > phys_dev_props.limits.maxTessellationPatchSize)) {
+                    skip |= LogError(
+                        "VUID-VkShaderCreateInfoEXT-pCode-08453", device, create_info_loc.dot(Field::pCode),
+                        "is using patch size %" PRIu32 ", which is not between 1 and maxTessellationPatchSize (%" PRIu32 ").",
+                        stage_state.entrypoint->execution_mode.output_vertices, phys_dev_props.limits.maxTessellationPatchSize);
                 }
 
                 if ((pCreateInfos[i].flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0u) {
