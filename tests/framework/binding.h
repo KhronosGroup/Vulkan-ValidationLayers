@@ -357,6 +357,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
     Fence() = default;
     Fence(const Device &dev) { init(dev, create_info()); }
     Fence(const Device &dev, const VkFenceCreateInfo &info) { init(dev, info); }
+    Fence(Fence &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     ~Fence() noexcept;
     void destroy() noexcept;
 

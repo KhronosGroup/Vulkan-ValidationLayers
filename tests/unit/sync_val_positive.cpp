@@ -1500,3 +1500,174 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWait) {
+    TEST_DESCRIPTION("Minimal version of https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7250");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr int N = 100;
+
+    vkt::Buffer src(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferCopy copy_info{};
+    copy_info.size = 1024;
+
+    // Allocate array of fences instead of calling ResetFences to minimize the number of
+    // API functions used by this test (leave only those that are part of the regression scenario).
+    std::vector<vkt::Fence> fences;
+    std::vector<vkt::Fence> thread_fences;
+    fences.reserve(N);
+    thread_fences.reserve(N);
+    for (int i = 0; i < N; i++) {
+        fences.emplace_back(*m_device);
+        thread_fences.emplace_back(*m_device);
+    }
+
+    vkt::CommandBuffer cmd(*m_device, m_commandPool);
+    cmd.begin();
+    vk::CmdCopyBuffer(cmd, src, dst, 1, &copy_info);
+    cmd.end();
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd.handle();
+
+    vkt::CommandBuffer thread_cmd(*m_device, m_commandPool);
+    thread_cmd.begin();
+    thread_cmd.end();
+    VkSubmitInfo thread_submit = vku::InitStructHelper();
+    thread_submit.commandBufferCount = 1;
+    thread_submit.pCommandBuffers = &thread_cmd.handle();
+
+    std::mutex queue_mutex;
+    std::mutex queue_mutex2;
+
+    // Worker thread runs "submit empty buffer and wait" loop.
+    std::thread thread([&] {
+        for (int i = 0; i < N; i++) {
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex);
+                vk::QueueSubmit(*m_default_queue, 1, &thread_submit, thread_fences[i]);
+            }
+            {
+                // WaitForFences does not require external synchronization.
+                // queue_mutex2 is not needed for correctness, but it was added to decrease
+                // the number of degrees of freedom of this test, so it's easier to analyze it.
+                std::unique_lock<std::mutex> lock(queue_mutex2);
+                vk::WaitForFences(device(), 1, &thread_fences[i].handle(), VK_TRUE, kWaitTimeout);
+            }
+        }
+    });
+    // Main thread runs "submit accesses and wait" loop.
+    {
+        for (int i = 0; i < N; i++) {
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex);
+                vk::QueueSubmit(*m_default_queue, 1, &submit, fences[i]);
+            }
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex2);
+                vk::WaitForFences(device(), 1, &fences[i].handle(), VK_TRUE, kWaitTimeout);
+            }
+        }
+    }
+    thread.join();
+}
+
+TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWaitAndPresent) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7250");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    {
+        vkt::CommandBuffer cmd(*m_device, m_commandPool);
+        cmd.begin();
+        for (VkImage image : swapchain_images) {
+            VkImageMemoryBarrier transition = vku::InitStructHelper();
+            transition.srcAccessMask = 0;
+            transition.dstAccessMask = 0;
+            transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            transition.image = image;
+            transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            transition.subresourceRange.baseMipLevel = 0;
+            transition.subresourceRange.levelCount = 1;
+            transition.subresourceRange.baseArrayLayer = 0;
+            transition.subresourceRange.layerCount = 1;
+            vk::CmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0,
+                                   nullptr, 1, &transition);
+        }
+        cmd.end();
+        cmd.QueueCommandBuffer();
+    }
+
+    constexpr int N = 1'000;
+    std::mutex queue_mutex;
+
+    // Worker thread submits accesses and waits on the fence.
+    std::thread thread([&] {
+        const int size = 1024 * 128;
+        vkt::Buffer src(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        vkt::Buffer dst(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        VkBufferCopy copy_info{};
+        copy_info.size = size;
+
+        vkt::Fence fence(*m_device);
+        VkSubmitInfo submit = vku::InitStructHelper();
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &m_commandBuffer->handle();
+
+        for (int i = 0; i < N; i++) {
+            m_commandBuffer->begin();
+            vk::CmdCopyBuffer(*m_commandBuffer, src, dst, 1, &copy_info);
+            m_commandBuffer->end();
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex);
+                vk::QueueSubmit(*m_default_queue, 1, &submit, fence);
+            }
+            vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+            vk::ResetFences(device(), 1, &fence.handle());
+        }
+    });
+
+    // Main thread submits empty batches and presents images
+    {
+        vkt::Semaphore acquire_semaphore(*m_device);
+        vkt::Semaphore submit_semaphore(*m_device);
+        vkt::Fence fence(*m_device);
+
+        for (int i = 0; i < N; i++) {
+            uint32_t image_index = 0;
+            vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+
+            constexpr VkPipelineStageFlags semaphore_wait_stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+            VkSubmitInfo submit = vku::InitStructHelper();
+            submit.waitSemaphoreCount = 1;
+            submit.pWaitSemaphores = &acquire_semaphore.handle();
+            submit.pWaitDstStageMask = &semaphore_wait_stage;
+            submit.signalSemaphoreCount = 1;
+            submit.pSignalSemaphores = &submit_semaphore.handle();
+
+            VkPresentInfoKHR present = vku::InitStructHelper();
+            present.waitSemaphoreCount = 1;
+            present.pWaitSemaphores = &submit_semaphore.handle();
+            present.swapchainCount = 1;
+            present.pSwapchains = &m_swapchain;
+            present.pImageIndices = &image_index;
+
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex);
+                vk::QueueSubmit(*m_default_queue, 1, &submit, fence);
+                vk::QueuePresentKHR(*m_default_queue, &present);
+            }
+            vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+            vk::ResetFences(device(), 1, &fence.handle());
+        }
+    }
+    thread.join();
+}
