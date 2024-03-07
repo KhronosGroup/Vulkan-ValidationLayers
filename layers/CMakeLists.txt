@@ -339,6 +339,8 @@ elseif(APPLE)
 if(IOS)
     set_target_properties(vvl PROPERTIES
 		FRAMEWORK			TRUE
+                MACOSX_FRAMEWORK_BUNDLE_VERSION "${VulkanHeaders_VERSION}"
+                MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${VulkanHeaders_VERSION}"
 		MACOSX_FRAMEWORK_IDENTIFIER 	com.khronos.validation
     )
 else()
