@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2023 Valve Corporation
-# Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2023-2024 Valve Corporation
+# Copyright (c) 2023-2024 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -85,3 +85,73 @@ class PlatformGuardHelper():
             out.append(f'#ifdef {guard}\n')
         self.current_guard = guard
         return out
+
+# The SPIR-V grammar json doesn't have an easy way to detect these, so have listed by hand
+# If we are missing one, its not critical, the goal of this list is to reduce the generated output size
+def IsNonVulkanSprivCapability(capability):
+    return capability in [
+        'Kernel',
+        'Vector16',
+        'Float16Buffer',
+        'ImageBasic',
+        'ImageReadWrite',
+        'ImageMipmap',
+        'DeviceEnqueue',
+        'SubgroupDispatch',
+        'Pipes',
+        'LiteralSampler',
+        'NamedBarrier',
+        'PipeStorage',
+        'SubgroupShuffleINTEL',
+        'SubgroupShuffleINTEL',
+        'SubgroupBufferBlockIOINTEL',
+        'SubgroupImageBlockIOINTEL',
+        'SubgroupImageMediaBlockIOINTEL',
+        'RoundToInfinityINTEL',
+        'FloatingPointModeINTEL',
+        'IndirectReferencesINTEL',
+        'AsmINTEL',
+        'VectorComputeINTEL',
+        'VectorAnyINTEL',
+        'SubgroupAvcMotionEstimationINTEL',
+        'SubgroupAvcMotionEstimationIntraINTEL',
+        'SubgroupAvcMotionEstimationChromaINTEL',
+        'VariableLengthArrayINTEL',
+        'FunctionFloatControlINTEL',
+        'FPGAMemoryAttributesINTEL',
+        'FPFastMathModeINTEL',
+        'ArbitraryPrecisionIntegersINTEL',
+        'ArbitraryPrecisionFloatingPointINTEL',
+        'UnstructuredLoopControlsINTEL',
+        'FPGALoopControlsINTEL',
+        'KernelAttributesINTEL',
+        'FPGAKernelAttributesINTEL',
+        'FPGAMemoryAccessesINTEL',
+        'FPGAClusterAttributesINTEL',
+        'LoopFuseINTEL',
+        'FPGADSPControlINTEL',
+        'MemoryAccessAliasingINTEL',
+        'FPGAInvocationPipeliningAttributesINTEL',
+        'FPGABufferLocationINTEL',
+        'ArbitraryPrecisionFixedPointINTEL',
+        'USMStorageClassesINTEL',
+        'RuntimeAlignedAttributeINTEL',
+        'IOPipesINTEL',
+        'BlockingPipesINTEL',
+        'FPGARegINTEL',
+        'LongCompositesINTEL',
+        'OptNoneINTEL',
+        'DebugInfoModuleINTEL',
+        'BFloat16ConversionINTEL',
+        'SplitBarrierINTEL',
+        'FPGAClusterAttributesV2INTEL',
+        'FPGAKernelAttributesv2INTEL',
+        'FPMaxErrorINTEL',
+        'FPGALatencyControlINTEL',
+        'FPGAArgumentInterfacesINTEL',
+        'GlobalVariableHostAccessINTEL',
+        'GlobalVariableFPGADecorationsINTEL',
+        'MaskedGatherScatterINTEL',
+        'CacheControlsINTEL',
+        'RegisterLimitsINTEL'
+    ]

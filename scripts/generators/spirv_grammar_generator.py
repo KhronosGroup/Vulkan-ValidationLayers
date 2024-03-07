@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2021-2023 The Khronos Group Inc.
+# Copyright (c) 2021-2024 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import os
 import re
 import json
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import IsNonVulkanSprivCapability
 
 #
 # Generate SPIR-V grammar helper for SPIR-V opcodes, enums, etc
@@ -83,18 +84,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             instructions = data['instructions']
             operandKinds = data['operand_kinds']
 
-            # Build list from json of all capabilities that are only for kernel
-            # This needs to be done before loop instructions
-            kernelCapability = ['Kernel']
-            # some SPV_INTEL_* are not allowed in Vulkan and are just adding unused opcodes
-            # TODO bring in vk.xml to cross check valid extensions/capabilities instead of starting another hardcoded list
-            kernelCapability.append('ArbitraryPrecisionIntegersINTEL')
-            kernelCapability.append('ArbitraryPrecisionFixedPointINTEL')
-            kernelCapability.append('ArbitraryPrecisionFloatingPointINTEL')
-            kernelCapability.append('SubgroupAvcMotionEstimationINTEL')
-            kernelCapability.append('SubgroupAvcMotionEstimationIntraINTEL')
-            kernelCapability.append('SubgroupAvcMotionEstimationChromaINTEL')
-
             for operandKind in operandKinds:
                 kind = operandKind['kind']
                 category = operandKind['category']
@@ -110,11 +99,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 elif category == 'BitEnum':
                     self.kindBitEnum.append(kind)
 
-                if kind == 'Capability':
-                    for enum in operandKind['enumerants']:
-                        if 'capabilities' in enum and len(enum['capabilities']) == 1 and enum['capabilities'][0] == 'Kernel':
-                            kernelCapability.append(enum['enumerant'])
-                elif kind == 'ImageOperands':
+                if kind == 'ImageOperands':
                     values = [] # prevent alias from being duplicatd
                     for enum in operandKind['enumerants']:
                         count = 0  if 'parameters' not in enum else len(enum['parameters'])
@@ -155,7 +140,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 if 'capabilities' in instruction:
                     notSupported = True
                     for capability in instruction['capabilities']:
-                        if capability not in kernelCapability:
+                        if not IsNonVulkanSprivCapability(capability):
                             notSupported = False
                             break
                     if notSupported:
@@ -273,7 +258,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2021-2023 The Khronos Group Inc.
+            * Copyright (c) 2021-2024 The Khronos Group Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.

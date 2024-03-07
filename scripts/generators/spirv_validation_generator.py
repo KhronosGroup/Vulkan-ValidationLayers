@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2020-2023 The Khronos Group Inc.
+# Copyright (c) 2020-2024 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import os
 import json
 from generators.vulkan_object import SpirvEnables
 from generators.base_generator import BaseGenerator
+from generators.generator_utils import IsNonVulkanSprivCapability
 
 #
 # Generate SPIR-V validation for SPIR-V extensions and capabilities
@@ -37,8 +38,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             if kind['kind'] == 'Capability':
                 enum_values = set()
                 for enum in kind['enumerants']:
-                    # Skip capabilities specific to OpenCL
-                    if enum.get('capabilities') == ['Kernel']:
+                    if IsNonVulkanSprivCapability(enum['enumerant']):
                         continue
                     # Detect aliases
                     if enum['value'] in enum_values:
@@ -124,7 +124,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2020-2023 The Khronos Group Inc.
+            * Copyright (c) 2020-2024 The Khronos Group Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
