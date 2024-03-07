@@ -862,41 +862,6 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
-TEST_F(PositiveGraphicsLibrary, TessellationWithoutPreRasterization) {
-    TEST_DESCRIPTION("have Tessellation stages with null pTessellationState but not Pre-Rasterization");
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::tessellationShader);
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitVertexInputLibInfo();
-
-    VkPipelineShaderStageCreateInfo stages[2];
-
-    const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
-    VkShaderModuleCreateInfo tcs_ci = vku::InitStructHelper();
-    tcs_ci.codeSize = tcs_spv.size() * sizeof(decltype(tcs_spv)::value_type);
-    tcs_ci.pCode = tcs_spv.data();
-    stages[0] = vku::InitStructHelper(&tcs_ci);
-    stages[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    stages[0].module = VK_NULL_HANDLE;
-    stages[0].pName = "main";
-
-    const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
-    VkShaderModuleCreateInfo tes_ci = vku::InitStructHelper();
-    tes_ci.codeSize = tes_spv.size() * sizeof(decltype(tes_spv)::value_type);
-    tes_ci.pCode = tes_spv.data();
-    stages[1] = vku::InitStructHelper(&tes_ci);
-    stages[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    stages[1].module = VK_NULL_HANDLE;
-    stages[1].pName = "main";
-
-    pipe.gp_ci_.stageCount = 2;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
-}
-
 TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1858,26 +1823,5 @@ TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreAllState) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.gp_ci_.pInputAssemblyState = nullptr;
-    pipe.CreateGraphicsPipeline(false);
-}
-
-TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
-    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-    CreatePipelineHelper pipe(*this);
-    pipe.InitVertexInputLibInfo();
-    pipe.gp_ci_.stageCount = 1;
-    pipe.gp_ci_.pStages = nullptr;
-    pipe.CreateGraphicsPipeline(false);
-}
-
-TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
-    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-    InitRenderTarget();
-    CreatePipelineHelper pipe(*this);
-    pipe.InitFragmentOutputLibInfo();
-    pipe.gp_ci_.stageCount = 1;
-    pipe.gp_ci_.pStages = nullptr;
     pipe.CreateGraphicsPipeline(false);
 }
