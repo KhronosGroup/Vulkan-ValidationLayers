@@ -166,6 +166,8 @@ void WrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                     for (uint32_t index0 = 0; index0 < safe_struct->groupCount; ++index0) {
                         if (safe_struct->pGroups[index0].pStages) {
                             for (uint32_t index1 = 0; index1 < safe_struct->pGroups[index0].stageCount; ++index1) {
+                                WrapPnextChainHandles(layer_data, safe_struct->pGroups[index0].pStages[index1].pNext);
+
                                 if (safe_struct->pGroups[index0].pStages[index1].module) {
                                     safe_struct->pGroups[index0].pStages[index1].module =
                                         layer_data->Unwrap(safe_struct->pGroups[index0].pStages[index1].module);
@@ -2627,9 +2629,7 @@ VkResult DispatchQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmi
                 }
                 if (local_pSubmits[index0].pCommandBufferInfos) {
                     for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
-                        if (local_pSubmits[index0].pCommandBufferInfos[index1].pNext) {
-                            WrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
-                        }
+                        WrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {
@@ -4852,9 +4852,7 @@ VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
                 }
                 if (local_pSubmits[index0].pCommandBufferInfos) {
                     for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
-                        if (local_pSubmits[index0].pCommandBufferInfos[index1].pNext) {
-                            WrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
-                        }
+                        WrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {
@@ -5177,6 +5175,8 @@ void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
             }
             if (local_pPushDescriptorSetInfo->pDescriptorWrites) {
                 for (uint32_t index1 = 0; index1 < local_pPushDescriptorSetInfo->descriptorWriteCount; ++index1) {
+                    WrapPnextChainHandles(layer_data, local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pNext);
+
                     if (pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet) {
                         local_pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet =
                             layer_data->Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet);
@@ -5955,6 +5955,8 @@ VkResult DispatchCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCa
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
                 if (local_pCreateInfos[index0].pStages) {
                     for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].stageCount; ++index1) {
+                        WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pStages[index1].pNext);
+
                         if (pCreateInfos[index0].pStages[index1].module) {
                             local_pCreateInfos[index0].pStages[index1].module =
                                 layer_data->Unwrap(pCreateInfos[index0].pStages[index1].module);
