@@ -654,6 +654,8 @@ enum class Feature {
     rayTraversalPrimitiveCulling,
     // VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR
     rayTracingPositionFetch,
+    // VkPhysicalDeviceRayTracingValidationFeaturesNV
+    rayTracingValidation,
     // VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG
     relaxedLineRasterization,
     // VkPhysicalDeviceRenderPassStripedFeaturesARM

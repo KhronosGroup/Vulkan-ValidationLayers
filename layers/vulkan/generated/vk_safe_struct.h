@@ -17890,6 +17890,27 @@ struct safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV {
         return reinterpret_cast<VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV const*>(this);
     }
 };
+struct safe_VkPhysicalDeviceRayTracingValidationFeaturesNV {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 rayTracingValidation;
+
+    safe_VkPhysicalDeviceRayTracingValidationFeaturesNV(const VkPhysicalDeviceRayTracingValidationFeaturesNV* in_struct,
+                                                        PNextCopyState* copy_state = {}, bool copy_pnext = true);
+    safe_VkPhysicalDeviceRayTracingValidationFeaturesNV(const safe_VkPhysicalDeviceRayTracingValidationFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceRayTracingValidationFeaturesNV& operator=(
+        const safe_VkPhysicalDeviceRayTracingValidationFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceRayTracingValidationFeaturesNV();
+    ~safe_VkPhysicalDeviceRayTracingValidationFeaturesNV();
+    void initialize(const VkPhysicalDeviceRayTracingValidationFeaturesNV* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceRayTracingValidationFeaturesNV* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceRayTracingValidationFeaturesNV* ptr() {
+        return reinterpret_cast<VkPhysicalDeviceRayTracingValidationFeaturesNV*>(this);
+    }
+    VkPhysicalDeviceRayTracingValidationFeaturesNV const* ptr() const {
+        return reinterpret_cast<VkPhysicalDeviceRayTracingValidationFeaturesNV const*>(this);
+    }
+};
 struct safe_VkAccelerationStructureGeometryTrianglesDataKHR {
     VkStructureType sType;
     const void* pNext{};

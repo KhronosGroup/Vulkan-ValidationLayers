@@ -1083,7 +1083,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
 
     // Force invalid aspect mask
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-subresource-01106");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01106");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
