@@ -4380,7 +4380,8 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
                 }
                 if ((creation_usage & usage_flag) == 0) {
                     skip |= LogError(vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
-                                     "conflicts with the image's flags (%s).", string_VkImageUsageFlagBits(usage_flag));
+                                     "expected usage (%s) conflicts with the image's flags (%s).",
+                                     string_VkImageUsageFlagBits(usage_flag), string_VkImageUsageFlags(creation_usage).c_str());
                 }
             }
         } else {
@@ -4389,7 +4390,8 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
                 uint32_t image_usage = fbaci->pAttachmentImageInfos[fb_attachment].usage;
                 if ((image_usage & usage_flag) == 0) {
                     skip |= LogError(vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
-                                     "conflicts with the image's flags (%s).", string_VkImageUsageFlagBits(usage_flag));
+                                     "expected usage (%s) conflicts with the image's flags (%s).",
+                                     string_VkImageUsageFlagBits(usage_flag), string_VkImageUsageFlags(image_usage).c_str());
                 }
             }
         }
