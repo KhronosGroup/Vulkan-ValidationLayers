@@ -4459,6 +4459,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->rayTracingPositionFetch,
                     "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::rayTracingPositionFetch"};
         }
+        case Feature::rayTracingValidation: {
+            auto vk_struct = const_cast<VkPhysicalDeviceRayTracingValidationFeaturesNV *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingValidationFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceRayTracingValidationFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->rayTracingValidation, "VkPhysicalDeviceRayTracingValidationFeaturesNV::rayTracingValidation"};
+        }
         case Feature::relaxedLineRasterization: {
             auto vk_struct = const_cast<VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG>(*inout_pnext_chain));

@@ -15143,4 +15143,54 @@ void safe_VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::initialize(
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::safe_VkPhysicalDeviceRayTracingValidationFeaturesNV(
+    const VkPhysicalDeviceRayTracingValidationFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state, bool copy_pnext)
+    : sType(in_struct->sType), rayTracingValidation(in_struct->rayTracingValidation) {
+    if (copy_pnext) {
+        pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    }
+}
+
+safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::safe_VkPhysicalDeviceRayTracingValidationFeaturesNV()
+    : sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV), pNext(nullptr), rayTracingValidation() {}
+
+safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::safe_VkPhysicalDeviceRayTracingValidationFeaturesNV(
+    const safe_VkPhysicalDeviceRayTracingValidationFeaturesNV& copy_src) {
+    sType = copy_src.sType;
+    rayTracingValidation = copy_src.rayTracingValidation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingValidationFeaturesNV& safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::operator=(
+    const safe_VkPhysicalDeviceRayTracingValidationFeaturesNV& copy_src) {
+    if (&copy_src == this) return *this;
+
+    FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rayTracingValidation = copy_src.rayTracingValidation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::~safe_VkPhysicalDeviceRayTracingValidationFeaturesNV() {
+    FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::initialize(
+    const VkPhysicalDeviceRayTracingValidationFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
+    FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rayTracingValidation = in_struct->rayTracingValidation;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceRayTracingValidationFeaturesNV::initialize(
+    const safe_VkPhysicalDeviceRayTracingValidationFeaturesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
+    sType = copy_src->sType;
+    rayTracingValidation = copy_src->rayTracingValidation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 // NOLINTEND

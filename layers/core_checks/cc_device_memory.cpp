@@ -2042,7 +2042,7 @@ bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const 
                                                                const Location &bind_loc, const Location &subresource_loc) const {
     bool skip = false;
     skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.createInfo.format, subresource.aspectMask,
-                                    image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBind-subresource-01106");
+                                    image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBindInfo-subresource-01106");
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
         skip |=
