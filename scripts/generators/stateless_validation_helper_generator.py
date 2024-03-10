@@ -181,6 +181,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBindDescriptorBuffersEXT',
             'vkGetPhysicalDeviceExternalBufferProperties',
             'vkGetPipelinePropertiesEXT',
+            'vkGetDescriptorSetLayoutSupport',
             ]
 
         # Commands to ignore

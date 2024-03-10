@@ -595,9 +595,16 @@ class StatelessValidation : public ValidationObject {
     bool ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
                                                  const VkMutableDescriptorTypeCreateInfoEXT &mutable_create_info,
                                                  const Location &loc) const;
+    bool ValidateMutableDescriptor(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                   const bool mutable_descriptor_type_features_enabled,
+                                   const VkMutableDescriptorTypeCreateInfoEXT *mutable_descriptor_type, const Location &binding_loc,
+                                   uint32_t i) const;
     bool manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
                                                          const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                             VkDescriptorSetLayoutSupport *pSupport,
+                                                             const ErrorObject &error_obj) const;
 
     bool manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
