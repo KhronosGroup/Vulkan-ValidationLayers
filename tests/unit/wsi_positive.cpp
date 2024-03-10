@@ -1330,3 +1330,73 @@ TEST_F(PositiveWsi, PhysicalDeviceSurfaceSupport) {
         vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &count, nullptr);
     }
 }
+
+TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
+    TEST_DESCRIPTION("Call vkAcquireNextImageKHR before vkGetSwapchainImagesKHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Surface not supported.";
+    }
+
+    SurfaceInformation info = GetSwapchainInfo(m_surface);
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
+                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    VkSwapchainKHR swapchain;
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+
+    vkt::Fence fence;
+    fence.init(*m_device, vkt::Fence::create_info());
+
+    uint32_t imageIndex;
+    vk::AcquireNextImageKHR(device(), swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &imageIndex);
+    vk::WaitForFences(device(), 1u, &fence.handle(), VK_FALSE, kWaitTimeout);
+
+    uint32_t imageCount;
+    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
+    std::vector<VkImage> images(imageCount);
+    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
+
+    const VkImageMemoryBarrier present_transition = TransitionToPresent(images[imageIndex], VK_IMAGE_LAYOUT_UNDEFINED, 0);
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+                           0, nullptr, 0, nullptr, 1, &present_transition);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 0;
+    present.swapchainCount = 1;
+    present.pSwapchains = &swapchain;
+    present.pImageIndices = &imageIndex;
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+
+    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+}
