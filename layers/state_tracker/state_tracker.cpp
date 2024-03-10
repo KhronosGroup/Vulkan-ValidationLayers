@@ -3807,6 +3807,13 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         if (fence_state && fence_state->IsPresentSyncSwapchainChanged(swapchain_data)) {
             fence_state->SetPresentSync(vvl::PresentSync{});
         }
+        if (*pImageIndex >= swapchain_data->images.size()) {
+            uint32_t swapchainImageCount = *pImageIndex + 1;
+            DispatchGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr);
+            std::vector<VkImage> swapchainImages(swapchainImageCount);
+            DispatchGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data());
+            RecordGetSwapchainImages(device, swapchain, &swapchainImageCount, swapchainImages.data());
+        }
         swapchain_data->AcquireImage(*pImageIndex, semaphore_state, fence_state);
     }
 }
@@ -4795,10 +4802,8 @@ void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uin
     }
 }
 
-void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                                 uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
-                                                                 const RecordObject &record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+void ValidationStateTracker::RecordGetSwapchainImages(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                                      VkImage *pSwapchainImages) {
     auto swapchain_state = Get<vvl::Swapchain>(swapchain);
 
     if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
@@ -4824,6 +4829,13 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
     if (*pSwapchainImageCount) {
         swapchain_state->get_swapchain_image_count = *pSwapchainImageCount;
     }
+}
+
+void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                                 uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
+                                                                 const RecordObject &record_obj) {
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    RecordGetSwapchainImages(device, swapchain, pSwapchainImageCount, pSwapchainImages);
 }
 
 void ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
