@@ -442,10 +442,13 @@ static bool ComparePipelineMultisampleStateCreateInfo(VkPipelineMultisampleState
         valid_mask = false;  // one is not null
     }
 
-    return (a.sType == b.sType) && (a.pNext == b.pNext) && (a.flags == b.flags) &&
-           (a.rasterizationSamples == b.rasterizationSamples) && (a.sampleShadingEnable == b.sampleShadingEnable) &&
-           (a.minSampleShading == b.minSampleShading) && (valid_mask) && (a.alphaToCoverageEnable == b.alphaToCoverageEnable) &&
-           (a.alphaToOneEnable == b.alphaToOneEnable);
+    // TODO - to do a deep pNext chain check would require us generating these compare functions for all structs
+    // For now, just check if pNext both null or not
+    const bool valid_pNext = (a.pNext && b.pNext) || (a.pNext == b.pNext);
+
+    return (a.sType == b.sType) && (valid_pNext) && (a.flags == b.flags) && (a.rasterizationSamples == b.rasterizationSamples) &&
+           (a.sampleShadingEnable == b.sampleShadingEnable) && (a.minSampleShading == b.minSampleShading) && (valid_mask) &&
+           (a.alphaToCoverageEnable == b.alphaToCoverageEnable) && (a.alphaToOneEnable == b.alphaToOneEnable);
 }
 
 static bool CompareDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding a, VkDescriptorSetLayoutBinding b) {
