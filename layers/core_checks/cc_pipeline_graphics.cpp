@@ -551,7 +551,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     }
 
     if (!pipeline.fragment_shader_state && !pipeline.pre_raster_state && pipeline.shader_stages_ci.size() > 0) {
-        skip |= LogError("UNASSIGNED-VkGraphicsPipelineCreateInfo-pStages", device, create_info_loc.dot(Field::stageCount),
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587", device, create_info_loc.dot(Field::stageCount),
                          "is %zu, but the pipeline does not have a pre-rasterization or fragment shader state.",
                          pipeline.shader_stages_ci.size());
     }

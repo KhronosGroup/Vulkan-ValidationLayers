@@ -2400,15 +2400,16 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     if (image_data) {
         auto image_loc = barrier_loc.dot(Field::image);
         // TODO - use LocationVuidAdapter
-        const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kNoMemory);
-        skip |= ValidateMemoryIsBoundToImage(objects, *image_data, image_loc, vuid.c_str());
+        const auto &vuid_no_memory = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kNoMemory);
+        skip |= ValidateMemoryIsBoundToImage(objects, *image_data, image_loc, vuid_no_memory.c_str());
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, image_loc, mem_barrier, image_data->Handle(),
                                              image_data->createInfo.sharingMode);
 
+        const auto &vuid_aspect = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kAspectMask);
         skip |=
             ValidateImageAspectMask(image_data->VkHandle(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
-                                    image_data->disjoint, image_loc, "UNASSIGNED-ImageBarrier-InvalidImageAspect");
+                                    image_data->disjoint, image_loc, vuid_aspect.c_str());
 
         skip |= ValidateImageBarrierSubresourceRange(image_data->createInfo, mem_barrier.subresourceRange, objects,
                                                      barrier_loc.dot(Field::subresourceRange));

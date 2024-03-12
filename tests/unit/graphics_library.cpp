@@ -3115,7 +3115,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
     pipe.InitVertexInputLibInfo();
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-pStages");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -3128,7 +3128,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
     pipe.InitFragmentOutputLibInfo();
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-pStages");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
