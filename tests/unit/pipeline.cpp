@@ -1814,7 +1814,7 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
 
 TEST_F(NegativePipeline, SampledInvalidImageViews) {
     TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
-
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1920,7 +1920,11 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     pipeline_unused.CreateGraphicsPipeline();
     pipeline_function.CreateGraphicsPipeline();
 
+    VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
+    reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.pNext = &reduction_mode_ci;
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;

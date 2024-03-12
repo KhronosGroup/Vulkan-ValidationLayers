@@ -422,6 +422,71 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
     }
 }
 
+TEST_F(NegativeSampler, LinearReductionModeMinMax) {
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), format, &formatProps);
+    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT);
+    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), format, formatProps);
+
+    vkt::Image image(*m_device, 128, 128, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
+    reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.pNext = &reduction_mode_ci;
+    sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_ci.compareEnable = VK_FALSE;
+    vkt::Sampler sampler(*m_device, sampler_ci);
+
+    char const *fs_source = R"glsl(
+        #version 450
+        layout (set=0, binding=0) uniform sampler2D bad;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = texture(bad, gl_FragCoord.xy);
+        }
+    )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler.handle());
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-09598");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     TEST_DESCRIPTION(
         "Create image with VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV flag and sample it with something other than "

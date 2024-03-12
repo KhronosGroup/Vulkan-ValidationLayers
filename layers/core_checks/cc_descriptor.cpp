@@ -4565,13 +4565,11 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                 }
             }
             // At this point there is a known sampler YCbCr conversion enabled
-            if (sampler_reduction) {
-                if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-                    skip |= LogError("VUID-VkSamplerCreateInfo-None-01647", device,
-                                     create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
-                                     "is %s but a sampler YCbCr Conversion is being used creating this sampler.",
-                                     string_VkSamplerReductionMode(sampler_reduction->reductionMode));
-                }
+            if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+                skip |= LogError("VUID-VkSamplerCreateInfo-None-01647", device,
+                                 create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
+                                 "is %s but a sampler YCbCr Conversion is being used creating this sampler.",
+                                 string_VkSamplerReductionMode(sampler_reduction->reductionMode));
             }
         }
     }
