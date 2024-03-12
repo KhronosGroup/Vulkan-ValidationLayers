@@ -251,7 +251,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
 
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-vkCreateImageView-InvalidImageAspect");
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-subresourceRange-09594");
     CreateImageViewTest(*this, &ivci, "VUID-VkImageSubresourceRange-aspectMask-02278");
 }
 
