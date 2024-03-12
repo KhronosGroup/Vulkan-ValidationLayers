@@ -37,6 +37,8 @@ struct DrawDispatchVuid {
     const char* sample_location_02689 = kVUIDUndefined;
     const char* linear_filter_sampler_04553 = kVUIDUndefined;
     const char* linear_mipmap_sampler_04770 = kVUIDUndefined;
+    const char* linear_filter_sampler_09598 = kVUIDUndefined;
+    const char* linear_mipmap_sampler_09599 = kVUIDUndefined;
     const char* cubic_sampler_02692 = kVUIDUndefined;
     const char* indirect_protected_cb_02711 = kVUIDUndefined;
     const char* indirect_contiguous_memory_02708 = kVUIDUndefined;

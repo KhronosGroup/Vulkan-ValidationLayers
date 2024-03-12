@@ -690,8 +690,14 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
         const VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
         const VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
-        const VkBool32 sampler_compare_enable = sampler_state->createInfo.compareEnable;
-        if ((sampler_compare_enable == VK_FALSE) &&
+        const bool sampler_compare_enable = sampler_state->createInfo.compareEnable == VK_TRUE;
+        const auto sampler_reduction =
+            vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
+        // The VU is wording is a bit misleading, if there is no VkSamplerReductionModeCreateInfo we still need to check for linear
+        // tiling feature
+        const bool is_weighted_average =
+            !sampler_reduction || sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+        if (!sampler_compare_enable && is_weighted_average &&
             !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
                 auto set = descriptor_set.Handle();
@@ -713,6 +719,35 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                           "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not contain "
                                           "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
                                           FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
+                                          FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format));
+            }
+        }
+
+        const bool is_minmax = sampler_reduction && (sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
+                                                     sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX);
+        if (is_minmax && !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT)) {
+            if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
+                auto set = descriptor_set.Handle();
+                const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
+                return dev_state.LogError(vuids.linear_filter_sampler_09598, objlist, loc,
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") has %s which is set to use VK_FILTER_LINEAR with reductionMode is set "
+                                          "to %s, but image view's (%s) format (%s) does not contain "
+                                          "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT in its format features.",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
+                                          string_VkSamplerReductionMode(sampler_reduction->reductionMode),
+                                          FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format));
+            }
+            if (sampler_state->createInfo.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
+                auto set = descriptor_set.Handle();
+                const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
+                return dev_state.LogError(vuids.linear_mipmap_sampler_09599, objlist, loc,
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
+                                          "reductionMode is set to %s, but image view's (%s) format (%s) does not contain "
+                                          "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT in its format features.",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(sampler_state->Handle()).c_str(),
+                                          string_VkSamplerReductionMode(sampler_reduction->reductionMode),
                                           FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format));
             }
         }
