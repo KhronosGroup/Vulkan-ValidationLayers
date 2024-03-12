@@ -109,16 +109,18 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
     if ((usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-format-08778", buffer_state.Handle(), loc.dot(Field::buffer),
-                         "was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format "
-                         "(%s) must be supported for uniform texel buffers. (supported bufferFeatures: %s)",
+                         "was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
+                         "Format (%s) doesn't support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
+                         "(supported bufferFeatures: %s)",
                          string_VkBufferUsageFlags2KHR(usage).c_str(), string_VkFormat(format),
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
     if ((usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-format-08779", buffer_state.Handle(), loc.dot(Field::buffer),
-                         "was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format "
-                         "(%s) must be supported for storage texel buffers. (supported bufferFeatures: %s)",
+                         "was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
+                         "Format (%s) doesn't support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
+                         "(supported bufferFeatures: %s)",
                          string_VkBufferUsageFlags2KHR(usage).c_str(), string_VkFormat(format),
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }

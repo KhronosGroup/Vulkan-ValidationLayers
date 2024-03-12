@@ -531,37 +531,38 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
             skip |= LogError(vuid.color_blend_enable_07627, objlist, loc,
                              "Pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT dynamic state, but "
                              "vkCmdSetColorBlendEnableEXT() was not called.");
-        }
-
-        const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments->size());
-
-        bool advanced_blend = false;
-        for (uint32_t i = 0; i < attachment_count; ++i) {
-            if (cb_state.dynamic_state_value.color_blend_enabled[i]) {
+        } else {
+            const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments->size());
+            for (uint32_t i = 0; i < attachment_count; ++i) {
+                if (!cb_state.dynamic_state_value.color_blend_enabled[i]) {
+                    continue;
+                }
                 if (cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
-                    advanced_blend = true;
+                    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
+                        attachment_count > phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                        const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+                        skip |= LogError(vuid.blend_advanced_07480, objlist, loc,
+                                         "Color Attachment %" PRIu32
+                                         " blending is enabled, but the total color attachment count (%" PRIu32
+                                         ") is greater than advancedBlendMaxColorAttachments (%" PRIu32 ").",
+                                         i, attachment_count,
+                                         phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
+                        break;
+                    }
                 }
 
                 const auto attachment = (*cb_state.active_attachments)[i];
                 if (attachment && ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                    skip |= LogError(vuid.blend_feature_07470, objlist, loc,
-                                     "Attachment %" PRIu32
-                                     " format features (%s) do not include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
-                                     i, string_VkFormatFeatureFlags2((*cb_state.active_attachments)[i]->format_features).c_str());
+                    skip |= LogError(
+                        vuid.blend_feature_07470, objlist, loc,
+                        "Color Attachment %" PRIu32
+                        " has an image view format (%s) that doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.\n"
+                        "(supported features: %s)",
+                        i, string_VkFormat(attachment->create_info.format),
+                        string_VkFormatFeatureFlags2((*cb_state.active_attachments)[i]->format_features).c_str());
+                    break;
                 }
-            }
-        }
-
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
-            if (advanced_blend &&
-                attachment_count > phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                skip |=
-                    LogError(vuid.blend_advanced_07480, objlist, loc,
-                             "Advanced blend is enabled, but color attachment count (%" PRIu32
-                             ") is greater than advancedBlendMaxColorAttachments (%" PRIu32 ").",
-                             attachment_count, phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
             }
         }
     }

@@ -107,7 +107,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
         ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR) == 0)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_CREATE_DISJOINT_BIT, but %s doesn't support "
-                         "VK_FORMAT_FEATURE_DISJOINT_BIT (supported features: %s).",
+                         "VK_FORMAT_FEATURE_DISJOINT_BIT.\n"
+                         "(supported features: %s)",
                          string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
@@ -115,7 +116,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
         (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, but %s doesn't support "
-                         "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT (supported features: %s).",
+                         "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT.\n"
+                         "(supported features: %s)",
                          string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
@@ -1650,21 +1652,29 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
                          string_VkFormat(view_format), string_VkImageTiling(image_tiling));
     } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-usage-02274", image_state.Handle(), create_info_loc.dot(Field::format),
-                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         "%s with tiling %s doesn't support VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT.\n"
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                          string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-usage-02275", image_state.Handle(), create_info_loc.dot(Field::format),
-                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         "%s with tiling %s doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT.\n"
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                          string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV))) {
         skip |= LogError("VUID-VkImageViewCreateInfo-usage-08931", image_state.Handle(), create_info_loc.dot(Field::format),
-                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         "%s with tiling %s doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.\n"
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                          string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
                !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-usage-02277", image_state.Handle(), create_info_loc.dot(Field::format),
-                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         "%s with tiling %s doesn't support VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.\n."
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                          string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
@@ -1672,15 +1682,19 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         if (!enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop &&
             !image_state.HasAHBFormat()) {
             skip |= LogError("VUID-VkImageViewCreateInfo-usage-08932", image_state.Handle(), create_info_loc.dot(Field::format),
-                             "%s with tiling %s only supports %s.", string_VkFormat(view_format),
-                             string_VkImageTiling(image_tiling), string_VkFormatFeatureFlags2(tiling_features).c_str());
+                             "%s with tiling %s doesn't support one of the required formats.\n."
+                             "(supported features: %s)",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                             string_VkFormatFeatureFlags2(tiling_features).c_str());
         }
     } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
                !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         if (enabled_features.attachmentFragmentShadingRate) {
             skip |= LogError("VUID-VkImageViewCreateInfo-usage-04550", image_state.Handle(), create_info_loc.dot(Field::format),
-                             "%s with tiling %s only supports %s.", string_VkFormat(view_format),
-                             string_VkImageTiling(image_tiling), string_VkFormatFeatureFlags2(tiling_features).c_str());
+                             "%s with tiling %s doesn't support VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.\n."
+                             "(supported features: %s)",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                             string_VkFormatFeatureFlags2(tiling_features).c_str());
         }
     }
 
@@ -1688,15 +1702,15 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         if ((image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) &&
             !(tiling_features & VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-08333", image_state.Handle(), create_info_loc.dot(Field::format),
-                             "%s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR (supported: %s).",
+                             "%s and tiling %s doesn't support VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR.\n"
+                             "(supported features: %s)",
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
                    !(tiling_features & VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-08334", image_state.Handle(), create_info_loc.dot(Field::format),
-                             "%s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR (supported: %s).",
+                             "%s and tiling %s doesn't support VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR.\n"
+                             "(supported features: %s)",
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if (image_usage & VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR) {
@@ -1706,15 +1720,15 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR) &&
                    !(tiling_features & VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-08336", image_state.Handle(), create_info_loc.dot(Field::format),
-                             "%s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR (supported: %s).",
+                             "%s and tiling %s doesn't support VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR.\n"
+                             "(supported features: %s)",
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) &&
                    !(tiling_features & VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-08337", image_state.Handle(), create_info_loc.dot(Field::format),
-                             "%s and tiling %s does not "
-                             "support usage that includes VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR (supported: %s).",
+                             "%s and tiling %s doesn't support VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR.\n"
+                             "(supported features: %s)",
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         } else if (image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR) {

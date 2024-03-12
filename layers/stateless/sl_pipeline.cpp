@@ -614,7 +614,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
                     skip |=
                         LogError("VUID-VkVertexInputAttributeDescription-format-00623", device, attribute_loc.dot(Field::format),
-                                 "(%s) is not a supported vertex buffer format (supported bufferFeatures: %s).",
+                                 "(%s) doesn't support VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT.\n"
+                                 "(supported bufferFeatures: %s)",
                                  string_VkFormat(vertex_attrib_desc.format),
                                  string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
                 }

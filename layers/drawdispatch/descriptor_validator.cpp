@@ -454,12 +454,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, image_view);
-        return dev_state.LogError(
-            vuids.imageview_atomic_02691, objlist, loc,
-            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-            ") has %s with format of %s which is missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT in its features (%s).",
-            FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format),
-            string_VkFormatFeatureFlags2(image_view_state->format_features).c_str());
+        return dev_state.LogError(vuids.imageview_atomic_02691, objlist, loc,
+                                  "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                  ") has %s with format of %s which is missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
+                                  "(supported features: %s).",
+                                  FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                                  string_VkFormat(image_view_ci.format),
+                                  string_VkFormatFeatureFlags2(image_view_state->format_features).c_str());
     }
 
     // When KHR_format_feature_flags2 is supported, the read/write without
@@ -473,36 +474,39 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                 !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view);
-                return dev_state.LogError(vuids.storage_image_read_without_format_07028, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") has %s with format of %s which is missing VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT "
-                                "in its features (%s).",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                string_VkFormat(image_view_ci.format), string_VkFormatFeatureFlags2(format_features).c_str());
+                return dev_state.LogError(
+                    vuids.storage_image_read_without_format_07028, objlist, loc,
+                    "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                    ") has %s with format of %s which doesn't support VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT.\n"
+                    "(supported features: %s).",
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                    string_VkFormat(image_view_ci.format), string_VkFormatFeatureFlags2(format_features).c_str());
             }
 
             if ((variable->info.is_write_without_format) &&
                 !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view);
-                return dev_state.LogError(vuids.storage_image_write_without_format_07027, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") has %s with format of %s which is missing VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT "
-                                "in its features (%s).",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                                string_VkFormat(image_view_ci.format), string_VkFormatFeatureFlags2(format_features).c_str());
+                return dev_state.LogError(
+                    vuids.storage_image_write_without_format_07027, objlist, loc,
+                    "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                    ") has %s with format of %s which doesn't support VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
+                    "(supported features: %s).",
+                    FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
+                    string_VkFormat(image_view_ci.format), string_VkFormatFeatureFlags2(format_features).c_str());
             }
         }
 
         if ((variable->info.is_dref) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, image_view);
-            return dev_state.LogError(vuids.depth_compare_sample_06479, objlist, loc,
-                            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                            ") has %s with format of %s which is missing VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT in "
-                            "its features (%s).",
-                            FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(),
-                            string_VkFormat(image_view_ci.format), string_VkFormatFeatureFlags2(format_features).c_str());
+            return dev_state.LogError(
+                vuids.depth_compare_sample_06479, objlist, loc,
+                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                ") has %s with format of %s which doesn't support VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT in.\n"
+                "i(supported features: %s)",
+                FormatHandle(set).c_str(), binding, index, FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format),
+                string_VkFormatFeatureFlags2(format_features).c_str());
         }
     }
 
@@ -1005,12 +1009,12 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         !(buf_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, buffer_view);
-        return dev_state.LogError(
-            vuids.bufferview_atomic_07888, objlist, loc,
-            "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-            ") has %s with format of %s which is missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT in its features (%s).",
-            FormatHandle(set).c_str(), binding, index, FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-            string_VkFormatFeatureFlags2(buf_format_features).c_str());
+        return dev_state.LogError(vuids.bufferview_atomic_07888, objlist, loc,
+                                  "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                  ") has %s with format of %s which is missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
+                                  "(supported features: %s).",
+                                  FormatHandle(set).c_str(), binding, index, FormatHandle(buffer_view).c_str(),
+                                  string_VkFormat(buffer_view_format), string_VkFormatFeatureFlags2(buf_format_features).c_str());
     }
 
     // When KHR_format_feature_flags2 is supported, the read/write without
@@ -1023,11 +1027,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, buffer_view);
                 return dev_state.LogError(vuids.storage_texel_buffer_read_without_format_07030, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") has %s with format of %s which is missing "
-                                "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR in its features (%s).",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(buffer_view).c_str(),
-                                string_VkFormat(buffer_view_format), string_VkFormatFeatureFlags2(buf_format_features).c_str());
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") has %s with format of %s which is missing "
+                                          "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR.\n"
+                                          "(supported features: %s).",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(buffer_view).c_str(),
+                                          string_VkFormat(buffer_view_format),
+                                          string_VkFormatFeatureFlags2(buf_format_features).c_str());
             }
 
             if ((variable->info.is_write_without_format) &&
@@ -1035,11 +1041,13 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, buffer_view);
                 return dev_state.LogError(vuids.storage_texel_buffer_write_without_format_07029, objlist, loc,
-                                "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
-                                ") has %s with format of %s which is missing "
-                                "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR in its features (%s).",
-                                FormatHandle(set).c_str(), binding, index, FormatHandle(buffer_view).c_str(),
-                                string_VkFormat(buffer_view_format), string_VkFormatFeatureFlags2(buf_format_features).c_str());
+                                          "the descriptor (%s, binding %" PRIu32 ", index %" PRIu32
+                                          ") has %s with format of %s which is missing "
+                                          "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR.\n"
+                                          "(supported features: %s).",
+                                          FormatHandle(set).c_str(), binding, index, FormatHandle(buffer_view).c_str(),
+                                          string_VkFormat(buffer_view_format),
+                                          string_VkFormatFeatureFlags2(buf_format_features).c_str());
             }
         }
     }
