@@ -260,8 +260,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
         if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
             skip |=
                 LogError("VUID-VkVertexInputAttributeDescription2EXT-format-04805", commandBuffer, attribute_loc.dot(Field::format),
-                         "(%s) is not a "
-                         "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT supported format. (supported bufferFeatures: %s)",
+                         "(%s) doesn't support VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT.\n"
+                         "(supported bufferFeatures: %s)",
                          string_VkFormat(pVertexAttributeDescriptions[attribute].format),
                          string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
         }

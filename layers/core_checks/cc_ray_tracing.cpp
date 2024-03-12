@@ -380,15 +380,14 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     }
                 }
 
-                VkFormatProperties vertex_format_props{};
-                DispatchGetPhysicalDeviceFormatProperties(physical_device, geom_data.geometry.triangles.vertexFormat,
-                                                          &vertex_format_props);
-                if (!(vertex_format_props.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+                const VkFormatProperties3KHR format_properties = GetPDFormatProperties(geom_data.geometry.triangles.vertexFormat);
+                if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
                     skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797", cmd_buffer,
                                      p_geom_geom_triangles_loc.dot(Field::vertexFormat),
-                                     "is %s, and only has the following VkFormatProperties::bufferFeatures: %s.",
+                                     "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
+                                     "(supported bufferFeatures: %s)",
                                      string_VkFormat(geom_data.geometry.triangles.vertexFormat),
-                                     string_VkFormatFeatureFlags(vertex_format_props.bufferFeatures).c_str());
+                                     string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
                 }
                 // Only try to get format info if vertex format is valid
                 else {
