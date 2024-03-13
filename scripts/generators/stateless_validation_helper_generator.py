@@ -366,6 +366,23 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend(guard_helper.add_guard(struct.protect))
 
+            # middle struct to breakup ValidatePnextStructContents because some
+            if struct.name == 'VkSampleLocationsInfoEXT':
+                out.append('''
+                        default:
+                            return ValidatePnextStructContents2(loc, header, pnext_vuid, is_const_param);
+                        }
+                        return skip;
+                    }
+
+                    // Breaks up function into 2 parts because MSVC seems to have issue compiling a single large function
+                    bool StatelessValidation::ValidatePnextStructContents2(const Location& loc,
+                                                                        const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                                        bool is_const_param) const {
+                        bool skip = false;
+                        switch(header->sType) {
+                    ''')
+
             pnext_case = '\n'
             pnext_check = ''
 
