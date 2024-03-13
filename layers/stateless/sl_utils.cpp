@@ -274,6 +274,15 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
                         }
                         // Send Location without pNext field so the pNext() connector can be used
                         skip |= ValidatePnextStructContents(loc, current, pnext_vuid, caller_physical_device, is_const_param);
+                        if (loc.function == Func::vkGetPhysicalDeviceProperties2 ||
+                            loc.function == Func::vkGetPhysicalDeviceProperties2KHR) {
+                            skip |= ValidatePnextPropertyStructContents(loc, current, pnext_vuid, caller_physical_device,
+                                                                        is_const_param);
+                        } else if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
+                                   loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
+                            skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, caller_physical_device,
+                                                                       is_const_param);
+                        }
                     }
                 }
                 current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
