@@ -145,7 +145,7 @@ TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -199,7 +199,7 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -299,10 +299,10 @@ TEST_F(PositiveGpuAVOOB, GPL) {
     frag_out.CreateGraphicsPipeline(false);
 
     std::array<VkPipeline, 4> libraries = {
-        vi.pipeline_,
-        pre_raster.pipeline_,
-        fragment.pipeline_,
-        frag_out.pipeline_,
+        vi.Handle(),
+        pre_raster.Handle(),
+        fragment.Handle(),
+        frag_out.Handle(),
     };
     vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
 

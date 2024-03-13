@@ -139,7 +139,7 @@ void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
 }
 
 void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper &library) {
-    libraries_.emplace_back(library.pipeline_);
+    libraries_.emplace_back(library.Handle());
     rp_library_ci_ = vku::InitStructHelper();
     rp_library_ci_.libraryCount = size32(libraries_);
     rp_library_ci_.pLibraries = libraries_.data();

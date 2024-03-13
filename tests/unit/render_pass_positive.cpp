@@ -722,7 +722,7 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
     descriptor_write.dstSet = 0;  // Should not cause a validation error
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
     vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
                                 &descriptor_write);
     m_commandBuffer->BeginRenderPass(render_pass.handle(), fb.handle(), 32, 32);
@@ -781,7 +781,7 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), ds_image.width(), ds_image.height());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
     // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
     // and used in the validation code, 06887 would trigger with the following draw call
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

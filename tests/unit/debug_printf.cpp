@@ -60,7 +60,7 @@ TEST_F(NegativeDebugPrintf, BasicCompute) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
@@ -497,10 +497,10 @@ TEST_F(NegativeDebugPrintf, GPL) {
     frag_out.CreateGraphicsPipeline(false);
 
     std::array<VkPipeline, 4> libraries = {
-        vi.pipeline_,
-        pre_raster.pipeline_,
-        fragment.pipeline_,
-        frag_out.pipeline_,
+        vi.Handle(),
+        pre_raster.Handle(),
+        fragment.Handle(),
+        frag_out.Handle(),
     };
     vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
 
@@ -631,10 +631,10 @@ TEST_F(NegativeDebugPrintf, GPL) {
         pre_raster_i64.CreateGraphicsPipeline(false);
 
         std::array<VkPipeline, 4> libraries_i64 = {
-            vi.pipeline_,
-            pre_raster_i64.pipeline_,
-            fragment.pipeline_,
-            frag_out.pipeline_,
+            vi.Handle(),
+            pre_raster_i64.Handle(),
+            fragment.Handle(),
+            frag_out.Handle(),
         };
 
         vkt::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64, pipeline_layout.handle());
@@ -786,10 +786,10 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     frag_out.CreateGraphicsPipeline(false);
 
     std::array<VkPipeline, 4> libraries = {
-        vi.pipeline_,
-        pre_raster.pipeline_,
-        fragment.pipeline_,
-        frag_out.pipeline_,
+        vi.Handle(),
+        pre_raster.Handle(),
+        fragment.Handle(),
+        frag_out.Handle(),
     };
     vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
 
@@ -924,10 +924,10 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     frag_out.CreateGraphicsPipeline(false);
 
     std::array<VkPipeline, 4> libraries = {
-        vi.pipeline_,
-        pre_raster.pipeline_,
-        fragment.pipeline_,
-        frag_out.pipeline_,
+        vi.Handle(),
+        pre_raster.Handle(),
+        fragment.Handle(),
+        frag_out.Handle(),
     };
     vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
 

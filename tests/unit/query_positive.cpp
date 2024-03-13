@@ -135,7 +135,7 @@ TEST_F(PositiveQuery, BasicQuery) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
@@ -201,7 +201,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);

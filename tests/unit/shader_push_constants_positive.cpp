@@ -318,9 +318,9 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     const VkPipelineLayout layout_a = pipeline_helper_a.pipeline_layout_.handle();
     const VkPipelineLayout layout_b = pipeline_helper_b.pipeline_layout_.handle();
     const VkPipelineLayout layout_c = pipeline_helper_c.pipeline_layout_.handle();
-    const VkPipeline pipeline_a = pipeline_helper_a.pipeline_;
-    const VkPipeline pipeline_b = pipeline_helper_b.pipeline_;
-    const VkPipeline pipeline_c = pipeline_helper_c.pipeline_;
+    const VkPipeline pipeline_a = pipeline_helper_a.Handle();
+    const VkPipeline pipeline_b = pipeline_helper_b.Handle();
+    const VkPipeline pipeline_c = pipeline_helper_c.Handle();
 
     const float data[16] = {};  // dummy data to match shader size
 
@@ -453,7 +453,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -461,7 +461,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -686,7 +686,7 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
