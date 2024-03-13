@@ -553,6 +553,9 @@ class CoreChecks : public ValidationStateTracker {
     bool VerifySetLayoutCompatibility(const vvl::PipelineLayout& layout_a, const vvl::PipelineLayout& layout_b,
                                       std::string& error_msg) const;
 
+    bool VerifySetLayoutCompatibilityUnion(const vvl::PipelineLayout& layout, const vvl::PipelineLayout& pre_raster_layout,
+                                           const vvl::PipelineLayout& fs_layout, std::string& error_msg) const;
+
     // Validate contents of a CopyUpdate
     using DescriptorSet = vvl::DescriptorSet;
     bool ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Location& copy_loc) const;
