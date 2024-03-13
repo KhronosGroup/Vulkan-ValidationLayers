@@ -337,8 +337,15 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         alias = entry.get('alias')
                         if (alias is not None and promotedToCore):
                             stype_version_dict[alias] = extensionName
-        out = []
 
+        # Generate the struct member checking code from the captured data
+        for struct in self.vk.structs.values():
+            # The string returned will be nested in an if check for a NULL pointer, so needs its indent incremented
+            lines = self.genFuncBody(self.vk.structs[struct.name].members, '{funcName}', '{errorLoc}', '{valuePrefix}', '{displayNamePrefix}', struct.name, False)
+            if lines:
+                self.validatedStructs[struct.name] = lines
+
+        out = []
         out.append('''
             #include "chassis.h"
 
@@ -354,32 +361,28 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 switch(header->sType) {
             ''')
 
-        # Generate the struct member checking code from the captured data
-        for struct in self.vk.structs.values():
-            # The string returned will be nested in an if check for a NULL pointer, so needs its indent incremented
-            lines = self.genFuncBody(self.vk.structs[struct.name].members, '{funcName}', '{errorLoc}', '{valuePrefix}', '{displayNamePrefix}', struct.name, False)
-            if lines:
-                self.validatedStructs[struct.name] = lines
+        extended_structs = [x for x in self.vk.structs.values() if x.extends]
+        middle_struct = [struct.name for i, struct in enumerate(extended_structs) if i == len(extended_structs) // 2][0]
 
         guard_helper = PlatformGuardHelper()
-        # Do some processing here to extract data from validatedstructs...
-        for struct in [x for x in self.vk.structs.values() if x.extends]:
+        for struct in extended_structs:
             out.extend(guard_helper.add_guard(struct.protect))
 
-            # middle struct to breakup ValidatePnextStructContents because some
-            if struct.name == 'VkSampleLocationsInfoEXT':
+            if struct.name == middle_struct:
                 out.append('''
                         default:
-                            return ValidatePnextStructContents2(loc, header, pnext_vuid, is_const_param);
+                            return ValidatePnextStructContents2(loc, header, pnext_vuid, caller_physical_device, is_const_param);
                         }
                         return skip;
                     }
 
                     // Breaks up function into 2 parts because MSVC seems to have issue compiling a single large function
+                    // reference: https://www.asawicki.info/news_1617_how_code_refactoring_can_fix_stack_overflow_error
                     bool StatelessValidation::ValidatePnextStructContents2(const Location& loc,
                                                                         const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                        bool is_const_param) const {
+                                                                        VkPhysicalDevice caller_physical_device, bool is_const_param) const {
                         bool skip = false;
+                        [[maybe_unused]] const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
                         switch(header->sType) {
                     ''')
 

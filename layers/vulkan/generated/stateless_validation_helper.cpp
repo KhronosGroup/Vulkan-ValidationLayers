@@ -4985,17 +4985,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // VUID-VkPipelineShaderStageNodeCreateInfoAMDX-sType-sType
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
-        default:
-            return ValidatePnextStructContents2(loc, header, pnext_vuid, is_const_param);
-    }
-    return skip;
-}
-
-// Breaks up function into 2 parts because MSVC seems to have issue compiling a single large function
-bool StatelessValidation::ValidatePnextStructContents2(const Location& loc, const VkBaseOutStructure* header,
-                                                       const char* pnext_vuid, bool is_const_param) const {
-    bool skip = false;
-    switch (header->sType) {
         // Validation code for VkSampleLocationsInfoEXT structure members
         case VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT: {  // Covers VUID-VkSampleLocationsInfoEXT-sType-sType
             if (is_const_param) {
@@ -5206,6 +5195,20 @@ bool StatelessValidation::ValidatePnextStructContents2(const Location& loc, cons
             }
         } break;
 
+        default:
+            return ValidatePnextStructContents2(loc, header, pnext_vuid, caller_physical_device, is_const_param);
+    }
+    return skip;
+}
+
+// Breaks up function into 2 parts because MSVC seems to have issue compiling a single large function
+// reference: https://www.asawicki.info/news_1617_how_code_refactoring_can_fix_stack_overflow_error
+bool StatelessValidation::ValidatePnextStructContents2(const Location& loc, const VkBaseOutStructure* header,
+                                                       const char* pnext_vuid, VkPhysicalDevice caller_physical_device,
+                                                       bool is_const_param) const {
+    bool skip = false;
+    [[maybe_unused]] const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+    switch (header->sType) {
         // Validation code for VkPipelineCoverageModulationStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV: {  // Covers
                                                                                      // VUID-VkPipelineCoverageModulationStateCreateInfoNV-sType-sType
