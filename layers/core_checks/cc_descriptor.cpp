@@ -147,19 +147,19 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
 bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSet &descriptor_set,
                                               const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
                                               const VulkanTypedHandle &handle, const uint32_t layoutIndex,
-                                              std::string &errorMsg) const {
+                                              std::string &error_msg) const {
     auto num_sets = set_layouts.size();
     if (layoutIndex >= num_sets) {
         std::stringstream error_str;
         error_str << FormatHandle(handle) << ") only contains " << num_sets << " setLayouts corresponding to sets 0-"
                   << num_sets - 1 << ", but you're attempting to bind set to index " << layoutIndex;
-        errorMsg = error_str.str();
+        error_msg = error_str.str();
         return false;
     }
     if (descriptor_set.IsPushDescriptor()) return true;
     const auto *layout_node = set_layouts[layoutIndex].get();
     if (layout_node) {
-        return VerifySetLayoutCompatibility(*layout_node, *descriptor_set.GetLayout(), errorMsg);
+        return VerifySetLayoutCompatibility(*layout_node, *descriptor_set.GetLayout(), error_msg);
     } else {
         // It's possible the DSL is null when creating a graphics pipeline library, in which case we can't verify compatibility
         // here.
