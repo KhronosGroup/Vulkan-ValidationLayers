@@ -1827,3 +1827,28 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }
+
+TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6523/diffs");
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    renderingInfo.colorAttachmentCount = 0;
+    renderingInfo.layerCount = 1;
+    renderingInfo.renderArea = {{0, 0}, {1, 1}};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(renderingInfo);
+
+    SetDefaultDynamicStates({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
+    BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}

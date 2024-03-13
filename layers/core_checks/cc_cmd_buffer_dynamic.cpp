@@ -1452,15 +1452,21 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LOGIC_OP_EXT, objlist, loc,
                                                   vuid.set_logic_op_08641);
             }
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, objlist,
-                                              loc, vuid.set_color_blend_enable_08657);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, objlist,
-                                              loc, vuid.set_blend_equation_09418);
+
+            const uint32_t attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
+            if (attachment_count > 0) {
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
+                                                  objlist, loc, vuid.set_color_blend_enable_08657);
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                                  objlist, loc, vuid.set_blend_equation_09418);
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, objlist,
+                                                  loc, vuid.set_color_write_mask_08659);
+            }
 
             const std::array<VkBlendFactor, 4> const_factors = {
                 VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
                 VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
-            for (uint32_t i = 0; i < cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount(); ++i) {
+            for (uint32_t i = 0; i < attachment_count; ++i) {
                 if (!cb_state.dynamic_state_value.color_blend_enable_attachments[i]) {
                     skip |= LogError(vuid.set_blend_advanced_09417, objlist, loc,
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
@@ -1499,8 +1505,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT));
                 }
             }
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, objlist, loc,
-                                              vuid.set_color_write_mask_08659);
             if (enabled_features.pipelineFragmentShadingRate) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR,
                                                   objlist, loc, vuid.set_fragment_shading_rate_09238);
