@@ -214,8 +214,6 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
                                               const char *stype_vuid, VkPhysicalDevice caller_physical_device,
                                               const bool is_const_param) const {
     bool skip = false;
-    const Location pNext_loc = loc.dot(Field::pNext);
-    const char *api_name = loc.StringFunc();
 
     if (next != nullptr) {
         vvl::unordered_set<const void *> cycle_check;
@@ -226,6 +224,7 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
             "you are using a struct from a private extension or an extension that was added to a later version of the Vulkan "
             "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
 
+        const Location pNext_loc = loc.dot(Field::pNext);
         if ((allowed_type_count == 0) && (custom_stype_info.size() == 0)) {
             std::string message = "must be NULL. ";
             message += disclaimer;
@@ -236,10 +235,8 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
             const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
 
             while (current != nullptr) {
-                if (((strncmp(api_name, "vkCreateInstance", strlen(api_name)) != 0) ||
-                     (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
-                    ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
-                     (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
+                if ((loc.function != Func::vkCreateInstance || (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
+                    (loc.function != Func::vkCreateDevice || (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
                     std::string type_name = string_VkStructureType(current->sType);
                     if (unique_stype_check.find(current->sType) != unique_stype_check.end() && !IsDuplicatePnext(current->sType)) {
                         // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
