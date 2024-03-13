@@ -304,53 +304,46 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &modul
             }
             break;
 
+        // For tessellation, it is not clear if the built-ins should be part of the total component limits or not
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3448#note_459088
+        // But seems that from Zink, that GL allowed it, so likely there is some exceptions for tessellation
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            if (total_input_components >= limits.maxTessellationControlPerVertexInputComponents) {
+            if (max_input_slot.slot >= limits.maxTessellationControlPerVertexInputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                 "SPIR-V (Tessellation control stage) input interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 "SPIR-V (Tessellation control stage) input interface variable (%s) "
                                  "exceeds component limit maxTessellationControlPerVertexInputComponents (%" PRIu32 ").",
-                                 max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
-                                 limits.maxTessellationControlPerVertexInputComponents);
+                                 max_input_slot.Describe().c_str(), limits.maxTessellationControlPerVertexInputComponents);
             }
             if (entrypoint.max_input_slot_variable) {
                 if (entrypoint.max_input_slot_variable->is_patch &&
-                    total_output_components >= limits.maxTessellationControlPerPatchOutputComponents) {
+                    max_output_slot.slot >= limits.maxTessellationControlPerPatchOutputComponents) {
                     skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                     "SPIR-V (Tessellation control stage) output interface variable (%s) along with %" PRIu32
-                                     " built-in components,  "
+                                     "SPIR-V (Tessellation control stage) output interface variable (%s) "
                                      "exceeds component limit maxTessellationControlPerPatchOutputComponents (%" PRIu32 ").",
-                                     max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                                     limits.maxTessellationControlPerPatchOutputComponents);
+                                     max_output_slot.Describe().c_str(), limits.maxTessellationControlPerPatchOutputComponents);
                 }
                 if (!entrypoint.max_input_slot_variable->is_patch &&
-                    total_output_components >= limits.maxTessellationControlPerVertexOutputComponents) {
+                    max_output_slot.slot >= limits.maxTessellationControlPerVertexOutputComponents) {
                     skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                     "SPIR-V (Tessellation control stage) output interface variable (%s) along with %" PRIu32
-                                     " built-in components,  "
+                                     "SPIR-V (Tessellation control stage) output interface variable (%s) "
                                      "exceeds component limit maxTessellationControlPerVertexOutputComponents (%" PRIu32 ").",
-                                     max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                                     limits.maxTessellationControlPerVertexOutputComponents);
+                                     max_output_slot.Describe().c_str(), limits.maxTessellationControlPerVertexOutputComponents);
                 }
             }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            if (total_input_components >= limits.maxTessellationEvaluationInputComponents) {
+            if (max_input_slot.slot >= limits.maxTessellationEvaluationInputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                 "SPIR-V (Tessellation evaluation stage) input interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 "SPIR-V (Tessellation evaluation stage) input interface variable (%s) "
                                  "exceeds component limit maxTessellationEvaluationInputComponents (%" PRIu32 ").",
-                                 max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
-                                 limits.maxTessellationEvaluationInputComponents);
+                                 max_input_slot.Describe().c_str(), limits.maxTessellationEvaluationInputComponents);
             }
-            if (total_output_components >= limits.maxTessellationEvaluationOutputComponents) {
+            if (max_output_slot.slot >= limits.maxTessellationEvaluationOutputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                 "SPIR-V (Tessellation evaluation stage) output interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 "SPIR-V (Tessellation evaluation stage) output interface variable (%s) "
                                  "exceeds component limit maxTessellationEvaluationOutputComponents (%" PRIu32 ").",
-                                 max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                                 limits.maxTessellationEvaluationOutputComponents);
+                                 max_output_slot.Describe().c_str(), limits.maxTessellationEvaluationOutputComponents);
             }
             // Portability validation
             if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
