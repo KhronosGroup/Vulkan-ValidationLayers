@@ -296,7 +296,11 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         return false;
     }
     if (!variable->info.is_image_accessed) {
-	return false;
+        return false;
+    }
+    // If not an image array, the set of indexes will be empty and we guarantee this is the only element
+    if (!variable->image_access_chain_indexes.empty() && !variable->image_access_chain_indexes.contains(index)) {
+        return false;
     }
 
     const spv::Dim dim = variable->info.image_dim;

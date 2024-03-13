@@ -383,6 +383,8 @@ struct ResourceInterfaceVariable : public VariableBase {
 
     bool is_read_from{false};   // has operation to reads from the variable
     bool is_written_to{false};  // has operation to writes to the variable
+    // If dealing with an image array, only check the indexes accesses
+    vvl::unordered_set<uint32_t> image_access_chain_indexes;
 
     // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
     bool is_storage_image{false};

@@ -1997,6 +1997,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 info.is_sampler_offset |= image_access.is_sampler_offset;
                 info.is_sign_extended |= image_access.is_sign_extended;
                 info.is_zero_extended |= image_access.is_zero_extended;
+
+                if (array_length > 1) {
+                    image_access_chain_indexes.insert(image_access.image_access_chain_index);
+                }
                 is_written_to |= image_access.is_written_to;
                 is_read_from |= image_access.is_read_from;
 
