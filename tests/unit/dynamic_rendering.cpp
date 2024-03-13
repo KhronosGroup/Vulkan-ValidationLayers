@@ -224,7 +224,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDepthWriteEnable(m_commandBuffer->handle(), true);
     vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_FRONT_BIT, 0xff);
     vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_BACK_BIT, 0);
@@ -1770,7 +1770,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
         m_commandBuffer->begin();
         m_commandBuffer->BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_commandBuffer->EndRendering();
         m_commandBuffer->end();
@@ -1803,7 +1803,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
         m_commandBuffer->begin();
         m_commandBuffer->BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_commandBuffer->EndRendering();
         m_commandBuffer->end();
@@ -3122,7 +3122,7 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     pipeline_rendering_info.viewMask = 0x1;
     VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper(&pipeline_rendering_info);
     library_create_info.libraryCount = 1;
-    library_create_info.pLibraries = &lib.pipeline_;
+    library_create_info.pLibraries = &lib.Handle();
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -3202,7 +3202,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     pipeline_rendering_info.viewMask = 0;
     VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper();
     library_create_info.libraryCount = 2;
-    VkPipeline libraries[2] = {lib1.pipeline_, lib2.pipeline_};
+    VkPipeline libraries[2] = {lib1.Handle(), lib2.Handle()};
     library_create_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&library_create_info);
@@ -3238,7 +3238,7 @@ TEST_F(NegativeDynamicRendering, LibraryRenderPass) {
 
     VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper(&pipeline_rendering_info);
     library_create_info.libraryCount = 1;
-    library_create_info.pLibraries = &lib.pipeline_;
+    library_create_info.pLibraries = &lib.Handle();
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     VkShaderModuleCreateInfo fs_ci = vku::InitStructHelper();
@@ -4550,7 +4550,7 @@ TEST_F(NegativeDynamicRendering, Pipeline) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-06198");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -5667,7 +5667,7 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
 
     vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin(&cbbi);
-    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(secondary.handle(), 3, 1, 0, 0);
     secondary.end();
 }
@@ -6086,7 +6086,7 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT;
     vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 1u, 1u, &color_component_flags);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-firstAttachment-07478");

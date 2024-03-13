@@ -42,7 +42,7 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
         }
         CreatePipelineHelper pipe(*this);
         pipe.CreateGraphicsPipeline();
-        pipeline_Array[i] = pipe.pipeline_;
+        pipeline_Array[i] = pipe.Handle();
         if (i == 1) {
             // change check to too many pipelines
             m_errorMonitor->VerifyFound();
@@ -702,7 +702,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     // record a secondary command buffer
     secondary_cmd_buf.begin(&binfo);
 
-    vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(secondary_cmd_buf.handle(), 0, 1, &vertex_buffer.handle(), &offset);
     vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);

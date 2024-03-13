@@ -34,7 +34,6 @@ class RayTracingPipelineHelper {
     VkRayTracingPipelineCreateInfoKHR rp_ci_KHR_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
     std::optional<VkRayTracingPipelineInterfaceCreateInfoKHR> rp_i_ci_;
-    VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::vector<VkRayTracingShaderGroupCreateInfoNV> groups_;
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups_KHR_;
@@ -47,6 +46,7 @@ class RayTracingPipelineHelper {
     RayTracingPipelineHelper(VkLayerTest& test);
     ~RayTracingPipelineHelper();
 
+    const VkPipeline& Handle() const { return pipeline_; }
     void InitShaderGroups();
     void InitDescriptorSetInfo();
     void InitDescriptorSetInfoKHR();
@@ -86,6 +86,9 @@ class RayTracingPipelineHelper {
 
         ASSERT_EQ(VK_SUCCESS, helper.CreateNVRayTracingPipeline());
     }
+
+  private:
+    VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
 // DEPRECATED: This is part of the legacy ray tracing framework, now only used in the old nvidia ray tracing extension tests.

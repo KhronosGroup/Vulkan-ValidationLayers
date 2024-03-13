@@ -87,7 +87,7 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -177,7 +177,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -271,7 +271,7 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -391,7 +391,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     // This does not invoke the Compute Entrypoint where the bad write would be

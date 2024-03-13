@@ -593,7 +593,7 @@ TEST_F(PositiveVertexInput, VertexAttributeDivisorFirstInstance) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &vertex_buffer.handle(), &offset);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 1u);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -621,7 +621,7 @@ TEST_F(PositiveVertexInput, VertextBindingNonLinear) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkDeviceSize offsets[6] = {0, 0, 0, 0, 0, 0};
     VkBuffer buffers[6] = {buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle()};
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 6, buffers, offsets);
@@ -674,7 +674,7 @@ TEST_F(PositiveVertexInput, VertextBindingDynamicState) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     VkBuffer buffers[2] = {buffer.handle(), buffer.handle()};
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 5, 2, buffers, offsets);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 3, bindings, 3, attributes);
     // set later, shouldn't matter
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 2, 2, buffers, offsets);
@@ -706,7 +706,7 @@ TEST_F(PositiveVertexInput, VertexStrideDynamicStride) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     VkDeviceSize offset = 0;
     VkDeviceSize good_stride = 4;
@@ -746,7 +746,7 @@ TEST_F(PositiveVertexInput, VertexStrideDoubleDynamicStride) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     const VkDeviceSize offset = 0;
     const VkDeviceSize bad_stride = 3;
     const VkDeviceSize good_stride = 4;
@@ -801,7 +801,7 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     VkDeviceSize offsets[2] = {0, 0};
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);

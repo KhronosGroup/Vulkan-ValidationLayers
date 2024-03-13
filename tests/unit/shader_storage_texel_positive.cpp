@@ -89,7 +89,7 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);

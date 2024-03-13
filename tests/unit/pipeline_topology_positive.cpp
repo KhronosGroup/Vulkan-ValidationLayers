@@ -446,7 +446,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(renderPass(), framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -480,7 +480,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     cb.begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(cb.handle(), 0, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdSetPrimitiveTopologyEXT(cb.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
     vk::CmdDraw(cb.handle(), 1, 1, 0, 0);

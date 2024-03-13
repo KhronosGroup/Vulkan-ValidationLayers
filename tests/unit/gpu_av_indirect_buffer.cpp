@@ -666,7 +666,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
     vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
@@ -691,7 +691,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     // Check again in a 2nd submitted command buffer
     m_commandBuffer->reset();
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
     vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);

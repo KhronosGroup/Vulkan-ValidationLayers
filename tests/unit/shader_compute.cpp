@@ -758,7 +758,7 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
 
     // Bind pipeline to command buffer
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     // Dispatch counts that exceed device limits
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountX-00386");
@@ -823,7 +823,7 @@ TEST_F(NegativeShaderCompute, DispatchBaseFlag) {
 
     // Bind pipeline to command buffer
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00427");
     vk::CmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();

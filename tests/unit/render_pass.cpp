@@ -2921,7 +2921,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
     // ms_render_to_ss.rasterizationSamples != ms_state.rasterizationSamples
     // Valid because never hit draw time
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_helper.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_helper.Handle());
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
@@ -3016,7 +3016,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.resolveImageView = VK_NULL_HANDLE;
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_commandBuffer->EndRendering();
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
@@ -3026,7 +3026,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     test_pipe.ms_ci_ = ms_state;
     test_pipe.CreateGraphicsPipeline();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
 

@@ -561,15 +561,15 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
     {
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-BindPipeline-SwitchTessGeometryMesh");
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.pipeline_);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.Handle());
         m_errorMonitor->Finish();
     }
     {
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-BindPipeline-SwitchTessGeometryMesh");
         for (int i = 0; i < 10; ++i) {
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vgsPipe.pipeline_);
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.pipeline_);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vgsPipe.Handle());
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.Handle());
         }
         m_errorMonitor->VerifyFound();
     }

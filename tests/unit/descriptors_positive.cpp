@@ -361,7 +361,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // This update should succeed, but offset of inactive binding 1 oversteps binding 2 buffer size
     //   we used to have a bug in this case.
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
@@ -1064,7 +1064,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0u, 1u,
                               &descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);

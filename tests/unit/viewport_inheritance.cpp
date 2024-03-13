@@ -984,7 +984,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     vk::BeginCommandBuffer(secondary.handle(), &cbbi);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04809");
-    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->VerifyFound();
 
     if (DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
@@ -994,7 +994,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
         pipe2.gp_ci_.pDynamicState = &dyn_state_ci;
         pipe2.CreateGraphicsPipeline();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04809");
-        vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+        vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
         m_errorMonitor->VerifyFound();
     }
 }

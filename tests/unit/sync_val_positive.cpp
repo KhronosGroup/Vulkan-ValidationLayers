@@ -128,7 +128,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     m_commandBuffer->begin();
     // Write 1: Copy to render target's layer 0
     vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, rt, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(render_pass, framebuffer, width, height);
     // Write 2: Clear render target's layer 1
     vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
@@ -743,13 +743,13 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     m_commandBuffer->begin();
     // Graphics pipeline writes
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     // Compute pipeline reads
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
@@ -814,13 +814,13 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     m_commandBuffer->begin();
     // Graphics pipeline writes
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     // Compute pipeline reads
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
@@ -889,13 +889,13 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     m_commandBuffer->begin();
     // Graphics pipeline writes
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     // Compute pipeline reads
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
@@ -966,7 +966,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
 
     vkt::CommandBuffer cb(*m_device, m_commandPool);
     cb.begin();
-    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb, 1, 1, 1);
     cb.end();
@@ -1153,7 +1153,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
 
     vkt::CommandBuffer cb2(*m_device, m_commandPool);
     cb2.begin();
-    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_);
+    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
     vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
     vk::CmdDispatch(cb2, 1, 1, 1);

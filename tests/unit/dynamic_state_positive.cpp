@@ -38,7 +38,7 @@ TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDiscardRectangleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -100,7 +100,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -153,7 +153,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -198,7 +198,7 @@ TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -263,7 +263,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     m_renderPassBeginInfo.renderPass = rp.handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkBool32 color_write_enable = VK_TRUE;
     vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, &color_write_enable);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
@@ -305,7 +305,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
@@ -347,7 +347,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle());
 
     vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
@@ -378,8 +378,8 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     command_buffer.begin();
     vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
     command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_no_dynamic.pipeline_);
-    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_no_dynamic.Handle());
+    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(command_buffer.handle(), 1, 1, 0, 0);
     vk::CmdEndRenderPass(command_buffer.handle());
     command_buffer.end();
@@ -404,10 +404,10 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
     float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     vk::CmdSetBlendConstants(m_commandBuffer->handle(), blends);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_blend.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_blend.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -434,7 +434,7 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
     vk::CmdSetAttachmentFeedbackLoopEnableEXT(m_commandBuffer->handle(), VK_IMAGE_ASPECT_COLOR_BIT);
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
 
@@ -647,7 +647,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer->handle(), VK_FALSE);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
@@ -667,7 +667,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
@@ -818,7 +818,7 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDepthBoundsTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
     // don't need vkCmdSetDepthBounds since test is disabled now
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -865,7 +865,7 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     info.pInheritanceInfo = &hinfo;
 
     cmd_buffer.begin(&info);
-    vk::CmdBindPipeline(cmd_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(cmd_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(cmd_buffer.handle(), 3, 1, 0, 0);
     cmd_buffer.end();
 

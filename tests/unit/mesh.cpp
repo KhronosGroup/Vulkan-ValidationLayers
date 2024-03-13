@@ -1414,7 +1414,7 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vk::CmdBeginQuery(m_commandBuffer->handle(), xfb_query_pool.handle(), 0u, 0u);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-None-07074");

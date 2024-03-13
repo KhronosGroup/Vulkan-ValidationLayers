@@ -40,7 +40,6 @@ class CreatePipelineHelper {
     VkPipelineDepthStencilStateCreateInfo ds_ci_ = {};
     VkGraphicsPipelineCreateInfo gp_ci_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
-    VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::unique_ptr<VkShaderObj> vs_;
     std::unique_ptr<VkShaderObj> fs_;
@@ -51,7 +50,7 @@ class CreatePipelineHelper {
     CreatePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
     ~CreatePipelineHelper();
 
-    VkPipeline Handle() { return pipeline_; }
+    const VkPipeline &Handle() const { return pipeline_; }
     void InitShaderInfo();
     void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
 
@@ -118,6 +117,7 @@ class CreatePipelineHelper {
 
   private:
     void InitPipelineCache();
+    VkPipeline pipeline_ = VK_NULL_HANDLE;
     // Hold some state for making certain pipeline creations easier
     std::vector<VkDynamicState> dynamic_states_;
 
@@ -133,7 +133,6 @@ class CreateComputePipelineHelper {
     vkt::PipelineLayout pipeline_layout_;
     VkComputePipelineCreateInfo cp_ci_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
-    VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::unique_ptr<VkShaderObj> cs_;
     bool override_skip_ = false;
@@ -142,6 +141,7 @@ class CreateComputePipelineHelper {
     CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
     ~CreateComputePipelineHelper();
 
+    const VkPipeline &Handle() const { return pipeline_; }
     void InitShaderInfo();
 
     void LateBindPipelineInfo();
@@ -182,6 +182,7 @@ class CreateComputePipelineHelper {
 
   private:
     void InitPipelineCache();
+    VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
 // Set all dynamic states needed when using shader objects
