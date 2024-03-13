@@ -182,6 +182,28 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::PipelineLayout &layout_
     return true;
 }
 
+bool CoreChecks::VerifySetLayoutCompatibilityUnion(const vvl::PipelineLayout &layout, const vvl::PipelineLayout &pre_raster_layout,
+                                                   const vvl::PipelineLayout &fs_layout, std::string &error_msg) const {
+    // When dealing with Graphics Pipeline Library, we need to get the union of pipeline states.
+    // Currently this just means the VkDescriptorSetLayout may be VK_NULL_HANDLE.
+    uint32_t num_sets = static_cast<uint32_t>(std::min(pre_raster_layout.set_layouts.size(), fs_layout.set_layouts.size()));
+    num_sets = std::min(static_cast<uint32_t>(layout.set_layouts.size()), num_sets);
+    for (uint32_t i = 0; i < num_sets; ++i) {
+        const auto ds_a = layout.set_layouts[i];
+        // If Pre-Rasterization is not null, should be good to use
+        auto ds_b = pre_raster_layout.set_layouts[i];
+        if (!ds_b) {
+            ds_b = fs_layout.set_layouts[i];
+        }
+        if (ds_a && ds_b) {
+            if (!VerifySetLayoutCompatibility(*ds_a, *ds_b, error_msg)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout, uint32_t firstSet,
                                                uint32_t setCount, const VkDescriptorSet *pDescriptorSets,
                                                uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets,
