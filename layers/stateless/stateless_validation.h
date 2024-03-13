@@ -364,6 +364,12 @@ class StatelessValidation : public ValidationObject {
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
     bool SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension) const;
 
+    bool ValidatePnextFeatureStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
+                                            VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE,
+                                            bool is_const_param = true) const;
+    bool ValidatePnextPropertyStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
+                                             VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE,
+                                             bool is_const_param = true) const;
     bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
                                      VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE, bool is_const_param = true) const;
 

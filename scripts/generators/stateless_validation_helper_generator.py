@@ -21,7 +21,7 @@
 import os
 import re
 from generators.generator_utils import buildListVUID, PlatformGuardHelper
-from generators.vulkan_object import Member
+from generators.vulkan_object import Member, Struct
 from generators.base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
@@ -234,6 +234,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # Map of flag bits typename to list of values
         self.flagBits = dict()
 
+        self.stype_version_dict = dict()
+
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -324,7 +326,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
         #  VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT
         root = self.registry.reg
-        stype_version_dict = dict()
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
                 extensionName = extension.get('name')
@@ -336,23 +337,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     if (entry.get('comment') is None or 'typo' not in entry.get('comment')):
                         alias = entry.get('alias')
                         if (alias is not None and promotedToCore):
-                            stype_version_dict[alias] = extensionName
-        out = []
-
-        out.append('''
-            #include "chassis.h"
-
-            #include "stateless/stateless_validation.h"
-            #include "generated/enum_flag_bits.h"
-            #include "generated/layer_chassis_dispatch.h"
-
-            bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
-                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
-                bool skip = false;
-                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
-                switch(header->sType) {
-            ''')
+                            self.stype_version_dict[alias] = extensionName
 
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
@@ -361,99 +346,79 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             if lines:
                 self.validatedStructs[struct.name] = lines
 
+        out = []
+        out.append('''
+            #include "chassis.h"
+
+            #include "stateless/stateless_validation.h"
+            #include "generated/enum_flag_bits.h"
+            #include "generated/layer_chassis_dispatch.h"
+            ''')
+
+        # The reason we split this up into Feature and Properties struct is before be had a 450 case, 10k line function that broke MSVC
+        # reference: https://www.asawicki.info/news_1617_how_code_refactoring_can_fix_stack_overflow_error
+        extended_structs = [x for x in self.vk.structs.values() if x.extends]
+        feature_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceFeatures2", "VkDeviceCreateInfo"]]
+        property_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceProperties2"]]
+        other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs]
+
+        out.append('''
+            bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc,
+                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
+                bool skip = false;
+                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+                switch(header->sType) {
+            ''')
         guard_helper = PlatformGuardHelper()
-        # Do some processing here to extract data from validatedstructs...
-        for struct in [x for x in self.vk.structs.values() if x.extends]:
+        for struct in feature_structs:
             out.extend(guard_helper.add_guard(struct.protect))
+            out.extend(self.genStructBody(struct))
+        out.extend(guard_helper.add_guard(None))
+        out.append('''
+                    default:
+                        skip = false;
+                }
+                return skip;
+            }
 
-            pnext_case = '\n'
-            pnext_check = ''
+            ''')
 
-            pnext_case += f'        // Validation code for {struct.name} structure members\n'
-            pnext_case += f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n'
+        out.append('''
+            bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& loc,
+                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
+                bool skip = false;
+                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+                switch(header->sType) {
+            ''')
+        guard_helper = PlatformGuardHelper()
+        for struct in property_structs:
+            out.extend(guard_helper.add_guard(struct.protect))
+            out.extend(self.genStructBody(struct))
+        out.extend(guard_helper.add_guard(None))
+        out.append('''
+                    default:
+                        skip = false;
+                }
+                return skip;
+            }
 
-            if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
-                pnext_check += f'''
-                    if (is_physdev_api) {{
-                        VkPhysicalDeviceProperties device_properties = {{}};
-                        DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
-                        if (device_properties.apiVersion < {struct.version.nameApi}) {{
-                            skip |= LogError(
-                                    pnext_vuid, instance, loc.dot(Field::pNext),
-                                    "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
-                                    "current effective API version is %s.", StringAPIVersion(api_version).c_str());
-                        }}
-                    }}
-                    '''
+            ''')
 
-            elif struct.sType in stype_version_dict.keys():
-                ext_name = stype_version_dict[struct.sType]
-
-                # Skip extensions that are not in the target API
-                # This check is needed because parts of the base generator code bypass the
-                # dependency resolution logic in the registry tooling and thus the generator
-                # may attempt to generate code for extensions which are not supported in the
-                # target API variant, thus this check needs to happen even if any specific
-                # target API variant may not specifically need it
-                if ext_name not in self.vk.extensions:
-                    continue
-
-                # Dependent on enabled extension
-                extension = self.vk.extensions[ext_name]
-                extension_check = ''
-                if extension.device:
-                    extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
-                else:
-                    extension_check = f'if (!IsExtEnabled(instance_extensions.{extension.name.lower()})) {{'
-                pnext_check += f'''
-                        {extension_check}
-                            skip |= LogError(
-                                pnext_vuid, instance, loc.dot(Field::pNext),
-                                "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
-                                "{extension.name} has not been enabled.");
-                        }}
-                    '''
-
-            expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [])
-            struct_validation_source = self.ScrubStructCode(expr)
-            if struct_validation_source != '':
-                # Only reasonable to validate content of structs if const as otherwise the date inside has not been writen to yet
-                # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3122
-                pnext_check += 'if (is_const_param) {\n'
-                pnext_check += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
-
-                # We do the extension checking here at the pNext chaining because if the struct is only used in a new extended command,
-                # using that command will always trigger a "missing extension" VU
-                checkExpression = []
-                resultExpression = []
-                for extension in [x.name for x in struct.extensions if x.device]:
-                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
-                    resultExpression.append(extension)
-                # TODO - Video session creation checks will fail tests if no extensions are found (need to fix test logic)
-                if len(checkExpression) > 0 and 'Video' not in struct.name:
-                    # Special message for device features
-                    if 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends:
-                        pnext_check += f'''if ({" && ".join(checkExpression)}){{
-                            skip |= LogError(pnext_vuid, instance, pNext_loc,
-                                "includes a pointer to a {struct.name}, but when creating VkDevice, the parent extension "
-                                "({" or ".join(resultExpression)}) was not included in ppEnabledExtensionNames.");
-                            }}
-                        '''
-                    else:
-                        pnext_check += f'''if ({" && ".join(checkExpression)}){{
-                                skip |= LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions {" or ".join(resultExpression)}");
-                            }}
-                            '''
-
-                struct_validation_source = f'{struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
-                struct_validation_source += '}\n'
-            pnext_case += f'{pnext_check}{struct_validation_source}'
-            pnext_case += '} break;\n'
-            # Skip functions containing no validation
-            if struct_validation_source or pnext_check != '':
-                out.append(pnext_case)
-            else:
-                out.append(f'\n        // No Validation code for {struct.name} structure members  -- Covers VUID-{struct.name}-sType-sType\n')
+        out.append('''
+            // All structs that are not a Feature or Property struct
+            bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
+                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
+                bool skip = false;
+                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+                switch(header->sType) {
+            ''')
+        guard_helper = PlatformGuardHelper()
+        for struct in other_structs:
+            out.extend(guard_helper.add_guard(struct.protect))
+            out.extend(self.genStructBody(struct))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -1006,6 +971,96 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             lines.append('// No xml-driven validation\n')
         return lines
 
+    # This logic was broken into its own function because we need to fill multiple functions with these structs
+    def genStructBody(self, struct: Struct):
+        pnext_case = '\n'
+        pnext_check = ''
+
+        pnext_case += f'        // Validation code for {struct.name} structure members\n'
+        pnext_case += f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n'
+
+        if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
+            pnext_check += f'''
+                if (is_physdev_api) {{
+                    VkPhysicalDeviceProperties device_properties = {{}};
+                    DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
+                    if (device_properties.apiVersion < {struct.version.nameApi}) {{
+                        skip |= LogError(
+                                pnext_vuid, instance, loc.dot(Field::pNext),
+                                "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
+                                "current effective API version is %s.", StringAPIVersion(api_version).c_str());
+                    }}
+                }}
+                '''
+
+        elif struct.sType in self.stype_version_dict.keys():
+            ext_name = self.stype_version_dict[struct.sType]
+
+            # Skip extensions that are not in the target API
+            # This check is needed because parts of the base generator code bypass the
+            # dependency resolution logic in the registry tooling and thus the generator
+            # may attempt to generate code for extensions which are not supported in the
+            # target API variant, thus this check needs to happen even if any specific
+            # target API variant may not specifically need it
+            if ext_name not in self.vk.extensions:
+                return ""
+
+            # Dependent on enabled extension
+            extension = self.vk.extensions[ext_name]
+            extension_check = ''
+            if extension.device:
+                extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
+            else:
+                extension_check = f'if (!IsExtEnabled(instance_extensions.{extension.name.lower()})) {{'
+            pnext_check += f'''
+                    {extension_check}
+                        skip |= LogError(
+                            pnext_vuid, instance, loc.dot(Field::pNext),
+                            "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
+                            "{extension.name} has not been enabled.");
+                    }}
+                '''
+
+        expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [])
+        struct_validation_source = self.ScrubStructCode(expr)
+        if struct_validation_source != '':
+            # Only reasonable to validate content of structs if const as otherwise the date inside has not been writen to yet
+            # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3122
+            pnext_check += 'if (is_const_param) {\n'
+            pnext_check += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
+
+            # We do the extension checking here at the pNext chaining because if the struct is only used in a new extended command,
+            # using that command will always trigger a "missing extension" VU
+            checkExpression = []
+            resultExpression = []
+            for extension in [x.name for x in struct.extensions if x.device]:
+                checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
+                resultExpression.append(extension)
+            # TODO - Video session creation checks will fail tests if no extensions are found (need to fix test logic)
+            if len(checkExpression) > 0 and 'Video' not in struct.name:
+                # Special message for device features
+                if 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends:
+                    pnext_check += f'''if ({" && ".join(checkExpression)}){{
+                        skip |= LogError(pnext_vuid, instance, pNext_loc,
+                            "includes a pointer to a {struct.name}, but when creating VkDevice, the parent extension "
+                            "({" or ".join(resultExpression)}) was not included in ppEnabledExtensionNames.");
+                        }}
+                    '''
+                else:
+                    pnext_check += f'''if ({" && ".join(checkExpression)}){{
+                            skip |= LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions {" or ".join(resultExpression)}");
+                        }}
+                        '''
+
+            struct_validation_source = f'{struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
+            struct_validation_source += '}\n'
+        pnext_case += f'{pnext_check}{struct_validation_source}'
+        pnext_case += '} break;\n'
+        # Skip functions containing no validation
+        if struct_validation_source or pnext_check != '':
+            return pnext_case
+        else:
+            return f'\n        // No Validation code for {struct.name} structure members  -- Covers VUID-{struct.name}-sType-sType\n'
 
 # Helper for iterating over a list where each element is possibly a single element or another 1-dimensional list
 # Generates (setter, deleter, element) for each element where:
