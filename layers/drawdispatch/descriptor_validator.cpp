@@ -299,7 +299,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         return false;
     }
     // If not an image array, the set of indexes will be empty and we guarantee this is the only element
-    if (!variable->image_access_chain_indexes.empty() && !variable->image_access_chain_indexes.contains(index)) {
+    if (!variable->image_access_chain_indexes.empty() &&
+        variable->image_access_chain_indexes.find(index) == variable->image_access_chain_indexes.end()) {
         return false;
     }
 
