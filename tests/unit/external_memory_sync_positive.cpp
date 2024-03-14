@@ -494,3 +494,25 @@ TEST_F(PositiveExternalMemorySync, ExportFromImportedFence) {
     }
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+TEST_F(PositiveExternalMemorySync, MultipleExportOpaqueFd) {
+    TEST_DESCRIPTION("regression from dEQP-VK.api.external.semaphore.opaque_fd.export_multiple_times_temporary");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    const auto handle_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    if ((handle_types & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT) == 0) {
+        GTEST_SKIP() << "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT is not exportable";
+    }
+
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
+
+    int handle = 0;
+    semaphore.export_handle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
+    semaphore.export_handle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
+}

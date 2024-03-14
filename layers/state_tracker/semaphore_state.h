@@ -144,6 +144,12 @@ class Semaphore : public RefcountedStateObject {
         auto guard = ReadLock();
         return scope_;
     }
+
+    // used to catch if GetSemaphore() is called multiple times
+    bool HasImportedHandleType() const {
+        auto guard = ReadLock();
+        return imported_handle_type_.has_value();
+    }
     VkExternalSemaphoreHandleTypeFlagBits ImportedHandleType() const {
         auto guard = ReadLock();
         assert(imported_handle_type_.has_value());
