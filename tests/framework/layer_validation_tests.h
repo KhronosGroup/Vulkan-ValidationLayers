@@ -345,6 +345,10 @@ class CommandTest : public VkLayerTest {};
 class NegativeCommand : public CommandTest {};
 class PositiveCommand : public CommandTest {};
 
+class CopyBufferImageTest : public VkLayerTest {};
+class NegativeCopyBufferImage : public CopyBufferImageTest {};
+class PositiveCopyBufferImage : public CopyBufferImageTest {};
+
 class DescriptorsTest : public VkLayerTest {};
 class NegativeDescriptors : public DescriptorsTest {};
 class PositiveDescriptors : public DescriptorsTest {};
