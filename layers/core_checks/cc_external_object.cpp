@@ -120,7 +120,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
 
-        if (sem_state->Scope() != vvl::Semaphore::kInternal &&
+        if (sem_state->Scope() != vvl::Semaphore::kInternal && sem_state->HasImportedHandleType() &&
             !CanSemaphoreExportFromImported(physical_device, pGetFdInfo->handleType, sem_state->ImportedHandleType())) {
             skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-semaphore-01133", sem_state->Handle(), info_loc.dot(Field::handleType),
                              "(%s) cannot be exported from semaphore with imported payload with handle type %s",
@@ -171,7 +171,7 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
 
-        if (fence_state->Scope() != vvl::Fence::kInternal &&
+        if (fence_state->Scope() != vvl::Fence::kInternal && fence_state->HasImportedHandleType() &&
             !CanFenceExportFromImported(physical_device, pGetFdInfo->handleType, fence_state->ImportedHandleType())) {
             skip |= LogError("VUID-VkFenceGetFdInfoKHR-fence-01455", fence_state->Handle(), info_loc.dot(Field::handleType),
                              "(%s) cannot be exported from fence with imported payload with handle type %s",
@@ -243,7 +243,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
 
-        if (sem_state->Scope() != vvl::Semaphore::kInternal &&
+        if (sem_state->Scope() != vvl::Semaphore::kInternal && sem_state->HasImportedHandleType() &&
             !CanSemaphoreExportFromImported(physical_device, pGetWin32HandleInfo->handleType, sem_state->ImportedHandleType())) {
             skip |= LogError("VUID-VkSemaphoreGetWin32HandleInfoKHR-semaphore-01128", sem_state->Handle(),
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
@@ -275,7 +275,7 @@ bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const Vk
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
 
-        if (fence_state->Scope() != vvl::Fence::kInternal &&
+        if (fence_state->Scope() != vvl::Fence::kInternal && fence_state->HasImportedHandleType() &&
             !CanFenceExportFromImported(physical_device, pGetWin32HandleInfo->handleType, fence_state->ImportedHandleType())) {
             skip |= LogError("VUID-VkFenceGetWin32HandleInfoKHR-fence-01450", fence_state->Handle(),
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),

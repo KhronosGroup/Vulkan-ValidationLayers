@@ -91,6 +91,12 @@ class Fence : public RefcountedStateObject {
     enum State State() const { return state_; }
     enum Scope Scope() const { return scope_; }
 
+    // used to catch if GetFence() is called multiple times
+    bool HasImportedHandleType() const {
+        auto guard = ReadLock();
+        return imported_handle_type_.has_value();
+    }
+
     VkExternalFenceHandleTypeFlagBits ImportedHandleType() const {
         auto guard = ReadLock();
         assert(imported_handle_type_.has_value());
