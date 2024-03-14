@@ -3746,6 +3746,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     }
 
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
+    const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
         // confused itself just as much.
@@ -3757,6 +3758,14 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             if (const auto &acquire_fence = swapchain_data->images[pPresentInfo->pImageIndices[i]].acquire_fence) {
                 present_sync.swapchain = swapchain_data;
                 acquire_fence->SetPresentSync(present_sync);
+            }
+            if (present_fence_info && present_fence_info->pFences[i] != VK_NULL_HANDLE) {
+                auto present_fence = Get<vvl::Fence>(present_fence_info->pFences[i]);
+                if (present_fence) {
+                    present_sync.swapchain = swapchain_data;
+                    present_fence->SetPresentSync(present_sync);
+                    present_fence->EnqueueSignal(nullptr, 0);
+                }
             }
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
             swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id);
