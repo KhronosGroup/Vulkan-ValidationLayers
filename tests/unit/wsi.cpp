@@ -2035,33 +2035,43 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     swapchain_create_info.pNext = &present_scaling_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07765");
-    present_scaling_info.presentGravityY = 1;
+    // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07772");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07773");
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
+    present_scaling_info.presentGravityX = 0;
+    present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07766");
-    present_scaling_info.presentGravityX = 1;
+    // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07774");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07775");
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
+    present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = 0;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentScalingCreateInfoEXT-scalingBehavior-07767");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
-    present_scaling_info.presentGravityX = 0;
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
+    present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
+    present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
+
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07768");
-    present_scaling_info.presentGravityX = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
-    present_scaling_info.presentGravityY = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
-    present_scaling_info.scalingBehavior = 0;
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
+    present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
+    present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07769");
-    present_scaling_info.presentGravityX = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
-    present_scaling_info.presentGravityY = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
+    present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
+    present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
 
@@ -2170,6 +2180,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     // Create swapchain
     VkPresentModeKHR good_present_mode = m_surface_non_shared_present_mode;
     present_modes_ci.pPresentModes = &good_present_mode;
+    swapchain_create_info.pNext = nullptr;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
