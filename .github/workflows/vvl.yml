@@ -80,6 +80,9 @@ jobs:
         with:
           key: ${{ matrix.config }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
+      # https://github.com/google/sanitizers/issues/1716
+      - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
           CFLAGS: -fsanitize=${{ matrix.sanitize }}
@@ -223,7 +226,7 @@ jobs:
       - run: nm -gU /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation
       # Helps verify useful details about the dylib (platform, minos, sdk)
       - run: vtool -show-build /tmp/lib/VkLayer_khronos_validation.framework/VkLayer_khronos_validation
-      
+
   mingw:
     runs-on: windows-latest
     defaults:
