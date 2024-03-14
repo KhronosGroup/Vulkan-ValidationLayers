@@ -1841,11 +1841,14 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
     bool has_stencil_aspect = false;
     bool has_non_stencil_aspect = false;
+    const bool same_image = (src_image_state == dst_image_state);
     for (uint32_t i = 0; i < regionCount; i++) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
         const RegionType &region = pRegions[i];
+        const VkImageSubresourceLayers &src_subresource = region.srcSubresource;
+        const VkImageSubresourceLayers &dst_subresource = region.dstSubresource;
 
         // For comp/uncomp copies, the copy extent for the dest image must be adjusted
         VkExtent3D src_copy_extent = region.extent;
@@ -1857,10 +1860,10 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         // Special case for copying between a 1D/2D array and a 3D image
         // TBD: This seems like the only way to reconcile 3 mutually-exclusive VU checks for 2D/3D copies. Heads up.
         if (src_is_3d && !dst_is_3d) {
-            depth_slices = region.dstSubresource.layerCount;  // Slice count from 2D subresource
+            depth_slices = dst_subresource.layerCount;  // Slice count from 2D subresource
             slice_override = (depth_slices != 1);
         } else if (dst_is_3d && !src_is_3d) {
-            depth_slices = region.srcSubresource.layerCount;  // Slice count from 2D subresource
+            depth_slices = src_subresource.layerCount;  // Slice count from 2D subresource
             slice_override = (depth_slices != 1);
         }
 
@@ -1869,26 +1872,24 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             if (!slice_override) {
                 // The number of depth slices in srcSubresource and dstSubresource must match
                 // Depth comes from layerCount for 1D,2D resources, from extent.depth for 3D
-                uint32_t src_slices = (src_is_3d ? src_copy_extent.depth : region.srcSubresource.layerCount);
-                uint32_t dst_slices = (dst_is_3d ? dst_copy_extent.depth : region.dstSubresource.layerCount);
+                uint32_t src_slices = (src_is_3d ? src_copy_extent.depth : src_subresource.layerCount);
+                uint32_t dst_slices = (dst_is_3d ? dst_copy_extent.depth : dst_subresource.layerCount);
                 if (src_slices == VK_REMAINING_ARRAY_LAYERS || dst_slices == VK_REMAINING_ARRAY_LAYERS) {
                     if (src_slices != VK_REMAINING_ARRAY_LAYERS) {
-                        if (src_slices != (dst_image_state->createInfo.arrayLayers - region.dstSubresource.baseArrayLayer)) {
+                        if (src_slices != (dst_image_state->createInfo.arrayLayers - dst_subresource.baseArrayLayer)) {
                             vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08794" : "VUID-vkCmdCopyImage-srcImage-08794";
-                            skip |=
-                                LogError(vuid, dst_objlist, src_subresource_loc.dot(Field::layerCount),
-                                         "(%" PRIu32 ") does not match dstImage arrayLayers (%" PRIu32
-                                         ") minus baseArrayLayer (%" PRIu32 ").",
-                                         src_slices, dst_image_state->createInfo.arrayLayers, region.dstSubresource.baseArrayLayer);
+                            skip |= LogError(vuid, dst_objlist, src_subresource_loc.dot(Field::layerCount),
+                                             "(%" PRIu32 ") does not match dstImage arrayLayers (%" PRIu32
+                                             ") minus baseArrayLayer (%" PRIu32 ").",
+                                             src_slices, dst_image_state->createInfo.arrayLayers, dst_subresource.baseArrayLayer);
                         }
                     } else if (dst_slices != VK_REMAINING_ARRAY_LAYERS) {
-                        if (dst_slices != (src_image_state->createInfo.arrayLayers - region.srcSubresource.baseArrayLayer)) {
+                        if (dst_slices != (src_image_state->createInfo.arrayLayers - src_subresource.baseArrayLayer)) {
                             vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08794" : "VUID-vkCmdCopyImage-srcImage-08794";
-                            skip |=
-                                LogError(vuid, src_objlist, dst_subresource_loc.dot(Field::layerCount),
-                                         "(%" PRIu32 ") does not match srcImage arrayLayers (%" PRIu32
-                                         ") minus baseArrayLayer (%" PRIu32 ").",
-                                         dst_slices, src_image_state->createInfo.arrayLayers, region.srcSubresource.baseArrayLayer);
+                            skip |= LogError(vuid, src_objlist, dst_subresource_loc.dot(Field::layerCount),
+                                             "(%" PRIu32 ") does not match srcImage arrayLayers (%" PRIu32
+                                             ") minus baseArrayLayer (%" PRIu32 ").",
+                                             dst_slices, src_image_state->createInfo.arrayLayers, src_subresource.baseArrayLayer);
                         }
                     }
                 } else if (src_slices != dst_slices) {
@@ -1926,20 +1927,20 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                                     dst_image_loc, vuid);
 
             // Check if 2D with 3D and depth not equal to 2D layerCount
-            if (src_is_2d && dst_is_3d && (src_copy_extent.depth != region.srcSubresource.layerCount)) {
+            if (src_is_2d && dst_is_3d && (src_copy_extent.depth != src_subresource.layerCount)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01791" : "VUID-vkCmdCopyImage-srcImage-01791";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "srcImage is 2D, dstImage is 3D and extent.depth is %" PRIu32
                                  " and has to be "
                                  "srcSubresource.layerCount (%" PRIu32 ")",
-                                 src_copy_extent.depth, region.srcSubresource.layerCount);
-            } else if (src_is_3d && dst_is_2d && (src_copy_extent.depth != region.dstSubresource.layerCount)) {
+                                 src_copy_extent.depth, src_subresource.layerCount);
+            } else if (src_is_3d && dst_is_2d && (src_copy_extent.depth != dst_subresource.layerCount)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01792" : "VUID-vkCmdCopyImage-dstImage-01792";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "srcImage is 3D, dstImage is 2D and extent.depth is %" PRIu32
                                  " and has to be "
                                  "dstSubresource.layerCount (%" PRIu32 ")",
-                                 src_copy_extent.depth, region.dstSubresource.layerCount);
+                                 src_copy_extent.depth, dst_subresource.layerCount);
             }
         } else {  // !vk_khr_maintenance1
             if ((src_is_2d || dst_is_2d) && (src_copy_extent.depth != 1)) {
@@ -1958,16 +1959,16 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
         if ((!vkuFormatIsMultiplane(src_format)) && (!vkuFormatIsMultiplane(dst_format))) {
             // If neither image is multi-plane the aspectMask member of src and dst must match
-            if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
+            if (src_subresource.aspectMask != dst_subresource.aspectMask) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01551" : "VUID-vkCmdCopyImage-srcImage-01551";
                 skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
-                                 string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(),
+                                 string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
                                  dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
-                                 string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
+                                 string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
             }
         } else {
             // Source image multiplane checks
-            VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
+            VkImageAspectFlags aspect = src_subresource.aspectMask;
             if (vkuFormatIsMultiplane(src_format) && !IsOnlyOneValidPlaneAspect(src_format, aspect)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
                 skip |= LogError(vuid, src_objlist, src_subresource_loc.dot(Field::aspectMask),
@@ -1985,7 +1986,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Dest image multiplane checks
-            aspect = region.dstSubresource.aspectMask;
+            aspect = dst_subresource.aspectMask;
             if (vkuFormatIsMultiplane(dst_format) && !IsOnlyOneValidPlaneAspect(dst_format, aspect)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
                 skip |= LogError(vuid, dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
@@ -2026,13 +2027,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (vkuFormatIsMultiplane(src_format) || vkuFormatIsMultiplane(dst_format)) {
             const VkFormat src_plane_format =
                 vkuFormatIsMultiplane(src_format)
-                    ? vkuFindMultiplaneCompatibleFormat(src_format,
-                                                        static_cast<VkImageAspectFlagBits>(region.srcSubresource.aspectMask))
+                    ? vkuFindMultiplaneCompatibleFormat(src_format, static_cast<VkImageAspectFlagBits>(src_subresource.aspectMask))
                     : src_format;
             const VkFormat dst_plane_format =
                 vkuFormatIsMultiplane(dst_format)
-                    ? vkuFindMultiplaneCompatibleFormat(dst_format,
-                                                        static_cast<VkImageAspectFlagBits>(region.dstSubresource.aspectMask))
+                    ? vkuFindMultiplaneCompatibleFormat(dst_format, static_cast<VkImageAspectFlagBits>(dst_subresource.aspectMask))
                     : dst_format;
             const size_t src_format_size = vkuFormatElementSize(src_plane_format);
             const size_t dst_format_size = vkuFormatElementSize(dst_plane_format);
@@ -2042,18 +2041,42 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-None-01549" : "VUID-vkCmdCopyImage-None-01549";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "srcImage format %s with aspectMask %s is not compatible with dstImage format %s aspectMask %s.",
-                                 string_VkFormat(src_format), string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(),
-                                 string_VkFormat(dst_format), string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
+                                 string_VkFormat(src_format), string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
+                                 string_VkFormat(dst_format), string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
             }
         }
 
         // track aspect mask in loop through regions
-        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+        if ((src_subresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
             has_stencil_aspect = true;
         }
-        if ((region.srcSubresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+        if ((src_subresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             has_non_stencil_aspect = true;
         }
+
+        // When performing copy from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
+        const bool same_subresource = (same_image && (src_subresource.mipLevel == dst_subresource.mipLevel) &&
+                                       RangesIntersect(src_subresource.baseArrayLayer, src_subresource.layerCount,
+                                                       dst_subresource.baseArrayLayer, dst_subresource.layerCount));
+        if (same_subresource) {
+            if (!IsValueIn(srcImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL}) ||
+                !IsValueIn(dstImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
+                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-09460" : "VUID-vkCmdCopyImage-srcImage-09460";
+                skip |= LogError(vuid, src_objlist, loc,
+                                 "copying to same VkImage (miplevel = %u, srcLayer[%u,%u), dstLayer[%u,%u)), but srcImageLayout is "
+                                 "%s and dstImageLayout is %s",
+                                 src_subresource.mipLevel, src_subresource.baseArrayLayer,
+                                 src_subresource.baseArrayLayer + src_subresource.layerCount, dst_subresource.baseArrayLayer,
+                                 dst_subresource.baseArrayLayer + dst_subresource.layerCount, string_VkImageLayout(srcImageLayout),
+                                 string_VkImageLayout(dstImageLayout));
+            }
+        }
+
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-00128" : "VUID-vkCmdCopyImage-srcImageLayout-00128";
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, src_image_loc, vuid);
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-00133" : "VUID-vkCmdCopyImage-dstImageLayout-00133";
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
+        skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, &region, region_loc);
     }
 
     // The formats of non-multiplane src_image and dst_image must be compatible. Formats are considered compatible if their texel
@@ -2157,38 +2180,6 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                    {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL})) {
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-01395" : "VUID-vkCmdCopyImage-dstImageLayout-01395";
         skip |= LogError(vuid, dst_objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
-    }
-
-    const bool same_image = (src_image_state == dst_image_state);
-    for (uint32_t i = 0; i < regionCount; ++i) {
-        // When performing copy from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
-        const Location region_loc = loc.dot(Field::pRegions, i);
-        const RegionType region = pRegions[i];
-        const VkImageSubresourceLayers &src_subresource = region.srcSubresource;
-        const VkImageSubresourceLayers &dst_subresource = region.dstSubresource;
-
-        const bool same_subresource = (same_image && (src_subresource.mipLevel == dst_subresource.mipLevel) &&
-                                       RangesIntersect(src_subresource.baseArrayLayer, src_subresource.layerCount,
-                                                       dst_subresource.baseArrayLayer, dst_subresource.layerCount));
-        if (same_subresource) {
-            if (!IsValueIn(srcImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL}) ||
-                !IsValueIn(dstImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
-                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-09460" : "VUID-vkCmdCopyImage-srcImage-09460";
-                skip |= LogError(vuid, src_objlist, loc,
-                                 "copying to same VkImage (miplevel = %u, srcLayer[%u,%u), dstLayer[%u,%u)), but srcImageLayout is "
-                                 "%s and dstImageLayout is %s",
-                                 src_subresource.mipLevel, src_subresource.baseArrayLayer,
-                                 src_subresource.baseArrayLayer + src_subresource.layerCount, dst_subresource.baseArrayLayer,
-                                 dst_subresource.baseArrayLayer + dst_subresource.layerCount, string_VkImageLayout(srcImageLayout),
-                                 string_VkImageLayout(dstImageLayout));
-            }
-        }
-
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-00128" : "VUID-vkCmdCopyImage-srcImageLayout-00128";
-        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, src_image_loc, vuid);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-00133" : "VUID-vkCmdCopyImage-dstImageLayout-00133";
-        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
-        skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, &region, region_loc);
     }
 
     return skip;
