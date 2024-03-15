@@ -166,6 +166,18 @@ static const std::string& FindVUID(const Location& loc, const Table& table) {
         f = Func::vkCmdWaitEvents2;
     } else if (f == Func::vkCmdWriteTimestamp2KHR) {
         f = Func::vkCmdWriteTimestamp2;
+    } else if (f == Func::vkCmdBlitImage2KHR) {
+        f = Func::vkCmdBlitImage2;
+    } else if (f == Func::vkCmdCopyBufferToImage2KHR) {
+        f = Func::vkCmdCopyBufferToImage2;
+    } else if (f == Func::vkCmdCopyBuffer2KHR) {
+        f = Func::vkCmdCopyBuffer2;
+    } else if (f == Func::vkCmdCopyImage2KHR) {
+        f = Func::vkCmdCopyImage2;
+    } else if (f == Func::vkCmdCopyImageToBuffer2KHR) {
+        f = Func::vkCmdCopyImageToBuffer2;
+    } else if (f == Func::vkCmdResolveImage2KHR) {
+        f = Func::vkCmdResolveImage2;
     }
     const Location core_loc(f, loc.structure, loc.field, loc.index);
 
@@ -198,6 +210,18 @@ static const std::string& FindVUID(OuterKey key, const Location& loc, const Tabl
         f = Func::vkCmdWaitEvents2;
     } else if (f == Func::vkCmdWriteTimestamp2KHR) {
         f = Func::vkCmdWriteTimestamp2;
+    } else if (f == Func::vkCmdBlitImage2KHR) {
+        f = Func::vkCmdBlitImage2;
+    } else if (f == Func::vkCmdCopyBufferToImage2KHR) {
+        f = Func::vkCmdCopyBufferToImage2;
+    } else if (f == Func::vkCmdCopyBuffer2KHR) {
+        f = Func::vkCmdCopyBuffer2;
+    } else if (f == Func::vkCmdCopyImage2KHR) {
+        f = Func::vkCmdCopyImage2;
+    } else if (f == Func::vkCmdCopyImageToBuffer2KHR) {
+        f = Func::vkCmdCopyImageToBuffer2;
+    } else if (f == Func::vkCmdResolveImage2KHR) {
+        f = Func::vkCmdResolveImage2;
     }
     const Location core_loc(f, loc.structure, loc.field, loc.index);
 

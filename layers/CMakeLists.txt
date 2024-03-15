@@ -176,6 +176,8 @@ target_sources(vvl PRIVATE
     core_checks/cc_shader_object.cpp
     core_checks/cc_synchronization.cpp
     core_checks/cc_video.cpp
+    core_checks/cc_vuid_maps.cpp
+    core_checks/cc_vuid_maps.h
     core_checks/cc_wsi.cpp
     core_checks/cc_ycbcr.cpp
     drawdispatch/descriptor_validator.cpp
