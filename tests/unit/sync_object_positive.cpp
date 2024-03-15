@@ -2394,3 +2394,38 @@ TEST_F(PositiveSyncObject, DynamicRenderingLocalReadImageBarrier) {
                            VK_DEPENDENCY_BY_REGION_BIT, 0u, nullptr, 0u, nullptr, 1u, &imageMemoryBarrier);
     secondary.end();
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6172
+TEST_F(PositiveSyncObject, TwoQueuesReuseBinarySemaphore) {
+    TEST_DESCRIPTION("Use binary semaphore with the first queue then re-use on a different queue");
+    RETURN_IF_SKIP(Init());
+
+    if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
+        GTEST_SKIP() << "Test requires two queues";
+    }
+
+    VkQueue q0 = m_default_queue->handle();
+    VkQueue q1 = nullptr;
+    vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 1, &q1);
+    ASSERT_NE(q1, nullptr);
+
+    constexpr VkPipelineStageFlags wait_dst_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    vkt::Semaphore semaphore(*m_device);
+
+    VkSubmitInfo submits[2];
+
+    submits[0] = vku::InitStructHelper();
+    submits[0].signalSemaphoreCount = 1;
+    submits[0].pSignalSemaphores = &semaphore.handle();
+
+    submits[1] = vku::InitStructHelper();
+    submits[1].waitSemaphoreCount = 1;
+    submits[1].pWaitSemaphores = &semaphore.handle();
+    submits[1].pWaitDstStageMask = &wait_dst_stages;
+
+    vk::QueueSubmit(q0, 2, submits, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(q0);
+
+    vk::QueueSubmit(q1, 2, submits, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(q1);
+}
