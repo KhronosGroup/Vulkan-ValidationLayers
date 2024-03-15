@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "core_validation.h"
+#include "cc_vuid_maps.h"
 #include "error_message/error_strings.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
@@ -272,271 +273,30 @@ bool CoreChecks::CheckItgExtent(const LogObjectList &objlist, const VkExtent3D &
 }
 template <typename HandleT>
 bool CoreChecks::ValidateImageMipLevel(const HandleT handle, const vvl::Image &image_state, uint32_t mip_level,
-                                       const Location &mip_loc, const char *vuid) const {
+                                       const Location &subresource_loc) const {
     bool skip = false;
     if (mip_level >= image_state.createInfo.mipLevels) {
         const LogObjectList objlist(handle, image_state.Handle());
-        skip |= LogError(vuid, objlist, mip_loc, "is %" PRIu32 ", but provided %s has %" PRIu32 " mip levels.", mip_level,
+        skip |= LogError(vvl::GetImageMipLevelVUID(subresource_loc), objlist, subresource_loc.dot(Field::mipLevel),
+                         "is %" PRIu32 ", but provided %s has %" PRIu32 " mip levels.", mip_level,
                          FormatHandle(image_state).c_str(), image_state.createInfo.mipLevels);
     }
     return skip;
 }
 template <typename HandleT>
-bool CoreChecks::ValidateImageArrayLayerRange(const HandleT handle, const vvl::Image &img, const uint32_t base_layer,
-                                              const uint32_t layer_count, const Location &subresource_loc, const char *vuid) const {
+bool CoreChecks::ValidateImageArrayLayerRange(const HandleT handle, const vvl::Image &image_state, const uint32_t base_layer,
+                                              const uint32_t layer_count, const Location &subresource_loc) const {
     bool skip = false;
-    if (base_layer >= img.createInfo.arrayLayers || layer_count > img.createInfo.arrayLayers ||
-        (base_layer + layer_count) > img.createInfo.arrayLayers) {
+    if (base_layer >= image_state.createInfo.arrayLayers || layer_count > image_state.createInfo.arrayLayers ||
+        (base_layer + layer_count) > image_state.createInfo.arrayLayers) {
         if (layer_count != VK_REMAINING_ARRAY_LAYERS) {
-            const LogObjectList objlist(handle, img.Handle());
-            skip |= LogError(vuid, objlist, subresource_loc.dot(Field::baseArrayLayer),
+            const LogObjectList objlist(handle, image_state.Handle());
+            skip |= LogError(vvl::GetImageArrayLayerRangeVUID(subresource_loc), objlist, subresource_loc.dot(Field::baseArrayLayer),
                              "is %" PRIu32 " and layerCount is %" PRIu32 ", but provided %s has %" PRIu32 " array layers.",
-                             base_layer, layer_count, FormatHandle(img).c_str(), img.createInfo.arrayLayers);
+                             base_layer, layer_count, FormatHandle(image_state).c_str(), image_state.createInfo.arrayLayers);
         }
     }
     return skip;
-}
-
-// All VUID from copy_bufferimage_to_imagebuffer_common.txt with more as a result of host_image_copy
-static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bool from_image, bool copy2, bool is_memory = false) {
-    // clang-format off
-    static const std::map<std::string, std::array<const char *, 6>> copy_imagebuffermemory_vuid = {
-        {"06659", {
-            "VUID-VkBufferImageCopy-imageExtent-06659",      // !copy2  & !from_image
-            "VUID-VkBufferImageCopy-imageExtent-06659",      // !copy2  &  from_image
-            "VUID-VkBufferImageCopy2-imageExtent-06659",     //  copy2  & !from_image
-            "VUID-VkBufferImageCopy2-imageExtent-06659",     //  copy2  &  from_image
-            "VUID-VkMemoryToImageCopyEXT-imageExtent-06659", //  memory & !from_image
-            "VUID-VkImageToMemoryCopyEXT-imageExtent-06659", //  memory &  from_image
-        }},
-        {"06660", {
-            "VUID-VkBufferImageCopy-imageExtent-06660",
-            "VUID-VkBufferImageCopy-imageExtent-06660",
-            "VUID-VkBufferImageCopy2-imageExtent-06660",
-            "VUID-VkBufferImageCopy2-imageExtent-06660",
-            "VUID-VkMemoryToImageCopyEXT-imageExtent-06660",
-            "VUID-VkImageToMemoryCopyEXT-imageExtent-06660",
-        }},
-        {"06661", {
-            "VUID-VkBufferImageCopy-imageExtent-06661",
-            "VUID-VkBufferImageCopy-imageExtent-06661",
-            "VUID-VkBufferImageCopy2-imageExtent-06661",
-            "VUID-VkBufferImageCopy2-imageExtent-06661",
-            "VUID-VkMemoryToImageCopyEXT-imageExtent-06661",
-            "VUID-VkImageToMemoryCopyEXT-imageExtent-06661",
-        }},
-        {"09101", {
-            "VUID-VkBufferImageCopy-bufferRowLength-09101",
-            "VUID-VkBufferImageCopy-bufferRowLength-09101",
-            "VUID-VkBufferImageCopy2-bufferRowLength-09101",
-            "VUID-VkBufferImageCopy2-bufferRowLength-09101",
-            "VUID-VkMemoryToImageCopyEXT-memoryRowLength-09101",
-            "VUID-VkImageToMemoryCopyEXT-memoryRowLength-09101",
-        }},
-        {"00196", {
-            "VUID-VkBufferImageCopy-bufferImageHeight-09102",
-            "VUID-VkBufferImageCopy-bufferImageHeight-09102",
-            "VUID-VkBufferImageCopy2-bufferImageHeight-09102",
-            "VUID-VkBufferImageCopy2-bufferImageHeight-09102",
-            "VUID-VkMemoryToImageCopyEXT-memoryImageHeight-09102",
-            "VUID-VkImageToMemoryCopyEXT-memoryImageHeight-09102",
-        }},
-        {"09103", {
-            "VUID-VkBufferImageCopy-aspectMask-09103",
-            "VUID-VkBufferImageCopy-aspectMask-09103",
-            "VUID-VkBufferImageCopy2-aspectMask-09103",
-            "VUID-VkBufferImageCopy2-aspectMask-09103",
-            "VUID-VkMemoryToImageCopyEXT-aspectMask-09103",
-            "VUID-VkImageToMemoryCopyEXT-aspectMask-09103",
-        }},
-        {"07975", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07975",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07975",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07975",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07975",
-            kVUIDUndefined,
-            kVUIDUndefined,
-        }},
-        {"07976", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07976",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07976",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07976",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07976",
-            kVUIDUndefined,
-            kVUIDUndefined,
-        }},
-        {"00197", {
-            "VUID-vkCmdCopyBufferToImage-imageSubresource-07971",
-            "VUID-vkCmdCopyImageToBuffer-imageSubresource-07971",
-            "VUID-VkCopyBufferToImageInfo2-pRegions-06223",
-            "VUID-VkCopyImageToBufferInfo2-imageOffset-00197",
-            "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07971",
-            "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07971",
-        }},
-        {"00198", {
-            "VUID-vkCmdCopyBufferToImage-imageSubresource-07972",
-            "VUID-vkCmdCopyImageToBuffer-imageSubresource-07972",
-            "VUID-VkCopyBufferToImageInfo2-pRegions-06224",
-            "VUID-VkCopyImageToBufferInfo2-imageOffset-00198",
-            "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07972",
-            "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07972",
-        }},
-        {"07979", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07979",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07979",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07979",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07979",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07979",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07979",
-        }},
-        {"09104", {
-            "VUID-vkCmdCopyBufferToImage-imageOffset-09104",
-            "VUID-vkCmdCopyImageToBuffer-imageOffset-09104",
-            "VUID-VkCopyBufferToImageInfo2-imageOffset-09104",
-            "VUID-VkCopyImageToBufferInfo2-imageOffset-09104",
-            "VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09104",
-            "VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09104",
-        }},
-        {"07980", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07980",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07980",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07980",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07980",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07980",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07980",
-        }},
-        {"09106", {
-            "VUID-vkCmdCopyBufferToImage-bufferRowLength-09106",
-            "VUID-vkCmdCopyImageToBuffer-bufferRowLength-09106",
-            "VUID-VkCopyBufferToImageInfo2-bufferRowLength-09106",
-            "VUID-VkCopyImageToBufferInfo2-bufferRowLength-09106",
-            "VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09106",
-            "VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09106",
-        }},
-        {"09107", {
-            "VUID-vkCmdCopyBufferToImage-bufferImageHeight-09107",
-            "VUID-vkCmdCopyImageToBuffer-bufferImageHeight-09107",
-            "VUID-VkCopyBufferToImageInfo2-bufferImageHeight-09107",
-            "VUID-VkCopyImageToBufferInfo2-bufferImageHeight-09107",
-            "VUID-VkCopyMemoryToImageInfoEXT-memoryImageHeight-09107",
-            "VUID-VkCopyImageToMemoryInfoEXT-memoryImageHeight-09107",
-        }},
-        {"07274", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07274",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07274",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07274",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07274",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07274",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07274",
-        }},
-        {"07275", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07275",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07275",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07275",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07275",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07275",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07275",
-        }},
-        {"07276", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07276",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07276",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07276",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07276",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07276",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07276",
-        }},
-        {"09108", {
-            "VUID-vkCmdCopyBufferToImage-bufferRowLength-09108",
-            "VUID-vkCmdCopyImageToBuffer-bufferRowLength-09108",
-            "VUID-VkCopyBufferToImageInfo2-bufferRowLength-09108",
-            "VUID-VkCopyImageToBufferInfo2-bufferRowLength-09108",
-            "VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09108",
-            "VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09108",
-        }},
-        {"00207", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-00207",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-00207",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-00207",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-00207",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00207",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00207",
-        }},
-        {"00208", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-00208",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-00208",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-00208",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-00208",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00208",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00208",
-        }},
-        {"00209", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-00209",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-00209",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-00209",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-00209",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00209",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00209",
-        }},
-        {"09105", {
-            "VUID-vkCmdCopyBufferToImage-imageSubresource-09105",
-            "VUID-vkCmdCopyImageToBuffer-imageSubresource-09105",
-            "VUID-VkCopyBufferToImageInfo2-imageSubresource-09105",
-            "VUID-VkCopyImageToBufferInfo2-imageSubresource-09105",
-            "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-09105",
-            "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-09105",
-        }},
-        {"07981", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07981",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07981",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07981",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07981",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981",
-        }},
-        {"07983", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07983",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07983",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07983",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07983",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07983",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07983",
-        }},
-        {"04052", {
-            // was split up in 1.3.236 spec (internal MR 5371)
-            "VUID-vkCmdCopyBufferToImage-commandBuffer-07737",
-            "VUID-vkCmdCopyImageToBuffer-commandBuffer-07746",
-            "VUID-vkCmdCopyBufferToImage2-commandBuffer-07737",
-            "VUID-vkCmdCopyImageToBuffer2-commandBuffer-07746",
-            kVUIDUndefined,
-            kVUIDUndefined,
-        }},
-        {"07978", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07978",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07978",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07978",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07978",
-            kVUIDUndefined,
-            kVUIDUndefined,
-        }},
-        {"00173", {
-            "VUID-vkCmdCopyBufferToImage-pRegions-00173",
-            "VUID-vkCmdCopyImageToBuffer-pRegions-00184",
-            "VUID-VkCopyBufferToImageInfo2-pRegions-00173",
-            "VUID-VkCopyImageToBufferInfo2-pRegions-00184",
-            kVUIDUndefined,
-            kVUIDUndefined,
-        }}
-    };
-    // clang-format on
-
-    uint8_t index = 0;
-    if (is_memory) {
-        index = 4 + (from_image ? 1 : 0);
-    } else {
-        index |= uint8_t((from_image) ? 0x1 : 0);
-        index |= uint8_t((copy2) ? 0x2 : 0);
-    }
-    return copy_imagebuffermemory_vuid.at(id).at(index);
 }
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
@@ -583,9 +343,6 @@ template <typename HandleT, typename RegionType>
 bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t regionCount, const RegionType *pRegions,
                                                const vvl::Image &image_state, const Location &loc) const {
     bool skip = false;
-    const bool is_2 = IsValueIn(loc.function, {Func::vkCmdCopyBufferToImage2, Func::vkCmdCopyBufferToImage2KHR});
-    const bool from_image = IsValueIn(loc.function, {Func::vkCmdCopyImageToBuffer, Func::vkCmdCopyImageToBuffer2,
-                                                     Func::vkCmdCopyImageToBuffer2KHR, Func::vkCopyImageToMemoryEXT});
     const bool is_memory = IsValueIn(loc.function, {Func::vkCopyMemoryToImageEXT, Func::vkCopyImageToMemoryEXT});
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -596,7 +353,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if (image_state.createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((region.imageOffset.y != 0) || (region.imageExtent.height != 1)) {
                 const LogObjectList objlist(handle, image_state.Handle());
-                skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07979", from_image, is_2, is_memory), objlist, region_loc,
+                skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::Image1D_07979), objlist, region_loc,
                                  "imageOffset.y is %" PRId32 " and imageExtent.height is %" PRIu32
                                  ". For 1D images these must be 0 "
                                  "and 1, respectively.",
@@ -607,7 +364,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if ((image_state.createInfo.imageType == VK_IMAGE_TYPE_1D) || (image_state.createInfo.imageType == VK_IMAGE_TYPE_2D)) {
             if ((region.imageOffset.z != 0) || (region.imageExtent.depth != 1)) {
                 const LogObjectList objlist(handle, image_state.Handle());
-                skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07980", from_image, is_2, is_memory), objlist, region_loc,
+                skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::Image1D_07980), objlist, region_loc,
                                  "imageOffset.z is %" PRId32 " and imageExtent.depth is %" PRIu32
                                  ". For 1D and 2D images these "
                                  "must be 0 and 1, respectively.",
@@ -618,29 +375,28 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if (image_state.createInfo.imageType == VK_IMAGE_TYPE_3D) {
             if ((0 != region.imageSubresource.baseArrayLayer) || (1 != region.imageSubresource.layerCount)) {
                 const LogObjectList objlist(handle, image_state.Handle());
-                skip |=
-                    LogError(GetBufferMemoryImageCopyCommandVUID("07983", from_image, is_2, is_memory), objlist, subresource_loc,
-                             "baseArrayLayer is %" PRIu32 " and layerCount is %" PRIu32
-                             ". "
-                             "For 3D images these must be 0 and 1, respectively.",
-                             region.imageSubresource.baseArrayLayer, region.imageSubresource.layerCount);
+                skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::Image3D_07983), objlist, subresource_loc,
+                                 "baseArrayLayer is %" PRIu32 " and layerCount is %" PRIu32
+                                 ". "
+                                 "For 3D images these must be 0 and 1, respectively.",
+                                 region.imageSubresource.baseArrayLayer, region.imageSubresource.layerCount);
             }
         }
 
         // Make sure not a empty region
         if (region.imageExtent.width == 0) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("06659", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ImageExtentWidthZero_06659), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::width), "is zero (empty copies are not allowed).");
         }
         if (region.imageExtent.height == 0) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("06660", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ImageExtentHeightZero_06660), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::height), "is zero (empty copies are not allowed).");
         }
         if (region.imageExtent.depth == 0) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("06661", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ImageExtentDepthZero_06661), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::depth), "is zero (empty copies are not allowed).");
         }
 
@@ -649,10 +405,10 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if ((row_length != 0) && (row_length < region.imageExtent.width)) {
             const LogObjectList objlist(handle, image_state.Handle());
             Field field = is_memory ? Field::memoryRowLength : Field::bufferRowLength;
-            skip |=
-                LogError(GetBufferMemoryImageCopyCommandVUID("09101", from_image, is_2, is_memory), objlist, region_loc.dot(field),
-                         "(%" PRIu32 ") must be zero or greater-than-or-equal-to imageExtent.width (%" PRIu32 ").", row_length,
-                         region.imageExtent.width);
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ImageExtentRowLength_09101), objlist,
+                             region_loc.dot(field),
+                             "(%" PRIu32 ") must be zero or greater-than-or-equal-to imageExtent.width (%" PRIu32 ").", row_length,
+                             region.imageExtent.width);
         }
 
         //  BufferImageHeight must be 0, or greater than or equal to the height member of imageExtent
@@ -660,16 +416,16 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if ((image_height != 0) && (image_height < region.imageExtent.height)) {
             const LogObjectList objlist(handle, image_state.Handle());
             Field field = is_memory ? Field::memoryImageHeight : Field::bufferImageHeight;
-            skip |=
-                LogError(GetBufferMemoryImageCopyCommandVUID("00196", from_image, is_2, is_memory), objlist, region_loc.dot(field),
-                         "(%" PRIu32 ") must be zero or greater-than-or-equal-to imageExtent.height (%" PRIu32 ").", image_height,
-                         region.imageExtent.height);
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ImageExtentImageHeight_09102), objlist,
+                             region_loc.dot(field),
+                             "(%" PRIu32 ") must be zero or greater-than-or-equal-to imageExtent.height (%" PRIu32 ").",
+                             image_height, region.imageExtent.height);
         }
 
         // subresource aspectMask must have exactly 1 bit set
         if (GetBitSetCount(region_aspect_mask) != 1) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("09103", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::AspectMaskSingleBit_09103), objlist,
                              subresource_loc.dot(Field::aspectMask), "is %s (only one bit allowed).",
                              string_VkImageAspectFlags(region_aspect_mask).c_str());
         }
@@ -681,7 +437,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
             ((region.imageOffset.x + static_cast<int32_t>(region.imageExtent.width)) >
              static_cast<int32_t>(adjusted_image_extent.width))) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("00197", from_image, is_2, is_memory), objlist, region_loc,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_07971), objlist, region_loc,
                              "imageOffset.x (%" PRId32 ") and (imageExtent.width + imageOffset.x) (%" PRIu32
                              ") must be >= "
                              "zero or <= image subresource width (%" PRIu32 ").",
@@ -694,7 +450,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
              static_cast<int32_t>(adjusted_image_extent.height))) {
             const LogObjectList objlist(handle, image_state.Handle());
             skip |=
-                LogError(GetBufferMemoryImageCopyCommandVUID("00198", from_image, is_2, is_memory), objlist, region_loc,
+                LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_07972), objlist, region_loc,
                          "imageOffset.y (%" PRId32 ") and (imageExtent.height + imageOffset.y) (%" PRIu32
                          ") must be >= "
                          "zero or <= image subresource height (%" PRIu32 ").",
@@ -706,7 +462,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
             ((region.imageOffset.z + static_cast<int32_t>(region.imageExtent.depth)) >
              static_cast<int32_t>(adjusted_image_extent.depth))) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("09104", from_image, is_2, is_memory), objlist, region_loc,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_09104), objlist, region_loc,
                              "imageOffset.z (%" PRId32 ") and (imageExtent.depth + imageOffset.z) (%" PRIu32
                              ") must be >= "
                              "zero or <= image subresource depth (%" PRIu32 ").",
@@ -717,7 +473,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         // image subresource aspect bit must match format
         if (!VerifyAspectsPresent(region_aspect_mask, image_format)) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("09105", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::AspectMask_09105), objlist,
                              subresource_loc.dot(Field::aspectMask), "%s invalid for image format %s.",
                              string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
         }
@@ -728,7 +484,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
             const LogObjectList objlist(handle, image_state.Handle());
             Field field = is_memory ? Field::memoryRowLength : Field::bufferRowLength;
             skip |= LogError(
-                GetBufferMemoryImageCopyCommandVUID("09106", from_image, is_2, is_memory), objlist, region_loc.dot(field),
+                GetCopyBufferImageVUID(region_loc, vvl::CopyError::bufferRowLength_09106), objlist, region_loc.dot(field),
                 "(%" PRIu32 ") must be a multiple of the blocked image's texel width (%" PRIu32 ").", row_length, block_size.width);
         }
 
@@ -736,16 +492,16 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if (SafeModulo(image_height, block_size.height) != 0) {
             const LogObjectList objlist(handle, image_state.Handle());
             Field field = is_memory ? Field::memoryImageHeight : Field::bufferImageHeight;
-            skip |=
-                LogError(GetBufferMemoryImageCopyCommandVUID("09107", from_image, is_2, is_memory), objlist, region_loc.dot(field),
-                         "(%" PRIu32 ") must be a multiple of the blocked image's texel height (%" PRIu32 ").", image_height,
-                         block_size.height);
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::bufferImageHeight_09107), objlist,
+                             region_loc.dot(field),
+                             "(%" PRIu32 ") must be a multiple of the blocked image's texel height (%" PRIu32 ").", image_height,
+                             block_size.height);
         }
 
         //  image offsets x must be multiple of block width
         if (SafeModulo(region.imageOffset.x, block_size.width) != 0) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07274", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentWidth_07274), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::x),
                              "(%" PRId32
                              ") must be a multiple of the blocked image's texel "
@@ -756,7 +512,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         //  image offsets y must be multiple of block height
         if (SafeModulo(region.imageOffset.y, block_size.height) != 0) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07275", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentHeight_07275), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::y),
                              "(%" PRId32
                              ") must be a multiple of the blocked image's texel "
@@ -767,7 +523,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         //  image offsets z must be multiple of block depth
         if (SafeModulo(region.imageOffset.z, block_size.depth) != 0) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07276", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentDepth_07276), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::z),
                              "(%" PRId32
                              ") must be a multiple of the blocked image's texel "
@@ -780,7 +536,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if ((SafeModulo(region.imageExtent.width, block_size.width) != 0) &&
             (region.imageExtent.width + region.imageOffset.x != mip_extent.width)) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("00207", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentWidth_00207), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::width),
                              "(%" PRIu32
                              ") must be a multiple of the blocked texture block width "
@@ -793,7 +549,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if ((SafeModulo(region.imageExtent.height, block_size.height) != 0) &&
             (region.imageExtent.height + region.imageOffset.y != mip_extent.height)) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("00208", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentHeight_00208), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::height),
                              "(%" PRIu32
                              ") must be a multiple of the blocked texture block height "
@@ -806,7 +562,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if ((SafeModulo(region.imageExtent.depth, block_size.depth) != 0) &&
             (region.imageExtent.depth + region.imageOffset.z != mip_extent.depth)) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("00209", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentDepth_00209), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::depth),
                              "(%" PRIu32
                              ") must be a multiple of the blocked texture block depth "
@@ -828,7 +584,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
             const LogObjectList objlist(handle, image_state.Handle());
             Field field = is_memory ? Field::memoryRowLength : Field::bufferRowLength;
             skip |=
-                LogError(GetBufferMemoryImageCopyCommandVUID("09108", from_image, is_2, is_memory), objlist, region_loc.dot(field),
+                LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::bufferRowLength_09108), objlist, region_loc.dot(field),
                          "(%" PRIu32 ") divided by the texel block extent width (%" PRIu32
                          ") then multiplied by the "
                          "texel block size of image (%" PRIu32 ") is (%" PRIu64 ") which is greater than 2^31 - 1",
@@ -838,7 +594,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         // Checks that apply only to multi-planar format images
         if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, region_aspect_mask)) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07981", from_image, is_2, is_memory), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::MultiPlaneAspectMask_07981), objlist,
                              subresource_loc.dot(Field::aspectMask), "(%s) is invalid for multi-planar format %s.",
                              string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
         }
@@ -850,10 +606,6 @@ template <typename RegionType>
 bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state, uint32_t regionCount, const RegionType *pRegions,
                                              const vvl::Image &image_state, const Location &loc) const {
     bool skip = false;
-
-    const bool is_2 = IsValueIn(loc.function, {Func::vkCmdCopyBufferToImage2, Func::vkCmdCopyBufferToImage2KHR});
-    const bool image_to_buffer =
-        IsValueIn(loc.function, {Func::vkCmdCopyImageToBuffer, Func::vkCmdCopyImageToBuffer2, Func::vkCmdCopyImageToBuffer2KHR});
 
     const VkFormat image_format = image_state.createInfo.format;
 
@@ -875,7 +627,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
         if (vkuFormatIsDepthOrStencil(image_format)) {
             if (SafeModulo(bufferOffset, 4) != 0) {
                 const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07978", image_to_buffer, is_2), objlist,
+                skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07978), objlist,
                                  region_loc.dot(Field::bufferOffset),
                                  "(%" PRIu64 ") must be a multiple 4 if using a depth/stencil format (%s).", bufferOffset,
                                  string_VkFormat(image_format));
@@ -884,7 +636,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
             // If not depth/stencil and not multi-plane
             if (!vkuFormatIsMultiplane(image_format) && (SafeModulo(bufferOffset, element_size) != 0)) {
                 const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07975", image_to_buffer, is_2), objlist,
+                skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::TexelBlockSize_07975), objlist,
                                  region_loc.dot(Field::bufferOffset),
                                  "(%" PRIu64 ") must be a multiple of %s texel size (%" PRIu32 ").", bufferOffset,
                                  string_VkFormat(image_format), element_size);
@@ -902,7 +654,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
                 const uint32_t compatible_size = vkuFormatElementSize(compatible_format);
                 if (SafeModulo(bufferOffset, compatible_size) != 0) {
                     const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                    skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07976", image_to_buffer, is_2), objlist,
+                    skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MultiPlaneCompatible_07976), objlist,
                                      region_loc.dot(Field::bufferOffset),
                                      "(%" PRIu64 ") is not a multiple of %s texel size (%" PRIu32 ") for plane %" PRIu32 " (%s).",
                                      bufferOffset, string_VkFormat(image_format), element_size,
@@ -915,7 +667,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
         if (SafeModulo(bufferOffset, 4) != 0) {
             std::stringstream ss;
             ss << "(" << bufferOffset << ") is not a multiple of 4, but is ";
-            const char *vuid = GetBufferMemoryImageCopyCommandVUID("04052", image_to_buffer, is_2);
+            const char *vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
             skip |= ValidateCmdQueueFlags(cb_state, region_loc.dot(Field::bufferOffset),
                                           VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid, ss.str().c_str());
         }
@@ -1142,191 +894,6 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const vvl::Com
     return skip;
 }
 
-static const char *GetImageCopyVUID(const std::string &id, bool copy2, bool host_version) {
-    // clang-format off
-    static const std::map<std::string, std::array<const char *, 3>> copy_image_vuid = {
-        {"00146", {
-            "VUID-vkCmdCopyImage-srcImage-00146",            // !copy2 & !host_version
-            "VUID-VkCopyImageInfo2-srcImage-00146",          // copy2 && !host_version
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07979", // host_version
-        }},
-        {"01785", {
-            "VUID-vkCmdCopyImage-srcImage-01785",
-            "VUID-VkCopyImageInfo2-srcImage-01785",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07980",
-        }},
-        {"07278", {
-            "VUID-vkCmdCopyImage-pRegions-07278",
-            "VUID-VkCopyImageInfo2-pRegions-07278",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07274",
-        }},
-        {"07279", {
-            "VUID-vkCmdCopyImage-pRegions-07279",
-            "VUID-VkCopyImageInfo2-pRegions-07279",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07275",
-        }},
-        {"07280", {
-            "VUID-vkCmdCopyImage-pRegions-07280",
-            "VUID-VkCopyImageInfo2-pRegions-07280",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07276",
-        }},
-        {"01728", {
-            "VUID-vkCmdCopyImage-srcImage-01728",
-            "VUID-VkCopyImageInfo2-srcImage-01728",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-00207",
-        }},
-        {"01729", {
-            "VUID-vkCmdCopyImage-srcImage-01729",
-            "VUID-VkCopyImageInfo2-srcImage-01729",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-00208",
-        }},
-        {"01730", {
-            "VUID-vkCmdCopyImage-srcImage-01730",
-            "VUID-VkCopyImageInfo2-srcImage-01730",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-00209",
-        }},
-        {"00152", {
-            "VUID-vkCmdCopyImage-dstImage-00152",
-            "VUID-VkCopyImageInfo2-dstImage-00152",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07979",
-        }},
-        {"01786", {
-            "VUID-vkCmdCopyImage-dstImage-01786",
-            "VUID-VkCopyImageInfo2-dstImage-01786",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07980",
-        }},
-        {"04443", {
-            "VUID-vkCmdCopyImage-srcImage-04443",
-            "VUID-VkCopyImageInfo2-srcImage-04443",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07983",
-       }},
-       {"04444", {
-            "VUID-vkCmdCopyImage-dstImage-04444",
-            "VUID-VkCopyImageInfo2-dstImage-04444",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07983",
-       }},
-       {"07281", {
-            "VUID-vkCmdCopyImage-pRegions-07281",
-            "VUID-VkCopyImageInfo2-pRegions-07281",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07274",
-       }},
-       {"07282", {
-            "VUID-vkCmdCopyImage-pRegions-07282",
-            "VUID-VkCopyImageInfo2-pRegions-07282",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07275",
-       }},
-       {"07283", {
-            "VUID-vkCmdCopyImage-pRegions-07283",
-            "VUID-VkCopyImageInfo2-pRegions-07283",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07276",
-       }},
-       {"01732", {
-            "VUID-vkCmdCopyImage-dstImage-01732",
-            "VUID-VkCopyImageInfo2-dstImage-01732",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-00207",
-       }},
-       {"01733", {
-            "VUID-vkCmdCopyImage-dstImage-01733",
-            "VUID-VkCopyImageInfo2-dstImage-01733",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-00208",
-       }},
-       {"01734", {
-            "VUID-vkCmdCopyImage-dstImage-01734",
-            "VUID-VkCopyImageInfo2-dstImage-01734",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-00209",
-       }},
-       {"07967src", {
-            "VUID-vkCmdCopyImage-srcSubresource-07967",
-            "VUID-VkCopyImageInfo2-srcSubresource-07967",
-            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07967",
-       }},
-       {"07967dst", {
-            "VUID-vkCmdCopyImage-dstSubresource-07967",
-            "VUID-VkCopyImageInfo2-dstSubresource-07967",
-            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07967",
-       }},
-       {"07968src", {
-            "VUID-vkCmdCopyImage-srcSubresource-07968",
-            "VUID-VkCopyImageInfo2-srcSubresource-07968",
-            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968",
-       }},
-       {"07968dst", {
-            "VUID-vkCmdCopyImage-dstSubresource-07968",
-            "VUID-VkCopyImageInfo2-dstSubresource-07968",
-            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968",
-       }},
-       {"00142", {
-            "VUID-vkCmdCopyImage-aspectMask-00142",
-            "VUID-VkCopyImageInfo2-aspectMask-00142",
-            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105",
-       }},
-       {"00143", {
-            "VUID-vkCmdCopyImage-aspectMask-00143",
-            "VUID-VkCopyImageInfo2-aspectMask-00143",
-            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-09105",
-       }},
-       {"00144", {
-            "VUID-vkCmdCopyImage-srcOffset-00144",
-            "VUID-VkCopyImageInfo2-srcOffset-00144",
-            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07971",
-       }},
-       {"00145", {
-            "VUID-vkCmdCopyImage-srcOffset-00145",
-            "VUID-VkCopyImageInfo2-srcOffset-00145",
-            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07972",
-       }},
-       {"00147", {
-            "VUID-vkCmdCopyImage-srcOffset-00147",
-            "VUID-VkCopyImageInfo2-srcOffset-00147",
-            "VUID-VkCopyImageToImageInfoEXT-srcOffset-09104",
-       }},
-       {"00150", {
-            "VUID-vkCmdCopyImage-dstOffset-00150",
-            "VUID-VkCopyImageInfo2-dstOffset-00150",
-            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07971",
-       }},
-       {"00151", {
-            "VUID-vkCmdCopyImage-dstOffset-00151",
-            "VUID-VkCopyImageInfo2-dstOffset-00151",
-            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07972",
-       }},
-       {"00153", {
-            "VUID-vkCmdCopyImage-dstOffset-00153",
-            "VUID-VkCopyImageInfo2-dstOffset-00153",
-            "VUID-VkCopyImageToImageInfoEXT-dstOffset-09104",
-       }},
-       {"07966src", {
-            "VUID-vkCmdCopyImage-srcImage-07966",
-            "VUID-VkCopyImageInfo2-srcImage-07966",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07966",
-       }},
-       {"07966dst", {
-            "VUID-vkCmdCopyImage-dstImage-07966",
-            "VUID-VkCopyImageInfo2-dstImage-07966",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07966",
-       }},
-       {"07969src", {
-            "VUID-vkCmdCopyImage-srcImage-07969",
-            "VUID-VkCopyImageInfo2-srcImage-07969",
-            "VUID-VkCopyImageToImageInfoEXT-srcImage-07969",
-       }},
-       {"07969dst", {
-            "VUID-vkCmdCopyImage-dstImage-07969",
-            "VUID-VkCopyImageInfo2-dstImage-07969",
-            "VUID-VkCopyImageToImageInfoEXT-dstImage-07969",
-       }},
-    };
-    // clang-format on
-    uint8_t index = 0;
-
-    if (host_version) {
-        index = 2;
-    } else if (copy2) {
-        index = 1;
-    }
-    return copy_image_vuid.at(id).at(index);
-}
-
 // Validate contents of a VkImageCopy or VkImageCopy2KHR struct
 template <typename HandleT, typename RegionType>
 bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regionCount, const RegionType *pRegions,
@@ -1364,7 +931,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
         if (src_image_state.createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((0 != region.srcOffset.y) || (1 != src_copy_extent.height)) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("00146", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage1D_00146), objlist, region_loc,
                                  "srcOffset.y is %" PRId32 " and extent.height is %" PRIu32
                                  ". For 1D images these must "
                                  "be 0 and 1, respectively.",
@@ -1377,7 +944,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             ((0 != region.srcOffset.z) || (1 != src_copy_extent.depth))) {
             const LogObjectList objlist(handle, src_image_state.Handle());
             const char *image_type = is_host ? "1D or 2D" : "1D";
-            skip |= LogError(GetImageCopyVUID("01785", is_2, is_host), objlist, region_loc,
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage1D_01785), objlist, region_loc,
                              "srcOffset.z is %" PRId32 " and extent.depth is %" PRIu32
                              ". For %s images "
                              "these must be 0 and 1, respectively.",
@@ -1395,7 +962,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             const VkExtent3D block_size = vkuFormatTexelBlockExtent(src_image_state.createInfo.format);
             if (SafeModulo(region.srcOffset.x, block_size.width) != 0) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("07278", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_07278), objlist, region_loc,
                                  "srcOffset.x (%" PRId32
                                  ") must be a multiple of the blocked image's texel "
                                  "width (%" PRIu32 ").",
@@ -1405,7 +972,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             //  image offsets y must be multiple of block height
             if (SafeModulo(region.srcOffset.y, block_size.height) != 0) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("07279", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_07279), objlist, region_loc,
                                  "srcOffset.y (%" PRId32
                                  ") must be a multiple of the blocked image's texel "
                                  "height (%" PRIu32 ").",
@@ -1415,7 +982,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             //  image offsets z must be multiple of block depth
             if (SafeModulo(region.srcOffset.z, block_size.depth) != 0) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("07280", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_07280), objlist, region_loc,
                                  "srcOffset.z (%" PRId32
                                  ") must be a multiple of the blocked image's texel "
                                  "depth (%" PRIu32 ").",
@@ -1426,7 +993,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             if ((SafeModulo(src_copy_extent.width, block_size.width) != 0) &&
                 (src_copy_extent.width + region.srcOffset.x != mip_extent.width)) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("01728", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_01728), objlist, region_loc,
                                  "extent width (%" PRIu32
                                  ") must be a multiple of the blocked texture block "
                                  "width (%" PRIu32 "), or when added to srcOffset.x (%" PRId32
@@ -1438,7 +1005,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             if ((SafeModulo(src_copy_extent.height, block_size.height) != 0) &&
                 (src_copy_extent.height + region.srcOffset.y != mip_extent.height)) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("01729", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_01729), objlist, region_loc,
                                  "extent height (%" PRIu32
                                  ") must be a multiple of the compressed texture block "
                                  "height (%" PRIu32 "), or when added to srcOffset.y (%" PRId32
@@ -1450,7 +1017,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             uint32_t copy_depth = (slice_override ? depth_slices : src_copy_extent.depth);
             if ((SafeModulo(copy_depth, block_size.depth) != 0) && (copy_depth + region.srcOffset.z != mip_extent.depth)) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("01730", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_01730), objlist, region_loc,
                                  "extent width (%" PRIu32
                                  ") must be a multiple of the compressed texture block "
                                  "depth (%" PRIu32 "), or when added to srcOffset.z (%" PRId32
@@ -1463,7 +1030,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
         if (dst_image_state.createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((0 != region.dstOffset.y) || (1 != dst_copy_extent.height)) {
                 const LogObjectList objlist(handle, dst_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("00152", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_00152), objlist, region_loc,
                                  "dstOffset.y is %" PRId32 " and dst_copy_extent.height is %" PRIu32
                                  ". For 1D images "
                                  "these must be 0 and 1, respectively.",
@@ -1476,7 +1043,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             ((0 != region.dstOffset.z) || (1 != dst_copy_extent.depth))) {
             const LogObjectList objlist(handle, dst_image_state.Handle());
             const char *image_type = is_host ? "1D or 2D" : "1D";
-            skip |= LogError(GetImageCopyVUID("01786", is_2, is_host), objlist, region_loc,
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_01786), objlist, region_loc,
                              "dstOffset.z is %" PRId32 " and extent.depth is %" PRIu32
                              ". For %s images these must be 0 "
                              "and 1, respectively.",
@@ -1495,7 +1062,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             if (src_image_state.createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
                 if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
-                    skip |= LogError(GetImageCopyVUID("04443", is_2, is_host), objlist, region_loc,
+                    skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage3D_04443), objlist, region_loc,
                                      "srcSubresource.baseArrayLayer is %" PRIu32
                                      " and srcSubresource.layerCount "
                                      "is %" PRIu32 ". For VK_IMAGE_TYPE_3D images these must be 0 and 1, respectively.",
@@ -1505,7 +1072,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             if (dst_image_state.createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 const LogObjectList objlist(handle, dst_image_state.Handle());
                 if ((0 != region.dstSubresource.baseArrayLayer) || (1 != region.dstSubresource.layerCount)) {
-                    skip |= LogError(GetImageCopyVUID("04444", is_2, is_host), objlist, region_loc,
+                    skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage3D_04444), objlist, region_loc,
                                      "dstSubresource.baseArrayLayer is %" PRIu32
                                      " and dstSubresource.layerCount "
                                      "is %" PRIu32 ". For VK_IMAGE_TYPE_3D images these must be 0 and 1, respectively.",
@@ -1545,7 +1112,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             //  image offsets x must be multiple of block width
             if (SafeModulo(region.dstOffset.x, block_size.width) != 0) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("07281", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_07281), objlist, region_loc,
                                  "srcOffset.x (%" PRId32
                                  ") must be a multiple of the blocked image's texel "
                                  "width (%" PRIu32 ").",
@@ -1555,7 +1122,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             //  image offsets y must be multiple of block height
             if (SafeModulo(region.dstOffset.y, block_size.height) != 0) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("07282", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_07282), objlist, region_loc,
                                  "srcOffset.y (%" PRId32
                                  ") must be a multiple of the blocked image's texel "
                                  "height (%" PRIu32 ").",
@@ -1565,7 +1132,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             //  image offsets z must be multiple of block depth
             if (SafeModulo(region.dstOffset.z, block_size.depth) != 0) {
                 const LogObjectList objlist(handle, src_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("07283", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_07283), objlist, region_loc,
                                  "srcOffset.z (%" PRId32
                                  ") must be a multiple of the blocked image's texel "
                                  "depth (%" PRIu32 ").",
@@ -1576,7 +1143,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             if ((SafeModulo(dst_copy_extent.width, block_size.width) != 0) &&
                 (dst_copy_extent.width + region.dstOffset.x != mip_extent.width)) {
                 const LogObjectList objlist(handle, dst_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("01732", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_01732), objlist, region_loc,
                                  "dst_copy_extent width (%" PRIu32
                                  ") must be a multiple of the blocked texture "
                                  "block width (%" PRIu32 "), or when added to dstOffset.x (%" PRId32
@@ -1588,7 +1155,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             if ((SafeModulo(dst_copy_extent.height, block_size.height) != 0) &&
                 (dst_copy_extent.height + region.dstOffset.y != mip_extent.height)) {
                 const LogObjectList objlist(handle, dst_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("01733", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_01733), objlist, region_loc,
                                  "dst_copy_extent height (%" PRIu32
                                  ") must be a multiple of the compressed "
                                  "texture block height (%" PRIu32 "), or when added to dstOffset.y (%" PRId32
@@ -1601,7 +1168,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
             uint32_t copy_depth = (slice_override ? depth_slices : dst_copy_extent.depth);
             if ((SafeModulo(copy_depth, block_size.depth) != 0) && (copy_depth + region.dstOffset.z != mip_extent.depth)) {
                 const LogObjectList objlist(handle, dst_image_state.Handle());
-                skip |= LogError(GetImageCopyVUID("01734", is_2, is_host), objlist, region_loc,
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_01734), objlist, region_loc,
                                  "dst_copy_extent width (%" PRIu32
                                  ") must be a multiple of the compressed texture "
                                  "block depth (%" PRIu32 "), or when added to dstOffset.z (%" PRId32
@@ -1676,16 +1243,12 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
         skip |= ValidateImageSubresourceLayers(handle, &region.srcSubresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(handle, &region.dstSubresource, dst_subresource_loc);
 
-        skip |= ValidateImageMipLevel(handle, src_image_state, region.srcSubresource.mipLevel,
-                                      src_subresource_loc.dot(Field::mipLevel), GetImageCopyVUID("07967src", is_2, is_host));
-        skip |= ValidateImageMipLevel(handle, dst_image_state, region.dstSubresource.mipLevel,
-                                      dst_subresource_loc.dot(Field::mipLevel), GetImageCopyVUID("07967dst", is_2, is_host));
+        skip |= ValidateImageMipLevel(handle, src_image_state, region.srcSubresource.mipLevel, src_subresource_loc);
+        skip |= ValidateImageMipLevel(handle, dst_image_state, region.dstSubresource.mipLevel, dst_subresource_loc);
         skip |= ValidateImageArrayLayerRange(handle, src_image_state, region.srcSubresource.baseArrayLayer,
-                                             region.srcSubresource.layerCount, src_subresource_loc,
-                                             GetImageCopyVUID("07968src", is_2, is_host));
+                                             region.srcSubresource.layerCount, src_subresource_loc);
         skip |= ValidateImageArrayLayerRange(handle, dst_image_state, region.dstSubresource.baseArrayLayer,
-                                             region.dstSubresource.layerCount, dst_subresource_loc,
-                                             GetImageCopyVUID("07968dst", is_2, is_host));
+                                             region.dstSubresource.layerCount, dst_subresource_loc);
 
         if (api_version < VK_API_VERSION_1_1) {
             if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
@@ -1715,13 +1278,15 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
 
         // For each region, the aspectMask member of srcSubresource must be present in the source image
         if (!VerifyAspectsPresent(region.srcSubresource.aspectMask, src_format)) {
-            skip |= LogError(GetImageCopyVUID("00142", is_2, is_host), src_objlist, src_subresource_loc.dot(Field::aspectMask),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcSubresource_00142), src_objlist,
+                             src_subresource_loc.dot(Field::aspectMask),
                              "(%s) cannot specify aspects not present in source image (%s).",
                              string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(), string_VkFormat(src_format));
         }
         // For each region, the aspectMask member of dstSubresource must be present in the destination image
         if (!VerifyAspectsPresent(region.dstSubresource.aspectMask, dst_format)) {
-            skip |= LogError(GetImageCopyVUID("00143", is_2, is_host), dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstSubresource_00143), dst_objlist,
+                             dst_subresource_loc.dot(Field::aspectMask),
                              "(%s) cannot specify aspects not present in destination image (%s).",
                              string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str(), string_VkFormat(dst_format));
         }
@@ -1751,18 +1316,21 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
         if (slice_override) src_copy_extent.depth = depth_slices;
         uint32_t extent_check = ExceedsBounds(&(region.srcOffset), &src_copy_extent, &subresource_extent);
         if (extent_check & kXBit) {
-            skip |= LogError(GetImageCopyVUID("00144", is_2, is_host), src_objlist, region_loc.dot(Field::srcOffset).dot(Field::x),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_00144), src_objlist,
+                             region_loc.dot(Field::srcOffset).dot(Field::x),
                              "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource width (%" PRIu32 ").", region.srcOffset.x,
                              src_copy_extent.width, subresource_extent.width);
         }
 
         if (extent_check & kYBit) {
-            skip |= LogError(GetImageCopyVUID("00145", is_2, is_host), src_objlist, region_loc.dot(Field::srcOffset).dot(Field::y),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_00145), src_objlist,
+                             region_loc.dot(Field::srcOffset).dot(Field::y),
                              "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource height (%" PRIu32 ").", region.srcOffset.y,
                              src_copy_extent.height, subresource_extent.height);
         }
         if (extent_check & kZBit) {
-            skip |= LogError(GetImageCopyVUID("00147", is_2, is_host), src_objlist, region_loc.dot(Field::srcOffset).dot(Field::z),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_00147), src_objlist,
+                             region_loc.dot(Field::srcOffset).dot(Field::z),
                              "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource depth (%" PRIu32 ").", region.srcOffset.z,
                              src_copy_extent.depth, subresource_extent.depth);
         }
@@ -1773,33 +1341,36 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
 
         extent_check = ExceedsBounds(&(region.dstOffset), &dst_copy_extent, &subresource_extent);
         if (extent_check & kXBit) {
-            skip |= LogError(GetImageCopyVUID("00150", is_2, is_host), dst_objlist, region_loc.dot(Field::dstOffset).dot(Field::x),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_00150), dst_objlist,
+                             region_loc.dot(Field::dstOffset).dot(Field::x),
                              "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource width (%" PRIu32 ").", region.dstOffset.x,
                              dst_copy_extent.width, subresource_extent.width);
         }
         if (extent_check & kYBit) {
-            skip |= LogError(GetImageCopyVUID("00151", is_2, is_host), dst_objlist, region_loc.dot(Field::dstOffset).dot(Field::y),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_00151), dst_objlist,
+                             region_loc.dot(Field::dstOffset).dot(Field::y),
                              "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource height (%" PRIu32 ").", region.dstOffset.y,
                              dst_copy_extent.height, subresource_extent.height);
         }
         if (extent_check & kZBit) {
-            skip |= LogError(GetImageCopyVUID("00153", is_2, is_host), dst_objlist, region_loc.dot(Field::dstOffset).dot(Field::z),
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_00153), dst_objlist,
+                             region_loc.dot(Field::dstOffset).dot(Field::z),
                              "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource depth (%" PRIu32 ").", region.dstOffset.z,
                              dst_copy_extent.depth, subresource_extent.depth);
         }
     }
 
     skip |= ValidateMemoryIsBoundToImage(src_objlist, src_image_state, loc.dot(Field::srcImage),
-                                         GetImageCopyVUID("07966src", is_2, is_host));
+                                         GetCopyImageVUID(loc, vvl::CopyError::SrcImageContiguous_07966).c_str());
     skip |= ValidateMemoryIsBoundToImage(dst_objlist, dst_image_state, loc.dot(Field::dstImage),
-                                         GetImageCopyVUID("07966dst", is_2, is_host));
+                                         GetCopyImageVUID(loc, vvl::CopyError::DstImageContiguous_07966).c_str());
 
     if (src_image_state.createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-        skip |= LogError(GetImageCopyVUID("07969src", is_2, is_host), src_objlist, loc.dot(Field::srcImage),
+        skip |= LogError(GetCopyImageVUID(loc, vvl::CopyError::SrcImageSubsampled_07969), src_objlist, loc.dot(Field::srcImage),
                          "was created with flags including VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
     }
     if (dst_image_state.createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-        skip |= LogError(GetImageCopyVUID("07969dst", is_2, is_host), dst_objlist, loc.dot(Field::dstImage),
+        skip |= LogError(GetCopyImageVUID(loc, vvl::CopyError::DstImageSubsampled_07969), dst_objlist, loc.dot(Field::dstImage),
                          "was created with flags including VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
     }
 
@@ -2470,7 +2041,7 @@ bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer &
         if (image_state.DoesResourceMemoryOverlap(image_region, &buffer_state, buffer_region)) {
             const Location region_loc = loc.dot(Field::pRegions, i);
             const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("00173", image_to_buffer, is_2), objlist, region_loc,
+            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MemoryOverlap_00173), objlist, region_loc,
                              "Detected overlap between source and dest regions in memory.");
         }
     }
@@ -2567,12 +2138,9 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
             VerifyImageLayoutSubresource(cb_state, *src_image_state, region.imageSubresource, srcImageLayout, src_image_loc, vuid);
         vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747" : "VUID-vkCmdCopyImageToBuffer-imageOffset-07747";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, &region, region_loc, vuid);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07967" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07967";
-        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, region.imageSubresource.mipLevel,
-                                      subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07968" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07968";
+        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, region.imageSubresource.mipLevel, subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, region.imageSubresource.baseArrayLayer,
-                                             region.imageSubresource.layerCount, subresource_loc, vuid);
+                                             region.imageSubresource.layerCount, subresource_loc);
     }
 
     // TODO 6898 - ValidateImageBufferCopyMemoryOverlap logic has issues
@@ -2717,12 +2285,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
             VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.imageSubresource, dstImageLayout, dst_image_loc, vuid);
         vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-imageOffset-07738" : "VUID-vkCmdCopyBufferToImage-imageOffset-07738";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *dst_image_state, &region, region_loc, vuid);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-07967" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07967";
-        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, region.imageSubresource.mipLevel,
-                                      subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-07968" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07968";
+        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, region.imageSubresource.mipLevel, subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, region.imageSubresource.baseArrayLayer,
-                                             region.imageSubresource.layerCount, subresource_loc, vuid);
+                                             region.imageSubresource.layerCount, subresource_loc);
 
         const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
         if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
@@ -2924,13 +2489,9 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         const Location subresource_loc = region_loc.dot(Field::imageSubresource);
         const auto region = info_ptr->pRegions[i];
 
-        skip |= ValidateImageMipLevel(device, *image_state, region.imageSubresource.mipLevel, subresource_loc.dot(Field::mipLevel),
-                                      from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07967"
-                                                 : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07967");
+        skip |= ValidateImageMipLevel(device, *image_state, region.imageSubresource.mipLevel, subresource_loc);
         skip |= ValidateImageArrayLayerRange(device, *image_state, region.imageSubresource.baseArrayLayer,
-                                             region.imageSubresource.layerCount, subresource_loc,
-                                             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968"
-                                                        : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
+                                             region.imageSubresource.layerCount, subresource_loc);
         skip |= ValidateImageSubresourceLayers(device, &region.imageSubresource, subresource_loc);
         if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) has_stencil = true;
         if (region.imageSubresource.aspectMask & ~VK_IMAGE_ASPECT_STENCIL_BIT) has_non_stencil = true;
@@ -3439,18 +3000,12 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
         skip |= ValidateImageSubresourceLayers(cb_state.VkHandle(), &src_subresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(cb_state.VkHandle(), &dst_subresource, dst_subresource_loc);
-        vuid = is_2 ? "VUID-VkBlitImageInfo2-srcSubresource-01705" : "VUID-vkCmdBlitImage-srcSubresource-01705";
-        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, src_subresource.mipLevel,
-                                      src_subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkBlitImageInfo2-dstSubresource-01706" : "VUID-vkCmdBlitImage-dstSubresource-01706";
-        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, dst_subresource.mipLevel,
-                                      dst_subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkBlitImageInfo2-srcSubresource-01707" : "VUID-vkCmdBlitImage-srcSubresource-01707";
+        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, src_subresource.mipLevel, src_subresource_loc);
+        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, dst_subresource.mipLevel, dst_subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, src_subresource.baseArrayLayer,
-                                             src_subresource.layerCount, src_subresource_loc, vuid);
-        vuid = is_2 ? "VUID-VkBlitImageInfo2-dstSubresource-01708" : "VUID-vkCmdBlitImage-dstSubresource-01708";
+                                             src_subresource.layerCount, src_subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, dst_subresource.baseArrayLayer,
-                                             dst_subresource.layerCount, dst_subresource_loc, vuid);
+                                             dst_subresource.layerCount, dst_subresource_loc);
 
         if (src_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS || dst_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
             if (src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
@@ -3785,18 +3340,12 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, src_image_loc, vuid);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImageLayout-00262" : "VUID-vkCmdResolveImage-dstImageLayout-00262";
         skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
-        vuid = is_2 ? "VUID-VkResolveImageInfo2-srcSubresource-01709" : "VUID-vkCmdResolveImage-srcSubresource-01709";
-        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, src_subresource.mipLevel,
-                                      src_subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkResolveImageInfo2-dstSubresource-01710" : "VUID-vkCmdResolveImage-dstSubresource-01710";
-        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, dst_subresource.mipLevel,
-                                      dst_subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkResolveImageInfo2-srcSubresource-01711" : "VUID-vkCmdResolveImage-srcSubresource-01711";
+        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, src_subresource.mipLevel, src_subresource_loc);
+        skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, dst_subresource.mipLevel, dst_subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, src_subresource.baseArrayLayer,
-                                             src_subresource.layerCount, src_subresource_loc, vuid);
-        vuid = is_2 ? "VUID-VkResolveImageInfo2-dstSubresource-01712" : "VUID-vkCmdResolveImage-dstSubresource-01712";
+                                             src_subresource.layerCount, src_subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, dst_subresource.baseArrayLayer,
-                                             dst_subresource.layerCount, dst_subresource_loc, vuid);
+                                             dst_subresource.layerCount, dst_subresource_loc);
 
         if (src_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS || dst_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
             if (src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
