@@ -909,12 +909,7 @@ bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags
     swapchain_create_info.oldSwapchain = oldSwapchain;
 
     VkResult result = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    if (result != VK_SUCCESS) return false;
-    // We must call vkGetSwapchainImagesKHR after creating the swapchain because the Validation Layer variables
-    // for the swapchain image count are set inside that call. Otherwise, various validation fails due to
-    // thinking that the swapchain image count is zero.
-    GetSwapchainImages(swapchain);
-    return true;
+    return result == VK_SUCCESS;
 }
 
 std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR swapchain) {
