@@ -496,7 +496,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     create_info.pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
                     skip |= LogError("VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214", device,
                                      create_info_loc.dot(Field::pTessellationState).dot(Field::patchControlPoints),
-                                     "%" PRIu32 ", but should between 0 and maxTessellationPatchSize (%" PRIu32 ").",
+                                     "is %" PRIu32 ", but should be between 0 and maxTessellationPatchSize (%" PRIu32 ").",
                                      create_info.pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
                 }
             }
