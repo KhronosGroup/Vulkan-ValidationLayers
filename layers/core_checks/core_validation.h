@@ -26,32 +26,6 @@
 #include "error_message/record_object.h"
 #include "containers/qfo_transfer.h"
 
-struct ValidateBeginQueryVuids {
-    const char* vuid_queue_feedback = kVUIDUndefined;
-    const char* vuid_queue_occlusion = kVUIDUndefined;
-    const char* vuid_precise = kVUIDUndefined;
-    const char* vuid_query_count = kVUIDUndefined;
-    const char* vuid_profile_lock = kVUIDUndefined;
-    const char* vuid_scope_not_first = kVUIDUndefined;
-    const char* vuid_scope_in_rp = kVUIDUndefined;
-    const char* vuid_dup_query_type = kVUIDUndefined;
-    const char* vuid_protected_cb = kVUIDUndefined;
-    const char* vuid_multiview_query = kVUIDUndefined;
-    const char* vuid_graphics_support = kVUIDUndefined;
-    const char* vuid_compute_support = kVUIDUndefined;
-    const char* vuid_primitives_generated = kVUIDUndefined;
-    const char* vuid_result_status_support = kVUIDUndefined;
-    const char* vuid_performance_queue_index_07289 = kVUIDUndefined;
-    const char* vuid_no_active_in_vc_scope = kVUIDUndefined;
-};
-
-struct ValidateEndQueryVuids {
-    const char* vuid_active_queries = kVUIDUndefined;
-    const char* vuid_protected_cb = kVUIDUndefined;
-    const char* vuid_multiview_query = kVUIDUndefined;
-    const char* vuid_inside_renderpass_07007 = kVUIDUndefined;
-};
-
 struct SubresourceRangeErrorCodes {
     const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
 };
@@ -298,9 +272,9 @@ class CoreChecks : public ValidationStateTracker {
     static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
-                            uint32_t index, const Location& loc, const ValidateBeginQueryVuids* vuids) const;
+                            uint32_t index, const Location& loc) const;
     bool ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t slot, uint32_t index,
-                             const Location& loc, const ValidateEndQueryVuids* vuids) const;
+                             const Location& loc) const;
 
     bool ValidateCmdDrawInstance(const vvl::CommandBuffer& cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                  const Location& loc) const;
