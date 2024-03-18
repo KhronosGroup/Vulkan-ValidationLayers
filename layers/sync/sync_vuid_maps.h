@@ -96,8 +96,6 @@ struct GetImageBarrierVUIDFunctor {
     const std::string &operator()(const Location &loc) const { return GetImageBarrierVUID(loc, error); }
 };
 
-const SubresourceRangeErrorCodes &GetSubResourceVUIDs(const Location &loc);
-
 enum class SubmitError {
     kTimelineSemSmallValue,
     kSemAlreadySignalled,

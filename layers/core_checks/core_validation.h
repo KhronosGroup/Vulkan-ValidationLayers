@@ -26,10 +26,6 @@
 #include "error_message/record_object.h"
 #include "containers/qfo_transfer.h"
 
-struct SubresourceRangeErrorCodes {
-    const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
-};
-
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 // Much of the data stored in vvl::CommandBuffer is only used by core validation, and is
@@ -698,9 +694,8 @@ class CoreChecks : public ValidationStateTracker {
                                                           const vvl::Image& dst_image_state, const RegionType* region,
                                                           const Location& region_loc) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
-                                       const VkImageSubresourceRange& subresourceRange, const char* image_layer_count_var_name,
-                                       const LogObjectList& objlist, const SubresourceRangeErrorCodes& errorCodes,
-                                       const Location& subresource_loc) const;
+                                       const VkImageSubresourceRange& subresourceRange, vvl::Field image_layer_count_var,
+                                       const LogObjectList& objlist, const Location& subresource_loc) const;
     bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                              vvl::Image& image_state, VkSampleCountFlagBits msrtss_samples,
                                                              const Location& rasterization_samples_loc) const;

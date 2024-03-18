@@ -23,6 +23,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "core_validation.h"
+#include "cc_vuid_maps.h"
 #include "generated/chassis.h"
 #include "generated/pnext_chain_extraction.h"
 #include "error_message/error_strings.h"
@@ -1448,15 +1449,14 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
 }
 
 bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
-                                               const VkImageSubresourceRange &subresourceRange,
-                                               const char *image_layer_count_var_name, const LogObjectList &objlist,
-                                               const SubresourceRangeErrorCodes &errorCodes,
-                                               const Location &subresource_loc) const {
+                                               const VkImageSubresourceRange &subresourceRange, vvl::Field image_layer_count_var,
+                                               const LogObjectList &objlist, const Location &subresource_loc) const {
     bool skip = false;
 
     // Validate mip levels
     if (subresourceRange.baseMipLevel >= image_mip_count) {
-        skip |= LogError(errorCodes.base_mip_err, objlist, subresource_loc.dot(Field::baseMipLevel),
+        skip |= LogError(GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::BaseMip_01486), objlist,
+                         subresource_loc.dot(Field::baseMipLevel),
                          "(%" PRIu32 ") is greater or equal to the mip level count of the image (%" PRIu32 ").",
                          subresourceRange.baseMipLevel, image_mip_count);
     }
@@ -1469,7 +1469,8 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
             const uint64_t necessary_mip_count = uint64_t{subresourceRange.baseMipLevel} + uint64_t{subresourceRange.levelCount};
 
             if (necessary_mip_count > image_mip_count) {
-                skip |= LogError(errorCodes.mip_count_err, objlist, subresource_loc.dot(Field::baseMipLevel),
+                skip |= LogError(GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::MipCount_01724), objlist,
+                                 subresource_loc.dot(Field::baseMipLevel),
                                  "(%" PRIu32 ") + levelCount (%" PRIu32 ") is (%" PRIu64
                                  ") which is greater than the mip level count of the image (i.e. greater than %" PRIu32 ").",
                                  subresourceRange.baseMipLevel, subresourceRange.levelCount, necessary_mip_count, image_mip_count);
@@ -1479,9 +1480,12 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
     // Validate array layers
     if (subresourceRange.baseArrayLayer >= image_layer_count) {
-        skip |= LogError(errorCodes.base_layer_err, objlist, subresource_loc.dot(Field::baseArrayLayer),
+        const auto vuid = image_layer_count_var == Field::depth
+                              ? "VUID-VkImageViewCreateInfo-image-02724"
+                              : GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::BaseLayer_01488);
+        skip |= LogError(vuid, objlist, subresource_loc.dot(Field::baseArrayLayer),
                          "(%" PRIu32 ") is greater or equal to the %s of the image when it was created (%" PRIu32 ").",
-                         subresourceRange.baseArrayLayer, image_layer_count_var_name, image_layer_count);
+                         subresourceRange.baseArrayLayer, String(image_layer_count_var), image_layer_count);
     }
 
     if (subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS) {
@@ -1493,11 +1497,14 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
                 uint64_t{subresourceRange.baseArrayLayer} + uint64_t{subresourceRange.layerCount};
 
             if (necessary_layer_count > image_layer_count) {
-                skip |= LogError(errorCodes.layer_count_err, objlist, subresource_loc.dot(Field::baseArrayLayer),
+                const auto vuid = image_layer_count_var == Field::depth
+                                      ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
+                                      : GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::LayerCount_01725);
+                skip |= LogError(vuid, objlist, subresource_loc.dot(Field::baseArrayLayer),
                                  "(%" PRIu32 ") + layerCount (%" PRIu32 ") is (%" PRIu64
                                  ") which is greater than the %s of the image when it was created (%" PRIu32 ").",
                                  subresourceRange.baseArrayLayer, subresourceRange.layerCount, necessary_layer_count,
-                                 image_layer_count_var_name, image_layer_count);
+                                 String(image_layer_count_var), image_layer_count);
             }
         }
     }
@@ -1527,11 +1534,11 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image
     const bool is_2d_compatible =
         image_state.create_info.flags & (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT);
     const bool is_image_slicable = (image_state.create_info.imageType == VK_IMAGE_TYPE_3D) && is_2d_compatible;
-    const bool is_3_d_to_2_d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
+    const bool is_3d_to_2d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
 
     uint32_t image_layer_count;
 
-    if (is_3_d_to_2_d_map) {
+    if (is_3d_to_2d_map) {
         const auto layers = LayersFromRange(subresourceRange);
         const auto extent = image_state.GetEffectiveSubresourceExtent(layers);
         image_layer_count = extent.depth;
@@ -1539,52 +1546,31 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image
         image_layer_count = image_state.create_info.arrayLayers;
     }
 
-    const auto image_layer_count_var_name = is_3_d_to_2_d_map ? "extent.depth" : "arrayLayers";
-
-    SubresourceRangeErrorCodes subresource_range_error_codes = {};
-    subresource_range_error_codes.base_mip_err = "VUID-VkImageViewCreateInfo-subresourceRange-01478";
-    subresource_range_error_codes.mip_count_err = "VUID-VkImageViewCreateInfo-subresourceRange-01718";
-    subresource_range_error_codes.base_layer_err =
-        is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-image-02724" : "VUID-VkImageViewCreateInfo-image-06724";
-    subresource_range_error_codes.layer_count_err = is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
-                                                                      : "VUID-VkImageViewCreateInfo-subresourceRange-06725";
+    const auto image_layer_count_var = is_3d_to_2d_map ? Field::depth : Field::arrayLayers;
 
     return ValidateImageSubresourceRange(image_state.create_info.mipLevels, image_layer_count, subresourceRange,
-                                         image_layer_count_var_name, image_state.VkHandle(), subresource_range_error_codes,
-                                         loc.dot(Field::subresourceRange));
+                                         image_layer_count_var, image_state.VkHandle(), loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateCmdClearColorSubresourceRange(const VkImageCreateInfo &create_info,
                                                        const VkImageSubresourceRange &subresourceRange,
                                                        const LogObjectList &objlist, const Location &loc) const {
-    SubresourceRangeErrorCodes subresource_range_error_codes = {};
-    subresource_range_error_codes.base_mip_err = "VUID-vkCmdClearColorImage-baseMipLevel-01470";
-    subresource_range_error_codes.mip_count_err = "VUID-vkCmdClearColorImage-pRanges-01692";
-    subresource_range_error_codes.base_layer_err = "VUID-vkCmdClearColorImage-baseArrayLayer-01472";
-    subresource_range_error_codes.layer_count_err = "VUID-vkCmdClearColorImage-pRanges-01693";
-
-    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, "arrayLayers", objlist,
-                                         subresource_range_error_codes, loc.dot(Field::subresourceRange));
+    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, Field::arrayLayers,
+                                         objlist, loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const VkImageCreateInfo &create_info,
                                                        const VkImageSubresourceRange &subresourceRange,
                                                        const LogObjectList &objlist, const Location &loc) const {
-    SubresourceRangeErrorCodes subresource_range_error_codes = {};
-    subresource_range_error_codes.base_mip_err = "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474";
-    subresource_range_error_codes.mip_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01694";
-    subresource_range_error_codes.base_layer_err = "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476";
-    subresource_range_error_codes.layer_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01695";
-
-    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, "arrayLayers", objlist,
-                                         subresource_range_error_codes, loc.dot(Field::subresourceRange));
+    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, Field::arrayLayers,
+                                         objlist, loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateImageBarrierSubresourceRange(const VkImageCreateInfo &create_info,
                                                       const VkImageSubresourceRange &subresourceRange, const LogObjectList &objlist,
                                                       const Location &loc) const {
-    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, "arrayLayers", objlist,
-                                         sync_vuid_maps::GetSubResourceVUIDs(loc), loc.dot(Field::subresourceRange));
+    return ValidateImageSubresourceRange(create_info.mipLevels, create_info.arrayLayers, subresourceRange, Field::arrayLayers,
+                                         objlist, loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, const VkFormat view_format,
@@ -2538,13 +2524,6 @@ bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice 
     return skip;
 }
 
-static const SubresourceRangeErrorCodes TransitionImageLayoutVUIDs{
-    "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01486",
-    "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01724",
-    "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01488",
-    "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01725",
-};
-
 bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                          const VkHostImageLayoutTransitionInfoEXT *pTransitions,
                                                          const ErrorObject &error_obj) const {
@@ -2568,8 +2547,8 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
         }
 
         skip |= ValidateImageSubresourceRange(image_state->create_info.mipLevels, image_state->create_info.arrayLayers,
-                                              transition.subresourceRange, "arrayLayers", image_state->VkHandle(),
-                                              TransitionImageLayoutVUIDs, transition_loc.dot(Field::subresourceRange));
+                                              transition.subresourceRange, Field::arrayLayers, image_state->VkHandle(),
+                                              transition_loc.dot(Field::subresourceRange));
         skip |=
             ValidateMemoryIsBoundToImage(LogObjectList(device, transition.image), *image_state, transition_loc.dot(Field::image),
                                          "VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");

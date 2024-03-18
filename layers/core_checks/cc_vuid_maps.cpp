@@ -567,4 +567,53 @@ const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
     return result;
 }
 
+const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error) {
+    static const std::map<SubresourceRangeError, std::array<Entry, 6>> errors{
+        {SubresourceRangeError::BaseMip_01486,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01486"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01486"},
+             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01486"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-baseMipLevel-01470"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-01478"},
+         }}},
+        {SubresourceRangeError::MipCount_01724,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01724"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01724"},
+             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01724"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-01692"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-01694"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-01718"},
+         }}},
+        {SubresourceRangeError::BaseLayer_01488,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01488"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01488"},
+             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01488"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-baseArrayLayer-01472"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-image-06724"},
+         }}},
+        {SubresourceRangeError::LayerCount_01725,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01725"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01725"},
+             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01725"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-01693"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-01695"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-06725"},
+         }}},
+    };
+
+    const auto &result = FindVUID(error, loc, errors);
+    assert(!result.empty());
+    if (result.empty()) {
+        static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-subresource-range");
+        return unhandled;
+    }
+    return result;
+}
+
 }  // namespace vvl
