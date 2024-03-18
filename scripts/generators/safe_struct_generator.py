@@ -65,6 +65,14 @@ class SafeStructOutputGenerator(BaseGenerator):
             'AHardwareBuffer',
         ]
 
+        # These 'data' union are decided by the 'type' in the same parent struct
+        self.union_of_pointers = [
+            'VkDescriptorDataEXT',
+        ]
+        self.union_of_pointer_callers = [
+            'VkDescriptorGetInfoEXT',
+        ]
+
         # Will update the the function interface
         self.custom_construct_params = {
             # safe_VkGraphicsPipelineCreateInfo needs to know if subpass has color and\or depth\stencil attachments to use its pointers
@@ -673,7 +681,7 @@ void FreePnextChain(const void *pNext) {
                     construct_txt += f'    {member.name} = new {m_type}(in_struct->{member.name});\n'
                     destruct_txt += f'if ({member.name})\n'
                     destruct_txt += f'    delete {member.name};\n'
-                elif 'safe_' in m_type and member.type == 'VkDescriptorDataEXT':
+                elif 'safe_' in m_type and member.type in self.union_of_pointers:
                     init_list += f'\n{member.name}(&in_struct->{member.name}, in_struct->type),'
                     init_func_txt += f'{member.name}.initialize(&in_struct->{member.name}, in_struct->type);\n'
                 elif 'safe_' in m_type:
@@ -707,7 +715,7 @@ void FreePnextChain(const void *pNext) {
                 destruct_txt += '    FreePnextChain(pNext);\n'
 
             if struct.union:
-                if (struct.name == 'VkDescriptorDataEXT'):
+                if struct.name in self.union_of_pointers:
                     default_init_list = ' type_at_end {0},'
                     out.append(f'''
                         safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state{copy_pnext_param})
@@ -739,7 +747,7 @@ void FreePnextChain(const void *pNext) {
             construct_txt = copy_pnext + construct_txt
             copy_construct_init = init_func_txt.replace('in_struct->', 'copy_src.')
             copy_construct_init = copy_construct_init.replace(', copy_state', '')
-            if struct.name == 'VkDescriptorGetInfoEXT':
+            if struct.name in self.union_of_pointer_callers:
                 copy_construct_init = copy_construct_init.replace(', copy_src.type', '')
             # Pass object to copy constructors
             copy_construct_txt = re.sub('(new \\w+)\\(in_struct->', '\\1(*copy_src.', construct_txt)
