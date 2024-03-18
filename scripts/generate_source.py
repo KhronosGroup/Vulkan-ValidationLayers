@@ -412,7 +412,7 @@ def main(argv):
     group.add_argument('--target', nargs='+', help='only generate file names passed in')
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
-    group.add_argument('--caching', action='store_true', help='Try to cache generator objects')
+    group.add_argument('--no-caching', action='store_true', help='Do not try to cache generator objects')
     args = parser.parse_args(argv)
 
     repo_dir = repo_relative(f'layers/{args.api}/generated')
@@ -456,7 +456,8 @@ def main(argv):
 
     registry = os.path.abspath(os.path.join(args.registry,  'vk.xml'))
     grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
-    RunGenerators(args.api, registry, grammar, gen_dir, styleFile, args.target, args.caching)
+    caching = not args.no_caching
+    RunGenerators(args.api, registry, grammar, gen_dir, styleFile, args.target, caching)
 
     # Generate vk_validation_error_messages.h (ignore if targeting a single generator)
     if (not args.target):
