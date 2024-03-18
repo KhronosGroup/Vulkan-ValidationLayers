@@ -594,7 +594,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
-    if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+    if (cb_state.IsSeconary()) {
         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdInSubmit);
         skip |= LogError(vuid, cb_state.Handle(), loc, "Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.",
                          FormatHandle(cb_state).c_str());

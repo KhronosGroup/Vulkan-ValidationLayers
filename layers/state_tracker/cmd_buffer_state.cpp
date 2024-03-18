@@ -926,12 +926,11 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     // Set updated state here in case implicit reset occurs above
     state = CbState::Recording;
     beginInfo = *pBeginInfo;
-    if (beginInfo.pInheritanceInfo && (createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+    if (beginInfo.pInheritanceInfo && IsSeconary()) {
         inheritanceInfo = *(beginInfo.pInheritanceInfo);
         beginInfo.pInheritanceInfo = &inheritanceInfo;
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
-        if ((createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
-            (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+        if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
             if (beginInfo.pInheritanceInfo->renderPass) {
                 activeRenderPass = dev_data->Get<vvl::RenderPass>(beginInfo.pInheritanceInfo->renderPass);
                 SetActiveSubpass(beginInfo.pInheritanceInfo->subpass);

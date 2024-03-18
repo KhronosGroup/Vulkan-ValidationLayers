@@ -1066,7 +1066,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                   ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea
                                   : cb_state.active_render_pass_begin_info.renderArea;
 
-    if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+    if (cb_state.IsPrimary()) {
         uint32_t layer_count = 0;
         if (cb_state.activeRenderPass->UsesDynamicRendering()) {
             layer_count = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount;
@@ -1252,7 +1252,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
         return;
     }
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
-    if (!cb_state.activeRenderPass || (cb_state.createInfo.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+    if (!cb_state.activeRenderPass || cb_state.IsPrimary()) {
         return;
     }
     std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;

@@ -73,8 +73,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                          FormatHandle(commandBuffer).c_str());
     }
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
-    if (cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-        // Primary Command Buffer
+    if (cb_state->IsPrimary()) {
         const VkCommandBufferUsageFlags invalid_usage =
             (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
         if ((pBeginInfo->flags & invalid_usage) == invalid_usage) {
@@ -83,7 +82,6 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                              string_VkCommandBufferUsageFlags(pBeginInfo->flags).c_str(), FormatHandle(commandBuffer).c_str());
         }
     } else {
-        // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
         const Location inheritance_loc = begin_info_loc.dot(Field::pInheritanceInfo);
         if (!info) {
@@ -328,8 +326,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
         return skip;
     }
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
-    if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state.createInfo.level) ||
-        !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+    if (cb_state.IsPrimary() || !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
         skip |= InsideRenderPass(cb_state, error_obj.location, "VUID-vkEndCommandBuffer-commandBuffer-00060");
     }
 
@@ -515,7 +512,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
 
 bool CoreChecks::ValidatePrimaryCommandBuffer(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool skip = false;
-    if (cb_state.createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+    if (cb_state.IsSeconary()) {
         skip |= LogError(vuid, cb_state.Handle(), loc, "command can't be executed on a secondary command buffer.");
     }
     return skip;
@@ -869,7 +866,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             skip |= viewport_scissor_inheritance.VisitSecondary(i, cb_loc, sub_cb_state);
         }
 
-        if (VK_COMMAND_BUFFER_LEVEL_SECONDARY != sub_cb_state.createInfo.level) {
+        if (!sub_cb_state.IsSeconary()) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00088", objlist, cb_loc,
                              "(%s) is not VK_COMMAND_BUFFER_LEVEL_SECONDARY.", FormatHandle(pCommandBuffers[i]).c_str());
