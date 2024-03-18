@@ -56,8 +56,8 @@ class Fence : public RefcountedStateObject {
         kExternalPermanent,
     };
     // Default constructor
-    Fence(ValidationStateTracker &dev, VkFence f, const VkFenceCreateInfo *pCreateInfo)
-        : RefcountedStateObject(f, kVulkanObjectTypeFence),
+    Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
+        : RefcountedStateObject(handle, kVulkanObjectTypeFence),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
           state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),

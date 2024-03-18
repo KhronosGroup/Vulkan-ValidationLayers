@@ -36,9 +36,9 @@ static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPool
     return counts;
 }
 
-vvl::DescriptorPool::DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool pool,
-                                             const VkDescriptorPoolCreateInfo *pCreateInfo)
-    : StateObject(pool, kVulkanObjectTypeDescriptorPool),
+vvl::DescriptorPool::DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool handle,
+                                    const VkDescriptorPoolCreateInfo *pCreateInfo)
+    : StateObject(handle, kVulkanObjectTypeDescriptorPool),
       maxSets(pCreateInfo->maxSets),
       createInfo(pCreateInfo),
       maxDescriptorTypeCount(GetMaxTypeCounts(pCreateInfo)),
@@ -372,15 +372,15 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 // The DescriptorSetLayout stores the per handle data for a descriptor set layout, and references the common defintion for the
 // handle invariant portion
 vvl::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
-                                                          const VkDescriptorSetLayout layout)
-    : StateObject(layout, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(p_create_info)) {}
+                                              const VkDescriptorSetLayout handle)
+    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(p_create_info)) {}
 
 void vvl::AllocateDescriptorSetsData::Init(uint32_t count) { layout_nodes.resize(count); }
 
-vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool_state,
-                                              const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
-                                              vvl::DescriptorSet::StateTracker *state_data)
-    : StateObject(set, kVulkanObjectTypeDescriptorSet),
+vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool_state,
+                                  const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
+                                  vvl::DescriptorSet::StateTracker *state_data)
+    : StateObject(handle, kVulkanObjectTypeDescriptorSet),
       some_update_(false),
       pool_state_(pool_state),
       layout_(layout),

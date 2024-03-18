@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -54,12 +54,12 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
 
 namespace vvl {
 
-Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
-    : Bindable(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
+Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
+    : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
-      requirements(GetMemoryRequirements(dev_data, buff)),
+      requirements(GetMemoryRequirements(dev_data, handle)),
       usage(GetBufferUsageFlags(createInfo)),
       supported_video_profiles(dev_data->video_profile_cache_.Get(
           dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -73,9 +73,9 @@ Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCr
     }
 }
 
-BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *ci,
                        VkFormatFeatureFlags2KHR buf_ff)
-    : StateObject(bv, kVulkanObjectTypeBufferView),
+    : StateObject(handle, kVulkanObjectTypeBufferView),
       create_info(*ci),
       buffer_state(bf),
 #ifdef VK_USE_PLATFORM_METAL_EXT

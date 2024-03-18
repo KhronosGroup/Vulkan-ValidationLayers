@@ -71,9 +71,9 @@ class AccelerationStructureNV : public Bindable {
 
 class AccelerationStructureKHR : public StateObject {
   public:
-    AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
+    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *ci,
                              std::shared_ptr<Buffer> &&buf_state)
-        : StateObject(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state) {}
+        : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     virtual ~AccelerationStructureKHR() {

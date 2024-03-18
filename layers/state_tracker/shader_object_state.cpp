@@ -28,10 +28,10 @@ static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_d
     return set_layouts;
 }
 
-ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
+ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT handle,
                            std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
                            uint32_t unique_shader_id)
-    : StateObject(shader_object, kVulkanObjectTypeShaderEXT),
+    : StateObject(handle, kVulkanObjectTypeShaderEXT),
       create_info(&create_info),
       spirv(spirv_module),
       entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
@@ -43,7 +43,7 @@ ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreat
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
     if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
-            if (pShaders[i] != shader_object) {
+            if (pShaders[i] != handle) {
                 linked_shaders.push_back(pShaders[i]);
             }
         }

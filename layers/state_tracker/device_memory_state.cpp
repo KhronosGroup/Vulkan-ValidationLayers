@@ -86,10 +86,10 @@ static bool GetMetalExport(const VkMemoryAllocateInfo *info) {
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 namespace vvl {
-DeviceMemory::DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                            const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                            std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
-    : StateObject(memory, kVulkanObjectTypeDeviceMemory),
+    : StateObject(handle, kVulkanObjectTypeDeviceMemory),
       alloc_info(p_alloc_info),
       export_handle_types(GetExportHandleTypes(p_alloc_info)),
       import_handle_type(GetImportHandleType(p_alloc_info)),

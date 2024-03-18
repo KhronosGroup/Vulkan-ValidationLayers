@@ -278,7 +278,7 @@ class ImageView : public StateObject {
     std::shared_ptr<vvl::Image> image_state;
     const bool is_depth_sliced;
 
-    ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+    ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
               VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     ImageView(const ImageView &rh_obj) = delete;
     VkImageView VkHandle() const { return handle_.Cast<VkImageView>(); }
@@ -332,7 +332,7 @@ class Swapchain : public StateObject {
     ValidationStateTracker *dev_data;
     uint32_t acquired_images = 0;
 
-    Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
+    Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 
     ~Swapchain() {
         if (!Destroyed()) {
@@ -392,7 +392,7 @@ namespace vvl {
 //    vvl::Surface -> nothing
 class Surface : public StateObject {
   public:
-    Surface(VkSurfaceKHR s) : StateObject(s, kVulkanObjectTypeSurfaceKHR) {}
+    Surface(VkSurfaceKHR handle) : StateObject(handle, kVulkanObjectTypeSurfaceKHR) {}
 
     ~Surface() {
         if (!Destroyed()) {

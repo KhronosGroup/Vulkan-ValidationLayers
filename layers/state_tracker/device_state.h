@@ -50,8 +50,8 @@ class PhysicalDevice : public StateObject {
     // Surfaceless Query extension needs 'global' surface_state data
     SurfacelessQueryState surfaceless_query_state{};
 
-    PhysicalDevice(VkPhysicalDevice phys_dev)
-        : StateObject(phys_dev, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(phys_dev)) {}
+    PhysicalDevice(VkPhysicalDevice handle)
+        : StateObject(handle, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(handle)) {}
 
     VkPhysicalDevice VkHandle() const { return handle_.Cast<VkPhysicalDevice>(); }
 
@@ -70,8 +70,8 @@ class DisplayMode : public StateObject {
   public:
     const VkPhysicalDevice physical_device;
 
-    DisplayMode(VkDisplayModeKHR dm, VkPhysicalDevice phys_dev)
-        : StateObject(dm, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
+    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice phys_dev)
+        : StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
 
     VkDisplayModeKHR VkHandle() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };

@@ -451,7 +451,7 @@ class ValidationStateTracker : public ValidationObject {
 
     // State update functions
     // Gets/Enumerations
-    virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev);
+    virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, const RecordObject& record_obj) override;
     void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
@@ -467,7 +467,7 @@ class ValidationStateTracker : public ValidationObject {
                                                             VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
                                                             const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Queue> CreateQueue(VkQueue queue, uint32_t queue_family_index, VkDeviceQueueCreateFlags flags,
+    virtual std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t queue_family_index, VkDeviceQueueCreateFlags flags,
                                                     const VkQueueFamilyProperties& queueFamilyProperties);
 
     void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
@@ -608,7 +608,7 @@ class ValidationStateTracker : public ValidationObject {
                                     const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::AccelerationStructureNV> CreateAccelerationStructureState(
-        VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo);
+        VkAccelerationStructureNV handle, const VkAccelerationStructureCreateInfoNV* pCreateInfo);
     void PostCallRecordCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator,
                                                      VkAccelerationStructureNV* pAccelerationStructure,
@@ -618,7 +618,7 @@ class ValidationStateTracker : public ValidationObject {
                                                      const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
-        VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+        VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
         std::shared_ptr<vvl::Buffer>&& buf_state);
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
@@ -645,21 +645,21 @@ class ValidationStateTracker : public ValidationObject {
                                                       const VkAllocationCallbacks* pAllocator,
                                                       const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo);
+    virtual std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* pCreateInfo);
     void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkBuffer* pBuffer, const RecordObject& record_obj) override;
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView bv,
-                                                                   const VkBufferViewCreateInfo* ci,
-                                                                   VkFormatFeatureFlags2KHR buf_ff);
+    virtual std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& buffer, VkBufferView handle,
+                                                                   const VkBufferViewCreateInfo* pCreateInfo,
+                                                                   VkFormatFeatureFlags2KHR format_features);
     void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                         const RecordObject& record_obj) override;
     void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
-    virtual std::shared_ptr<vvl::CommandPool> CreateCommandPoolState(VkCommandPool command_pool,
+    virtual std::shared_ptr<vvl::CommandPool> CreateCommandPoolState(VkCommandPool handle,
                                                                      const VkCommandPoolCreateInfo* pCreateInfo);
     void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
@@ -674,9 +674,9 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool pool,
+    virtual std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool handle,
                                                                            const VkDescriptorPoolCreateInfo* pCreateInfo);
-    virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet, vvl::DescriptorPool*,
+    virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool*,
                                                                     const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                                     uint32_t variable_count);
 
@@ -737,7 +737,7 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator,
                                          const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::PipelineCache> CreatePipelineCacheState(VkPipelineCache pipeline_cache,
+    virtual std::shared_ptr<vvl::PipelineCache> CreatePipelineCacheState(VkPipelineCache handle,
                                                                          const VkPipelineCacheCreateInfo* pCreateInfo) const;
     void PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
@@ -760,9 +760,9 @@ class ValidationStateTracker : public ValidationObject {
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const RecordObject& record_obj, void* cgpl_state) override;
 
-    virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+    virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo,
                                                          VkFormatFeatureFlags2KHR features);
-    virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+    virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo,
                                                          VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                          VkFormatFeatureFlags2KHR features);
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -770,8 +770,9 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView iv,
-                                                                 const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
+    virtual std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView handle,
+                                                                 const VkImageViewCreateInfo* pCreateInfo,
+                                                                 VkFormatFeatureFlags2KHR format_features,
                                                                  const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props);
     void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView,
@@ -854,7 +855,7 @@ class ValidationStateTracker : public ValidationObject {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci);
+    virtual std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo* pCreateInfo);
     void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                      const RecordObject& record_obj) override;
@@ -942,8 +943,8 @@ class ValidationStateTracker : public ValidationObject {
                                                const RecordObject& record_obj) override;
     void PostCallRecordReleaseProfilingLockKHR(VkDevice device, const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb,
-                                                                     const VkCommandBufferAllocateInfo* create_info,
+    virtual std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
+                                                                     const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                                      const vvl::CommandPool* pool);
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
@@ -973,11 +974,9 @@ class ValidationStateTracker : public ValidationObject {
                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                          const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info,
-                                                                       uint64_t fake_address, const VkMemoryType& memory_type,
-                                                                       const VkMemoryHeap& memory_heap,
-                                                                       std::optional<vvl::DedicatedBinding>&& dedicated_binding,
-                                                                       uint32_t physical_device_count);
+    virtual std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(
+        VkDeviceMemory handle, const VkMemoryAllocateInfo* pAllocateInfo, uint64_t fake_address, const VkMemoryType& memory_type,
+        const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count);
 
     // Memory mapping
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
@@ -1444,8 +1443,8 @@ class ValidationStateTracker : public ValidationObject {
                                                     const vvl::DescriptorUpdateTemplate* template_state, const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex, vvl::Func command);
-    virtual std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
-                                                                 VkSwapchainKHR swapchain);
+    virtual std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                                                 VkSwapchainKHR handle);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
                                     std::shared_ptr<vvl::Surface>&& surface_state, vvl::Swapchain* old_swapchain_state);
     void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,

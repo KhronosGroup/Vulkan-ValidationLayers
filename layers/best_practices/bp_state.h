@@ -31,15 +31,15 @@ class BestPractices;
 namespace bp_state {
 class Image : public vvl::Image {
   public:
-    Image(const ValidationStateTracker* dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo,
+    Image(const ValidationStateTracker* dev_data, VkImage handle, const VkImageCreateInfo* pCreateInfo,
           VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, features) {
+        : vvl::Image(dev_data, handle, pCreateInfo, features) {
         SetupUsages();
     }
 
-    Image(const ValidationStateTracker* dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
+    Image(const ValidationStateTracker* dev_data, VkImage handle, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, swapchain, swapchain_index, features) {
+        : vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features) {
         SetupUsages();
     }
 
@@ -100,18 +100,18 @@ class PhysicalDevice : public vvl::PhysicalDevice {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker* dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR swapchain)
-        : vvl::Swapchain(dev_data, pCreateInfo, swapchain) {}
+    Swapchain(ValidationStateTracker* dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR handle)
+        : vvl::Swapchain(dev_data, pCreateInfo, handle) {}
 
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
 
 class DeviceMemory : public vvl::DeviceMemory {
   public:
-    DeviceMemory(VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address,
+    DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* pAllocateInfo, uint64_t fake_address,
                  const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
                  std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
-        : vvl::DeviceMemory(mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
+        : vvl::DeviceMemory(handle, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
                             physical_device_count) {}
 
     std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
@@ -189,7 +189,7 @@ struct CommandBufferStateNV {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+    CommandBuffer(BestPractices* bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const vvl::CommandPool* pool);
 
     RenderPassState render_pass_state;
@@ -203,8 +203,8 @@ class CommandBuffer : public vvl::CommandBuffer {
 
 class DescriptorPool : public vvl::DescriptorPool {
   public:
-    DescriptorPool(ValidationStateTracker* dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo* pCreateInfo)
-        : vvl::DescriptorPool(dev, pool, pCreateInfo) {}
+    DescriptorPool(ValidationStateTracker* dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* pCreateInfo)
+        : vvl::DescriptorPool(dev, handle, pCreateInfo) {}
 
     uint32_t freed_count{0};
 };

@@ -687,8 +687,8 @@ struct Module {
 // Represents a VkShaderModule handle
 namespace vvl {
 struct ShaderModule : public StateObject {
-    ShaderModule(VkShaderModule shader_module, std::shared_ptr<spirv::Module> &spirv_module, uint32_t unique_shader_id)
-        : StateObject(shader_module, kVulkanObjectTypeShaderModule), spirv(spirv_module), gpu_validation_shader_id(unique_shader_id) {
+    ShaderModule(VkShaderModule handle, std::shared_ptr<spirv::Module> &spirv_module, uint32_t unique_shader_id)
+        : StateObject(handle, kVulkanObjectTypeShaderModule), spirv(spirv_module), gpu_validation_shader_id(unique_shader_id) {
         spirv->handle_ = handle_;
     }
 

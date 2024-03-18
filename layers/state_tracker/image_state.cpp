@@ -405,9 +405,9 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 
 namespace vvl {
 
-ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
+ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView handle, const VkImageViewCreateInfo *ci,
                      VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
-    : StateObject(iv, kVulkanObjectTypeImageView),
+    : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
       normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, *ci)),
@@ -529,8 +529,8 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
 
 namespace vvl {
 
-Swapchain::Swapchain(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
-    : StateObject(swapchain, kVulkanObjectTypeSwapchainKHR),
+Swapchain::Swapchain(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
+    : StateObject(handle, kVulkanObjectTypeSwapchainKHR),
       createInfo(pCreateInfo),
       images(),
       exclusive_full_screen_access(false),

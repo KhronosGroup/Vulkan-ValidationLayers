@@ -72,8 +72,8 @@ class Event : public StateObject {
     // Queue that signaled this event. It's null if event was signaled from the host
     VkQueue signaling_queue = VK_NULL_HANDLE;
 
-    Event(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
-        : StateObject(event_, kVulkanObjectTypeEvent),
+    Event(VkEvent handle, const VkEventCreateInfo *pCreateInfo)
+        : StateObject(handle, kVulkanObjectTypeEvent),
           write_in_use(0),
 #ifdef VK_USE_PLATFORM_METAL_EXT
           metal_event_export(GetMetalExport(pCreateInfo)),
@@ -103,7 +103,7 @@ class CommandPool : public StateObject {
     // Cmd buffers allocated from this pool
     vvl::unordered_map<VkCommandBuffer, CommandBuffer *> commandBuffers;
 
-    CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo, VkQueueFlags flags);
+    CommandPool(ValidationStateTracker *dev, VkCommandPool handle, const VkCommandPoolCreateInfo *pCreateInfo, VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
 
     VkCommandPool VkHandle() const { return handle_.Cast<VkCommandPool>(); }
@@ -464,7 +464,7 @@ class CommandBuffer : public RefcountedStateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(ValidationStateTracker *, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+    CommandBuffer(ValidationStateTracker *, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const vvl::CommandPool *cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }

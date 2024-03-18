@@ -269,8 +269,8 @@ static void InitRenderPassState(vvl::RenderPass *render_pass) {
 
 namespace vvl {
 
-RenderPass::RenderPass(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo)
-    : StateObject(rp, kVulkanObjectTypeRenderPass),
+RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo)
+    : StateObject(handle, kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
@@ -283,8 +283,8 @@ static safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCreateIn
     return create_info_2;
 }
 
-RenderPass::RenderPass(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo)
-    : StateObject(rp, kVulkanObjectTypeRenderPass),
+RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo)
+    : StateObject(handle, kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
@@ -406,9 +406,9 @@ RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritan
       has_multiview_enabled(false),
       inheritance_rendering_info(pInheritanceRenderingInfo) {}
 
-Framebuffer::Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
+Framebuffer::Framebuffer(VkFramebuffer handle, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
                          std::vector<std::shared_ptr<vvl::ImageView>> &&attachments)
-    : StateObject(fb, kVulkanObjectTypeFramebuffer),
+    : StateObject(handle, kVulkanObjectTypeFramebuffer),
       createInfo(pCreateInfo),
       rp_state(rpstate),
       attachments_view_state(std::move(attachments)) {}

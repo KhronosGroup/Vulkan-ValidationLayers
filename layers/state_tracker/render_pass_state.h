@@ -104,8 +104,8 @@ class RenderPass : public StateObject {
     using TransitionVec = std::vector<std::vector<AttachmentTransition>>;
     const TransitionVec subpass_transitions;
 
-    RenderPass(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo);
-    RenderPass(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo);
+    RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo);
+    RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo);
 
     RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled);
     RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled);
@@ -130,7 +130,7 @@ class Framebuffer : public StateObject {
     std::shared_ptr<const RenderPass> rp_state;
     std::vector<std::shared_ptr<vvl::ImageView>> attachments_view_state;
 
-    Framebuffer(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
+    Framebuffer(VkFramebuffer handle, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
                 std::vector<std::shared_ptr<vvl::ImageView>> &&attachments);
     void LinkChildNodes() override;
 
