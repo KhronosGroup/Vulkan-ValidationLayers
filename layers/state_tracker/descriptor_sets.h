@@ -47,7 +47,7 @@ struct AllocateDescriptorSetsData;
 
 class DescriptorPool : public StateObject {
   public:
-    DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo);
+    DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo *pCreateInfo);
     ~DescriptorPool() { Destroy(); }
 
     VkDescriptorPool VkHandle() const { return handle_.Cast<VkDescriptorPool>(); };
@@ -96,8 +96,8 @@ class DescriptorUpdateTemplate : public StateObject {
   public:
     const safe_VkDescriptorUpdateTemplateCreateInfo create_info;
 
-    DescriptorUpdateTemplate(VkDescriptorUpdateTemplate update_template, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
-        : StateObject(update_template, kVulkanObjectTypeDescriptorUpdateTemplate), create_info(pCreateInfo) {}
+    DescriptorUpdateTemplate(VkDescriptorUpdateTemplate handle, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
+        : StateObject(handle, kVulkanObjectTypeDescriptorUpdateTemplate), create_info(pCreateInfo) {}
 
     VkDescriptorUpdateTemplate VkHandle() const { return handle_.Cast<VkDescriptorUpdateTemplate>(); };
 };
@@ -239,7 +239,7 @@ using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 class DescriptorSetLayout : public StateObject {
   public:
     // Constructors and destructor
-    DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
+    DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const VkDescriptorSetLayout handle);
     virtual ~DescriptorSetLayout() { Destroy(); }
 
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
@@ -755,7 +755,7 @@ class DescriptorSet : public StateObject {
     using ConstBindingIterator = BindingVector::const_iterator;
     using StateTracker = ValidationStateTracker;
 
-    DescriptorSet(const VkDescriptorSet, vvl::DescriptorPool *, const std::shared_ptr<DescriptorSetLayout const> &,
+    DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *, const std::shared_ptr<DescriptorSetLayout const> &,
                   uint32_t variable_count, StateTracker *state_data);
     void LinkChildNodes() override;
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override;

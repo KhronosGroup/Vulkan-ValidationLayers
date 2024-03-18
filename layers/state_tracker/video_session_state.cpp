@@ -587,14 +587,14 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
     return skip;
 }
 
-VideoSession::VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR vs, VkVideoSessionCreateInfoKHR const *pCreateInfo,
-                           std::shared_ptr<const VideoProfileDesc> &&profile_desc)
-    : StateObject(vs, kVulkanObjectTypeVideoSessionKHR),
+VideoSession::VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR handle,
+                           VkVideoSessionCreateInfoKHR const *pCreateInfo, std::shared_ptr<const VideoProfileDesc> &&profile_desc)
+    : StateObject(handle, kVulkanObjectTypeVideoSessionKHR),
       create_info(pCreateInfo),
       profile(std::move(profile_desc)),
       memory_binding_count_queried(false),
       memory_bindings_queried(0),
-      memory_bindings_(GetMemoryBindings(dev_data, vs)),
+      memory_bindings_(GetMemoryBindings(dev_data, handle)),
       unbound_memory_binding_count_(static_cast<uint32_t>(memory_bindings_.size())),
       device_state_mutex_(),
       device_state_(pCreateInfo->maxDpbSlots) {}
@@ -654,11 +654,11 @@ bool VideoSession::ReferenceSetupRequested(VkVideoEncodeInfoKHR const &encode_in
     }
 }
 
-VideoSessionParameters::VideoSessionParameters(VkVideoSessionParametersKHR vsp,
+VideoSessionParameters::VideoSessionParameters(VkVideoSessionParametersKHR handle,
                                                VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
                                                std::shared_ptr<VideoSession> &&vsstate,
                                                std::shared_ptr<VideoSessionParameters> &&vsp_template)
-    : StateObject(vsp, kVulkanObjectTypeVideoSessionParametersKHR),
+    : StateObject(handle, kVulkanObjectTypeVideoSessionParametersKHR),
       create_info(pCreateInfo),
       vs_state(vsstate),
       mutex_(),

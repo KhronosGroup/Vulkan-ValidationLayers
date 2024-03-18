@@ -63,8 +63,8 @@ class Sampler : public StateObject {
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
-    Sampler(const VkSampler s, const VkSamplerCreateInfo *pci)
-        : StateObject(s, kVulkanObjectTypeSampler),
+    Sampler(const VkSampler handle, const VkSamplerCreateInfo *pci)
+        : StateObject(handle, kVulkanObjectTypeSampler),
           createInfo(pci),
           samplerConversion(GetConversion(pci)),
           customCreateInfo(GetCustomCreateInfo(pci)) {}
@@ -91,9 +91,9 @@ class SamplerYcbcrConversion : public StateObject {
     const VkFilter chromaFilter;
     const uint64_t external_format;
 
-    SamplerYcbcrConversion(VkSamplerYcbcrConversion ycbcr, const VkSamplerYcbcrConversionCreateInfo *info,
+    SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *info,
                            VkFormatFeatureFlags2KHR features)
-        : StateObject(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion),
+        : StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
           format_features(features),
           format(info->format),
           chromaFilter(info->chromaFilter),

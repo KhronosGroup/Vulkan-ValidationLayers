@@ -489,7 +489,7 @@ class VideoSession : public StateObject {
         VideoSessionDeviceState &state_;
     };
 
-    VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR vs, VkVideoSessionCreateInfoKHR const *pCreateInfo,
+    VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR handle, VkVideoSessionCreateInfoKHR const *pCreateInfo,
                  std::shared_ptr<const VideoProfileDesc> &&profile_desc);
 
     VkVideoSessionKHR VkHandle() const { return handle_.Cast<VkVideoSessionKHR>(); }
@@ -673,7 +673,7 @@ class VideoSessionParameters : public StateObject {
     const safe_VkVideoSessionParametersCreateInfoKHR create_info;
     std::shared_ptr<const VideoSession> vs_state;
 
-    VideoSessionParameters(VkVideoSessionParametersKHR vsp, VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
+    VideoSessionParameters(VkVideoSessionParametersKHR handle, VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,
                            std::shared_ptr<VideoSession> &&vsstate, std::shared_ptr<VideoSessionParameters> &&vsp_template);
 
     VkVideoSessionParametersKHR VkHandle() const { return handle_.Cast<VkVideoSessionParametersKHR>(); }

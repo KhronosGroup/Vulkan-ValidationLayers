@@ -41,9 +41,9 @@ static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits
 
 namespace vvl {
 
-CommandPool::CommandPool(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
+CommandPool::CommandPool(ValidationStateTracker *dev, VkCommandPool handle, const VkCommandPoolCreateInfo *pCreateInfo,
                          VkQueueFlags flags)
-    : StateObject(cp, kVulkanObjectTypeCommandPool),
+    : StateObject(handle, kVulkanObjectTypeCommandPool),
       dev_data(dev),
       createFlags(pCreateInfo->flags),
       queueFamilyIndex(pCreateInfo->queueFamilyIndex),
@@ -89,9 +89,9 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
     active_subpass_sample_count_ = std::nullopt;
 }
 
-CommandBuffer::CommandBuffer(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+CommandBuffer::CommandBuffer(ValidationStateTracker *dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                              const vvl::CommandPool *pool)
-    : RefcountedStateObject(cb, kVulkanObjectTypeCommandBuffer),
+    : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
       createInfo(*pCreateInfo),
       command_pool(pool),
       dev_data(dev),

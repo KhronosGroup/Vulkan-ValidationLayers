@@ -39,7 +39,7 @@ class Buffer : public Bindable {
 
     unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
-    Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo);
+    Buffer(ValidationStateTracker *dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo);
 
     Buffer(Buffer const &rh_obj) = delete;
 
@@ -81,7 +81,7 @@ class BufferView : public StateObject {
     // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
     const VkFormatFeatureFlags2KHR buf_format_features;
 
-    BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+    BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *ci,
                VkFormatFeatureFlags2KHR buf_ff);
 
     void LinkChildNodes() override {

@@ -121,12 +121,12 @@ class Semaphore : public RefcountedStateObject {
         return export_info ? export_info->handleTypes : 0;
     }
 
-    Semaphore(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreCreateInfo *pCreateInfo)
-        : Semaphore(dev, sem, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
+    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
+        : Semaphore(dev, handle, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
-    Semaphore(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info,
-                    const VkSemaphoreCreateInfo *pCreateInfo)
-        : RefcountedStateObject(sem, kVulkanObjectTypeSemaphore),
+    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
+              const VkSemaphoreCreateInfo *pCreateInfo)
+        : RefcountedStateObject(handle, kVulkanObjectTypeSemaphore),
 #ifdef VK_USE_PLATFORM_METAL_EXT
           metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT

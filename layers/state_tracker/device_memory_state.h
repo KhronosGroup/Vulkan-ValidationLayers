@@ -212,8 +212,12 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
 class Bindable : public StateObject {
   public:
     template <typename Handle>
-    Bindable(Handle h, VulkanObjectType t, bool is_sparse, bool is_unprotected, VkExternalMemoryHandleTypeFlags handle_types)
-        : StateObject(h, t), external_memory_handle_types(handle_types), sparse(is_sparse), unprotected(is_unprotected),
+    Bindable(Handle handle, VulkanObjectType type, bool is_sparse, bool is_unprotected,
+             VkExternalMemoryHandleTypeFlags handle_types)
+        : StateObject(handle, type),
+          external_memory_handle_types(handle_types),
+          sparse(is_sparse),
+          unprotected(is_unprotected),
           memory_tracker_(nullptr) {}
 
     virtual ~Bindable() {

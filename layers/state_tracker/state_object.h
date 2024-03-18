@@ -133,7 +133,7 @@ class RefcountedStateObject : public StateObject {
 
   public:
     template <typename Handle>
-    RefcountedStateObject(Handle h, VulkanObjectType t) : StateObject(h, t), in_use_(0) {}
+    RefcountedStateObject(Handle handle, VulkanObjectType type) : StateObject(handle, type), in_use_(0) {}
 
     void BeginUse() { in_use_.fetch_add(1); }
 

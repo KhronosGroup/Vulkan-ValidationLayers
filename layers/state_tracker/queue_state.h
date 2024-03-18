@@ -78,9 +78,9 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
 
 class Queue: public StateObject {
   public:
-    Queue(ValidationStateTracker &dev_data, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
-                const VkQueueFamilyProperties &queueFamilyProperties)
-        : StateObject(q, kVulkanObjectTypeQueue),
+    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties &queueFamilyProperties)
+        : StateObject(handle, kVulkanObjectTypeQueue),
           queueFamilyIndex(index),
           flags(flags),
           queueFamilyProperties(queueFamilyProperties),

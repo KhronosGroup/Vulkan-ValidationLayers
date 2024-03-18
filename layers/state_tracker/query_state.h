@@ -34,10 +34,10 @@ class VideoProfileDesc;
 
 class QueryPool : public StateObject {
   public:
-    QueryPool(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t perf_queue_family_index,
+    QueryPool(VkQueryPool handle, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t perf_queue_family_index,
               uint32_t n_perf_pass, bool has_cb, bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
               VkVideoEncodeFeedbackFlagsKHR enabled_video_encode_feedback_flags)
-        : StateObject(qp, kVulkanObjectTypeQueryPool),
+        : StateObject(handle, kVulkanObjectTypeQueryPool),
           createInfo(*pCreateInfo),
           has_perf_scope_command_buffer(has_cb),
           has_perf_scope_render_pass(has_rb),
