@@ -359,13 +359,19 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
 IndexType ImageRangeEncoder::Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index,
                                       const VkOffset3D& offset) const {
     assert(offset.z == 0U);
+    // The address offset of the beginning of offset.x's block is:
+    // floor(offset.x * / texel_extent_.width) * texel_extent_.width * texel_extent_.height * texel_sizes_[apsect].
+    // Since offset.x must be a multiple of texel_extent_.width, we can simplify the formula by canceling out texel_extent_.width.
+    double xSize = static_cast<double>(texel_extent_.height * texel_sizes_[aspect_index]);
     return layout.offset + layer * layout.arrayPitch + offset.y * layout.rowPitch +
-           (offset.x ? static_cast<IndexType>(floor(offset.x * texel_sizes_[aspect_index])) : 0U);
+           (offset.x ? static_cast<IndexType>(floor(offset.x * xSize)) : 0U);
 }
 
 IndexType ImageRangeEncoder::Encode3D(const VkSubresourceLayout& layout, uint32_t aspect_index, const VkOffset3D& offset) const {
+    // See comment in Encode2D.
+    double xSize = static_cast<double>(texel_extent_.height * texel_sizes_[aspect_index]);
     return layout.offset + offset.z * layout.depthPitch + offset.y * layout.rowPitch +
-           (offset.x ? static_cast<IndexType>(floor(offset.x * texel_sizes_[aspect_index])) : 0U);
+           (offset.x ? static_cast<IndexType>(floor(offset.x * xSize)) : 0U);
 }
 
 void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer,
