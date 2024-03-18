@@ -1216,22 +1216,6 @@ const std::string &GetImageBarrierVUID(const Location &loc, ImageError error) {
     return result;
 }
 
-const SubresourceRangeErrorCodes &GetSubResourceVUIDs(const Location &loc) {
-    static const SubresourceRangeErrorCodes v1{
-        "VUID-VkImageMemoryBarrier-subresourceRange-01486",
-        "VUID-VkImageMemoryBarrier-subresourceRange-01724",
-        "VUID-VkImageMemoryBarrier-subresourceRange-01488",
-        "VUID-VkImageMemoryBarrier-subresourceRange-01725",
-    };
-    static const SubresourceRangeErrorCodes v2{
-        "VUID-VkImageMemoryBarrier2-subresourceRange-01486",
-        "VUID-VkImageMemoryBarrier2-subresourceRange-01724",
-        "VUID-VkImageMemoryBarrier2-subresourceRange-01488",
-        "VUID-VkImageMemoryBarrier2-subresourceRange-01725",
-    };
-    return (loc.structure == Struct::VkImageMemoryBarrier2) ? v2 : v1;
-}
-
 static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
     {SubmitError::kTimelineSemSmallValue,
      {

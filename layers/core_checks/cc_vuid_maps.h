@@ -92,4 +92,13 @@ const std::string &GetCopyImageVUID(const Location &loc, CopyError error);
 const std::string &GetImageMipLevelVUID(const Location &loc);
 const std::string &GetImageArrayLayerRangeVUID(const Location &loc);
 
+enum class SubresourceRangeError {
+    BaseMip_01486,
+    MipCount_01724,
+    BaseLayer_01488,
+    LayerCount_01725,
+};
+
+const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error);
+
 }  // namespace vvl
