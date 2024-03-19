@@ -440,7 +440,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
 
         const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
         if (0 == (qfp.queueFlags & required_mask)) {
-            const LogObjectList objlist(cb_state.Handle(), cb_state.createInfo.commandPool);
+            const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
             const char *vuid = kVUIDUndefined;
             switch (loc.function) {
                 case Func::vkCmdBindDescriptorSets:
@@ -486,7 +486,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
                     break;
             }
             skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
-                             FormatHandle(cb_state.Handle()).c_str(), FormatHandle(cb_state.createInfo.commandPool).c_str(),
+                             FormatHandle(cb_state.Handle()).c_str(), FormatHandle(cb_state.allocate_info.commandPool).c_str(),
                              string_VkPipelineBindPoint(bind_point));
         }
     }
@@ -587,8 +587,8 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
             total_resources += rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
         } else {
             // "For the fragment shader stage the framebuffer color attachments also count against this limit"
-            if (pipeline.Subpass() < rp_state->createInfo.subpassCount) {
-                total_resources += rp_state->createInfo.pSubpasses[pipeline.Subpass()].colorAttachmentCount;
+            if (pipeline.Subpass() < rp_state->create_info.subpassCount) {
+                total_resources += rp_state->create_info.pSubpasses[pipeline.Subpass()].colorAttachmentCount;
             }
         }
     }

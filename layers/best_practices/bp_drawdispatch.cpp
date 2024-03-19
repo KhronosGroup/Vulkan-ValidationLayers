@@ -32,8 +32,8 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
     if (pipe) {
         const auto& rp_state = pipe->RenderPassState();
         if (rp_state) {
-            for (uint32_t i = 0; i < rp_state->createInfo.subpassCount; ++i) {
-                const auto& subpass = rp_state->createInfo.pSubpasses[i];
+            for (uint32_t i = 0; i < rp_state->create_info.subpassCount; ++i) {
+                const auto& subpass = rp_state->create_info.pSubpasses[i];
                 const auto* ds_state = pipe->DepthStencilState();
                 const uint32_t depth_stencil_attachment =
                     GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);

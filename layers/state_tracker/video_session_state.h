@@ -474,7 +474,8 @@ class VideoSession : public StateObject {
     };
     using MemoryBindingMap = unordered_map<uint32_t, MemoryBindingInfo>;
 
-    const safe_VkVideoSessionCreateInfoKHR create_info;
+    const safe_VkVideoSessionCreateInfoKHR safe_create_info;
+    const VkVideoSessionCreateInfoKHR &create_info;
     std::shared_ptr<const VideoProfileDesc> profile;
     bool memory_binding_count_queried;
     uint32_t memory_bindings_queried;
@@ -670,7 +671,8 @@ class VideoSessionParameters : public StateObject {
         const Data *data_;
     };
 
-    const safe_VkVideoSessionParametersCreateInfoKHR create_info;
+    const safe_VkVideoSessionParametersCreateInfoKHR safe_create_info;
+    const VkVideoSessionParametersCreateInfoKHR &create_info;
     std::shared_ptr<const VideoSession> vs_state;
 
     VideoSessionParameters(VkVideoSessionParametersKHR handle, VkVideoSessionParametersCreateInfoKHR const *pCreateInfo,

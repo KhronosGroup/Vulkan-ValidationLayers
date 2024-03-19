@@ -38,7 +38,8 @@ class QueryPool : public StateObject {
               uint32_t n_perf_pass, bool has_cb, bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
               VkVideoEncodeFeedbackFlagsKHR enabled_video_encode_feedback_flags)
         : StateObject(handle, kVulkanObjectTypeQueryPool),
-          createInfo(*pCreateInfo),
+          safe_create_info(pCreateInfo),
+          create_info(*safe_create_info.ptr()),
           has_perf_scope_command_buffer(has_cb),
           has_perf_scope_render_pass(has_rb),
           n_performance_passes(n_perf_pass),
@@ -79,7 +80,8 @@ class QueryPool : public StateObject {
         return QUERYSTATE_UNKNOWN;
     }
 
-    const VkQueryPoolCreateInfo createInfo;
+    const safe_VkQueryPoolCreateInfo safe_create_info;
+    const VkQueryPoolCreateInfo &create_info;
 
     const bool has_perf_scope_command_buffer;
     const bool has_perf_scope_render_pass;

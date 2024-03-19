@@ -84,7 +84,7 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image &image_state, const char *vuid_string,
                                                         const Location &loc) const {
     bool skip = false;
-    const auto image_create_info = image_state.createInfo;
+    const auto image_create_info = image_state.create_info;
     VkResult image_properties_result = VK_SUCCESS;
     Func command = Func::vkGetPhysicalDeviceImageFormatProperties;
     if (image_create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {

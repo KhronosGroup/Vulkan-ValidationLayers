@@ -88,7 +88,7 @@ namespace vvl {
 class Image : public Bindable {
   public:
     const safe_VkImageCreateInfo safe_create_info;
-    const VkImageCreateInfo &createInfo;
+    const VkImageCreateInfo &create_info;
     bool shared_presentable;                   // True for a front-buffered swapchain image
     bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
     const uint64_t ahb_format;                 // External Android format, if provided
@@ -126,9 +126,9 @@ class Image : public Bindable {
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
-    Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
+    Image(const ValidationStateTracker *dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
           VkFormatFeatureFlags2KHR features);
-    Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+    Image(const ValidationStateTracker *dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
     Image(Image const &rh_obj) = delete;
     std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
@@ -140,49 +140,51 @@ class Image : public Bindable {
     bool IsCompatibleAliasing(const Image *other_image_state) const;
 
     // returns true if this image could be using the same memory as another image
-    bool HasAliasFlag() const { return 0 != (createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT); }
+    bool HasAliasFlag() const { return 0 != (create_info.flags & VK_IMAGE_CREATE_ALIAS_BIT); }
     bool CanAlias() const { return HasAliasFlag() || bind_swapchain; }
 
-    bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
-    bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const;
+    bool IsCreateInfoEqual(const VkImageCreateInfo &other_create_info) const;
+    bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_create_info) const;
 
     bool IsSwapchainImage() const { return create_from_swapchain != VK_NULL_HANDLE; }
 
-    inline bool IsImageTypeEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.imageType == other_createInfo.imageType;
+    inline bool IsImageTypeEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.imageType == other_create_info.imageType;
     }
-    inline bool IsFormatEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.format == other_createInfo.format;
+    inline bool IsFormatEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.format == other_create_info.format;
     }
-    inline bool IsMipLevelsEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.mipLevels == other_createInfo.mipLevels;
+    inline bool IsMipLevelsEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.mipLevels == other_create_info.mipLevels;
     }
-    inline bool IsUsageEqual(const VkImageCreateInfo &other_createInfo) const { return createInfo.usage == other_createInfo.usage; }
-    inline bool IsSamplesEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.samples == other_createInfo.samples;
+    inline bool IsUsageEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.usage == other_create_info.usage;
     }
-    inline bool IsTilingEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.tiling == other_createInfo.tiling;
+    inline bool IsSamplesEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.samples == other_create_info.samples;
     }
-    inline bool IsArrayLayersEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.arrayLayers == other_createInfo.arrayLayers;
+    inline bool IsTilingEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.tiling == other_create_info.tiling;
     }
-    inline bool IsInitialLayoutEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.initialLayout == other_createInfo.initialLayout;
+    inline bool IsArrayLayersEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.arrayLayers == other_create_info.arrayLayers;
     }
-    inline bool IsSharingModeEqual(const VkImageCreateInfo &other_createInfo) const {
-        return createInfo.sharingMode == other_createInfo.sharingMode;
+    inline bool IsInitialLayoutEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.initialLayout == other_create_info.initialLayout;
     }
-    inline bool IsExtentEqual(const VkImageCreateInfo &other_createInfo) const {
-        return (createInfo.extent.width == other_createInfo.extent.width) &&
-               (createInfo.extent.height == other_createInfo.extent.height) &&
-               (createInfo.extent.depth == other_createInfo.extent.depth);
+    inline bool IsSharingModeEqual(const VkImageCreateInfo &other_create_info) const {
+        return create_info.sharingMode == other_create_info.sharingMode;
     }
-    inline bool IsQueueFamilyIndicesEqual(const VkImageCreateInfo &other_createInfo) const {
-        return (createInfo.queueFamilyIndexCount == other_createInfo.queueFamilyIndexCount) &&
-               (createInfo.queueFamilyIndexCount == 0 ||
-                memcmp(createInfo.pQueueFamilyIndices, other_createInfo.pQueueFamilyIndices,
-                       createInfo.queueFamilyIndexCount * sizeof(createInfo.pQueueFamilyIndices[0])) == 0);
+    inline bool IsExtentEqual(const VkImageCreateInfo &other_create_info) const {
+        return (create_info.extent.width == other_create_info.extent.width) &&
+               (create_info.extent.height == other_create_info.extent.height) &&
+               (create_info.extent.depth == other_create_info.extent.depth);
+    }
+    inline bool IsQueueFamilyIndicesEqual(const VkImageCreateInfo &other_create_info) const {
+        return (create_info.queueFamilyIndexCount == other_create_info.queueFamilyIndexCount) &&
+               (create_info.queueFamilyIndexCount == 0 ||
+                memcmp(create_info.pQueueFamilyIndices, other_create_info.pQueueFamilyIndices,
+                       create_info.queueFamilyIndexCount * sizeof(create_info.pQueueFamilyIndices[0])) == 0);
     }
 
     ~Image() {
@@ -197,21 +199,21 @@ class Image : public Bindable {
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
-        return GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
+        return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
     }
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const {
-        return GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
+        return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
     }
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const {
-        return GetEffectiveExtent(createInfo, range.aspectMask, range.baseMipLevel);
+        return GetEffectiveExtent(create_info, range.aspectMask, range.baseMipLevel);
     }
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
-        return ::NormalizeSubresourceRange(createInfo, range);
+        return ::NormalizeSubresourceRange(create_info, range);
     }
 
     void SetInitialLayoutMap();
@@ -263,6 +265,7 @@ class ImageView : public StateObject {
   public:
     const safe_VkImageViewCreateInfo safe_create_info;
     const VkImageViewCreateInfo &create_info;
+
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
@@ -318,7 +321,9 @@ struct SwapchainImage {
 //    However, only 1 swapchain for each surface can be !retired.
 class Swapchain : public StateObject {
   public:
-    const safe_VkSwapchainCreateInfoKHR createInfo;
+    const safe_VkSwapchainCreateInfoKHR safe_create_info;
+    const VkSwapchainCreateInfoKHR &create_info;
+
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<SwapchainImage> images;
     bool retired = false;

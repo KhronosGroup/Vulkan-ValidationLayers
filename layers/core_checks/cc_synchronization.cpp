@@ -809,7 +809,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     const auto &rp_state = cb_state.activeRenderPass;
     RenderPassDepState state(this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
                              enabled_features, device_extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
-                             rp_state->createInfo.pDependencies);
+                             rp_state->create_info.pDependencies);
     if (state.self_dependencies.size() == 0) {
         skip |= LogError("VUID-vkCmdPipelineBarrier-None-07889", state.rp_handle, outer_loc,
                          "Barriers cannot be set during subpass %" PRIu32 " of %s with no self-dependency specified.",
@@ -817,7 +817,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         return skip;
     }
     // Grab ref to current subpassDescription up-front for use below
-    const auto &sub_desc = rp_state->createInfo.pSubpasses[state.active_subpass];
+    const auto &sub_desc = rp_state->create_info.pSubpasses[state.active_subpass];
     skip |= state.ValidateStage(outer_loc, src_stage_mask, dst_stage_mask);
     skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, src_stage_mask, dst_stage_mask);
 
@@ -869,7 +869,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     }
     RenderPassDepState state(this, "VUID-vkCmdPipelineBarrier2-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
                              enabled_features, device_extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
-                             rp_state->createInfo.pDependencies);
+                             rp_state->create_info.pDependencies);
 
     if (state.self_dependencies.size() == 0) {
         skip |= LogError(state.vuid, state.rp_handle, outer_loc,
@@ -878,7 +878,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         return skip;
     }
     // Grab ref to current subpassDescription up-front for use below
-    const auto &sub_desc = rp_state->createInfo.pSubpasses[state.active_subpass];
+    const auto &sub_desc = rp_state->create_info.pSubpasses[state.active_subpass];
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info.pMemoryBarriers[i];
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
@@ -1618,7 +1618,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
 
         if ((img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) ||
             (img_barrier.oldLayout != img_barrier.newLayout)) {
-            VkImageUsageFlags usage_flags = image_state->createInfo.usage;
+            VkImageUsageFlags usage_flags = image_state->create_info.usage;
             skip |= ValidateBarrierLayoutToImageUsage(barrier_loc.dot(Field::oldLayout), img_barrier.image, img_barrier.oldLayout,
                                                       usage_flags);
             skip |= ValidateBarrierLayoutToImageUsage(barrier_loc.dot(Field::newLayout), img_barrier.image, img_barrier.newLayout,
@@ -1635,7 +1635,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
                              string_VkImageLayout(img_barrier.newLayout));
         }
 
-        const VkImageCreateInfo &image_create_info = image_state->createInfo;
+        const VkImageCreateInfo &image_create_info = image_state->create_info;
         const VkFormat image_format = image_create_info.format;
         const VkImageAspectFlags aspect_mask = img_barrier.subresourceRange.aspectMask;
         const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
@@ -1781,7 +1781,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
     uint64_t image_ahb_format = 0;
     const Location image_loc = barrier_loc.dot(Field::image);
     // Verify that a framebuffer image matches barrier image
-    const auto attachment_count = fb_state->createInfo.attachmentCount;
+    const auto attachment_count = fb_state->create_info.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
         auto view_state = primary_cb_state ? primary_cb_state->GetActiveAttachmentImageViewState(attachment)
                                            : cb_state.GetActiveAttachmentImageViewState(attachment);
@@ -1869,11 +1869,10 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
 void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location &loc, vvl::CommandBuffer &cb_state,
                                                                  const ImageBarrier &barrier) {
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
-    if ((cb_state.activeRenderPass) && (VK_NULL_HANDLE == cb_state.activeFramebuffer) &&
-        (VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state.createInfo.level)) {
+    if ((cb_state.activeRenderPass) && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSeconary()) {
         const auto active_subpass = cb_state.GetActiveSubpass();
         const auto rp_state = cb_state.activeRenderPass;
-        const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
+        const auto &sub_desc = rp_state->create_info.pSubpasses[active_subpass];
         // Secondary CB case w/o FB specified delay validation
         auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
         vvl::LocationCapture loc_capture(loc);
@@ -1908,7 +1907,7 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBu
         // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
         // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
         auto handle_state = barrier.GetResourceState(*this);
-        const bool mode_concurrent = handle_state && handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT;
+        const bool mode_concurrent = handle_state && handle_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
         if (!mode_concurrent) {
             const auto typed_handle = barrier.GetTypedHandle();
             vvl::LocationCapture loc_capture(loc);
@@ -2317,9 +2316,9 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
         skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), *buffer_state, buf_loc, mem_vuid.c_str());
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, buf_loc, mem_barrier, buffer_state->Handle(),
-                                             buffer_state->createInfo.sharingMode);
+                                             buffer_state->create_info.sharingMode);
 
-        auto buffer_size = buffer_state->createInfo.size;
+        auto buffer_size = buffer_state->create_info.size;
         if (mem_barrier.offset >= buffer_size) {
             auto offset_loc = barrier_loc.dot(Field::offset);
             const auto &vuid = GetBufferBarrierVUID(offset_loc, BufferError::kOffsetTooBig);
@@ -2404,14 +2403,14 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         skip |= ValidateMemoryIsBoundToImage(objects, *image_data, image_loc, vuid_no_memory.c_str());
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, image_loc, mem_barrier, image_data->Handle(),
-                                             image_data->createInfo.sharingMode);
+                                             image_data->create_info.sharingMode);
 
         const auto &vuid_aspect = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kAspectMask);
         skip |=
-            ValidateImageAspectMask(image_data->VkHandle(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
+            ValidateImageAspectMask(image_data->VkHandle(), image_data->create_info.format, mem_barrier.subresourceRange.aspectMask,
                                     image_data->disjoint, image_loc, vuid_aspect.c_str());
 
-        skip |= ValidateImageBarrierSubresourceRange(image_data->createInfo, mem_barrier.subresourceRange, objects,
+        skip |= ValidateImageBarrierSubresourceRange(image_data->create_info, mem_barrier.subresourceRange, objects,
                                                      barrier_loc.dot(Field::subresourceRange));
     }
     return skip;

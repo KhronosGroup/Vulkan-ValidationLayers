@@ -28,11 +28,12 @@ static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_d
     return set_layouts;
 }
 
-ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT handle,
+ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
                            std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
                            uint32_t unique_shader_id)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
-      create_info(&create_info),
+      safe_create_info(&create_info_i),
+      create_info(*safe_create_info.ptr()),
       spirv(spirv_module),
       entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
       gpu_validation_shader_id(unique_shader_id),

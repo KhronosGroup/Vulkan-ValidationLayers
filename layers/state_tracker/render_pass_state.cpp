@@ -152,21 +152,21 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
           last(const_cast<vvl::RenderPass::SubpassVec &>(rp->attachment_last_subpass)),
           subpass_transitions(const_cast<vvl::RenderPass::TransitionVec &>(rp->subpass_transitions)),
           first_read(const_cast<vvl::RenderPass::FirstReadMap &>(rp->attachment_first_read)),
-          attachment_count(rp->createInfo.attachmentCount),
+          attachment_count(rp->create_info.attachmentCount),
           attachment_layout(),
           subpass_attachment_layout() {
         first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
         first_is_transition.resize(attachment_count, false);
         last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
-        subpass_transitions.resize(rp->createInfo.subpassCount + 1);  // Add an extra for EndRenderPass
+        subpass_transitions.resize(rp->create_info.subpassCount + 1);  // Add an extra for EndRenderPass
         attachment_layout.reserve(attachment_count);
-        subpass_attachment_layout.resize(rp->createInfo.subpassCount);
+        subpass_attachment_layout.resize(rp->create_info.subpassCount);
         for (auto &subpass_layouts : subpass_attachment_layout) {
             subpass_layouts.resize(attachment_count, kInvalidLayout);
         }
 
         for (uint32_t j = 0; j < attachment_count; j++) {
-            attachment_layout.push_back(rp->createInfo.pAttachments[j].initialLayout);
+            attachment_layout.push_back(rp->create_info.pAttachments[j].initialLayout);
         }
     }
 
@@ -183,7 +183,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
 
         for (const auto attachment : vvl::make_span(preserved, count)) {
             if (max_prev == VK_SUBPASS_EXTERNAL) {
-                subpass_attachment_layout[subpass][attachment] = rp->createInfo.pAttachments[attachment].initialLayout;
+                subpass_attachment_layout[subpass][attachment] = rp->create_info.pAttachments[attachment].initialLayout;
             } else {
                 subpass_attachment_layout[subpass][attachment] = subpass_attachment_layout[max_prev][attachment];
             }
@@ -198,7 +198,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                 const auto layout = attach_ref[j].layout;
                 // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
                 first_read.emplace(attachment, is_read);
-                const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
+                const auto initial_layout = rp->create_info.pAttachments[attachment].initialLayout;
                 bool no_external_transition = true;
                 if (first[attachment] == VK_SUBPASS_EXTERNAL) {
                     first[attachment] = subpass;
@@ -232,10 +232,10 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         }
     }
     void FinalTransitions() {
-        auto &final_transitions = subpass_transitions[rp->createInfo.subpassCount];
+        auto &final_transitions = subpass_transitions[rp->create_info.subpassCount];
 
         for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
-            const auto final_layout = rp->createInfo.pAttachments[attachment].finalLayout;
+            const auto final_layout = rp->create_info.pAttachments[attachment].finalLayout;
             // Add final transitions for attachments that were used and change layout.
             if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
                 final_transitions.emplace_back(last[attachment], attachment, attachment_layout[attachment], final_layout);
@@ -245,7 +245,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
 };
 
 static void InitRenderPassState(vvl::RenderPass *render_pass) {
-    auto create_info = render_pass->createInfo.ptr();
+    auto create_info = render_pass->create_info.ptr();
 
     RecordRenderPassDAG(create_info, render_pass);
 
@@ -274,7 +274,7 @@ RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCrea
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
-      createInfo(pCreateInfo) {
+      create_info(pCreateInfo) {
     InitRenderPassState(this);
 }
 
@@ -288,7 +288,7 @@ RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreat
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
-      createInfo(ConvertCreateInfo(*pCreateInfo)) {
+      create_info(ConvertCreateInfo(*pCreateInfo)) {
     InitRenderPassState(this);
 }
 
@@ -308,8 +308,8 @@ RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCr
 bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
     bool result = false;
 
-    if (subpass_num < createInfo.subpassCount) {
-        const auto &subpass = createInfo.pSubpasses[subpass_num];
+    if (subpass_num < create_info.subpassCount) {
+        const auto &subpass = create_info.pSubpasses[subpass_num];
 
         for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
             if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
@@ -325,7 +325,7 @@ bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
         if (subpass.pResolveAttachments != nullptr) {
             for (uint32_t i = 0; i < subpass.colorAttachmentCount && !result; ++i) {
                 uint32_t resolveAttachmentIndex = subpass.pResolveAttachments[i].attachment;
-                const void* resolveAtatchmentPNextChain = createInfo.pAttachments[resolveAttachmentIndex].pNext;
+                const void *resolveAtatchmentPNextChain = create_info.pAttachments[resolveAttachmentIndex].pNext;
                 if (vku::FindStructInPNextChain<VkExternalFormatANDROID>(resolveAtatchmentPNextChain)) result = true;
             }
         }
@@ -336,8 +336,8 @@ bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
 
 bool RenderPass::UsesDepthStencilAttachment(uint32_t subpass_num) const {
     bool result = false;
-    if (subpass_num < createInfo.subpassCount) {
-        const auto &subpass = createInfo.pSubpasses[subpass_num];
+    if (subpass_num < create_info.subpassCount) {
+        const auto &subpass = create_info.pSubpasses[subpass_num];
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             result = true;
         }
@@ -375,7 +375,7 @@ uint32_t RenderPass::GetViewMaskBits(uint32_t subpass) const {
     } else if (use_dynamic_rendering) {
         return GetBitSetCount(dynamic_rendering_begin_rendering_info.viewMask);
     } else {
-        const auto *subpass_desc = &createInfo.pSubpasses[subpass];
+        const auto *subpass_desc = &create_info.pSubpasses[subpass];
         if (subpass_desc) {
             return GetBitSetCount(subpass_desc->viewMask);
         }
@@ -388,7 +388,7 @@ const VkMultisampledRenderToSingleSampledInfoEXT *RenderPass::GetMSRTSSInfo(uint
         return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
             dynamic_rendering_begin_rendering_info.pNext);
     }
-    return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(createInfo.pSubpasses[subpass].pNext);
+    return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(create_info.pSubpasses[subpass].pNext);
 }
 
 RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled)
@@ -409,7 +409,8 @@ RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritan
 Framebuffer::Framebuffer(VkFramebuffer handle, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RenderPass> &&rpstate,
                          std::vector<std::shared_ptr<vvl::ImageView>> &&attachments)
     : StateObject(handle, kVulkanObjectTypeFramebuffer),
-      createInfo(pCreateInfo),
+      safe_create_info(pCreateInfo),
+      create_info(*safe_create_info.ptr()),
       rp_state(rpstate),
       attachments_view_state(std::move(attachments)) {}
 

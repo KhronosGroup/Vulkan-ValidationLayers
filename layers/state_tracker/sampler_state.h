@@ -59,26 +59,29 @@ namespace vvl {
 
 class Sampler : public StateObject {
   public:
-    const safe_VkSamplerCreateInfo createInfo;
+    const safe_VkSamplerCreateInfo safe_create_info;
+    const VkSamplerCreateInfo &create_info;
+
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
-    Sampler(const VkSampler handle, const VkSamplerCreateInfo *pci)
+    Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)
         : StateObject(handle, kVulkanObjectTypeSampler),
-          createInfo(pci),
-          samplerConversion(GetConversion(pci)),
-          customCreateInfo(GetCustomCreateInfo(pci)) {}
+          safe_create_info(pCreateInfo),
+          create_info(*safe_create_info.ptr()),
+          samplerConversion(GetConversion(pCreateInfo)),
+          customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
 
     VkSampler VkHandle() const { return handle_.Cast<VkSampler>(); }
 
   private:
-    static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo *pci) {
-        auto *conversionInfo = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
+    static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo *pCreateInfo) {
+        auto *conversionInfo = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         return conversionInfo ? conversionInfo->conversion : VK_NULL_HANDLE;
     }
-    static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pci) {
+    static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pCreateInfo) {
         VkSamplerCustomBorderColorCreateInfoEXT result{};
-        auto cbci = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
+        auto cbci = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
         if (cbci) result = *cbci;
         return result;
     }

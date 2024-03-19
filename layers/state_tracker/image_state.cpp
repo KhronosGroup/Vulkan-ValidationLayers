@@ -176,7 +176,7 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
-      createInfo(*safe_create_info.ptr()),
+      create_info(*safe_create_info.ptr()),
       shared_presentable(false),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
@@ -219,7 +219,7 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
-      createInfo(*safe_create_info.ptr()),
+      create_info(*safe_create_info.ptr()),
       shared_presentable(false),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
@@ -273,45 +273,45 @@ void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool un
     }
 }
 
-bool Image::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const {
-    bool is_equal = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
-    is_equal = is_equal && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
-    is_equal = is_equal && IsMipLevelsEqual(other_createInfo) && IsArrayLayersEqual(other_createInfo);
-    is_equal = is_equal && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
-    is_equal = is_equal && IsExtentEqual(other_createInfo) && IsTilingEqual(other_createInfo);
-    is_equal = is_equal && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
+bool Image::IsCreateInfoEqual(const VkImageCreateInfo &other_create_info) const {
+    bool is_equal = (create_info.sType == other_create_info.sType) && (create_info.flags == other_create_info.flags);
+    is_equal = is_equal && IsImageTypeEqual(other_create_info) && IsFormatEqual(other_create_info);
+    is_equal = is_equal && IsMipLevelsEqual(other_create_info) && IsArrayLayersEqual(other_create_info);
+    is_equal = is_equal && IsUsageEqual(other_create_info) && IsInitialLayoutEqual(other_create_info);
+    is_equal = is_equal && IsExtentEqual(other_create_info) && IsTilingEqual(other_create_info);
+    is_equal = is_equal && IsSamplesEqual(other_create_info) && IsSharingModeEqual(other_create_info);
     return is_equal &&
-           ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_createInfo) : true);
+           ((create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_create_info) : true);
 }
 
 // Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
-bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const {
-    bool is_compatible = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
-    is_compatible = is_compatible && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
-    is_compatible = is_compatible && IsMipLevelsEqual(other_createInfo);
-    is_compatible = is_compatible && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
-    is_compatible = is_compatible && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
+bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_create_info) const {
+    bool is_compatible = (create_info.sType == other_create_info.sType) && (create_info.flags == other_create_info.flags);
+    is_compatible = is_compatible && IsImageTypeEqual(other_create_info) && IsFormatEqual(other_create_info);
+    is_compatible = is_compatible && IsMipLevelsEqual(other_create_info);
+    is_compatible = is_compatible && IsUsageEqual(other_create_info) && IsInitialLayoutEqual(other_create_info);
+    is_compatible = is_compatible && IsSamplesEqual(other_create_info) && IsSharingModeEqual(other_create_info);
     is_compatible = is_compatible &&
-                    ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_createInfo) : true);
-    is_compatible = is_compatible && IsTilingEqual(other_createInfo);
+                    ((create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_create_info) : true);
+    is_compatible = is_compatible && IsTilingEqual(other_create_info);
 
-    is_compatible = is_compatible && createInfo.extent.width <= other_createInfo.extent.width &&
-                    createInfo.extent.height <= other_createInfo.extent.height &&
-                    createInfo.extent.depth <= other_createInfo.extent.depth &&
-                    createInfo.arrayLayers <= other_createInfo.arrayLayers;
+    is_compatible = is_compatible && create_info.extent.width <= other_create_info.extent.width &&
+                    create_info.extent.height <= other_create_info.extent.height &&
+                    create_info.extent.depth <= other_create_info.extent.depth &&
+                    create_info.arrayLayers <= other_create_info.arrayLayers;
     return is_compatible;
 }
 
 bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
     if (!IsSwapchainImage() && !other_image_state->IsSwapchainImage() &&
-        !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
+        !(create_info.flags & other_image_state->create_info.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
     }
     const auto binding = Binding();
     const auto other_binding = other_image_state->Binding();
     if ((create_from_swapchain == VK_NULL_HANDLE) && binding && other_binding &&
         (binding->memory_state == other_binding->memory_state) && (binding->memory_offset == other_binding->memory_offset) &&
-        IsCreateInfoEqual(other_image_state->createInfo)) {
+        IsCreateInfoEqual(other_image_state->create_info)) {
         return true;
     }
     if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain) &&
@@ -347,7 +347,7 @@ void Image::SetInitialLayoutMap() {
         layout_map = std::make_shared<GlobalImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
         auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
         for (; range_gen->non_empty(); ++range_gen) {
-            layout_map->insert(layout_map->end(), std::make_pair(*range_gen, createInfo.initialLayout));
+            layout_map->insert(layout_map->end(), std::make_pair(*range_gen, create_info.initialLayout));
         }
     }
     // And store in the object
@@ -380,7 +380,7 @@ static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo
 
 static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo *ci, const vvl::Image &image_state) {
     auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci->pNext);
-    return (usage_create_info) ? usage_create_info->usage : image_state.createInfo.usage;
+    return (usage_create_info) ? usage_create_info->usage : image_state.create_info.usage;
 }
 
 static float GetImageViewMinLod(const VkImageViewCreateInfo *ci) {
@@ -410,9 +410,9 @@ ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView handle, 
     : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
-      normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, *ci)),
+      normalized_subresource_range(::NormalizeSubresourceRange(im->create_info, *ci)),
       range_generator(im->subresource_encoder, normalized_subresource_range),
-      samples(im->createInfo.samples),
+      samples(im->create_info.samples),
       // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
       // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
       // conversion must be used the shader type is always float.
@@ -427,7 +427,7 @@ ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView handle, 
       metal_imageview_export(GetMetalExport(ci)),
 #endif
       image_state(im),
-      is_depth_sliced(::IsDepthSliced(im->createInfo, *ci)) {
+      is_depth_sliced(::IsDepthSliced(im->create_info, *ci)) {
 }
 
 void ImageView::Destroy() {
@@ -440,7 +440,7 @@ void ImageView::Destroy() {
 
 uint32_t ImageView::GetAttachmentLayerCount() const {
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !IsDepthSliced()) {
-        return image_state->createInfo.arrayLayers;
+        return image_state->create_info.arrayLayers;
     }
     return create_info.subresourceRange.layerCount;
 }
@@ -531,7 +531,8 @@ namespace vvl {
 
 Swapchain::Swapchain(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
     : StateObject(handle, kVulkanObjectTypeSwapchainKHR),
-      createInfo(pCreateInfo),
+      safe_create_info(pCreateInfo),
+      create_info(*safe_create_info.ptr()),
       images(),
       exclusive_full_screen_access(false),
       shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||

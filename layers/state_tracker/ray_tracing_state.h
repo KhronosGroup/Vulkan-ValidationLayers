@@ -25,14 +25,16 @@ namespace vvl {
 
 class AccelerationStructureNV : public Bindable {
   public:
-    AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
-        : Bindable(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
-          create_infoNV(ci),
-          memory_requirements(GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
+    AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV handle,
+                            const VkAccelerationStructureCreateInfoNV *pCreateInfo)
+        : Bindable(handle, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
+          safe_create_info(pCreateInfo),
+          create_info(*safe_create_info.ptr()),
+          memory_requirements(GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
           build_scratch_memory_requirements(
-              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
+              GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
           update_scratch_memory_requirements(
-              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)),
+              GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)),
           tracker_(&memory_requirements) {
         Bindable::SetMemoryTracker(&tracker_);
     }
@@ -45,7 +47,9 @@ class AccelerationStructureNV : public Bindable {
         build_info.initialize(pInfo);
     };
 
-    const safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
+    const safe_VkAccelerationStructureCreateInfoNV safe_create_info;
+    const VkAccelerationStructureCreateInfoNV &create_info;
+
     safe_VkAccelerationStructureInfoNV build_info;
     const VkMemoryRequirements memory_requirements;
     const VkMemoryRequirements build_scratch_memory_requirements;
@@ -71,9 +75,12 @@ class AccelerationStructureNV : public Bindable {
 
 class AccelerationStructureKHR : public StateObject {
   public:
-    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *ci,
+    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
                              std::shared_ptr<Buffer> &&buf_state)
-        : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state) {}
+        : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
+          safe_create_info(pCreateInfo),
+          create_info(*safe_create_info.ptr()),
+          buffer_state(buf_state) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     virtual ~AccelerationStructureKHR() {
@@ -110,7 +117,9 @@ class AccelerationStructureKHR : public StateObject {
         }
     }
 
-    const safe_VkAccelerationStructureCreateInfoKHR create_infoKHR{};
+    const safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
+    const VkAccelerationStructureCreateInfoKHR &create_info;
+
     safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr{};
     bool built = false;
     uint64_t opaque_handle = 0;

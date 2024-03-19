@@ -90,8 +90,8 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
     auto image_state = Get<vvl::Image>(depth_attachment);
     assert(image_state);
 
-    const uint32_t mip_levels = image_state->createInfo.mipLevels;
-    const uint32_t array_layers = image_state->createInfo.arrayLayers;
+    const uint32_t mip_levels = image_state->create_info.mipLevels;
+    const uint32_t array_layers = image_state->create_info.arrayLayers;
 
     auto& tree = cmd_state.nv.zcull_per_image[depth_attachment];
     if (tree.states.empty()) {

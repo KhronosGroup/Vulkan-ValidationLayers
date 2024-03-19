@@ -121,8 +121,8 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
         if (!mem_info->IsDedicatedBuffer() && !mem_info->IsDedicatedImage() && !mem_info->IsExport() && !mem_info->IsImport()) {
             MemoryFreeEvent event;
             event.time = std::chrono::high_resolution_clock::now();
-            event.memory_type_index = mem_info->alloc_info.memoryTypeIndex;
-            event.allocation_size = mem_info->alloc_info.allocationSize;
+            event.memory_type_index = mem_info->allocate_info.memoryTypeIndex;
+            event.allocation_size = mem_info->allocate_info.allocationSize;
 
             WriteLockGuard guard{memory_free_events_lock_};
             memory_free_events_.push_back(event);
@@ -154,14 +154,14 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
     auto buffer_state = Get<vvl::Buffer>(buffer);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
 
-    if (mem_state && mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
-        mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
+    if (mem_state && mem_state->allocate_info.allocationSize == buffer_state->create_info.size &&
+        mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_SmallDedicatedAllocation, device, loc,
                                       "%s: Trying to bind %s to a memory block which is fully consumed by the buffer. "
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller buffers like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      loc.Message().c_str(), FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize,
+                                      loc.Message().c_str(), FormatHandle(buffer).c_str(), mem_state->allocate_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -201,14 +201,14 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     auto image_state = Get<vvl::Image>(image);
     auto mem_state = Get<vvl::DeviceMemory>(memory);
 
-    if (mem_state->alloc_info.allocationSize == image_state->requirements[0].size &&
-        mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
+    if (mem_state->allocate_info.allocationSize == image_state->requirements[0].size &&
+        mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning(kVUID_BestPractices_SmallDedicatedAllocation, device, loc,
                                       "%s: Trying to bind %s to a memory block which is fully consumed by the image. "
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller images like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      loc.Message().c_str(), FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize,
+                                      loc.Message().c_str(), FormatHandle(image).c_str(), mem_state->allocate_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -216,7 +216,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     // make sure this type is actually used.
     // This warning will only trigger if this layer is run on a platform that supports LAZILY_ALLOCATED_BIT
     // (i.e.most tile - based renderers)
-    if (image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
+    if (image_state->create_info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
         bool supports_lazy = false;
         uint32_t suggested_type = 0;
 
@@ -230,7 +230,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
             }
         }
 
-        uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags;
+        uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags;
 
         if (supports_lazy && (allocated_properties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
             skip |= LogPerformanceWarning(
@@ -238,7 +238,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                 "%s: Attempting to bind memory type %u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
                 "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
                 "%" PRIu64 " bytes of physical memory.",
-                loc.Message().c_str(), mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
+                loc.Message().c_str(), mem_state->allocate_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
         }
     }
 
@@ -302,8 +302,8 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
 }
 
 std::shared_ptr<vvl::DeviceMemory> BestPractices::CreateDeviceMemoryState(
-    VkDeviceMemory mem, const VkMemoryAllocateInfo* p_alloc_info, uint64_t fake_address, const VkMemoryType& memory_type,
+    VkDeviceMemory handle, const VkMemoryAllocateInfo* pAllocateInfo, uint64_t fake_address, const VkMemoryType& memory_type,
     const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count) {
     return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
-        mem, p_alloc_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
+        handle, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
 }

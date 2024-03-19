@@ -39,8 +39,9 @@ static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPool
 vvl::DescriptorPool::DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool handle,
                                     const VkDescriptorPoolCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeDescriptorPool),
+      safe_create_info(pCreateInfo),
+      create_info(*safe_create_info.ptr()),
       maxSets(pCreateInfo->maxSets),
-      createInfo(pCreateInfo),
       maxDescriptorTypeCount(GetMaxTypeCounts(pCreateInfo)),
       available_sets_(pCreateInfo->maxSets),
       available_counts_(maxDescriptorTypeCount),
@@ -371,9 +372,9 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 
 // The DescriptorSetLayout stores the per handle data for a descriptor set layout, and references the common defintion for the
 // handle invariant portion
-vvl::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
+vvl::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                               const VkDescriptorSetLayout handle)
-    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(p_create_info)) {}
+    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(pCreateInfo)) {}
 
 void vvl::AllocateDescriptorSetsData::Init(uint32_t count) { layout_nodes.resize(count); }
 
@@ -981,7 +982,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
             range_ = buffer_info.range;
             const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
             if (buffer_state) {
-                buffer_size = buffer_state->createInfo.size;
+                buffer_size = buffer_state->create_info.size;
             }
             ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
             break;
@@ -989,7 +990,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
         case DescriptorClass::TexelBuffer: {
             const auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
             if (buffer_view) {
-                buffer_size = buffer_view->buffer_state->createInfo.size;
+                buffer_size = buffer_view->buffer_state->create_info.size;
             }
             ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
             break;
@@ -1118,7 +1119,7 @@ void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType src_type, const 
             buffer_size_ = vvl::kU32Max;
         } else {
             auto buffer_state = static_cast<const vvl::BufferDescriptor *>(src)->GetBufferState();
-            buffer_size_ = static_cast<uint32_t>(buffer_state->createInfo.size);
+            buffer_size_ = static_cast<uint32_t>(buffer_state->create_info.size);
         }
     } else if (src->GetClass() == vvl::DescriptorClass::TexelBuffer) {
         auto buffer_view = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferView();
@@ -1126,7 +1127,7 @@ void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType src_type, const 
             buffer_size_ = vvl::kU32Max;
         } else {
             auto buffer_view_state = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferViewState();
-            buffer_size_ = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
+            buffer_size_ = static_cast<uint32_t>(buffer_view_state->buffer_state->create_info.size);
         }
     } else if (src->GetClass() == vvl::DescriptorClass::Mutable) {
         auto descriptor = static_cast<const vvl::MutableDescriptor *>(src);

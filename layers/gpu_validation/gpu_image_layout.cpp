@@ -572,7 +572,7 @@ void gpuav::Validator::TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_stat
 
 void gpuav::Validator::TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state,
                                                 const int subpass_index) {
-    auto const &subpass = render_pass_state.createInfo.pSubpasses[subpass_index];
+    auto const &subpass = render_pass_state.create_info.pSubpasses[subpass_index];
     for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
         TransitionAttachmentRefLayout(cb_state, subpass.pInputAttachments[j]);
     }
@@ -589,7 +589,7 @@ void gpuav::Validator::TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, co
 // 2. Transition from initialLayout to layout used in subpass 0
 void gpuav::Validator::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
     // First record expected initialLayout as a potential initial layout usage.
-    auto const rpci = render_pass_state.createInfo.ptr();
+    auto const rpci = render_pass_state.create_info.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
@@ -620,7 +620,7 @@ void gpuav::Validator::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_stat
         return;
     }
 
-    const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->createInfo.ptr();
+    const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->create_info.ptr();
     for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
         auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {

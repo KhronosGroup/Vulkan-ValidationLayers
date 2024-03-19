@@ -644,7 +644,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
 
     const auto &rp_state = pipeline.RenderPassState();
     if (rp_state && !rp_state->UsesDynamicRendering()) {
-        const auto rpci = rp_state->createInfo.ptr();
+        const auto rpci = rp_state->create_info.ptr();
         if (subpass_index < rpci->subpassCount) {
             const auto subpass = rpci->pSubpasses[subpass_index];
             for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {

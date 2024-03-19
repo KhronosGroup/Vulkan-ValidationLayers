@@ -363,7 +363,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                 for (const auto attachment : (*cb_state.active_attachments)) {
                     if (attachment && attachment->create_info.subresourceRange.aspectMask &
                                           (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                        if ((attachment->image_state->createInfo.flags &
+                        if ((attachment->image_state->create_info.flags &
                              VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                             const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
                             skip |=
@@ -853,7 +853,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
         bool pgq_active = false;
         for (const auto& active_query : cb_state.activeQueries) {
             auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
-            if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
                 pgq_active = true;
                 break;
             }

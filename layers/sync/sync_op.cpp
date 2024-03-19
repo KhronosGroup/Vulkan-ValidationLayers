@@ -452,7 +452,7 @@ void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sy
         const auto &barrier = barriers[index];
         auto image = sync_state.Get<ImageState>(barrier.image);
         if (image) {
-            auto subresource_range = NormalizeSubresourceRange(image->createInfo, barrier.subresourceRange);
+            auto subresource_range = NormalizeSubresourceRange(image->create_info, barrier.subresourceRange);
             const SyncBarrier sync_barrier(barrier, src, dst);
             image_memory_barriers.emplace_back(image, index, sync_barrier, barrier.oldLayout, barrier.newLayout, subresource_range);
         } else {
@@ -472,7 +472,7 @@ void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sy
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         auto image = sync_state.Get<ImageState>(barrier.image);
         if (image) {
-            auto subresource_range = NormalizeSubresourceRange(image->createInfo, barrier.subresourceRange);
+            auto subresource_range = NormalizeSubresourceRange(image->create_info, barrier.subresourceRange);
             const SyncBarrier sync_barrier(barrier, src, dst);
             image_memory_barriers.emplace_back(image, index, sync_barrier, barrier.oldLayout, barrier.newLayout, subresource_range);
         } else {

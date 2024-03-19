@@ -87,7 +87,7 @@ class RenderPass : public StateObject {
     const safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
     const safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
     const safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
-    const safe_VkRenderPassCreateInfo2 createInfo;
+    const safe_VkRenderPassCreateInfo2 create_info;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
     const std::vector<SubpassVec> self_dependencies;
@@ -126,7 +126,8 @@ class RenderPass : public StateObject {
 
 class Framebuffer : public StateObject {
   public:
-    const safe_VkFramebufferCreateInfo createInfo;
+    const safe_VkFramebufferCreateInfo safe_create_info;
+    const VkFramebufferCreateInfo &create_info;
     std::shared_ptr<const RenderPass> rp_state;
     std::vector<std::shared_ptr<vvl::ImageView>> attachments_view_state;
 

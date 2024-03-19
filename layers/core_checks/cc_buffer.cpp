@@ -78,14 +78,14 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const 
                              phys_dev_props.limits.maxTexelBufferElements);
         }
         // The sum of range and offset must be less than or equal to the size of buffer
-        if (range + create_info.offset > buffer_state.createInfo.size) {
+        if (range + create_info.offset > buffer_state.create_info.size) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-offset-00931", buffer_state.Handle(), loc.dot(Field::range),
                              "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, the sum of offset (%" PRIuLEAST64
                              ") and range must be less than or equal to the size of the buffer (%" PRIuLEAST64 ").",
-                             range, create_info.offset, buffer_state.createInfo.size);
+                             range, create_info.offset, buffer_state.create_info.size);
         }
     } else {
-        const VkDeviceSize offset_range = buffer_state.createInfo.size - create_info.offset;
+        const VkDeviceSize offset_range = buffer_state.create_info.size - create_info.offset;
         const VkDeviceSize texels = SafeDivision(offset_range, format_info.block_size) * texel_per_block;
         if (texels > static_cast<VkDeviceSize>(phys_dev_props.limits.maxTexelBufferElements)) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-range-04059", buffer_state.Handle(), loc.dot(Field::range),
@@ -93,7 +93,7 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const 
                              "), %s texel block size (%" PRIu32 "), and texels-per-block (%" PRIuLEAST64
                              ") is a total of (%" PRIuLEAST64
                              ") texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
-                             buffer_state.createInfo.size, create_info.offset, string_VkFormat(format), format_info.block_size,
+                             buffer_state.create_info.size, create_info.offset, string_VkFormat(format), format_info.block_size,
                              texel_per_block, texels, phys_dev_props.limits.maxTexelBufferElements);
         }
     }
@@ -339,10 +339,10 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                                      "VUID-VkBufferViewCreateInfo-buffer-00932", create_info_loc.dot(Field::buffer));
 
     // Buffer view offset must be less than the size of buffer
-    if (pCreateInfo->offset >= buffer_state.createInfo.size) {
+    if (pCreateInfo->offset >= buffer_state.create_info.size) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-offset-00925", buffer_state.Handle(), create_info_loc.dot(Field::offset),
                          "(%" PRIuLEAST64 ") must be less than the size of the buffer (%" PRIuLEAST64 ").", pCreateInfo->offset,
-                         buffer_state.createInfo.size);
+                         buffer_state.create_info.size);
     }
 
     // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
@@ -468,16 +468,16 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateProtectedBuffer(cb_state, *buffer_state, buffer_loc, "VUID-vkCmdFillBuffer-commandBuffer-01811");
     skip |= ValidateUnprotectedBuffer(cb_state, *buffer_state, buffer_loc, "VUID-vkCmdFillBuffer-commandBuffer-01812");
 
-    if (dstOffset >= buffer_state->createInfo.size) {
+    if (dstOffset >= buffer_state->create_info.size) {
         skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00024", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not less than destination buffer (%s) size (%" PRIu64 ").", dstOffset,
-                         FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
+                         FormatHandle(dstBuffer).c_str(), buffer_state->create_info.size);
     }
 
-    if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->createInfo.size - dstOffset))) {
+    if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->create_info.size - dstOffset))) {
         skip |= LogError("VUID-vkCmdFillBuffer-size-00027", objlist, error_obj.location.dot(Field::size),
                          "(%" PRIu64 ") is greater than dstBuffer (%s) size (%" PRIu64 ") minus dstOffset (%" PRIu64 ").", size,
-                         FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
+                         FormatHandle(dstBuffer).c_str(), buffer_state->create_info.size, dstOffset);
     }
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {

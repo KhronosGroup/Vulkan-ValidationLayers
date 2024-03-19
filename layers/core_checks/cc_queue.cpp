@@ -504,19 +504,19 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
             switch (state_object->Type()) {
                 case kVulkanObjectTypeImage: {
                     auto image_state = static_cast<const vvl::Image *>(state_object.get());
-                    if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                    if (image_state && image_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                         skip |= ValidImageBufferQueue(cb_state, image_state->Handle(), queue_state->queueFamilyIndex,
-                                                      image_state->createInfo.queueFamilyIndexCount,
-                                                      image_state->createInfo.pQueueFamilyIndices, loc);
+                                                      image_state->create_info.queueFamilyIndexCount,
+                                                      image_state->create_info.pQueueFamilyIndices, loc);
                     }
                     break;
                 }
                 case kVulkanObjectTypeBuffer: {
                     auto buffer_state = static_cast<const vvl::Buffer *>(state_object.get());
-                    if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                    if (buffer_state && buffer_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                         skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state->queueFamilyIndex,
-                                                      buffer_state->createInfo.queueFamilyIndexCount,
-                                                      buffer_state->createInfo.pQueueFamilyIndices, loc);
+                                                      buffer_state->create_info.queueFamilyIndexCount,
+                                                      buffer_state->create_info.pQueueFamilyIndices, loc);
                     }
                     break;
                 }
@@ -712,7 +712,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 if (!image_state->sparse_residency) {
                     skip |=
                         LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),
-                                 "was created with flags %s.", string_VkImageCreateFlags(image_state->createInfo.flags).c_str());
+                                 "was created with flags %s.", string_VkImageCreateFlags(image_state->create_info.flags).c_str());
                 }
 
                 for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {

@@ -70,7 +70,7 @@ class UpdateStateResolveAction {
 
 void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state, const AccessContext *external_context,
                          std::vector<AccessContext> &subpass_contexts) {
-    const auto &create_info = rp_state.createInfo;
+    const auto &create_info = rp_state.create_info;
     // Add this for all subpasses here so that they exsist during next subpass validation
     subpass_contexts.clear();
     subpass_contexts.reserve(create_info.subpassCount);
@@ -178,9 +178,9 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &va
                                                     const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
                                                     const AttachmentViewGenVector &attachment_views, vvl::Func command) {
     bool skip = false;
-    const auto *attachment_ci = rp_state.createInfo.pAttachments;
+    const auto *attachment_ci = rp_state.create_info.pAttachments;
 
-    for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
+    for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; i++) {
         if (subpass == rp_state.attachment_first_subpass[i]) {
             const auto &view_gen = attachment_views[i];
             if (!view_gen.IsValid()) continue;
@@ -250,9 +250,9 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &va
 // The latter is handled in layout transistion validation directly
 bool RenderPassAccessContext::ValidateStoreOperation(const SyncValidationInfo &val_info, vvl::Func command) const {
     bool skip = false;
-    const auto *attachment_ci = rp_state_->createInfo.pAttachments;
+    const auto *attachment_ci = rp_state_->create_info.pAttachments;
 
-    for (uint32_t i = 0; i < rp_state_->createInfo.attachmentCount; i++) {
+    for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
         if (current_subpass_ == rp_state_->attachment_last_subpass[i]) {
             const AttachmentViewGen &view_gen = attachment_views_[i];
             if (!view_gen.IsValid()) continue;
@@ -340,7 +340,7 @@ bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, const VkFor
 template <typename Action>
 void ResolveOperation(Action &action, const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
                       uint32_t subpass) {
-    const auto &rp_ci = rp_state.createInfo;
+    const auto &rp_ci = rp_state.create_info;
     const auto *attachment_ci = rp_ci.pAttachments;
     const auto &subpass_ci = rp_ci.pSubpasses[subpass];
 
@@ -414,9 +414,9 @@ void RenderPassAccessContext::UpdateAttachmentResolveAccess(const vvl::RenderPas
 void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state,
                                                           const AttachmentViewGenVector &attachment_views, uint32_t subpass,
                                                           const ResourceUsageTag tag, AccessContext &access_context) {
-    const auto *attachment_ci = rp_state.createInfo.pAttachments;
+    const auto *attachment_ci = rp_state.create_info.pAttachments;
 
-    for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
+    for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; i++) {
         if (rp_state.attachment_last_subpass[i] == subpass) {
             const auto &view_gen = attachment_views[i];
             if (!view_gen.IsValid()) continue;  // UNUSED
@@ -495,7 +495,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
         return skip;
     }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
-    const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
+    const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
 
     const auto &current_context = CurrentContext();
     // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
@@ -585,7 +585,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
         return;
     }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
-    const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
+    const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
 
     auto &current_context = CurrentContext();
     // Subpass's inputAttachment has been done in RecordDispatchDrawDescriptorSet
@@ -640,7 +640,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
 }
 
 uint32_t RenderPassAccessContext::GetAttachmentIndex(const VkClearAttachment &clear_attachment) const {
-    const auto &rpci = rp_state_->createInfo;
+    const auto &rpci = rp_state_->create_info;
     const auto &subpass = rpci.pSubpasses[GetCurrentSubpass()];
     uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
 
@@ -835,10 +835,10 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag tag
 }
 
 void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
-    const auto *attachment_ci = rp_state_->createInfo.pAttachments;
+    const auto *attachment_ci = rp_state_->create_info.pAttachments;
     auto &subpass_context = subpass_contexts_[current_subpass_];
 
-    for (uint32_t i = 0; i < rp_state_->createInfo.attachmentCount; i++) {
+    for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
         if (rp_state_->attachment_first_subpass[i] == current_subpass_) {
             const AttachmentViewGen &view_gen = attachment_views_[i];
             if (!view_gen.IsValid()) continue;  // UNUSED

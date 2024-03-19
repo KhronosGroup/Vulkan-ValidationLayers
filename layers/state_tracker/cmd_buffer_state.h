@@ -56,6 +56,19 @@ static bool GetMetalExport(const VkEventCreateInfo *info) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+// Only CoreChecks uses this, but the state tracker stores it.
+constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
+using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
+typedef vvl::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
+
+enum class CbState {
+    New,                // Newly created CB w/o any cmds
+    Recording,          // BeginCB has been called on this CB
+    Recorded,           // EndCB has been called on this CB
+    InvalidComplete,    // had a complete recording, but was since invalidated
+    InvalidIncomplete,  // fouled before recording was completed
+};
+
 namespace vvl {
 
 class Event : public StateObject {
@@ -84,14 +97,6 @@ class Event : public StateObject {
     VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
 };
 
-}  // namespace vvl
-
-// Only CoreChecks uses this, but the state tracker stores it.
-constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
-using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
-typedef vvl::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
-
-namespace vvl {
 // Track command pools and their command buffers
 class CommandPool : public StateObject {
   public:
@@ -114,18 +119,6 @@ class CommandPool : public StateObject {
 
     void Destroy() override;
 };
-}  // namespace vvl
-
-enum class CbState {
-    New,                // Newly created CB w/o any cmds
-    Recording,          // BeginCB has been called on this CB
-    Recorded,           // EndCB has been called on this CB
-    InvalidComplete,    // had a complete recording, but was since invalidated
-    InvalidIncomplete,  // fouled before recording was completed
-};
-
-
-namespace vvl {
 
 class CommandBuffer : public RefcountedStateObject {
     using Func = vvl::Func;
@@ -137,7 +130,7 @@ class CommandBuffer : public RefcountedStateObject {
     using ImageLayoutMap = vvl::unordered_map<VkImage, LayoutState>;
     using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>;
 
-    VkCommandBufferAllocateInfo createInfo = {};
+    VkCommandBufferAllocateInfo allocate_info;
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
@@ -464,7 +457,7 @@ class CommandBuffer : public RefcountedStateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(ValidationStateTracker *, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+    CommandBuffer(ValidationStateTracker *, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pAllocateInfo,
                   const vvl::CommandPool *cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }
@@ -615,8 +608,8 @@ class CommandBuffer : public RefcountedStateObject {
     }
     void BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state);
 
-    bool IsPrimary() const { return createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
-    bool IsSeconary() const { return createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
+    bool IsPrimary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
+    bool IsSeconary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
     void BeginLabel(const char *label_name);
     void EndLabel();
     int LabelStackDepth() const { return label_stack_depth_; }
