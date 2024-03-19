@@ -23,6 +23,7 @@
 #include "utils/cast_utils.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
+#include "gpu_validation/gpu_constants.h"
 #include "gpu_validation/gpu_validation.h"
 #include "gpu_validation/gpu_subclasses.h"
 #include "state_tracker/device_state.h"
@@ -85,19 +86,31 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 
-    // BaseClass::CreateDevice will set up bindings
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
-                                                gpu_tracker::kShaderStageAllRayTracing,
-                                            NULL};
     // Set up a stub implementation of the descriptor heap in case we abort.
     desc_heap.emplace(*this, 0);
-    bindings_.push_back(binding);
-    for (auto i = 1; i < 3; i++) {
-        binding.binding = i;
-        bindings_.push_back(binding);
-    }
+
+    // Setup bindings
+    const VkShaderStageFlags all_stages_flags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
+                                                VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
+                                                gpu_tracker::kShaderStageAllRayTracing;
+
+    validation_bindings_ = {
+        // Error output buffer
+        {glsl::kBindingInstErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
+        // Current bindless buffer
+        {glsl::kBindingInstBindlessDescriptor, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
+        // Buffer holding buffer device addresses
+        {glsl::kBindingInstBufferDeviceAddress, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
+        // Buffer holding action command index in command buffer
+        {glsl::kBindingInstActionIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, all_stages_flags, nullptr},
+        // Buffer holding a resource index from the per command buffer command resources list
+        {glsl::kBindingInstCmdResourceIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, all_stages_flags, nullptr},
+        // Commands errors counts buffer
+        {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, all_stages_flags, nullptr},
+    };
+
+    // TODO: Such a call is expected to be the first thing happening in this function,
+    // but moving it at the top breaks GPU-AV. Try to fix it
     BaseClass::CreateDevice(pCreateInfo, loc);
 
     if (api_version < VK_API_VERSION_1_1) {
@@ -156,7 +169,7 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
                    "Use of descriptor buffers will result in no descriptor checking");
     }
 
-    output_buffer_size = sizeof(uint32_t) * (glsl::kMaxErrorRecordSize + spvtools::kDebugOutputDataOffset);
+    output_buffer_byte_size = gpuav::glsl::kErrorBufferByteSize;
 
     if (gpuav_settings.validate_descriptors && !force_buffer_device_address) {
         gpuav_settings.validate_descriptors = false;
@@ -186,20 +199,28 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
 
     if (gpuav_settings.vma_linear_output) {
         VkBufferCreateInfo output_buffer_create_info = vku::InitStructHelper();
-        output_buffer_create_info.size = output_buffer_size;
+        output_buffer_create_info.size = output_buffer_byte_size;
         output_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_create_info = {};
         alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         uint32_t mem_type_index;
-        vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
+        VkResult result =
+            vmaFindMemoryTypeIndexForBufferInfo(vmaAllocator, &output_buffer_create_info, &alloc_create_info, &mem_type_index);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, loc, "Unable to find memory type index");
+            aborted = true;
+            return;
+        }
         VmaPoolCreateInfo pool_create_info = {};
         pool_create_info.memoryTypeIndex = mem_type_index;
         pool_create_info.blockSize = 0;
         pool_create_info.maxBlockCount = 0;
         pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
-        VkResult result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
+        result = vmaCreatePool(vmaAllocator, &pool_create_info, &output_buffer_pool);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, loc, "Unable to create VMA memory pool");
+            aborted = true;
+            return;
         }
     }
 
@@ -231,6 +252,39 @@ void gpuav::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const
             }
             file_stream.close();
         }
+    }
+
+    // Create command indices buffer
+    {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        buffer_info.size = cst::indices_count * sizeof(uint32_t);
+        VmaAllocationCreateInfo alloc_info = {};
+        assert(output_buffer_pool);
+        alloc_info.pool = output_buffer_pool;
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        VkResult result =
+            vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &indices_buffer.buffer, &indices_buffer.allocation, nullptr);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, loc, "Unable to allocate device memory for command indices. Device could become unstable.",
+                               true);
+            aborted = true;
+            return;
+        }
+
+        uint32_t *indices_ptr = nullptr;
+        result = vmaMapMemory(vmaAllocator, indices_buffer.allocation, reinterpret_cast<void **>(&indices_ptr));
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, loc, "Unable to map device memory for command indices buffer.");
+            aborted = true;
+            return;
+        }
+
+        for (uint32_t i = 0; i < cst::indices_count; ++i) {
+            indices_ptr[i] = i;
+        }
+
+        vmaUnmapMemory(vmaAllocator, indices_buffer.allocation);
     }
 }
 
@@ -401,15 +455,11 @@ void gpuav::RestorablePipelineState::Restore(VkCommandBuffer command_buffer) con
 }
 
 void gpuav::CommandResources::Destroy(gpuav::Validator &validator) {
-    if (output_mem_block.buffer != VK_NULL_HANDLE) {
-        vmaDestroyBuffer(validator.vmaAllocator, output_mem_block.buffer, output_mem_block.allocation);
+    if (instrumentation_desc_set != VK_NULL_HANDLE) {
+        validator.desc_set_manager->PutBackDescriptorSet(instrumentation_desc_pool, instrumentation_desc_set);
+        instrumentation_desc_set = VK_NULL_HANDLE;
+        instrumentation_desc_pool = VK_NULL_HANDLE;
     }
-    if (output_buffer_desc_set != VK_NULL_HANDLE) {
-        validator.desc_set_manager->PutBackDescriptorSet(output_buffer_desc_pool, output_buffer_desc_set);
-    }
-    output_mem_block.buffer = VK_NULL_HANDLE;
-    output_mem_block.allocation = VK_NULL_HANDLE;
-    output_buffer_desc_set = VK_NULL_HANDLE;
 }
 
 void gpuav::PreDrawResources::Destroy(gpuav::Validator &validator) {
@@ -432,15 +482,7 @@ void gpuav::PreDispatchResources::Destroy(gpuav::Validator &validator) {
     CommandResources::Destroy(validator);
 }
 
-void gpuav::PreTraceRaysResources::Destroy(gpuav::Validator &validator) {
-    if (desc_set != VK_NULL_HANDLE) {
-        validator.desc_set_manager->PutBackDescriptorSet(desc_pool, desc_set);
-        desc_set = VK_NULL_HANDLE;
-        desc_pool = VK_NULL_HANDLE;
-    }
-
-    CommandResources::Destroy(validator);
-}
+void gpuav::PreTraceRaysResources::Destroy(gpuav::Validator &validator) { CommandResources::Destroy(validator); }
 
 void gpuav::PreCopyBufferToImageResources::Destroy(gpuav::Validator &validator) {
     if (desc_set != VK_NULL_HANDLE) {

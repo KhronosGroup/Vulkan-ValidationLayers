@@ -69,15 +69,25 @@ VkResult gpu_tracker::DescriptorSetManager::GetDescriptorSets(uint32_t count, Vk
         if (count > default_pool_size) {
             pool_count = count;
         }
-        const VkDescriptorPoolSize size_counts = {
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            pool_count * num_bindings_in_set,
-        };
+
+        // TODO: The logic to compute descriptor pool sizes should not be
+        // hardcoded like so, should be dynamic depending on the descriptor sets
+        // to be created. Not too dramatic as Vulkan will gracefully fail if there is a
+        // mismatch between this and created descriptor sets.
+        const std::array<VkDescriptorPoolSize, 2> pool_sizes = {{{
+                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                                                     pool_count * num_bindings_in_set,
+                                                                 },
+                                                                 {
+                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+                                                                     pool_count * num_bindings_in_set,
+                                                                 }}};
+
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         desc_pool_info.maxSets = pool_count;
-        desc_pool_info.poolSizeCount = 1;
-        desc_pool_info.pPoolSizes = &size_counts;
+        desc_pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+        desc_pool_info.pPoolSizes = pool_sizes.data();
         result = DispatchCreateDescriptorPool(device, &desc_pool_info, NULL, &pool_to_use);
         assert(result == VK_SUCCESS);
         if (result != VK_SUCCESS) {
@@ -409,28 +419,30 @@ void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo,
         aborted = true;
         return;
     }
+
     desc_set_bind_index = adjusted_max_desc_sets - 1;
 
     VkResult result1 = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address, &vmaAllocator);
     assert(result1 == VK_SUCCESS);
-    desc_set_manager = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(bindings_.size()));
+    desc_set_manager = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(validation_bindings_.size()));
 
     const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0,
-                                                                    static_cast<uint32_t>(bindings_.size()), bindings_.data()};
+                                                                    static_cast<uint32_t>(validation_bindings_.size()),
+                                                                    validation_bindings_.data()};
 
     const VkDescriptorSetLayoutCreateInfo dummy_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 0,
                                                                     NULL};
 
-    result1 = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, NULL, &debug_desc_layout);
+    result1 = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, NULL, &debug_desc_layout_);
 
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
-    VkResult result2 = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, NULL, &dummy_desc_layout);
+    VkResult result2 = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, NULL, &dummy_desc_layout_);
 
     std::vector<VkDescriptorSetLayout> debug_layouts;
     for (uint32_t j = 0; j < adjusted_max_desc_sets - 1; ++j) {
-        debug_layouts.push_back(dummy_desc_layout);
+        debug_layouts.push_back(dummy_desc_layout_);
     }
-    debug_layouts.push_back(debug_desc_layout);
+    debug_layouts.push_back(debug_desc_layout_);
     const VkPipelineLayoutCreateInfo debug_pipeline_layout_info = {
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, NULL, 0u, static_cast<uint32_t>(debug_layouts.size()), debug_layouts.data(), 0u, NULL};
     VkResult result3 = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, NULL, &debug_pipeline_layout);
@@ -439,16 +451,16 @@ void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo,
     if ((result1 != VK_SUCCESS) || (result2 != VK_SUCCESS) || (result3 != VK_SUCCESS)) {
         ReportSetupProblem(device, loc, "Unable to create descriptor set layout.");
         if (result1 == VK_SUCCESS) {
-            DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
+            DispatchDestroyDescriptorSetLayout(device, debug_desc_layout_, NULL);
         }
         if (result2 == VK_SUCCESS) {
-            DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout, NULL);
+            DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout_, NULL);
         }
         if (result3 == VK_SUCCESS) {
             DispatchDestroyPipelineLayout(device, debug_pipeline_layout, NULL);
         }
-        debug_desc_layout = VK_NULL_HANDLE;
-        dummy_desc_layout = VK_NULL_HANDLE;
+        debug_desc_layout_ = VK_NULL_HANDLE;
+        dummy_desc_layout_ = VK_NULL_HANDLE;
         debug_pipeline_layout = VK_NULL_HANDLE;
         aborted = true;
         return;
@@ -457,13 +469,15 @@ void gpu_tracker::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo,
 
 void gpu_tracker::Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                                         const RecordObject &record_obj) {
-    if (debug_desc_layout) {
-        DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
-        debug_desc_layout = VK_NULL_HANDLE;
+    indices_buffer.Destroy(vmaAllocator);
+
+    if (debug_desc_layout_) {
+        DispatchDestroyDescriptorSetLayout(device, debug_desc_layout_, NULL);
+        debug_desc_layout_ = VK_NULL_HANDLE;
     }
-    if (dummy_desc_layout) {
-        DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout, NULL);
-        dummy_desc_layout = VK_NULL_HANDLE;
+    if (dummy_desc_layout_) {
+        DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout_, NULL);
+        dummy_desc_layout_ = VK_NULL_HANDLE;
     }
     if (debug_pipeline_layout) {
         DispatchDestroyPipelineLayout(device, debug_pipeline_layout, NULL);
@@ -687,9 +701,9 @@ void gpu_tracker::Validator::PreCallRecordCreatePipelineLayout(VkDevice device, 
         cpl_state->new_layouts.insert(cpl_state->new_layouts.end(), &pCreateInfo->pSetLayouts[0],
                                       &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
         for (uint32_t i = pCreateInfo->setLayoutCount; i < adjusted_max_desc_sets - 1; ++i) {
-            cpl_state->new_layouts.push_back(dummy_desc_layout);
+            cpl_state->new_layouts.push_back(dummy_desc_layout_);
         }
-        cpl_state->new_layouts.push_back(debug_desc_layout);
+        cpl_state->new_layouts.push_back(debug_desc_layout_);
         cpl_state->modified_create_info.pSetLayouts = cpl_state->new_layouts.data();
         cpl_state->modified_create_info.setLayoutCount = adjusted_max_desc_sets;
     }
@@ -730,9 +744,9 @@ void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint
             cso_state->new_layouts.insert(cso_state->new_layouts.end(), pCreateInfos[i].pSetLayouts,
                                           &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
             for (uint32_t j = pCreateInfos[i].setLayoutCount; j < adjusted_max_desc_sets - 1; ++j) {
-                cso_state->new_layouts.push_back(dummy_desc_layout);
+                cso_state->new_layouts.push_back(dummy_desc_layout_);
             }
-            cso_state->new_layouts.push_back(debug_desc_layout);
+            cso_state->new_layouts.push_back(debug_desc_layout_);
             cso_state->instrumented_create_info->pSetLayouts = cso_state->new_layouts.data();
             cso_state->instrumented_create_info->setLayoutCount = adjusted_max_desc_sets;
         }

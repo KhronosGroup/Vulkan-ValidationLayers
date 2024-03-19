@@ -35,6 +35,7 @@ out64/*
 scripts/.vs
 .*.sw[op]
 *~
+*.10x
 
 # BUILD.gn artifacts
 .cipd/

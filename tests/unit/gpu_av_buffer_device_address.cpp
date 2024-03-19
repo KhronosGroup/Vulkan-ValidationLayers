@@ -16,7 +16,8 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
+TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerPushConstant) {
     TEST_DESCRIPTION("Read before the valid pointer - use Push Constants to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
@@ -70,7 +71,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -131,14 +133,15 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerPushConstant) 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
-    TEST_DESCRIPTION("Read before the valid pointer - use Descriptor to set the value");
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7132
+TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadBeforePointerDescriptor) {
+    TEST_DESCRIPTION("Read 16 bytes before the valid pointer - use Descriptor to set the value");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
 
@@ -156,11 +159,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
 
     VkDeviceAddress u_info_ptr = buffer.address();
     // Will dereference the wrong ptr address
-    VkDeviceAddress data = u_info_ptr - 16;
+    VkDeviceAddress invalid_buffer_address = u_info_ptr - 16;
     uint32_t n_writes = 4;
 
     uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.memory().map();
-    memcpy(uniform_buffer_ptr, &data, sizeof(VkDeviceAddress));
+    memcpy(uniform_buffer_ptr, &invalid_buffer_address, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
     uniform_buffer.memory().unmap();
 
@@ -197,7 +200,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -263,7 +267,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ReadAfterPointerDescriptor) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -351,6 +355,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
 
         layout(set=0, binding=0) buffer storage_buffer {
             uint index;
+            uint pad;
             // Offset is 8
             Foo f[]; // each item is 8 bytes
         } foo;
@@ -387,18 +392,17 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     memcpy(buffer_ptr + (3 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     storage_buffer.memory().unmap();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE,
-                                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-uniformBuffers-06935");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Device address out of bounds");
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();

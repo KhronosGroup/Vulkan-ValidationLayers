@@ -149,6 +149,12 @@ void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
     }
 }
 
+void ErrorMonitor::SetDesiredWarning(const char *msg, uint32_t count) {
+    for (uint32_t i = 0; i < count; ++i) {
+        SetDesiredFailureMsg(kWarningBit, msg);
+    }
+}
+
 void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
     auto guard = Lock();
     allowed_message_strings_.emplace_back(msg);

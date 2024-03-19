@@ -163,6 +163,7 @@ vvl_sources = [
   "layers/gpu_shaders/gpu_shaders_constants.h",
   "layers/gpu_validation/debug_printf.cpp",
   "layers/gpu_validation/debug_printf.h",
+  "layers/gpu_validation/gpu_constants.h",
   "layers/gpu_validation/gpu_descriptor_set.cpp",
   "layers/gpu_validation/gpu_descriptor_set.h",
   "layers/gpu_validation/gpu_error_message.cpp",

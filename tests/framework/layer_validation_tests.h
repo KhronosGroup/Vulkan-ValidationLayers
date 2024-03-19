@@ -289,8 +289,8 @@ class GpuAVOOBTest : public GpuAVTest {};
 class NegativeGpuAVOOB : public GpuAVOOBTest {
   public:
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
-                              VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error,
-                              bool shader_objects = false);
+                              VkDescriptorType descriptor_type, const char *fragment_shader,
+                              std::vector<const char *> expected_errors, bool shader_objects = false);
     void ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size);
 };
 class PositiveGpuAVOOB : public GpuAVOOBTest {};

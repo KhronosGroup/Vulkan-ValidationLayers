@@ -16,9 +16,10 @@
 
 #version 460
 #extension GL_GOOGLE_include_directive : enable
-#include "gpu_pre_action.h"
 
 #extension GL_EXT_shader_explicit_arithmetic_types_int8 : require
+
+#include "gpu_pre_action.h"
 
 // GPU equivalent of VkBufferImageCopy
 struct BufferImageCopy {
@@ -33,11 +34,11 @@ struct BufferImageCopy {
     uvec4 region_extent;
 };
 
-layout(set = 0, binding = 1) buffer SrcBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer SrcBuffer {
     uint8_t src_buffer[];
 };
 
-layout(set = 0, binding = 2, std430) buffer CopySrcRegions {
+layout(set = kDiagPerCmdDescriptorSet, binding = 1, std430) buffer CopySrcRegions {
     uvec4 image_extent;
     uint block_size;
     uint copy_regions_count;

@@ -16,29 +16,31 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "gpu_pre_action.h"
-
-layout(set = 0, binding = 1) buffer IndirectBuffer { uint indirect_buffer[]; };
-
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(push_constant) uniform UniformInfo {
     uint limit_x;
     uint limit_y;
     uint limit_z;
     uint indirect_x_offset;
-} u_info;
+};
+
+#include "gpu_pre_action.h"
+
+layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer IndirectBuffer { uint indirect_buffer[]; };
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
 
 void main() {
-    uint indirect_x = indirect_buffer[u_info.indirect_x_offset];
-    uint indirect_y = indirect_buffer[u_info.indirect_x_offset + 1];
-    uint indirect_z = indirect_buffer[u_info.indirect_x_offset + 2];
+    uint indirect_x = indirect_buffer[indirect_x_offset];
+    uint indirect_y = indirect_buffer[indirect_x_offset + 1];
+    uint indirect_z = indirect_buffer[indirect_x_offset + 2];
 
-    if (indirect_x > u_info.limit_x) {
+    if (indirect_x > limit_x) {
         gpuavLogError(kErrorGroupGpuPreDispatch, kErrorSubCodePreDispatchCountLimitX, indirect_x, 0);
-    } else if (indirect_y > u_info.limit_y) {
+    } else if (indirect_y > limit_y) {
         gpuavLogError(kErrorGroupGpuPreDispatch, kErrorSubCodePreDispatchCountLimitY, indirect_y, 0);
-    } else if (indirect_z > u_info.limit_z) {
+    } else if (indirect_z > limit_z) {
         gpuavLogError(kErrorGroupGpuPreDispatch, kErrorSubCodePreDispatchCountLimitZ, indirect_z, 0);
     }
 

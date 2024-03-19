@@ -509,7 +509,8 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349", gpuav::glsl::kMaxErrorsPerCmd);
+
     m_commandBuffer->QueueCommandBuffer(false);
     m_device->wait();
     m_errorMonitor->VerifyFound();

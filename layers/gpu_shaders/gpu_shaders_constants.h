@@ -32,18 +32,41 @@ const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u*4u;
 
 #endif
 
+// Maximum errors a cmd is allowed to log
+const uint kMaxErrorsPerCmd = 6;
+
+// Instrumentation
+// ---
+
 // Instead of having to create a variable and pass it in each time for every function call made, we use these values to map
 // constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime. (Similar to
 // Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
 
 // This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
-const int kDefaultDescriptorSet = 7;
+const int kInstDefaultDescriptorSet = 7;
 
-// Inside the descriptor set used by GPU-AV, binding #0 is reserved for the output, but each check that requires additional input
+// Inside the descriptor set used by instrumentation validation,
+// binding #0 is reserved for the output, but each check that requires additional input
 // must reserve its own binding slot
-const int kBindingBindlessDescriptor = 1;
-const int kBindingBufferDeviceAddress = 2;
+const int kBindingInstErrorBuffer = 0;
+const int kBindingInstBindlessDescriptor = 1;
+const int kBindingInstBufferDeviceAddress = 2;
+const int kBindingInstActionIndex = 3;
+const int kBindingInstCmdResourceIndex = 4;
+const int kBindingInstCmdErrorsCount = 5;
+
+// Diagnostic calls
+// ---
+
+const int kDiagCommonDescriptorSet = 0;
+const int kDiagPerCmdDescriptorSet = 1;
+
+// Diagnostic calls bindings in common descriptor set
+const int kBindingDiagErrorBuffer = 0;
+const int kBindingDiagActionIndex = 1;
+const int kBindingDiagCmdResourceIndex = 2;
+const int kBindingDiagCmdErrorsCount = 3;
 
 // Direct Input Buffer Offsets
 //
