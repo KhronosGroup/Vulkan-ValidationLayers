@@ -467,6 +467,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 VkInstance instance = VK_NULL_HANDLE;
                 VkPhysicalDevice physical_device = VK_NULL_HANDLE;
                 VkDevice device = VK_NULL_HANDLE;
+                bool is_device_lost = false;
                 LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
 
                 std::vector<ValidationObject*> object_dispatch;
@@ -1959,6 +1960,15 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 out.append('auto lock = intercept->WriteLock();\n')
             else:
                 out.append('ValidationObject::BlockingOperationGuard lock(intercept);\n')
+
+            # Because each intercept is a copy of ValidationObject, we need to update it for each
+            if command.errorCodes and 'VK_ERROR_DEVICE_LOST' in command.errorCodes:
+                out.append('''
+                    if (result == VK_ERROR_DEVICE_LOST) {
+                        intercept->is_device_lost = true;
+                    }
+                ''')
+
             out.append(f'intercept->PostCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
             out.append('}\n')
             # Return result variable, if any.

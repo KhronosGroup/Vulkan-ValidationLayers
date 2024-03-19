@@ -381,6 +381,12 @@ bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT sh
             LogError("VUID-vkDestroyShaderEXT-None-08481", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
 
+    const auto shader_state = Get<vvl::ShaderObject>(shader);
+    if (shader_state) {
+        skip |= ValidateObjectNotInUse(shader_state.get(), error_obj.location.dot(Field::shader),
+                                       "VUID-vkDestroyShaderEXT-shader-08482");
+    }
+
     return skip;
 }
 

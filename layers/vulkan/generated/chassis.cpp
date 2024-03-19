@@ -1335,6 +1335,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
     }
     return result;
@@ -1358,6 +1362,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueWaitIdle]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordQueueWaitIdle(queue, record_obj);
     }
     return result;
@@ -1381,6 +1389,10 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDeviceWaitIdle]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordDeviceWaitIdle(device, record_obj);
     }
     return result;
@@ -1712,6 +1724,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueBindSparse]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
     }
     return result;
@@ -1803,6 +1819,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceStatus]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetFenceStatus(device, fence, record_obj);
     }
     return result;
@@ -1827,6 +1847,10 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitForFences]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
     }
     return result;
@@ -1940,6 +1964,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetEventStatus]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetEventStatus(device, event, record_obj);
     }
     return result;
@@ -2057,6 +2085,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueryPoolResults]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags,
                                                      record_obj);
     }
@@ -4777,6 +4809,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValue]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
     }
     return result;
@@ -4800,6 +4836,10 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitSemaphores]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
     }
     return result;
@@ -5116,6 +5156,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     }
     return result;
@@ -5846,6 +5890,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSwapchainKHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
     }
     return result;
@@ -5916,6 +5964,10 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireNextImageKHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
     }
     return result;
@@ -5939,6 +5991,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
     }
     return result;
@@ -6043,6 +6099,10 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcq
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordAcquireNextImage2KHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
     }
     return result;
@@ -6252,6 +6312,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSharedSwapchainsKHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains,
                                                            record_obj);
     }
@@ -7660,6 +7724,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchai
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainStatusKHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
     }
     return result;
@@ -8325,6 +8393,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValueKHR]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, record_obj);
     }
     return result;
@@ -8348,6 +8420,10 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitSemaphoresKHR]) {
         ValidationObject::BlockingOperationGuard lock(intercept);
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, record_obj);
     }
     return result;
@@ -8500,6 +8576,10 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordWaitForPresentKHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
     }
     return result;
@@ -9040,6 +9120,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2KHR]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
     }
     return result;
@@ -10618,6 +10702,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapcha
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSwapchainCounterEXT]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
     }
     return result;
@@ -10643,6 +10731,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, Vk
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRefreshCycleDurationGOOGLE]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
     }
     return result;
@@ -10671,6 +10763,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, 
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPastPresentationTimingGOOGLE]) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings,
                                                                  record_obj);
     }
@@ -13886,6 +13982,10 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
     }
     return result;
@@ -13910,6 +14010,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            intercept->is_device_lost = true;
+        }
         intercept->PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
     }
     return result;

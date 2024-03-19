@@ -553,11 +553,8 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
                                              const ErrorObject &error_obj) const {
     auto fence_node = Get<vvl::Fence>(fence);
     bool skip = false;
-    if (fence_node) {
-        if (fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
-            skip |= LogError("VUID-vkDestroyFence-fence-01120", fence, error_obj.location.dot(Field::fence), "(%s) is in use.",
-                             FormatHandle(fence).c_str());
-        }
+    if (fence_node && fence_node->Scope() == vvl::Fence::kInternal && fence_node->State() == vvl::Fence::kInflight) {
+        skip |= ValidateObjectNotInUse(fence_node.get(), error_obj.location.dot(Field::fence), "VUID-vkDestroyFence-fence-01120");
     }
     return skip;
 }

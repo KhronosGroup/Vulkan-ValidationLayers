@@ -2272,6 +2272,7 @@ class ValidationObject {
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
+    bool is_device_lost = false;
     LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
 
     std::vector<ValidationObject*> object_dispatch;

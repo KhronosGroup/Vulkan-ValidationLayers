@@ -3242,14 +3242,9 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     if (disabled[object_in_use]) return false;
     bool skip = false;
     auto pool = Get<vvl::DescriptorPool>(descriptorPool);
-    if (!pool) {
-        return false;
-    }
-    const auto *used_handle = pool->InUse();
-    if (used_handle) {
-        skip |= LogError("VUID-vkResetDescriptorPool-descriptorPool-00313", descriptorPool,
-                         error_obj.location.dot(Field::descriptorPool), "descriptor sets in use by %s.",
-                         FormatHandle(*used_handle).c_str());
+    if (pool) {
+        skip |= ValidateObjectNotInUse(pool.get(), error_obj.location.dot(Field::descriptorPool),
+                                       "VUID-vkResetDescriptorPool-descriptorPool-00313");
     }
     return skip;
 }
@@ -3414,14 +3409,8 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const Location &
     if (disabled[object_in_use]) return false;
     bool skip = false;
     auto set_node = Get<vvl::DescriptorSet>(set);
-    if (!set_node) {
-        return false;
-    }
-    // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
-    const auto *used_handle = set_node->InUse();
-    if (used_handle) {
-        skip |= LogError("VUID-vkFreeDescriptorSets-pDescriptorSets-00309", set, loc, "%s is in use by %s.",
-                         FormatHandle(set).c_str(), FormatHandle(*used_handle).c_str());
+    if (set_node) {
+        skip |= ValidateObjectNotInUse(set_node.get(), loc, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309");
     }
     return skip;
 }

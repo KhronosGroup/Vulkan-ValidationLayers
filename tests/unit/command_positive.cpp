@@ -1027,3 +1027,37 @@ TEST_F(PositiveCommand, DISABLED_ClearAttachmentBasicUsage) {
 
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 }
+
+TEST_F(PositiveCommand, DeviceLost) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    // Destroying should not throw VUID-vkDestroyPipeline-pipeline-00765
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->end();
+
+    // Destroying should not throw VUID-vkDestroyFence-fence-01120
+    vkt::Fence fence(*m_device);
+
+    // Special way to force VK_ERROR_DEVICE_LOST with MockICD
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubmitInfo-pNext-pNext");
+    VkExportFenceCreateInfo fault_injection = vku::InitStructHelper();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper(&fault_injection);
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    VkResult result = vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence.handle());
+
+    if (result != VK_ERROR_DEVICE_LOST) {
+        vk::QueueWaitIdle(m_default_queue->handle());
+        GTEST_SKIP() << "No device lost found";
+    }
+}
