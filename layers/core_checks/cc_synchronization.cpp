@@ -684,11 +684,11 @@ struct RenderPassDepState {
     const VkRenderPass rp_handle;
     const VkPipelineStageFlags2KHR disabled_features;
     const std::vector<uint32_t> &self_dependencies;
-    const safe_VkSubpassDependency2 *dependencies;
+    const vku::safe_VkSubpassDependency2 *dependencies;
 
     RenderPassDepState(const CoreChecks &c, const std::string &v, uint32_t subpass, const VkRenderPass handle,
                        const DeviceFeatures &features, const DeviceExtensions &device_extensions,
-                       const std::vector<uint32_t> &self_deps, const safe_VkSubpassDependency2 *deps)
+                       const std::vector<uint32_t> &self_deps, const vku::safe_VkSubpassDependency2 *deps)
         : core(c),
           vuid(v),
           active_subpass(subpass),
@@ -697,7 +697,7 @@ struct RenderPassDepState {
           self_dependencies(self_deps),
           dependencies(deps) {}
 
-    VkMemoryBarrier2 GetSubPassDepBarrier(const safe_VkSubpassDependency2 &dep) const {
+    VkMemoryBarrier2 GetSubPassDepBarrier(const vku::safe_VkSubpassDependency2 &dep) const {
         // "If a VkMemoryBarrier2 is included in the pNext chain, srcStageMask, dstStageMask,
         // srcAccessMask, and dstAccessMask parameters are ignored. The synchronization and
         // access scopes instead are defined by the parameters of VkMemoryBarrier2."
@@ -1761,7 +1761,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
 // Verify image barrier image state and that the image is consistent with FB image
 bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
                                                 const vvl::Framebuffer *framebuffer, uint32_t active_subpass,
-                                                const safe_VkSubpassDescription2 &sub_desc, const VkRenderPass rp_handle,
+                                                const vku::safe_VkSubpassDescription2 &sub_desc, const VkRenderPass rp_handle,
                                                 const ImageBarrier &img_barrier, const vvl::CommandBuffer *primary_cb_state) const {
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
@@ -2034,7 +2034,7 @@ void RecordQueuedQFOTransferBarriers(QFOTransferBarrierSets<TransferBarrier> &cb
     // Add release barriers from this submit to the global map
     for (const auto &release : cb_barriers.release) {
         // the global barrier list is mapped by resource handle to allow cleanup on resource destruction
-        // NOTE: vl_concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
+        // NOTE: vvl::concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
         // copy back after updating.
         auto iter = global_release_barriers.find(release.handle);
         iter->second.insert(release);
@@ -2051,7 +2051,7 @@ void RecordQueuedQFOTransferBarriers(QFOTransferBarrierSets<TransferBarrier> &cb
             if (set_for_handle.size() == 0) {  // Clean up empty sets
                 global_release_barriers.erase(acquire.handle);
             } else {
-                // NOTE: vl_concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
+                // NOTE: vvl::concurrent_ordered_map::find() makes a thread safe copy of the result, so we must
                 // copy back after updating.
                 global_release_barriers.insert_or_assign(acquire.handle, set_for_handle);
             }

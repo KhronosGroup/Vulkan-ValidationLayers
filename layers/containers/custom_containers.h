@@ -38,6 +38,8 @@
 #include <unordered_set>
 #endif
 
+#include <vulkan/utility/vk_concurrent_unordered_map.hpp>
+
 // namespace aliases to allow map and set implementations to easily be swapped out
 namespace vvl {
 
@@ -106,6 +108,14 @@ using map_entry = std::pair<Key, T>;
 
 template <typename T>
 using insert_iterator = std::insert_iterator<T>;
+#endif
+
+#if 1
+template <typename Key, typename T, int BucketsLog2 = 2, typename Hash = std::hash<Key>>
+using concurrent_unordered_map = vku::concurrent::unordered_map<Key, T, BucketsLog2, vvl::unordered_map<Key, T, Hash>>;
+#else
+template <typename Key, typename T, int BucketsLog2 = 2>
+using concurrent_unordered_map = vku::concurrent_unordered_map<Key, T, BucketsLog2, vvl::unordered_map<Key, T>>;
 #endif
 
 }  // namespace vvl

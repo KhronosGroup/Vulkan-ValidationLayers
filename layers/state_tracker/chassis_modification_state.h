@@ -78,25 +78,25 @@ struct ShaderObject {
 using ShaderModuleUniqueIds = std::unordered_map<VkShaderStageFlagBits, uint32_t>;
 
 struct CreateGraphicsPipelines {
-    std::vector<safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
+    std::vector<vku::safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
 
 struct CreateComputePipelines {
-    std::vector<safe_VkComputePipelineCreateInfo> modified_create_infos;
+    std::vector<vku::safe_VkComputePipelineCreateInfo> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
 
 struct CreateRayTracingPipelinesNV {
-    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
+    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
 };
 
 struct CreateRayTracingPipelinesKHR {
-    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
+    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
 };

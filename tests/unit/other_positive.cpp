@@ -12,7 +12,6 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "generated/vk_safe_struct.h"
 #include "generated/vk_extension_helper.h"
 
 #include <cstdlib>
@@ -363,50 +362,6 @@ TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5112
-TEST_F(VkPositiveLayerTest, SafeVoidPointerCopies) {
-    TEST_DESCRIPTION("Ensure valid deep copy of pData / dataSize combination structures");
-
-    // safe_VkSpecializationInfo, constructor
-    {
-        std::vector<std::byte> data(20, std::byte{0b11110000});
-
-        VkSpecializationInfo info = {};
-        info.dataSize = size32(data);
-        info.pData = data.data();
-
-        safe_VkSpecializationInfo safe(&info);
-
-        ASSERT_TRUE(safe.pData != info.pData);
-        ASSERT_TRUE(safe.dataSize == info.dataSize);
-
-        data.clear();  // Invalidate any references, pointers, or iterators referring to contained elements.
-
-        auto copied_bytes = reinterpret_cast<const std::byte *>(safe.pData);
-        ASSERT_TRUE(copied_bytes[19] == std::byte{0b11110000});
-    }
-
-    // safe_VkPipelineExecutableInternalRepresentationKHR, initialize
-    {
-        std::vector<std::byte> data(11, std::byte{0b01001001});
-
-        VkPipelineExecutableInternalRepresentationKHR info = {};
-        info.dataSize = size32(data);
-        info.pData = data.data();
-
-        safe_VkPipelineExecutableInternalRepresentationKHR safe;
-
-        safe.initialize(&info);
-
-        ASSERT_TRUE(safe.dataSize == info.dataSize);
-        ASSERT_TRUE(safe.pData != info.pData);
-
-        data.clear();  // Invalidate any references, pointers, or iterators referring to contained elements.
-
-        auto copied_bytes = reinterpret_cast<const std::byte *>(safe.pData);
-        ASSERT_TRUE(copied_bytes[10] == std::byte{0b01001001});
-    }
-}
-
 TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
     // https://github.com/KhronosGroup/Vulkan-Profiles/pull/392
     TEST_DESCRIPTION("Make sure VkFormatProperties3KHR is overwritten correctly in Profiles layer");
@@ -532,83 +487,6 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     }
 
     RETURN_IF_SKIP(InitFramework());
-}
-
-TEST_F(VkPositiveLayerTest, CustomSafePNextCopy) {
-    TEST_DESCRIPTION("Check passing custom data down the pNext chain for safe struct construction");
-
-    // This tests an additional "copy_state" parameter in the SafePNextCopy function that allows "customizing" safe_* struct
-    // construction.. This is required for structs such as VkPipelineRenderingCreateInfo (which extend VkGraphicsPipelineCreateInfo)
-    // whose members must be partially ignored depending on the graphics sub-state present.
-
-    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfo pri = vku::InitStructHelper();
-    pri.colorAttachmentCount = 1;
-    pri.pColorAttachmentFormats = &format;
-
-    bool ignore_default_construction = true;
-    PNextCopyState copy_state = {
-        [&ignore_default_construction](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
-            if (ignore_default_construction) {
-                auto tmp = reinterpret_cast<safe_VkPipelineRenderingCreateInfo *>(safe_struct);
-                tmp->colorAttachmentCount = 0;
-                tmp->pColorAttachmentFormats = nullptr;
-                return true;
-            }
-            return false;
-        },
-    };
-
-    {
-        VkGraphicsPipelineCreateInfo gpci = vku::InitStructHelper(&pri);
-        safe_VkGraphicsPipelineCreateInfo safe_gpci(&gpci, false, false, &copy_state);
-
-        auto safe_pri = reinterpret_cast<const safe_VkPipelineRenderingCreateInfo *>(safe_gpci.pNext);
-        // Ensure original input struct was not modified
-        ASSERT_EQ(pri.colorAttachmentCount, 1);
-        ASSERT_EQ(pri.pColorAttachmentFormats, &format);
-
-        // Ensure safe struct was modified
-        ASSERT_EQ(safe_pri->colorAttachmentCount, 0);
-        ASSERT_EQ(safe_pri->pColorAttachmentFormats, nullptr);
-    }
-
-    // Ensure PNextCopyState::init is also applied when there is more than one element in the pNext chain
-    {
-        VkGraphicsPipelineLibraryCreateInfoEXT gpl_info = vku::InitStructHelper(&pri);
-        VkGraphicsPipelineCreateInfo gpci = vku::InitStructHelper(&gpl_info);
-
-        safe_VkGraphicsPipelineCreateInfo safe_gpci(&gpci, false, false, &copy_state);
-
-        auto safe_gpl_info = reinterpret_cast<const safe_VkGraphicsPipelineLibraryCreateInfoEXT *>(safe_gpci.pNext);
-        auto safe_pri = reinterpret_cast<const safe_VkPipelineRenderingCreateInfo *>(safe_gpl_info->pNext);
-        // Ensure original input struct was not modified
-        ASSERT_EQ(pri.colorAttachmentCount, 1);
-        ASSERT_EQ(pri.pColorAttachmentFormats, &format);
-
-        // Ensure safe struct was modified
-        ASSERT_EQ(safe_pri->colorAttachmentCount, 0);
-        ASSERT_EQ(safe_pri->pColorAttachmentFormats, nullptr);
-    }
-
-    // Check that signaling to use the default constructor works
-    {
-        pri.colorAttachmentCount = 1;
-        pri.pColorAttachmentFormats = &format;
-
-        ignore_default_construction = false;
-        VkGraphicsPipelineCreateInfo gpci = vku::InitStructHelper(&pri);
-        safe_VkGraphicsPipelineCreateInfo safe_gpci(&gpci, false, false, &copy_state);
-
-        auto safe_pri = reinterpret_cast<const safe_VkPipelineRenderingCreateInfo *>(safe_gpci.pNext);
-        // Ensure original input struct was not modified
-        ASSERT_EQ(pri.colorAttachmentCount, 1);
-        ASSERT_EQ(pri.pColorAttachmentFormats, &format);
-
-        // Ensure safe struct was modified
-        ASSERT_EQ(safe_pri->colorAttachmentCount, 1);
-        ASSERT_EQ(*safe_pri->pColorAttachmentFormats, format);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {

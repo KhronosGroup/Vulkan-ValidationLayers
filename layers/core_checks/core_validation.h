@@ -161,7 +161,7 @@ class CoreChecks : public ValidationStateTracker {
                                                          const ImageBarrier& barrier);
     bool ValidateImageBarrierAttachment(const Location& barrier_loc, vvl::CommandBuffer const& cb_state,
                                         const vvl::Framebuffer* framebuffer, uint32_t active_subpass,
-                                        const safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
+                                        const vku::safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
                                         const ImageBarrier& img_barrier,
                                         const vvl::CommandBuffer* primary_cb_state = nullptr) const;
 
@@ -568,29 +568,30 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineTessellationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pipeline& pipeline,
-                                                           const safe_VkSubpassDescription2* subpass_desc,
+                                                           const vku::safe_VkSubpassDescription2* subpass_desc,
                                                            const Location& color_loc) const;
-    bool ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline& pipeline, const safe_VkSubpassDescription2* subpass_desc,
+    bool ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline& pipeline, const vku::safe_VkSubpassDescription2* subpass_desc,
                                                  const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline& pipeline, const safe_VkSubpassDescription2* subpass_desc,
+    bool ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline& pipeline,
+                                                    const vku::safe_VkSubpassDescription2* subpass_desc,
                                                     const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& pipeline, const safe_VkSubpassDescription2* subpass_desc,
+    bool ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& pipeline, const vku::safe_VkSubpassDescription2* subpass_desc,
                                                   const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline& pipeline, const safe_VkSubpassDescription2* subpass_desc,
+    bool ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline& pipeline, const vku::safe_VkSubpassDescription2* subpass_desc,
                                                    const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineFragmentShadingRateState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineMeshTask(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeline& pipeline,
-                                                       const safe_VkSubpassDescription2* subpass_desc,
+                                                       const vku::safe_VkSubpassDescription2* subpass_desc,
                                                        const Location& create_info_loc) const;
     bool ValidateComputePipelineShaderState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline& pipeline, const VkPipelineRobustnessCreateInfoEXT& create_info,
                                               const Location& loc) const;
     uint32_t CalcShaderStageCount(const vvl::Pipeline& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const vvl::Pipeline& pipeline, uint32_t group, uint32_t stage) const;
-    bool ValidateRayTracingPipeline(const vvl::Pipeline& pipeline, const safe_VkRayTracingPipelineCreateInfoCommon& create_info,
+    bool ValidateRayTracingPipeline(const vvl::Pipeline& pipeline, const vku::safe_VkRayTracingPipelineCreateInfoCommon& create_info,
                                     VkPipelineCreateFlags flags, const Location& create_info_loc) const;
     bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                      VkShaderModuleIdentifierEXT* pIdentifier,
@@ -666,7 +667,7 @@ class CoreChecks : public ValidationStateTracker {
                                const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidatePrimitiveTopology(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const StageCreateInfo& create_info, const Location& loc) const;
-    bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info,
+    bool ValidateSpecializations(const vku::safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info,
                                  const Location& loc) const;
     bool ValidateInterfaceBetweenStages(const spirv::Module& producer, const spirv::EntryPoint& producer_entrypoint,
                                         const spirv::Module& consumer, const spirv::EntryPoint& consumer_entrypoint,
@@ -820,7 +821,7 @@ class CoreChecks : public ValidationStateTracker {
                                                const vvl::Framebuffer& framebuffer_state, const Location& rp_begin_loc) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
-    void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const safe_VkAttachmentReference2& ref);
+    void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref);
 
     void TransitionSubpassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state, const int);
 

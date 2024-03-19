@@ -259,7 +259,7 @@ WriteLockGuard gpu_tracker::Validator::WriteLock() {
 void gpu_tracker::Validator::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                        const RecordObject &record_obj,
-                                                       safe_VkDeviceCreateInfo *modified_create_info) {
+                                                       vku::safe_VkDeviceCreateInfo *modified_create_info) {
     BaseClass::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
     VkPhysicalDeviceFeatures *features = nullptr;
     // Use a local variable to query features since this method runs in the instance validation object.
@@ -783,7 +783,7 @@ void gpu_tracker::Validator::PreCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                   chassis::CreateGraphicsPipelines &chassis_state) {
     if (aborted) return;
-    std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
+    std::vector<vku::safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
@@ -796,7 +796,7 @@ void gpu_tracker::Validator::PreCallRecordCreateComputePipelines(VkDevice device
                                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                  chassis::CreateComputePipelines &chassis_state) {
     if (aborted) return;
-    std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
+    std::vector<vku::safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
@@ -808,7 +808,7 @@ void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesNV(
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const RecordObject &record_obj,
     PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesNV &chassis_state) {
     if (aborted) return;
-    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
+    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
@@ -820,7 +820,7 @@ void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesKHR(
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     if (aborted) return;
-    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
+    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipeline_states, &new_pipeline_create_infos,
                                    record_obj, chassis_state);
     chassis_state.modified_create_infos = new_pipeline_create_infos;
@@ -913,14 +913,14 @@ VkShaderModule GetShaderModule(const VkComputePipelineCreateInfo &create_info, V
 }
 
 template <typename SafeType>
-void SetShaderModule(SafeType &create_info, const safe_VkPipelineShaderStageCreateInfo &stage_info, VkShaderModule shader_module,
-                     uint32_t stage_ci_index) {
+void SetShaderModule(SafeType &create_info, const vku::safe_VkPipelineShaderStageCreateInfo &stage_info,
+                     VkShaderModule shader_module, uint32_t stage_ci_index) {
     create_info.pStages[stage_ci_index] = stage_info;
     create_info.pStages[stage_ci_index].module = shader_module;
 }
 
 template <>
-void SetShaderModule(safe_VkComputePipelineCreateInfo &create_info, const safe_VkPipelineShaderStageCreateInfo &stage_info,
+void SetShaderModule(vku::safe_VkComputePipelineCreateInfo &create_info, const vku::safe_VkPipelineShaderStageCreateInfo &stage_info,
                      VkShaderModule shader_module, uint32_t stage_ci_index) {
     assert(stage_ci_index == 0);
     create_info.stage = stage_info;
@@ -939,7 +939,7 @@ StageInfo &GetShaderStageCI(CreateInfo &ci, VkShaderStageFlagBits stage) {
 }
 
 template <>
-safe_VkPipelineShaderStageCreateInfo &GetShaderStageCI(safe_VkComputePipelineCreateInfo &ci, VkShaderStageFlagBits) {
+vku::safe_VkPipelineShaderStageCreateInfo &GetShaderStageCI(vku::safe_VkComputePipelineCreateInfo &ci, VkShaderStageFlagBits) {
     return ci.stage;
 }
 
@@ -969,7 +969,7 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         const auto &pipe = pipeline_states[pipeline];
         // NOTE: since these are "safe" CreateInfos, this will create a deep copy via the safe copy constructor
-        auto new_pipeline_ci = pipe->GetCreateInfo<CreateInfo>();
+        auto new_pipeline_ci = std::get<SafeCreateInfo>(pipe->create_info);
 
         bool replace_shaders = false;
         if (pipe->active_slots.find(desc_set_bind_index) != pipe->active_slots.end()) {
@@ -1015,10 +1015,10 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
                         const VkShaderStageFlagBits stage = stage_state.GetStage();
                         // Now find the corresponding VkShaderModuleCreateInfo
                         auto &stage_ci =
-                            GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(new_pipeline_ci, stage);
+                            GetShaderStageCI<SafeCreateInfo, vku::safe_VkPipelineShaderStageCreateInfo>(new_pipeline_ci, stage);
                         // We're modifying the copied, safe create info, which is ok to be non-const
-                        auto sm_ci =
-                            const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
+                        auto sm_ci = const_cast<vku::safe_VkShaderModuleCreateInfo *>(
+                            reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
                                 vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
                         if (gpuav_settings.select_instrumented_shaders && sm_ci && !CheckForGpuAvEnabled(sm_ci->pNext)) continue;
                         uint32_t unique_shader_id = 0;

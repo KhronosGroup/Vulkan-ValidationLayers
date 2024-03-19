@@ -671,7 +671,7 @@ bool CoreChecks::CommonBuildAccelerationStructureValidation(const VkAcceleration
                 const VkAccelerationStructureGeometryKHR &updated_geometry =
                     info.pGeometries ? info.pGeometries[geom_i] : *info.ppGeometries[geom_i];
 
-                const safe_VkAccelerationStructureGeometryKHR &last_geometry =
+                const vku::safe_VkAccelerationStructureGeometryKHR &last_geometry =
                     src_as_state->build_info_khr.pGeometries ? src_as_state->build_info_khr.pGeometries[geom_i]
                                                              : *src_as_state->build_info_khr.ppGeometries[geom_i];
 
@@ -1675,8 +1675,8 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
 
 uint32_t CoreChecks::CalcTotalShaderGroupCount(const vvl::Pipeline &pipeline) const {
     uint32_t total = 0;
-    if (pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR) {
-        const auto &create_info = pipeline.GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
+    const auto &create_info = pipeline.RayTracingCreateInfo();
+    if (create_info.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR) {
         total = create_info.groupCount;
 
         if (create_info.pLibraryInfo) {
@@ -1685,8 +1685,7 @@ uint32_t CoreChecks::CalcTotalShaderGroupCount(const vvl::Pipeline &pipeline) co
                 total += CalcTotalShaderGroupCount(*library_pipeline_state.get());
             }
         }
-    } else if (pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) {
-        const auto &create_info = pipeline.GetCreateInfo<VkRayTracingPipelineCreateInfoNV>();
+    } else if (create_info.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) {
         total = create_info.groupCount;
 
         if (create_info.pLibraryInfo) {
@@ -1772,7 +1771,7 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
         return skip;
     }
 
-    const auto &create_info = pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
+    const auto &create_info = pipeline_state->RayTracingCreateInfo();
     if (create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829", pipeline,
@@ -1824,7 +1823,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
                              error_obj.location.dot(Field::pipeline), "is a %s pipeline.",
                              string_VkPipelineBindPoint(pipeline_state->pipeline_type));
         } else {
-            auto create_info = pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
+            const auto &create_info = pipeline_state->RayTracingCreateInfo();
             if (group >= create_info.groupCount) {
                 skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608", pipeline,
                                  error_obj.location.dot(Field::group),

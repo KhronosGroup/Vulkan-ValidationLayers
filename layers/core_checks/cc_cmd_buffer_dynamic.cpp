@@ -452,7 +452,8 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
     const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
 
     // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
-    const auto *discard_rectangle_state = vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
+    const auto* discard_rectangle_state =
+        vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.GraphicsCreateInfo().pNext);
     if (discard_rectangle_state && pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
         for (uint32_t i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
             if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
@@ -999,7 +1000,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     uint32_t pipeline_color_count = 0;
     const uint32_t* pipeline_color_locations = nullptr;
     if (const auto* pipeline_location_info =
-            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline_state.PNext())) {
+            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline_state.GraphicsCreateInfo().pNext)) {
         pipeline_color_count = pipeline_location_info->colorAttachmentCount;
         pipeline_color_locations = pipeline_location_info->pColorAttachmentLocations;
     } else if (const auto* pipeline_rendering_create_info = pipeline_state.GetPipelineRenderingCreateInfo()) {
@@ -1045,7 +1046,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     const uint32_t* pipeline_depth_index = nullptr;
     const uint32_t* pipeline_stencil_index = nullptr;
     if (const auto* pipeline_index_info =
-            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline_state.PNext())) {
+            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline_state.GraphicsCreateInfo().pNext)) {
         pipeline_color_count = pipeline_index_info->colorAttachmentCount;
         pipeline_color_indexes = pipeline_index_info->pColorAttachmentInputIndices;
         pipeline_depth_index = pipeline_index_info->pDepthInputAttachmentIndex;

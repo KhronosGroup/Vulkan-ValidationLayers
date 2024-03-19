@@ -356,7 +356,7 @@ class Validator : public gpu_tracker::Validator {
     // gpu_image_layout.cpp
     // --------------------
 
-    void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const safe_VkAttachmentReference2& ref);
+    void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref);
 
     void TransitionSubpassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state, const int);
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
@@ -498,7 +498,7 @@ struct RestorablePipelineState {
     std::vector<std::pair<VkDescriptorSet, uint32_t>> descriptor_sets;
     std::vector<std::vector<uint32_t>> dynamic_offsets;
     uint32_t push_descriptor_set_index = 0;
-    std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
+    std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes;
     std::vector<uint8_t> push_constants_data;
     PushConstantRangesId push_constants_ranges;
     std::vector<vvl::ShaderObject*> shader_objects;

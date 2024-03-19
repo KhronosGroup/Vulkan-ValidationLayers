@@ -299,6 +299,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include <vulkan/vulkan.h>
             #include <vulkan/vk_layer.h>
             #include <vulkan/vk_enum_string_helper.h>
+            #include <vulkan/utility/vk_struct_helper.hpp>
+            #include <vulkan/utility/vk_safe_struct.hpp>
             #include "utils/cast_utils.h"
             #include "vk_layer_config.h"
             #include "layer_options.h"
@@ -311,7 +313,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "utils/vk_layer_utils.h"
             #include "vk_dispatch_table_helper.h"
             #include "vk_extension_helper.h"
-            #include "vk_safe_struct.h"
             #include "gpu_validation/gpu_settings.h"
 
             extern std::atomic<uint64_t> global_unique_id;
@@ -328,8 +329,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return id;
                 }
             };
-
-            struct safe_VkDeviceCreateInfo;
 
             namespace chassis {
                 struct CreateGraphicsPipelines;
@@ -351,7 +350,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             // Each chassis layer will need to track its own state
             using PipelineStates = std::vector<std::shared_ptr<vvl::Pipeline>>;
 
-            extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+            extern vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
             VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName);\n
             ''')
@@ -380,10 +379,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             struct TemplateState {
                 VkDescriptorUpdateTemplate desc_update_template;
-                safe_VkDescriptorUpdateTemplateCreateInfo create_info;
+                vku::safe_VkDescriptorUpdateTemplateCreateInfo create_info;
                 bool destroyed;
 
-                TemplateState(VkDescriptorUpdateTemplate update_template, safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
+                TemplateState(VkDescriptorUpdateTemplate update_template, vku::safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
                     : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
             };
 
@@ -432,10 +431,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 std::vector<ValidationObject*> object_dispatch;
                 LayerObjectTypeId container_type;
 
-                vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
-                vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
+                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
+                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
                     deferred_operation_post_check;
-                vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
+                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
 
                 std::string layer_name = "CHASSIS";
 
@@ -564,7 +563,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
                 // Handle Wrapping Data
                 // Reverse map display handles
-                vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
+                vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
                 // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
                 vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
                 struct SubpassesUsageStates {
@@ -712,7 +711,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         };
 
         // Modify a parameter to CreateDevice
-        virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj, safe_VkDeviceCreateInfo *modified_create_info) {
+        virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
         };
 };
@@ -742,7 +741,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             std::atomic<uint64_t> global_unique_id(1ULL);
             // Map uniqueID to actual object handle. Accesses to the map itself are
             // internally synchronized.
-            vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+            vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
             bool wrap_handles = true;
 
@@ -1044,7 +1043,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                                                             VK_API_VERSION_MINOR(specified_version), 0);
 
                 auto debug_report = new DebugReport{};
-                debug_report->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
+                debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
                 ActivateInstanceDebugCallbacks(debug_report);
 
                 // Set up enable and disable features flags
@@ -1082,7 +1081,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 // Define logic to cleanup everything in case of an error
                 auto cleanup_allocations = [debug_report, &local_object_dispatch]() {
                     DeactivateInstanceDebugCallbacks(debug_report);
-                    FreePnextChain(debug_report->instance_pnext_chain);
+                    vku::FreePnextChain(debug_report->instance_pnext_chain);
                     LayerDebugUtilsDestroyInstance(debug_report);
                     for (ValidationObject* object : local_object_dispatch) {
                         delete object;
@@ -1180,7 +1179,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
 
                 DeactivateInstanceDebugCallbacks(layer_data->debug_report);
-                FreePnextChain(layer_data->debug_report->instance_pnext_chain);
+                vku::FreePnextChain(layer_data->debug_report->instance_pnext_chain);
 
                 LayerDebugUtilsDestroyInstance(layer_data->debug_report);
 
@@ -1217,7 +1216,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     item->device_extensions = device_extensions;
                 }
 
-                safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
+                vku::safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
 
                 bool skip = false;
                 ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(gpu, kVulkanObjectTypePhysicalDevice));

@@ -170,7 +170,7 @@ void CommandBuffer::ResetCBState() {
     usedDynamicScissorCount = false;
     dirtyStaticState = false;
 
-    active_render_pass_begin_info = safe_VkRenderPassBeginInfo();
+    active_render_pass_begin_info = vku::safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
     active_attachments = nullptr;
     active_subpasses = nullptr;
@@ -461,7 +461,7 @@ void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, u
     });
 }
 
-void CommandBuffer::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses) {
+void CommandBuffer::UpdateSubpassAttachments(const vku::safe_VkSubpassDescription2 &subpass, std::vector<SubpassInfo> &subpasses) {
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
@@ -526,7 +526,7 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     RecordCmd(command);
     activeFramebuffer = dev_data.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    active_render_pass_begin_info = safe_VkRenderPassBeginInfo(pRenderPassBegin);
+    active_render_pass_begin_info = vku::safe_VkRenderPassBeginInfo(pRenderPassBegin);
     SetActiveSubpass(0);
     activeSubpassContents = contents;
     renderPassQueries.clear();

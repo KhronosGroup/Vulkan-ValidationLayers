@@ -486,7 +486,7 @@ bool ImageView::OverlapSubresource(const ImageView &compare_view) const {
 
 }  // namespace vvl
 
-static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
+static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     // Pull out the format list only. This stack variable will get copied onto the heap
     // by the 'safe' constructor used to build the return value below.
@@ -524,7 +524,7 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
         image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
     }
-    return safe_VkImageCreateInfo(&image_ci);
+    return vku::safe_VkImageCreateInfo(&image_ci);
 }
 
 namespace vvl {
@@ -685,23 +685,23 @@ std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice phys_dev
     return result;
 }
 
-void Surface::SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts) {
+void Surface::SetFormats(VkPhysicalDevice phys_dev, std::vector<vku::safe_VkSurfaceFormat2KHR> &&fmts) {
     auto guard = Lock();
     assert(phys_dev);
     formats_[phys_dev] = std::move(fmts);
 }
 
-vvl::span<const safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                              const void *surface_info2_pnext, const Location &loc,
-                                                              const ValidationObject *validation_obj) const {
+vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                                  const void *surface_info2_pnext, const Location &loc,
+                                                                  const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
 
     if (const auto search = formats_.find(phys_dev); search != formats_.end()) {
-        vvl::span<const safe_VkSurfaceFormat2KHR>(search->second);
+        vvl::span<const vku::safe_VkSurfaceFormat2KHR>(search->second);
     }
 
-    std::vector<safe_VkSurfaceFormat2KHR> result;
+    std::vector<vku::safe_VkSurfaceFormat2KHR> result;
     if (get_surface_capabilities2) {
         const auto log_internal_error = [validation_obj, loc](VkResult err, auto &&...objects) {
             if (validation_obj) {
@@ -726,7 +726,7 @@ vvl::span<const safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surface_c
         } else {
             result.resize(count);
             for (uint32_t surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
-                result.emplace_back(safe_VkSurfaceFormat2KHR(&formats2[surface_format_index]));
+                result.emplace_back(vku::safe_VkSurfaceFormat2KHR(&formats2[surface_format_index]));
             }
         }
 
@@ -756,23 +756,23 @@ vvl::span<const safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surface_c
             VkSurfaceFormat2KHR format2 = vku::InitStructHelper();
             for (const auto &format : formats) {
                 format2.surfaceFormat = format;
-                result.emplace_back(safe_VkSurfaceFormat2KHR(&format2));
+                result.emplace_back(vku::safe_VkSurfaceFormat2KHR(&format2));
             }
         }
     }
     formats_[phys_dev] = std::move(result);
-    return vvl::span<const safe_VkSurfaceFormat2KHR>(formats_[phys_dev]);
+    return vvl::span<const vku::safe_VkSurfaceFormat2KHR>(formats_[phys_dev]);
 }
 
-void Surface::SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps) {
+void Surface::SetCapabilities(VkPhysicalDevice phys_dev, const vku::safe_VkSurfaceCapabilities2KHR &caps) {
     auto guard = Lock();
     assert(phys_dev);
     capabilities_[phys_dev] = caps;
 }
 
-safe_VkSurfaceCapabilities2KHR Surface::GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                        const void *surface_info2_pnext, const Location &loc,
-                                                        const ValidationObject *validation_obj) const {
+vku::safe_VkSurfaceCapabilities2KHR Surface::GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                            const void *surface_info2_pnext, const Location &loc,
+                                                            const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
 
@@ -801,7 +801,7 @@ safe_VkSurfaceCapabilities2KHR Surface::GetCapabilities(bool get_surface_capabil
         }
         surface_caps2.surfaceCapabilities = caps;
     }
-    safe_VkSurfaceCapabilities2KHR safe_surface_caps2(&surface_caps2);
+    vku::safe_VkSurfaceCapabilities2KHR safe_surface_caps2(&surface_caps2);
     capabilities_[phys_dev] = safe_surface_caps2;
     return safe_surface_caps2;
 }

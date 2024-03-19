@@ -280,7 +280,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             const StageCreateInfo stage_create_info(pCreateInfos[i]);
             const auto spirv =
                 std::make_shared<spirv::Module>(pCreateInfos[i].codeSize, static_cast<const uint32_t*>(pCreateInfos[i].pCode));
-            safe_VkShaderCreateInfoEXT safe_create_info = safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
+            vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
             const PipelineStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
             skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc);
 

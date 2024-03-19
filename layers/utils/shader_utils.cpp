@@ -119,7 +119,7 @@ VkShaderStageFlagBits PipelineStageState::GetStage() const {
     return (pipeline_create_info) ? pipeline_create_info->stage : shader_object_create_info->stage;
 }
 
-safe_VkSpecializationInfo *PipelineStageState::GetSpecializationInfo() const {
+vku::safe_VkSpecializationInfo *PipelineStageState::GetSpecializationInfo() const {
     return (pipeline_create_info) ? pipeline_create_info->pSpecializationInfo : shader_object_create_info->pSpecializationInfo;
 }
 
@@ -151,8 +151,8 @@ bool PipelineStageState::GetInt32ConstantValue(const spirv::Instruction &insn, u
     return false;
 }
 
-PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
-                                       const safe_VkShaderCreateInfoEXT *shader_object_create_info,
+PipelineStageState::PipelineStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                                       const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
                                        std::shared_ptr<const vvl::ShaderModule> module_state,
                                        std::shared_ptr<const spirv::Module> spirv_state)
     : module_state(module_state),
