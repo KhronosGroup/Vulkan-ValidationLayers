@@ -508,8 +508,8 @@ void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t subm
     num_queue_submissions_ += submitCount;
 }
 
-std::shared_ptr<vvl::PhysicalDevice> BestPractices::CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) {
-    return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(phys_dev));
+std::shared_ptr<vvl::PhysicalDevice> BestPractices::CreatePhysicalDeviceState(VkPhysicalDevice handle) {
+    return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(handle));
 }
 
 bp_state::PhysicalDevice* BestPractices::GetPhysicalDeviceState() {

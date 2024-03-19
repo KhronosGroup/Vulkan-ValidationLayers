@@ -720,7 +720,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreDrawIndire
         }
         auto buffer_state = Get<vvl::Buffer>(indirect_buffer);
         uint32_t max_count;
-        uint64_t bufsize = buffer_state->createInfo.size;
+        uint64_t bufsize = buffer_state->create_info.size;
         uint64_t first_command_bytes = struct_size + indirect_offset;
         if (first_command_bytes > bufsize) {
             max_count = 0;

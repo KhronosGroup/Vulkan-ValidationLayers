@@ -39,7 +39,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
 
         auto view_state = Get<vvl::ImageView>(image_views[i]);
         if (view_state) {
-            const auto& ici = view_state->image_state->createInfo;
+            const auto& ici = view_state->image_state->create_info;
 
             const bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
@@ -82,7 +82,7 @@ bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
 
     auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
     if (rp_state && !(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
-        skip |= ValidateAttachments(rp_state->createInfo.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments,
+        skip |= ValidateAttachments(rp_state->create_info.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments,
                                     error_obj.location);
     }
 

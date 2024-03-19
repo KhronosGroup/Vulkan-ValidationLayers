@@ -67,9 +67,9 @@ class Image : public vvl::Image {
 
   private:
     void SetupUsages() {
-        usages_.resize(createInfo.arrayLayers);
+        usages_.resize(create_info.arrayLayers);
         for (auto& mip_vec : usages_) {
-            mip_vec.resize(createInfo.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
+            mip_vec.resize(create_info.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
         }
     }
     // A 2d vector for all the array layers and mip levels.

@@ -78,13 +78,13 @@ bool CoreChecks::IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image
 
 bool CoreChecks::IsBufferCompatibleWithVideoProfile(const vvl::Buffer &buffer_state,
                                                     const std::shared_ptr<const vvl::VideoProfileDesc> &video_profile) const {
-    return (buffer_state.createInfo.flags & VK_BUFFER_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) ||
+    return (buffer_state.create_info.flags & VK_BUFFER_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) ||
            buffer_state.supported_video_profiles.find(video_profile) != buffer_state.supported_video_profiles.end();
 }
 
 bool CoreChecks::IsImageCompatibleWithVideoProfile(const vvl::Image &image_state,
                                                    const std::shared_ptr<const vvl::VideoProfileDesc> &video_profile) const {
-    return (image_state.createInfo.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) ||
+    return (image_state.create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) ||
            image_state.supported_video_profiles.find(video_profile) != image_state.supported_video_profiles.end();
 }
 
@@ -122,16 +122,16 @@ bool CoreChecks::ValidateVideoInlineQueryInfo(const vvl::QueryPool &query_pool_s
                                               const Location &loc) const {
     bool skip = false;
 
-    if (query_info.firstQuery >= query_pool_state.createInfo.queryCount) {
+    if (query_info.firstQuery >= query_pool_state.create_info.queryCount) {
         skip |= LogError("VUID-VkVideoInlineQueryInfoKHR-queryPool-08372", query_pool_state.Handle(), loc.dot(Field::firstQuery),
                          "(%u) is greater than or equal to the number of queries (%u) in %s.", query_info.firstQuery,
-                         query_pool_state.createInfo.queryCount, FormatHandle(query_pool_state).c_str());
+                         query_pool_state.create_info.queryCount, FormatHandle(query_pool_state).c_str());
     }
 
-    if (query_info.firstQuery + query_info.queryCount > query_pool_state.createInfo.queryCount) {
+    if (query_info.firstQuery + query_info.queryCount > query_pool_state.create_info.queryCount) {
         skip |= LogError("VUID-VkVideoInlineQueryInfoKHR-queryPool-08373", query_pool_state.Handle(), loc.dot(Field::firstQuery),
                          "(%u) plus queryCount (%u) is greater than the number of queries (%u) in %s.", query_info.firstQuery,
-                         query_info.queryCount, query_pool_state.createInfo.queryCount, FormatHandle(query_pool_state).c_str());
+                         query_info.queryCount, query_pool_state.create_info.queryCount, FormatHandle(query_pool_state).c_str());
     }
 
     return skip;
@@ -2639,7 +2639,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
             if (mem_binding_info != nullptr) {
                 auto mem_state = Get<vvl::DeviceMemory>(bind_info.memory);
                 if (mem_state) {
-                    if (((1 << mem_state->alloc_info.memoryTypeIndex) & mem_binding_info->requirements.memoryTypeBits) == 0) {
+                    if (((1 << mem_state->allocate_info.memoryTypeIndex) & mem_binding_info->requirements.memoryTypeBits) == 0) {
                         const LogObjectList objlist(videoSession, mem_state->Handle());
                         skip |=
                             LogError("VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07198", objlist, error_obj.location,
@@ -2647,24 +2647,24 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                                      "with index %u of %s are not compatible with the memory type index (%u) of "
                                      "%s specified in pBindSessionMemoryInfos[%u].memory.",
                                      mem_binding_info->requirements.memoryTypeBits, bind_info.memoryBindIndex,
-                                     FormatHandle(videoSession).c_str(), mem_state->alloc_info.memoryTypeIndex,
+                                     FormatHandle(videoSession).c_str(), mem_state->allocate_info.memoryTypeIndex,
                                      FormatHandle(*mem_state).c_str(), i);
                     }
 
-                    if (bind_info.memoryOffset >= mem_state->alloc_info.allocationSize) {
+                    if (bind_info.memoryOffset >= mem_state->allocate_info.allocationSize) {
                         const LogObjectList objlist(videoSession, mem_state->Handle());
                         skip |= LogError("VUID-VkBindVideoSessionMemoryInfoKHR-memoryOffset-07201", objlist,
                                          error_obj.location.dot(Field::pBindSessionMemoryInfos, i).dot(Field::memoryOffset),
                                          "(%" PRIuLEAST64 ") must be less than the size (%" PRIuLEAST64 ") of %s.",
-                                         bind_info.memoryOffset, mem_state->alloc_info.allocationSize,
+                                         bind_info.memoryOffset, mem_state->allocate_info.allocationSize,
                                          FormatHandle(*mem_state).c_str());
-                    } else if (bind_info.memoryOffset + bind_info.memorySize > mem_state->alloc_info.allocationSize) {
+                    } else if (bind_info.memoryOffset + bind_info.memorySize > mem_state->allocate_info.allocationSize) {
                         const LogObjectList objlist(videoSession, mem_state->Handle());
                         skip |= LogError("VUID-VkBindVideoSessionMemoryInfoKHR-memorySize-07202", objlist,
                                          error_obj.location.dot(Field::pBindSessionMemoryInfos, i).dot(Field::memoryOffset),
                                          "(%" PRIuLEAST64 ") + memory size (%" PRIuLEAST64
                                          ") must be less than or equal to the size (%" PRIuLEAST64 ") of %s.",
-                                         bind_info.memoryOffset, bind_info.memorySize, mem_state->alloc_info.allocationSize,
+                                         bind_info.memoryOffset, bind_info.memorySize, mem_state->allocate_info.allocationSize,
                                          FormatHandle(*mem_state).c_str());
                     }
                 }
@@ -3748,11 +3748,12 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                          FormatHandle(pDecodeInfo->srcBuffer).c_str(), FormatHandle(*vs_state).c_str());
     }
 
-    if (pDecodeInfo->srcBufferOffset >= buffer_state->createInfo.size) {
+    if (pDecodeInfo->srcBufferOffset >= buffer_state->create_info.size) {
         const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
-        skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBufferOffset-07166", objlist, decode_info_loc.dot(Field::srcBufferOffset),
-                         "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
-                         pDecodeInfo->srcBufferOffset, buffer_state->createInfo.size, FormatHandle(pDecodeInfo->srcBuffer).c_str());
+        skip |=
+            LogError("VUID-VkVideoDecodeInfoKHR-srcBufferOffset-07166", objlist, decode_info_loc.dot(Field::srcBufferOffset),
+                     "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
+                     pDecodeInfo->srcBufferOffset, buffer_state->create_info.size, FormatHandle(pDecodeInfo->srcBuffer).c_str());
     }
 
     if (!IsIntegerMultipleOf(pDecodeInfo->srcBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment)) {
@@ -3764,12 +3765,12 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                          FormatHandle(*vs_state).c_str());
     }
 
-    if (pDecodeInfo->srcBufferOffset + pDecodeInfo->srcBufferRange > buffer_state->createInfo.size) {
+    if (pDecodeInfo->srcBufferOffset + pDecodeInfo->srcBufferRange > buffer_state->create_info.size) {
         const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
         skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBufferRange-07167", objlist, decode_info_loc.dot(Field::srcBufferOffset),
                          "(%" PRIu64 ") plus pDecodeInfo->srcBufferRange (%" PRIu64
                          ") must be less than or equal to the size (%" PRIu64 ") of pDecodeInfo->srcBuffer (%s).",
-                         pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange, buffer_state->createInfo.size,
+                         pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange, buffer_state->create_info.size,
                          FormatHandle(pDecodeInfo->srcBuffer).c_str());
     }
 
@@ -3979,7 +3980,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-opCount-07134", commandBuffer, error_obj.location,
                              "not enough activatable queries for query type %s "
                              "with opCount %u, active query index %u, and last activatable query index %u.",
-                             string_VkQueryType(query_pool_state->createInfo.queryType), op_count, query.active_query_index,
+                             string_VkQueryType(query_pool_state->create_info.queryType), op_count, query.active_query_index,
                              query.last_activatable_query_index);
         }
     }
@@ -3999,13 +4000,13 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "(%u) is not equal to opCount (%u).", inline_query_info->queryCount, op_count);
                 }
 
-                if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR) {
+                if (query_pool_state->create_info.queryType != VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);
                     skip |= LogError("VUID-vkCmdDecodeVideoKHR-queryType-08367", objlist,
                                      decode_info_loc.pNext(Struct::VkVideoInlineQueryInfoKHR, Field::queryPool),
                                      "(%s) has query type (%s) but must be VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR.",
                                      FormatHandle(*query_pool_state).c_str(),
-                                     string_VkQueryType(query_pool_state->createInfo.queryType));
+                                     string_VkQueryType(query_pool_state->create_info.queryType));
                 }
 
                 if (vs_state->profile != query_pool_state->supported_video_profile) {
@@ -4162,7 +4163,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                           "VUID-vkCmdEncodeVideoKHR-commandBuffer-08203", where);
     }
 
-    if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
+    if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
         const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
         skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBuffer-08236", objlist, encode_info_loc.dot(Field::dstBuffer),
                          "(%s) was not created with "
@@ -4178,11 +4179,12 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                          FormatHandle(pEncodeInfo->dstBuffer).c_str(), FormatHandle(*vs_state).c_str());
     }
 
-    if (pEncodeInfo->dstBufferOffset >= buffer_state->createInfo.size) {
+    if (pEncodeInfo->dstBufferOffset >= buffer_state->create_info.size) {
         const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
-        skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBufferOffset-08237", objlist, encode_info_loc.dot(Field::dstBufferOffset),
-                         "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
-                         pEncodeInfo->dstBufferOffset, buffer_state->createInfo.size, FormatHandle(pEncodeInfo->dstBuffer).c_str());
+        skip |=
+            LogError("VUID-VkVideoEncodeInfoKHR-dstBufferOffset-08237", objlist, encode_info_loc.dot(Field::dstBufferOffset),
+                     "(%" PRIu64 ") must be less than the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
+                     pEncodeInfo->dstBufferOffset, buffer_state->create_info.size, FormatHandle(pEncodeInfo->dstBuffer).c_str());
     }
 
     if (!IsIntegerMultipleOf(pEncodeInfo->dstBufferOffset, profile_caps.base.minBitstreamBufferOffsetAlignment)) {
@@ -4194,12 +4196,12 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                          FormatHandle(*vs_state).c_str());
     }
 
-    if (pEncodeInfo->dstBufferOffset + pEncodeInfo->dstBufferRange > buffer_state->createInfo.size) {
+    if (pEncodeInfo->dstBufferOffset + pEncodeInfo->dstBufferRange > buffer_state->create_info.size) {
         const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
         skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBufferRange-08238", objlist, encode_info_loc.dot(Field::dstBufferOffset),
                          "(%" PRIu64 ") plus pEncodeInfo->dstBufferRange (%" PRIu64
                          ") must be less than or equal to the size (%" PRIu64 ") of pEncodeInfo->dstBuffer (%s).",
-                         pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange, buffer_state->createInfo.size,
+                         pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange, buffer_state->create_info.size,
                          FormatHandle(pEncodeInfo->dstBuffer).c_str());
     }
 
@@ -4389,7 +4391,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-opCount-07174", commandBuffer, error_obj.location,
                              "not enough activatable queries for query type %s "
                              "with opCount %u, active query index %u, and last activatable query index %u.",
-                             string_VkQueryType(query_pool_state->createInfo.queryType), op_count, query.active_query_index,
+                             string_VkQueryType(query_pool_state->create_info.queryType), op_count, query.active_query_index,
                              query.last_activatable_query_index);
         }
     }
@@ -4409,15 +4411,15 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "(%u) is not equal to opCount (%u).", inline_query_info->queryCount, op_count);
                 }
 
-                if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR &&
-                    query_pool_state->createInfo.queryType != VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR) {
+                if (query_pool_state->create_info.queryType != VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR &&
+                    query_pool_state->create_info.queryType != VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);
                     skip |= LogError("VUID-vkCmdEncodeVideoKHR-queryType-08362", objlist,
                                      encode_info_loc.pNext(Struct::VkVideoInlineQueryInfoKHR, Field::queryPool),
                                      "(%s) has query type (%s) but must be VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR or "
                                      "VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR.",
                                      FormatHandle(*query_pool_state).c_str(),
-                                     string_VkQueryType(query_pool_state->createInfo.queryType));
+                                     string_VkQueryType(query_pool_state->create_info.queryType));
                 }
 
                 if (vs_state->profile != query_pool_state->supported_video_profile) {

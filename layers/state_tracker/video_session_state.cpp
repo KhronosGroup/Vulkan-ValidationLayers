@@ -297,8 +297,8 @@ VkExtent3D VideoPictureResource::GetEffectiveImageExtent(const vvl::VideoSession
     extent.height = ((extent.height + gran.height - 1) / gran.height) * gran.height;
 
     // Clamp to mip level dimensions
-    extent.width = std::min(extent.width, image_state->createInfo.extent.width >> range.baseMipLevel);
-    extent.height = std::min(extent.height, image_state->createInfo.extent.height >> range.baseMipLevel);
+    extent.width = std::min(extent.width, image_state->create_info.extent.width >> range.baseMipLevel);
+    extent.height = std::min(extent.height, image_state->create_info.extent.height >> range.baseMipLevel);
 
     return extent;
 }
@@ -590,7 +590,8 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
 VideoSession::VideoSession(ValidationStateTracker *dev_data, VkVideoSessionKHR handle,
                            VkVideoSessionCreateInfoKHR const *pCreateInfo, std::shared_ptr<const VideoProfileDesc> &&profile_desc)
     : StateObject(handle, kVulkanObjectTypeVideoSessionKHR),
-      create_info(pCreateInfo),
+      safe_create_info(pCreateInfo),
+      create_info(*safe_create_info.ptr()),
       profile(std::move(profile_desc)),
       memory_binding_count_queried(false),
       memory_bindings_queried(0),
@@ -659,7 +660,8 @@ VideoSessionParameters::VideoSessionParameters(VkVideoSessionParametersKHR handl
                                                std::shared_ptr<VideoSession> &&vsstate,
                                                std::shared_ptr<VideoSessionParameters> &&vsp_template)
     : StateObject(handle, kVulkanObjectTypeVideoSessionParametersKHR),
-      create_info(pCreateInfo),
+      safe_create_info(pCreateInfo),
+      create_info(*safe_create_info.ptr()),
       vs_state(vsstate),
       mutex_(),
       data_(),

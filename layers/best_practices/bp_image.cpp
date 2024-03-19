@@ -47,7 +47,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
                 kVUID_BestPractices_CreateImage_NonTransientMSImage, device, error_obj.location,
-                "%s %s Trying to create a multisampled image, but createInfo.usage did not have "
+                "%s %s Trying to create a multisampled image, but pCreateInfo->usage did not have "
                 "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. Multisampled images may be resolved on-chip, "
                 "and do not need to be backed by physical storage. "
                 "TRANSIENT_ATTACHMENT allows tiled GPUs to not back the multisampled image with physical memory.",
@@ -148,12 +148,12 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
-    const uint32_t base_array_layer = state->createInfo.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
+    const uint32_t base_array_layer = state->create_info.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
 
-    const uint32_t max_layers = state->createInfo.arrayLayers - base_array_layer;
+    const uint32_t max_layers = state->create_info.arrayLayers - base_array_layer;
     const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
-    const uint32_t max_levels = state->createInfo.mipLevels - subresource_range.baseMipLevel;
-    const uint32_t mip_levels = std::min(state->createInfo.mipLevels, max_levels);
+    const uint32_t max_levels = state->create_info.mipLevels - subresource_range.baseMipLevel;
+    const uint32_t mip_levels = std::min(state->create_info.mipLevels, max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
@@ -164,7 +164,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
-    const uint32_t max_layers = state->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
+    const uint32_t max_layers = state->create_info.arrayLayers - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
@@ -260,7 +260,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode
-    if (state.createInfo.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
+    if (state.create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
         // if UNDEFINED then first use/acquisition of subresource
         if (last_usage.type != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
             // If usage might read from the subresource, as contents are undefined
@@ -295,13 +295,13 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     }
 }
 
-std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo,
                                                             VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<bp_state::Image>(this, img, pCreateInfo, features);
+    return std::make_shared<bp_state::Image>(this, handle, pCreateInfo, features);
 }
 
-std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
+std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo,
                                                             VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                             VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<bp_state::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+    return std::make_shared<bp_state::Image>(this, handle, pCreateInfo, swapchain, swapchain_index, features);
 }

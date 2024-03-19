@@ -31,7 +31,8 @@ class VideoProfileDesc;
 class Buffer : public Bindable {
   public:
     const safe_VkBufferCreateInfo safe_create_info;
-    const VkBufferCreateInfo &createInfo;
+    const VkBufferCreateInfo &create_info;
+
     const VkMemoryRequirements requirements;
     VkDeviceAddress deviceAddress = 0;
     // VkBufferUsageFlags2CreateInfoKHR can be used instead over the VkBufferCreateInfo::usage
@@ -53,7 +54,7 @@ class Buffer : public Bindable {
 
     VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
     std::optional<VkDeviceSize> ComputeValidSize(VkDeviceSize offset, VkDeviceSize size) const {
-        return ::ComputeValidSize(offset, size, createInfo.size);
+        return ::ComputeValidSize(offset, size, create_info.size);
     }
     VkDeviceSize ComputeSize(VkDeviceSize offset, VkDeviceSize size) const {
         std::optional<VkDeviceSize> valid_size = ComputeValidSize(offset, size);
@@ -64,7 +65,9 @@ class Buffer : public Bindable {
         return buffer_state ? buffer_state->ComputeSize(offset, size) : VkDeviceSize(0);
     }
 
-    sparse_container::range<VkDeviceAddress> DeviceAddressRange() const { return {deviceAddress, deviceAddress + createInfo.size}; }
+    sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {
+        return {deviceAddress, deviceAddress + create_info.size};
+    }
 
   private:
     std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;
@@ -72,17 +75,19 @@ class Buffer : public Bindable {
 
 class BufferView : public StateObject {
   public:
-    const VkBufferViewCreateInfo create_info;
+    const safe_VkBufferViewCreateInfo safe_create_info;
+    const VkBufferViewCreateInfo &create_info;
+
     std::shared_ptr<Buffer> buffer_state;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_bufferview_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
     // Format features that matter when accessing the buffer
     // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
-    const VkFormatFeatureFlags2KHR buf_format_features;
+    const VkFormatFeatureFlags2KHR buffer_format_features;
 
-    BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *ci,
-               VkFormatFeatureFlags2KHR buf_ff);
+    BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
+               VkFormatFeatureFlags2KHR format_features);
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
@@ -110,7 +115,7 @@ class BufferView : public StateObject {
     VkDeviceSize Size() const {
         VkDeviceSize size = create_info.range;
         if (size == VK_WHOLE_SIZE) {
-            size = buffer_state->createInfo.size - create_info.offset;
+            size = buffer_state->create_info.size - create_info.offset;
         }
         return size;
     }

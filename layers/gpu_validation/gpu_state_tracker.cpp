@@ -897,33 +897,33 @@ void gpu_tracker::Validator::PreCallRecordDestroyPipeline(VkDevice device, VkPip
 }
 
 template <typename CreateInfo>
-VkShaderModule GetShaderModule(const CreateInfo &createInfo, VkShaderStageFlagBits stage) {
-    for (uint32_t i = 0; i < createInfo.stageCount; ++i) {
-        if (createInfo.pStages[i].stage == stage) {
-            return createInfo.pStages[i].module;
+VkShaderModule GetShaderModule(const CreateInfo &create_info, VkShaderStageFlagBits stage) {
+    for (uint32_t i = 0; i < create_info.stageCount; ++i) {
+        if (create_info.pStages[i].stage == stage) {
+            return create_info.pStages[i].module;
         }
     }
     return {};
 }
 
 template <>
-VkShaderModule GetShaderModule(const VkComputePipelineCreateInfo &createInfo, VkShaderStageFlagBits) {
-    return createInfo.stage.module;
+VkShaderModule GetShaderModule(const VkComputePipelineCreateInfo &create_info, VkShaderStageFlagBits) {
+    return create_info.stage.module;
 }
 
 template <typename SafeType>
-void SetShaderModule(SafeType &createInfo, const safe_VkPipelineShaderStageCreateInfo &stage_info, VkShaderModule shader_module,
+void SetShaderModule(SafeType &create_info, const safe_VkPipelineShaderStageCreateInfo &stage_info, VkShaderModule shader_module,
                      uint32_t stage_ci_index) {
-    createInfo.pStages[stage_ci_index] = stage_info;
-    createInfo.pStages[stage_ci_index].module = shader_module;
+    create_info.pStages[stage_ci_index] = stage_info;
+    create_info.pStages[stage_ci_index].module = shader_module;
 }
 
 template <>
-void SetShaderModule(safe_VkComputePipelineCreateInfo &createInfo, const safe_VkPipelineShaderStageCreateInfo &stage_info,
+void SetShaderModule(safe_VkComputePipelineCreateInfo &create_info, const safe_VkPipelineShaderStageCreateInfo &stage_info,
                      VkShaderModule shader_module, uint32_t stage_ci_index) {
     assert(stage_ci_index == 0);
-    createInfo.stage = stage_info;
-    createInfo.stage.module = shader_module;
+    create_info.stage = stage_info;
+    create_info.stage.module = shader_module;
 }
 
 template <typename CreateInfo, typename StageInfo>

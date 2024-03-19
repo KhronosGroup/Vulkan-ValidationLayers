@@ -138,13 +138,13 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
     }
     for (const auto &query : cb_state.activeQueries) {
         const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
-        if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+        if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
             skip |= LogError(vuid.xfb_queries_07074, cb_state.Handle(), loc, "Query with type %s is active.",
-                             string_VkQueryType(query_pool_state->createInfo.queryType));
+                             string_VkQueryType(query_pool_state->create_info.queryType));
         }
-        if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+        if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
             skip |= LogError(vuid.pg_queries_07075, cb_state.Handle(), loc, "Query with type %s is active.",
-                             string_VkQueryType(query_pool_state->createInfo.queryType));
+                             string_VkQueryType(query_pool_state->create_info.queryType));
         }
     }
     return skip;
@@ -319,14 +319,14 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
         skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
                                                 Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), drawCount, offset,
                                                 *buffer_state, error_obj.location);
-    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->createInfo.size) {
+    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer);
         skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-00487", objlist, error_obj.location.dot(Field::drawCount),
                          "is 1 and (offset + sizeof(VkDrawIndirectCommand)) (%" PRIu64
                          ") is not less than "
                          "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawIndirectCommand)), buffer_state->createInfo.size);
+                         (offset + sizeof(VkDrawIndirectCommand)), buffer_state->create_info.size);
     }
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
@@ -368,14 +368,14 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     } else if (offset & 3) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
-    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->createInfo.size) {
+    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer);
         skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-00539", objlist, error_obj.location.dot(Field::drawCount),
                          "is 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
                          ") is not less than "
                          "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawIndexedIndirectCommand)), buffer_state->createInfo.size);
+                         (offset + sizeof(VkDrawIndexedIndirectCommand)), buffer_state->create_info.size);
     }
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
@@ -506,13 +506,13 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
         skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
     }
-    if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->createInfo.size) {
+    if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->create_info.size) {
         skip |= LogError("VUID-vkCmdDispatchIndirect-offset-00407", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                          error_obj.location,
                          "The (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
                          ")  is greater than the "
                          "size of the buffer (%" PRIu64 ").",
-                         offset + sizeof(VkDispatchIndirectCommand), buffer_state->createInfo.size);
+                         offset + sizeof(VkDispatchIndirectCommand), buffer_state->create_info.size);
     }
     return skip;
 }
@@ -777,40 +777,40 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, error_obj.location);
     auto callable_shader_buffer_state = Get<vvl::Buffer>(callableShaderBindingTableBuffer);
-    if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->createInfo.size) {
+    if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
         objlist.add(callableShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461", objlist,
                          error_obj.location.dot(Field::callableShaderBindingOffset),
                          "%" PRIu64 " must be less than the size of callableShaderBindingTableBuffer %" PRIu64 " .",
-                         callableShaderBindingOffset, callable_shader_buffer_state->createInfo.size);
+                         callableShaderBindingOffset, callable_shader_buffer_state->create_info.size);
     }
     auto hit_shader_buffer_state = Get<vvl::Buffer>(hitShaderBindingTableBuffer);
-    if (hit_shader_buffer_state && hitShaderBindingOffset >= hit_shader_buffer_state->createInfo.size) {
+    if (hit_shader_buffer_state && hitShaderBindingOffset >= hit_shader_buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
         objlist.add(hitShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02459", objlist,
                          error_obj.location.dot(Field::hitShaderBindingOffset),
                          "%" PRIu64 " must be less than the size of hitShaderBindingTableBuffer %" PRIu64 " .",
-                         hitShaderBindingOffset, hit_shader_buffer_state->createInfo.size);
+                         hitShaderBindingOffset, hit_shader_buffer_state->create_info.size);
     }
     auto miss_shader_buffer_state = Get<vvl::Buffer>(missShaderBindingTableBuffer);
-    if (miss_shader_buffer_state && missShaderBindingOffset >= miss_shader_buffer_state->createInfo.size) {
+    if (miss_shader_buffer_state && missShaderBindingOffset >= miss_shader_buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
         objlist.add(missShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02457", objlist,
                          error_obj.location.dot(Field::missShaderBindingOffset),
                          "%" PRIu64 " must be less than the size of missShaderBindingTableBuffer %" PRIu64 " .",
-                         missShaderBindingOffset, miss_shader_buffer_state->createInfo.size);
+                         missShaderBindingOffset, miss_shader_buffer_state->create_info.size);
     }
     auto raygen_shader_buffer_state = Get<vvl::Buffer>(raygenShaderBindingTableBuffer);
-    if (raygenShaderBindingOffset >= raygen_shader_buffer_state->createInfo.size) {
+    if (raygenShaderBindingOffset >= raygen_shader_buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
         objlist.add(raygenShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02455", objlist,
                          error_obj.location.dot(Field::raygenShaderBindingOffset),
                          "%" PRIu64 " must be less than the size of raygenShaderBindingTableBuffer %" PRIu64 " .",
-                         raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
+                         raygenShaderBindingOffset, raygen_shader_buffer_state->create_info.size);
     }
     return skip;
 }
@@ -1277,13 +1277,13 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                 error_obj.location.dot(Field::stride),
                 "(0x%" PRIxLEAST32 "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).", stride);
         }
-    } else if (drawCount == 1 && ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > buffer_state.get()->createInfo.size)) {
+    } else if (drawCount == 1 && ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > buffer_state.get()->create_info.size)) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer);
         skip |=
             LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156", objlist, error_obj.location,
                      "(offset + sizeof(VkDrawMeshTasksIndirectNV)) (%" PRIu64 ") is greater than the size of buffer (%" PRIu64 ").",
-                     offset + sizeof(VkDrawMeshTasksIndirectCommandNV), buffer_state->createInfo.size);
+                     offset + sizeof(VkDrawMeshTasksIndirectCommandNV), buffer_state->create_info.size);
     }
     if (offset & 3) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -1419,14 +1419,14 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
             cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride, Struct::VkDrawMeshTasksIndirectCommandEXT,
             sizeof(VkDrawMeshTasksIndirectCommandEXT), drawCount, offset, *buffer_state, error_obj.location);
     }
-    if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->createInfo.size) {
+    if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer);
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089", objlist, error_obj.location.dot(Field::drawCount),
                          "is 1 and (offset + sizeof(vkCmdDrawMeshTasksIndirectEXT)) (%" PRIu64
                          ") is not less than "
                          "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), buffer_state->createInfo.size);
+                         (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), buffer_state->create_info.size);
     }
     // TODO: vkMapMemory() and check the contents of buffer at offset
     // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
@@ -1761,7 +1761,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
                                               VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
             for (const auto &query : cb_state.activeQueries) {
                 const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
-                if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
+                if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
                     const LogObjectList objlist(cb_state.Handle(), query.pool);
                     skip |= LogError(vuid.mesh_shader_queries_07073, objlist, loc,
                                      "Query (slot %" PRIu32 ") with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active.",
@@ -1842,10 +1842,10 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
                                           vuid.indirect_count_contiguous_memory_02714);
     skip |= ValidateBufferUsageFlags(objlist, count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      vuid.indirect_count_buffer_bit_02715, loc.dot(Field::countBuffer));
-    if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.createInfo.size) {
+    if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.create_info.size) {
         skip |= LogError(vuid.indirect_count_offset_04129, objlist, loc,
                          "countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
-                         count_buffer_offset, count_buffer_state.createInfo.size);
+                         count_buffer_offset, count_buffer_state.create_info.size);
     }
     return skip;
 }

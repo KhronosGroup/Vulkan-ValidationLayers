@@ -49,7 +49,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state
         if (!variable.input_attachment_index_read[i]) {
             continue;
         }
-        const auto rpci = rp_state->createInfo.ptr();
+        const auto rpci = rp_state->create_info.ptr();
         const uint32_t subpass = pipeline.Subpass();
         const auto subpass_description = rpci->pSubpasses[subpass];
         const auto input_attachments = subpass_description.pInputAttachments;
@@ -825,7 +825,7 @@ bool CoreChecks::ValidateShaderResolveQCOM(const spirv::Module &module_state, Vk
     // then the fragment shader must not enable the SPIRV SampleRateShading capability.
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && module_state.HasCapability(spv::CapabilitySampleRateShading)) {
         const auto &rp_state = pipeline.RenderPassState();
-        auto subpass_flags = (!rp_state) ? 0 : rp_state->createInfo.pSubpasses[pipeline.Subpass()].flags;
+        auto subpass_flags = (!rp_state) ? 0 : rp_state->create_info.pSubpasses[pipeline.Subpass()].flags;
         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
             const LogObjectList objlist(module_state.handle(), rp_state->Handle());
             skip |= LogError("VUID-RuntimeSpirv-SampleRateShading-06378", objlist, loc,

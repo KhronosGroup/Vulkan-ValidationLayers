@@ -317,7 +317,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
             // general with no storage
             if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
-                if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+                if (!(image_state->create_info.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     const LogObjectList objlist(commandBuffer, pImageMemoryBarriers[i].image);
                     skip |= LogPerformanceWarning(kVUID_BestPractices_vkImage_AvoidGeneral, objlist, error_obj.location,
                                                   "%s VK_IMAGE_LAYOUT_GENERAL should only be used with "

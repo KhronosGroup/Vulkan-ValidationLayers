@@ -89,10 +89,10 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
     active_subpass_sample_count_ = std::nullopt;
 }
 
-CommandBuffer::CommandBuffer(ValidationStateTracker *dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+CommandBuffer::CommandBuffer(ValidationStateTracker *dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pAllocateInfo,
                              const vvl::CommandPool *pool)
     : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
-      createInfo(*pCreateInfo),
+      allocate_info(*pAllocateInfo),
       command_pool(pool),
       dev_data(dev),
       unprotected(pool->unprotected),
@@ -504,7 +504,7 @@ void CommandBuffer::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &s
 
 void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
     auto &attachments = *(active_attachments.get());
-    const bool imageless = (activeFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
+    const bool imageless = (activeFramebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
     if (pRenderPassBegin) attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
@@ -558,12 +558,12 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
 
     if (activeFramebuffer) {
         // Set cb_state->active_subpasses
-        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->createInfo.attachmentCount);
-        const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
+        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->create_info.attachmentCount);
+        const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
         UpdateSubpassAttachments(subpass, *active_subpasses);
 
         // Set cb_state->active_attachments & cb_state->attachments_view_states
-        active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->createInfo.attachmentCount);
+        active_attachments = std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
         UpdateAttachmentsView(pRenderPassBegin);
 
         // Connect this framebuffer and its children to this cmdBuffer
@@ -579,10 +579,10 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     // Update cb_state->active_subpasses
     if (activeFramebuffer) {
         active_subpasses = nullptr;
-        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->createInfo.attachmentCount);
+        active_subpasses = std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->create_info.attachmentCount);
 
-        if (GetActiveSubpass() < activeRenderPass->createInfo.subpassCount) {
-            const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
+        if (GetActiveSubpass() < activeRenderPass->create_info.subpassCount) {
+            const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
             UpdateSubpassAttachments(subpass, *active_subpasses);
         }
     }
@@ -943,13 +943,13 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                     if (activeFramebuffer) {
                         // Set active_subpasses
                         active_subpasses =
-                            std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->createInfo.attachmentCount);
-                        const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
+                            std::make_shared<std::vector<SubpassInfo>>(activeFramebuffer->create_info.attachmentCount);
+                        const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
                         UpdateSubpassAttachments(subpass, *active_subpasses);
 
                         // Set active_attachments & attachments_view_states
                         active_attachments =
-                            std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->createInfo.attachmentCount);
+                            std::make_shared<std::vector<vvl::ImageView *>>(activeFramebuffer->create_info.attachmentCount);
                         UpdateAttachmentsView(nullptr);
 
                         // Connect this framebuffer and its children to this cmdBuffer

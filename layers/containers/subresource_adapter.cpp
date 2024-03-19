@@ -275,8 +275,8 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image)
 
 ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParameters* param)
     : RangeEncoder(image.full_range, param), total_size_(0U) {
-    if (image.createInfo.extent.depth > 1) {
-        limits_.arrayLayer = image.createInfo.extent.depth;
+    if (image.create_info.extent.depth > 1) {
+        limits_.arrayLayer = image.create_info.extent.depth;
     }
     VkSubresourceLayout layout = {};
     VkImageSubresource subres = {};
@@ -284,7 +284,7 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
     linear_image_ = false;
 
     // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
-    if (image.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+    if (image.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
         const VkImageAspectFlags first_aspect = AspectBit(0);  // AspectBit returns aspects by index
         subres = {first_aspect, 0, 0};
         DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.VkHandle(), &subres, &layout);
@@ -305,15 +305,16 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
     // aliased resources can be done correctly.
     linear_image_ = false;
 
-    is_compressed_ = vkuFormatIsCompressed(image.createInfo.format);
-    texel_extent_ = vkuFormatTexelBlockExtent(image.createInfo.format);
+    is_compressed_ = vkuFormatIsCompressed(image.create_info.format);
+    texel_extent_ = vkuFormatTexelBlockExtent(image.create_info.format);
 
-    is_3_d_ = image.createInfo.imageType == VK_IMAGE_TYPE_3D;
+    is_3_d_ = image.create_info.imageType == VK_IMAGE_TYPE_3D;
     y_interleave_ = false;
     for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
         subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
         subres_layers.aspectMask = subres.aspectMask;
-        texel_sizes_.push_back(vkuFormatTexelSizeWithAspect(image.createInfo.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
+        texel_sizes_.push_back(
+            vkuFormatTexelSizeWithAspect(image.create_info.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
         IndexType aspect_size = 0;
         for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
             subres_layers.mipLevel = mip_index;
@@ -351,7 +352,7 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
         }
         aspect_sizes_.emplace_back(aspect_size);
         aspect_extent_divisors_.emplace_back(
-            vkuFindMultiplaneExtentDivisors(image.createInfo.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
+            vkuFindMultiplaneExtentDivisors(image.create_info.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
     }
 }
 

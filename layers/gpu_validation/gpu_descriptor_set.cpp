@@ -164,7 +164,7 @@ static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
         return glsl::DescriptorState(DescriptorClass::GeneralBuffer, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
     }
     return glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id,
-                                 static_cast<uint32_t>(buffer_state->createInfo.size));
+                                 static_cast<uint32_t>(buffer_state->create_info.size));
 }
 
 static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
@@ -214,7 +214,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             if (!buffer_state) {
                 return glsl::DescriptorState(desc_class, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
             }
-            return glsl::DescriptorState(desc_class, buffer_state->id, static_cast<uint32_t>(buffer_state->createInfo.size));
+            return glsl::DescriptorState(desc_class, buffer_state->id, static_cast<uint32_t>(buffer_state->create_info.size));
         }
         case DescriptorClass::TexelBuffer: {
             auto buffer_view_state = std::static_pointer_cast<const BufferView>(desc.GetSharedBufferViewState());

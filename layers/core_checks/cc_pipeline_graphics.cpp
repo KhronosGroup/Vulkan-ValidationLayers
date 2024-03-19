@@ -59,12 +59,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
         // Ensure the subpass index is valid. If not, then ValidateGraphicsPipelineShaderState
         // produces nonsense errors that confuse users. Other layers should already
         // emit errors for renderpass being invalid.
-        subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
-        if (subpass >= rp_state->createInfo.subpassCount) {
+        subpass_desc = &rp_state->create_info.pSubpasses[subpass];
+        if (subpass >= rp_state->create_info.subpassCount) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06046", rp_state->Handle(),
                          create_info_loc.dot(Field::subpass), "(%" PRIu32 ") is out of range for this renderpass (0..%" PRIu32 ").",
-                         subpass, rp_state->createInfo.subpassCount - 1);
+                         subpass, rp_state->create_info.subpassCount - 1);
             subpass_desc = nullptr;
         }
 
@@ -214,7 +214,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeli
         const bool ignore_color_blend_state =
             raster_state_ci->rasterizerDiscardEnable ||
             (pipeline.rendering_create_info ? (pipeline.rendering_create_info->colorAttachmentCount == 0)
-                                            : (render_pass->createInfo.pSubpasses[subpass].colorAttachmentCount == 0));
+                                            : (render_pass->create_info.pSubpasses[subpass].colorAttachmentCount == 0));
         const auto *color_blend_state = pipeline.ColorBlendState();
         if (!enabled_features.constantAlphaColorBlendFactors && !ignore_color_blend_state && color_blend_state) {
             const auto attachments = color_blend_state->pAttachments;
@@ -1189,13 +1189,13 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
 
     if (!rp_state->UsesDynamicRendering()) {
         const auto subpass = pipeline.Subpass();
-        const auto *subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
+        const auto *subpass_desc = &rp_state->create_info.pSubpasses[subpass];
 
         for (uint32_t i = 0; i < pipeline.Attachments().size() && i < subpass_desc->colorAttachmentCount; ++i) {
             const auto attachment = subpass_desc->pColorAttachments[i].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
 
-            const auto attachment_desc = rp_state->createInfo.pAttachments[attachment];
+            const auto attachment_desc = rp_state->create_info.pAttachments[attachment];
             VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_desc.format);
 
             const auto *raster_state = pipeline.RasterizationState();
@@ -1236,7 +1236,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
         if (attachment == VK_ATTACHMENT_UNUSED) {
             return false;
         }
-        const uint64_t external_format = GetExternalFormat(rp_state->createInfo.pAttachments[attachment].pNext);
+        const uint64_t external_format = GetExternalFormat(rp_state->create_info.pAttachments[attachment].pNext);
         if (external_format == 0) {
             return false;
         }
@@ -1891,7 +1891,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
             for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; i++) {
                 const auto attachment = subpass_desc->pColorAttachments[i].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
-                    samples |= static_cast<uint32_t>(rp_state->createInfo.pAttachments[attachment].samples);
+                    samples |= static_cast<uint32_t>(rp_state->create_info.pAttachments[attachment].samples);
                 }
             }
         };
@@ -1908,7 +1908,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                 if (subpass_desc->pDepthStencilAttachment &&
                     subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                     const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-                    subpass_num_samples |= static_cast<uint32_t>(rp_state->createInfo.pAttachments[attachment].samples);
+                    subpass_num_samples |= static_cast<uint32_t>(rp_state->create_info.pAttachments[attachment].samples);
                 }
 
                 // subpass_num_samples is 0 when the subpass has no attachments or if all attachments are VK_ATTACHMENT_UNUSED.
@@ -1926,14 +1926,14 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                     if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
                         max_sample_count =
                             std::max(max_sample_count,
-                                     rp_state->createInfo.pAttachments[subpass_desc->pColorAttachments[i].attachment].samples);
+                                     rp_state->create_info.pAttachments[subpass_desc->pColorAttachments[i].attachment].samples);
                     }
                 }
                 if (subpass_desc->pDepthStencilAttachment &&
                     subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                     max_sample_count =
                         std::max(max_sample_count,
-                                 rp_state->createInfo.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
+                                 rp_state->create_info.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
                 }
                 const auto raster_state = pipeline.RasterizationState();
                 if ((raster_state && raster_state->rasterizerDiscardEnable == VK_FALSE) &&
@@ -1955,7 +1955,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                     subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                     const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
                     const uint32_t subpass_depth_samples =
-                        static_cast<uint32_t>(rp_state->createInfo.pAttachments[attachment].samples);
+                        static_cast<uint32_t>(rp_state->create_info.pAttachments[attachment].samples);
                     const auto ds_state = pipeline.DepthStencilState();
                     if (ds_state) {
                         const bool ds_test_enabled = (ds_state->depthTestEnable == VK_TRUE) ||
@@ -2014,7 +2014,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                 if (subpass_desc->pDepthStencilAttachment &&
                     subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                     const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-                    subpass_depth_samples = static_cast<uint32_t>(rp_state->createInfo.pAttachments[attachment].samples);
+                    subpass_depth_samples = static_cast<uint32_t>(rp_state->create_info.pAttachments[attachment].samples);
                 }
 
                 if (multisample_state && IsPowerOfTwo(subpass_color_samples) &&
@@ -2090,7 +2090,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                 const auto &color_attachment_ref =
                     subpass_desc->pColorAttachments[coverage_to_color_state->coverageToColorLocation];
                 if (color_attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto &color_attachment = rp_state->createInfo.pAttachments[color_attachment_ref.attachment];
+                    const auto &color_attachment = rp_state->create_info.pAttachments[color_attachment_ref.attachment];
 
                     switch (color_attachment.format) {
                         case VK_FORMAT_R8_UINT:
@@ -2175,7 +2175,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                 const auto attachment = subpass_desc->pInputAttachments[i].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     subpass_input_attachment_samples |=
-                        static_cast<uint32_t>(rp_state->createInfo.pAttachments[attachment].samples);
+                        static_cast<uint32_t>(rp_state->create_info.pAttachments[attachment].samples);
                 }
             }
 
@@ -2994,7 +2994,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
         bool primitives_generated_query = false;
         for (const auto &query : cb_state.activeQueries) {
             auto query_pool_state = Get<vvl::QueryPool>(query.pool);
-            if (query_pool_state && query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
                 primitives_generated_query = true;
                 break;
             }
@@ -3152,7 +3152,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
                 // TODO: Mirror the below VUs but using dynamic rendering
                 const auto dynamic_rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
             } else {
-                const auto render_pass_info = cb_state.activeRenderPass->createInfo.ptr();
+                const auto render_pass_info = cb_state.activeRenderPass->create_info.ptr();
                 const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
                 uint32_t i;
                 unsigned subpass_num_samples = 0;
@@ -3538,7 +3538,7 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LastBound &last_bound_stat
                          cb_state.GetActiveSubpass());
     }
     const safe_VkAttachmentReference2 *ds_attachment =
-        cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;
+        cb_state.activeRenderPass->create_info.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;
     if (ds_attachment != nullptr) {
         // Check if depth stencil attachment was created with sample location compatible bit
         if (pipeline.SampleLocationEnabled() == VK_TRUE) {
@@ -3548,7 +3548,7 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LastBound &last_bound_stat
                 if (imageview_state != nullptr) {
                     const auto *image_state = imageview_state->image_state.get();
                     if (image_state != nullptr) {
-                        if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
+                        if ((image_state->create_info.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
                             skip |= LogError(vuid.sample_location_02689, objlist, loc,
                                              "sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
@@ -3947,7 +3947,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                 continue;
             }
             auto color_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            auto color_image_samples = Get<vvl::Image>(color_view_state->create_info.image)->createInfo.samples;
+            auto color_image_samples = Get<vvl::Image>(color_view_state->create_info.image)->create_info.samples;
 
             if (p_attachment_sample_count_info &&
                 (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
@@ -3963,7 +3963,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if (rendering_info.pDepthAttachment != nullptr) {
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-            auto depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->createInfo.samples;
+            auto depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
 
             if (p_attachment_sample_count_info) {
                 if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -3980,7 +3980,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if (rendering_info.pStencilAttachment != nullptr) {
             auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-            auto stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->createInfo.samples;
+            auto stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
 
             if (p_attachment_sample_count_info) {
                 if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
@@ -4002,7 +4002,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
                 continue;
             }
             auto view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
-            auto samples = Get<vvl::Image>(view_state->create_info.image)->createInfo.samples;
+            auto samples = Get<vvl::Image>(view_state->create_info.image)->create_info.samples;
 
             if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
@@ -4016,7 +4016,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
-            const auto &depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->createInfo.samples;
+            const auto &depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
             if (depth_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_07286, objlist, loc,
@@ -4029,7 +4029,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LastBound &last_bou
 
         if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
-            const auto &stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->createInfo.samples;
+            const auto &stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
             if (stencil_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle(), cb_state.activeRenderPass->Handle());
                 skip |= LogError(vuid.dynamic_rendering_07287, objlist, loc,

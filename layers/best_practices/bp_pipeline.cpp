@@ -58,7 +58,7 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount, co
         if (!rp_state) {
             continue;
         }
-        const auto& subpass = rp_state->createInfo.pSubpasses[create_info->subpass];
+        const auto& subpass = rp_state->create_info.pSubpasses[create_info->subpass];
 
         // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
         uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info->pColorBlendState->attachmentCount);
@@ -68,7 +68,7 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount, co
             uint32_t att = subpass.pColorAttachments[j].attachment;
 
             if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
-                if (!FormatHasFullThroughputBlendingArm(rp_state->createInfo.pAttachments[att].format)) {
+                if (!FormatHasFullThroughputBlendingArm(rp_state->create_info.pAttachments[att].format)) {
                     skip |= LogPerformanceWarning(kVUID_BestPractices_CreatePipelines_MultisampledBlending, device, create_info_loc,
                                                   "%s Pipeline is multisampled and "
                                                   "color attachment #%u makes use "
@@ -175,7 +175,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
             const auto& rp_state = pipeline.RenderPassState();
             if (rp_state && !rp_state->UsesDynamicRendering() && stage.entrypoint) {
-                auto rpci = rp_state->createInfo.ptr();
+                auto rpci = rp_state->create_info.ptr();
                 auto subpass = pipeline.Subpass();
                 for (const auto& variable : stage.entrypoint->resource_interface_variables) {
                     if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
@@ -217,7 +217,7 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
         return result;
     }
     auto& create_info = pipe_state.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
-    const auto& subpass = rp->createInfo.pSubpasses[create_info.subpass];
+    const auto& subpass = rp->create_info.pSubpasses[create_info.subpass];
 
     // NOTE: see PIPELINE_LAYOUT and safe_VkGraphicsPipelineCreateInfo constructors. pColorBlendState and pDepthStencilState
     // are only non-null if they are enabled.
@@ -301,17 +301,17 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const VkComputePipelineCreateInfo& createInfo = pCreateInfos[i];
+        const VkComputePipelineCreateInfo& create_info = pCreateInfos[i];
         if (VendorCheckEnabled(kBPVendorArm)) {
-            skip |= ValidateCreateComputePipelineArm(createInfo, create_info_loc);
+            skip |= ValidateCreateComputePipelineArm(create_info, create_info_loc);
         }
 
         if (VendorCheckEnabled(kBPVendorAMD)) {
-            skip |= ValidateCreateComputePipelineAmd(createInfo, create_info_loc);
+            skip |= ValidateCreateComputePipelineAmd(create_info, create_info_loc);
         }
 
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
-            auto module_state = Get<vvl::ShaderModule>(createInfo.stage.module);
+            auto module_state = Get<vvl::ShaderModule>(create_info.stage.module);
             if (module_state &&
                 module_state->spirv->static_data_.has_builtin_workgroup_size) {  // No module if creating from module identifier
                 skip |= LogWarning(kVUID_BestPractices_SpirvDeprecated_WorkgroupSize, device, create_info_loc,
@@ -325,16 +325,16 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
     return skip;
 }
 
-bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo,
+bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& create_info,
                                                      const Location& create_info_loc) const {
     bool skip = false;
-    auto module_state = Get<vvl::ShaderModule>(createInfo.stage.module);
+    auto module_state = Get<vvl::ShaderModule>(create_info.stage.module);
     if (!module_state || !module_state->spirv) {
         return false;  // No module if creating from module identifier
     }
 
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint = module_state->spirv->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    auto entrypoint = module_state->spirv->FindEntrypoint(create_info.stage.pName, create_info.stage.stage);
     if (!entrypoint) return false;
 
     uint32_t x = {}, y = {}, z = {};
@@ -396,14 +396,14 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     return skip;
 }
 
-bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& createInfo,
+bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& create_info,
                                                      const Location& create_info_loc) const {
     bool skip = false;
-    auto module_state = Get<vvl::ShaderModule>(createInfo.stage.module);
+    auto module_state = Get<vvl::ShaderModule>(create_info.stage.module);
     if (!module_state || !module_state->spirv) {
         return false;
     }
-    auto entrypoint = module_state->spirv->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    auto entrypoint = module_state->spirv->FindEntrypoint(create_info.stage.pName, create_info.stage.stage);
     if (!entrypoint) {
         return false;
     }

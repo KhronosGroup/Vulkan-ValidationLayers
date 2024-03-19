@@ -58,9 +58,9 @@ Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer handle, const VkBuffer
     : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
-      createInfo(*safe_create_info.ptr()),
+      create_info(*safe_create_info.ptr()),
       requirements(GetMemoryRequirements(dev_data, handle)),
-      usage(GetBufferUsageFlags(createInfo)),
+      usage(GetBufferUsageFlags(create_info)),
       supported_video_profiles(dev_data->video_profile_cache_.Get(
           dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
@@ -73,15 +73,16 @@ Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer handle, const VkBuffer
     }
 }
 
-BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *ci,
-                       VkFormatFeatureFlags2KHR buf_ff)
+BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
+                       VkFormatFeatureFlags2KHR format_features)
     : StateObject(handle, kVulkanObjectTypeBufferView),
-      create_info(*ci),
+      safe_create_info(pCreateInfo),
+      create_info(*safe_create_info.ptr()),
       buffer_state(bf),
 #ifdef VK_USE_PLATFORM_METAL_EXT
-      metal_bufferview_export(GetMetalExport(ci)),
+      metal_bufferview_export(GetMetalExport(pCreateInfo)),
 #endif
-      buf_format_features(buf_ff) {
+      buffer_format_features(format_features) {
 }
 
 }  // namespace vvl

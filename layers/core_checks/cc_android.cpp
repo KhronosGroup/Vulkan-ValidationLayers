@@ -296,7 +296,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             }
 
             auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
-            const auto *ici = &image_state->createInfo;
+            const auto *ici = &image_state->create_info;
             const Location &dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
 
             //  the format of image must be VK_FORMAT_UNDEFINED or the format returned by

@@ -47,7 +47,7 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     if (const auto memory_state = Get<vvl::DeviceMemory>(pGetFdInfo->memory)) {
-        const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
+        const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->allocate_info.pNext);
         if (!export_info) {
             skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
                              error_obj.location.dot(Field::pGetFdInfo).dot(Field::memory),
@@ -193,7 +193,7 @@ bool CoreChecks::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const V
                                                         HANDLE *pHandle, const ErrorObject &error_obj) const {
     bool skip = false;
     if (const auto memory_state = Get<vvl::DeviceMemory>(pGetWin32HandleInfo->memory)) {
-        const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
+        const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->allocate_info.pNext);
         if (!export_info) {
             skip |= LogError("VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662", pGetWin32HandleInfo->memory,
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::memory),
@@ -402,7 +402,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "VkImageCreateInfo structure",
                                 FormatHandle(metal_texture_ptr->image).c_str());
                         }
-                        auto format_plane_count = vkuFormatPlaneCount(image_info->createInfo.format);
+                        auto format_plane_count = vkuFormatPlaneCount(image_info->create_info.format);
                         auto image_plane = metal_texture_ptr->plane;
                         if (!(format_plane_count > 1) && (image_plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
                             skip |= LogError(
@@ -411,7 +411,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "%s, and plane = %s, but image was created with format %s, which is not multiplaner and plane is "
                                 "required to be VK_IMAGE_ASPECT_PLANE_0_BIT",
                                 FormatHandle(metal_texture_ptr->image).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
-                                string_VkFormat(image_info->createInfo.format));
+                                string_VkFormat(image_info->create_info.format));
                         }
                         if ((format_plane_count == 2) && (image_plane == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                             skip |= LogError(
@@ -421,7 +421,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "cannot"
                                 "be VK_IMAGE_ASPECT_PLANE_2_BIT",
                                 FormatHandle(metal_texture_ptr->image).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
-                                string_VkFormat(image_info->createInfo.format));
+                                string_VkFormat(image_info->create_info.format));
                         }
                     }
                 }

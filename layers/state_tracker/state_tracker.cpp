@@ -46,9 +46,9 @@
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
                                                                           const vvl::Framebuffer &fb_state) {
-    const VkImageView *attachments = fb_state.createInfo.pAttachments;
-    uint32_t count = fb_state.createInfo.attachmentCount;
-    if (fb_state.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+    const VkImageView *attachments = fb_state.create_info.pAttachments;
+    uint32_t count = fb_state.create_info.attachmentCount;
+    if (fb_state.create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
         const auto *framebuffer_attachments = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(rp_begin.pNext);
         if (framebuffer_attachments) {
             attachments = framebuffer_attachments->pAttachments;
@@ -454,7 +454,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
     } else {
         format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
                                                  IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device,
-                                                 image_state->VkHandle(), pCreateInfo->format, image_state->createInfo.tiling);
+                                                 image_state->VkHandle(), pCreateInfo->format, image_state->create_info.tiling);
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
@@ -463,12 +463,12 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         VkPhysicalDeviceImageViewImageFormatInfoEXT imageview_format_info = vku::InitStructHelper();
         imageview_format_info.imageViewType = pCreateInfo->viewType;
         VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&imageview_format_info);
-        image_format_info.type = image_state->createInfo.imageType;
-        image_format_info.format = image_state->createInfo.format;
-        image_format_info.tiling = image_state->createInfo.tiling;
+        image_format_info.type = image_state->create_info.imageType;
+        image_format_info.format = image_state->create_info.format;
+        image_format_info.tiling = image_state->create_info.tiling;
         auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
-        image_format_info.usage = usage_create_info ? usage_create_info->usage : image_state->createInfo.usage;
-        image_format_info.flags = image_state->createInfo.flags;
+        image_format_info.usage = usage_create_info ? usage_create_info->usage : image_state->create_info.usage;
+        image_format_info.flags = image_state->create_info.flags;
 
         VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&filter_cubic_props);
 
@@ -518,13 +518,13 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
             VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
         if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
-            descriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+            descriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
 
             if (buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)
-                resourceDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+                resourceDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
 
             if (buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
-                samplerDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+                samplerDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
         }
 
         if (buffer_state->deviceAddress != 0) {
@@ -1278,14 +1278,14 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
             if (!buffer_state) {
                 return;
             }
-            dedicated_binding.emplace(dedicated->buffer, buffer_state->createInfo);
+            dedicated_binding.emplace(dedicated->buffer, buffer_state->create_info);
         } else if (dedicated->image) {
             auto image_state = Get<vvl::Image>(dedicated->image);
             assert(image_state);
             if (!image_state) {
                 return;
             }
-            dedicated_binding.emplace(dedicated->image, image_state->createInfo);
+            dedicated_binding.emplace(dedicated->image, image_state->create_info);
         }
     }
     if (const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
@@ -1729,8 +1729,8 @@ void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSamp
     auto sampler_state = Get<vvl::Sampler>(sampler);
     // Any bound cmd buffers are now invalid
     if (sampler_state) {
-        if (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
-            sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
+        if (sampler_state->create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+            sampler_state->create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
             custom_border_color_sampler_count--;
         }
     }
@@ -3593,8 +3593,8 @@ void ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(VkDevice devi
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
         ExternalOpaqueInfo external_info = {};
-        external_info.allocation_size = memory_state->alloc_info.allocationSize;
-        external_info.memory_type_index = memory_state->alloc_info.memoryTypeIndex;
+        external_info.allocation_size = memory_state->allocate_info.allocationSize;
+        external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
         external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
         external_info.dedicated_image = memory_state->GetDedicatedImage();
 
@@ -3614,8 +3614,8 @@ void ValidationStateTracker::PostCallRecordGetMemoryFdKHR(VkDevice device, const
         // For validation purposes we need to keep allocation size and memory type index.
         // There is no need to keep pNext chain.
         ExternalOpaqueInfo external_info = {};
-        external_info.allocation_size = memory_state->alloc_info.allocationSize;
-        external_info.memory_type_index = memory_state->alloc_info.memoryTypeIndex;
+        external_info.allocation_size = memory_state->allocate_info.allocationSize;
+        external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
         external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
         external_info.dedicated_image = memory_state->GetDedicatedImage();
 
@@ -4469,11 +4469,11 @@ void ValidationStateTracker::PostCallRecordResetQueryPool(VkDevice device, VkQue
     if (!query_pool_state) return;
 
     // Reset the state of existing entries.
-    const uint32_t max_query_count = std::min(queryCount, query_pool_state->createInfo.queryCount - firstQuery);
+    const uint32_t max_query_count = std::min(queryCount, query_pool_state->create_info.queryCount - firstQuery);
     for (uint32_t i = 0; i < max_query_count; ++i) {
         auto query_index = firstQuery + i;
         query_pool_state->SetQueryState(query_index, 0, QUERYSTATE_RESET);
-        if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+        if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
             for (uint32_t pass_index = 0; pass_index < query_pool_state->n_performance_passes; pass_index++) {
                 query_pool_state->SetQueryState(query_index, pass_index, QUERYSTATE_RESET);
             }
@@ -4491,12 +4491,12 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
 }
 
 // Update the common AllocateDescriptorSetsData
-void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
+void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                               vvl::AllocateDescriptorSetsData *ds_data) const {
     const auto *count_allocate_info =
-        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
-    for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = Get<vvl::DescriptorSetLayout>(p_alloc_info->pSetLayouts[i]);
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
+    for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
+        auto layout = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
         if (layout) {
             ds_data->layout_nodes[i] = layout;
             // Count total descriptors required per type

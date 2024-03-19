@@ -82,7 +82,7 @@ void gpuav::Validator::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuf
 
     std::vector<uint64_t> current_valid_handles;
     ForEach<vvl::AccelerationStructureNV>([&current_valid_handles](const vvl::AccelerationStructureNV &as_state) {
-        if (as_state.built && as_state.create_infoNV.info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
+        if (as_state.built && as_state.create_info.info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
             current_valid_handles.push_back(as_state.opaque_handle);
         }
     });

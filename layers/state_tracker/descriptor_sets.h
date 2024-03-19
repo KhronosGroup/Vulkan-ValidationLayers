@@ -77,8 +77,10 @@ class DescriptorPool : public StateObject {
         return available_sets_;
     }
 
+    const safe_VkDescriptorPoolCreateInfo safe_create_info;
+    const VkDescriptorPoolCreateInfo &create_info;
+
     const uint32_t maxSets;  // Max descriptor sets allowed in this pool
-    const safe_VkDescriptorPoolCreateInfo createInfo;
     using TypeCountMap = vvl::unordered_map<uint32_t, uint32_t>;
     const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
 
@@ -94,10 +96,13 @@ class DescriptorPool : public StateObject {
 
 class DescriptorUpdateTemplate : public StateObject {
   public:
-    const safe_VkDescriptorUpdateTemplateCreateInfo create_info;
+    const safe_VkDescriptorUpdateTemplateCreateInfo safe_create_info;
+    const VkDescriptorUpdateTemplateCreateInfo &create_info;
 
     DescriptorUpdateTemplate(VkDescriptorUpdateTemplate handle, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
-        : StateObject(handle, kVulkanObjectTypeDescriptorUpdateTemplate), create_info(pCreateInfo) {}
+        : StateObject(handle, kVulkanObjectTypeDescriptorUpdateTemplate),
+          safe_create_info(pCreateInfo),
+          create_info(*safe_create_info.ptr()) {}
 
     VkDescriptorUpdateTemplate VkHandle() const { return handle_.Cast<VkDescriptorUpdateTemplate>(); };
 };
