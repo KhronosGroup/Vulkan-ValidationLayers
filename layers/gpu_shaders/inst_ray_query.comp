@@ -28,12 +28,7 @@
 
 #include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
-
-layout(set = kDefaultDescriptorSet, binding = 0, std430) buffer inst_OutputBuffer {
-    uint flags;
-    uint written_count;
-    uint data[];
-} inst_output_buffer;
+#include "gpu_inst_common_descriptor_sets.h"
 
 bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
 {
@@ -109,22 +104,31 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
     } while (false);
 
     if (0u != error) {
-        uint rec_len = 10u;
-        uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
-        if ((write_pos + rec_len) <= uint(inst_output_buffer.data.length()))
-        {
-            inst_output_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = rec_len;
-            inst_output_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
-            inst_output_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
-            inst_output_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
-            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+        const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
+        const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
+        const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
 
-            inst_output_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstRayQuery;
-            inst_output_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
+        if (max_cmd_errors_count_reached) return false;
+        
+        uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
+        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+
+        if (errors_buffer_not_filled) {
+            inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
+            inst_errors_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
+            inst_errors_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
+            inst_errors_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
+            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+
+            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstRayQuery;
+            inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
+
+            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
             
-            inst_output_buffer.data[write_pos + kInstRayQueryParamOffset_0] = param_0;
+            inst_errors_buffer.data[write_pos + kInstRayQueryParamOffset_0] = param_0;
         }
         return false;
     }

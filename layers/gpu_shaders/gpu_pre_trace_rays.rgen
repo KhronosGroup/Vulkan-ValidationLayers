@@ -24,7 +24,6 @@
 #endif
 
 #extension GL_GOOGLE_include_directive : enable
-#include "gpu_pre_action.h"
 
 struct VkTraceRaysIndirectCommandKHR {
     uint width;
@@ -36,23 +35,24 @@ layout(buffer_reference, std430) buffer IndirectCommandReference {
     VkTraceRaysIndirectCommandKHR ray_query_dimensions;
 };
 
-layout(push_constant) uniform UniformInfo {
+layout(push_constant) uniform PushConstants {
     // Need to put the buffer reference first otherwise it is incorrect, probably an alignment issue
     IndirectCommandReference indirect_data;
     uint ray_query_width_limit;
     uint ray_query_height_limit;
     uint ray_query_depth_limit;
-} u_info;
+};
 
+#include "gpu_pre_action.h"
 
 void main() {
-    if (u_info.indirect_data.ray_query_dimensions.width > u_info.ray_query_width_limit) {
-        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, u_info.indirect_data.ray_query_dimensions.width, 0);
+    if (indirect_data.ray_query_dimensions.width > ray_query_width_limit) {
+        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, indirect_data.ray_query_dimensions.width, 0);
     }
-    if (u_info.indirect_data.ray_query_dimensions.height > u_info.ray_query_height_limit) {
-        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, u_info.indirect_data.ray_query_dimensions.height, 0);
+    if (indirect_data.ray_query_dimensions.height > ray_query_height_limit) {
+        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, indirect_data.ray_query_dimensions.height, 0);
     }
-    if (u_info.indirect_data.ray_query_dimensions.depth > u_info.ray_query_depth_limit) {
-        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, u_info.indirect_data.ray_query_dimensions.depth, 0);
+    if (indirect_data.ray_query_dimensions.depth > ray_query_depth_limit) {
+        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, indirect_data.ray_query_dimensions.depth, 0);
     }
 }

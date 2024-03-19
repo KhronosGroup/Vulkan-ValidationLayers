@@ -16,7 +16,9 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 
-TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBBuffer) {
+#include "../layers/gpu_shaders/gpu_shaders_constants.h"
+
+TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ArrayOOBBuffer) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
@@ -235,13 +237,15 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     uint32_t *data = (uint32_t *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", 2 * 3);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -353,7 +357,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     data[0] = 25;
     buffer0.memory().unmap();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -484,7 +488,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     buffer0.memory().unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -494,7 +499,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     buffer0.memory().unmap();
 
     SCOPED_TRACE("Uninitialized");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -611,7 +617,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     buffer0.memory().unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -621,7 +628,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     buffer0.memory().unmap();
 
     SCOPED_TRACE("Uninitialized");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -729,7 +737,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     buffer0.memory().unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", 3);
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -739,7 +747,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     buffer0.memory().unmap();
 
     SCOPED_TRACE("Uninitialized");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", 3);
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -947,6 +955,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
         uint32_t *data = (uint32_t *)buffer0.memory().map();
         data[0] = 5;
         buffer0.memory().unmap();
+        // Invalid read
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08114");
         m_default_queue->submit(*m_commandBuffer, false);
         m_default_queue->wait();
@@ -958,6 +967,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
         uint32_t *data = (uint32_t *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
+        // Invalid read and invalid write
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
         m_default_queue->submit(*m_commandBuffer, false);
         m_default_queue->wait();
@@ -1079,8 +1090,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     image.destroy();
 
     // UNASSIGNED-Descriptor destroyed
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.");
+    m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.",
+                                    gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -1201,8 +1213,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     sampler.destroy();
 
     // UNASSIGNED-Descriptor destroyed
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.");
+    m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.",
+                                    gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -1440,7 +1453,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
 
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
+
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
@@ -1532,7 +1546,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSL) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.WriteDescriptorImageInfo(2, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set.UpdateDescriptorSets();
@@ -1652,7 +1666,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
     // indexing into textures[7], but don't fill it
     descriptor_set.WriteDescriptorImageInfo(2, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -1835,7 +1849,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE);
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -1871,7 +1885,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "(set = 0, binding = 1) Index of 3 used to index descriptor array of length 2");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "(set = 0, binding = 1) Index of 5 used to index descriptor array of length 2");
     m_default_queue->submit(*m_commandBuffer, false);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();

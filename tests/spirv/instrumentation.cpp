@@ -18,7 +18,7 @@
 #include "module.h"
 
 static constexpr uint32_t kDefaultShaderId = 23;
-static constexpr uint32_t kDefaultDescriptorSet = 3;
+static constexpr uint32_t kInstDefaultDescriptorSet = 3;
 
 static bool all_passes = false;
 static bool bindless_descriptor_pass = false;
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     }
     fclose(fp);
 
-    gpuav::spirv::Module module(spirv_data, kDefaultShaderId, kDefaultDescriptorSet);
+    gpuav::spirv::Module module(spirv_data, kDefaultShaderId, kInstDefaultDescriptorSet);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
     }

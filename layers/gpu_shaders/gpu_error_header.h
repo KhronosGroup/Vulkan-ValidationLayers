@@ -36,13 +36,13 @@ namespace glsl {
 // |	- Instruction Id
 // |	- Shader stage Id
 // |	- Shader stage info (3 integers)
+// |	- Action command index in command buffer
+// |    - Command resources index
 // | 	- Error group (Id unique to the shader/instrumentation code that wrote the error)
 // |	- subcode (maps to VUIDs)
 // | --------------------------------
 // | Error specific parameters
 // \---------------------------------
-//
-// The size of these parts depends on the validation being done.
 
 // Error Header offsets:
 // ---------------------
@@ -114,12 +114,15 @@ const int kHeaderTaskGlobalInvocationIdXOffset = kHeaderStageInfoOffset_0;
 const int kHeaderTaskGlobalInvocationIdYOffset = kHeaderStageInfoOffset_1;
 const int kHeaderTaskGlobalInvocationIdZOffset = kHeaderStageInfoOffset_2;
 
-// This identifies the validation error
-// We use groups to more easily mangage the many int values not conflicting
-const int kHeaderErrorGroupOffset = 7;
-const int kHeaderErrorSubCodeOffset = 8;
+const int kHeaderActionIdOffset = 7;
+const int kHeaderCommandResourceIdOffset = 8;
 
-const int kHeaderSize = 9;
+// This identifies the validation error
+// We use groups to more easily manage the many int values not conflicting
+const int kHeaderErrorGroupOffset = 9;
+const int kHeaderErrorSubCodeOffset = 10;
+
+const int kHeaderSize = 11;
 
 // Error specific parameters offsets:
 // ----------------------------------
@@ -130,14 +133,14 @@ const int kHeaderSize = 9;
 const int kInstBindlessDescSetOffset = kHeaderSize;
 const int kInstBindlessDescBindingOffset = kHeaderSize + 1;
 const int kInstBindlessDescIndexOffset = kHeaderSize + 2;
-const int kInstBindlessCustom_0 = kHeaderSize + 3;
-const int kInstBindlessCustom_1 = kHeaderSize + 4;
+const int kInstBindlessCustomOffset_0 = kHeaderSize + 3;
+const int kInstBindlessCustomOffset_1 = kHeaderSize + 4;
 
 // A bindless bounds error will output the index and the bound.
 const int kInstBindlessBoundsDescSetOffset = kInstBindlessDescSetOffset;
 const int kInstBindlessBoundsDescBindingOffset = kInstBindlessDescBindingOffset;
 const int kInstBindlessBoundsDescIndexOffset = kInstBindlessDescIndexOffset;
-const int kInstBindlessBoundsDescBoundOffset = kInstBindlessCustom_0;
+const int kInstBindlessBoundsDescBoundOffset = kInstBindlessCustomOffset_0;
 
 // A descriptor uninitialized error will output the index.
 const int kInstBindlessUninitDescSetOffset = kInstBindlessDescSetOffset;
@@ -149,8 +152,8 @@ const int kInstBindlessUninitDescIndexOffset = kInstBindlessDescIndexOffset;
 const int kInstBindlessBuffOOBDescSetOffset = kInstBindlessDescSetOffset;
 const int kInstBindlessBuffOOBDescBindingOffset = kInstBindlessDescBindingOffset;
 const int kInstBindlessBuffOOBDescIndexOffset = kInstBindlessDescIndexOffset;
-const int kInstBindlessBuffOOBBuffOffOffset = kInstBindlessCustom_0;
-const int kInstBindlessBuffOOBBuffSizeOffset = kInstBindlessCustom_1;
+const int kInstBindlessBuffOOBBuffOffOffset = kInstBindlessCustomOffset_0;
+const int kInstBindlessBuffOOBBuffSizeOffset = kInstBindlessCustomOffset_1;
 
 // Buffer device addresses
 // ---
@@ -168,9 +171,11 @@ const int kInstRayQueryParamOffset_0 = kHeaderSize;
 const int kPreActionParamOffset_0 = kHeaderSize;
 const int kPreActionParamOffset_1 = kHeaderSize + 1;
 
-// Maximum record size
+// Sizes/Counts
 // -------------------
-const int kMaxErrorRecordSize = kHeaderSize + 7;
+const int kErrorRecordSize = kHeaderSize + 5;
+const int kErrorRecordCounts = 4096;  // Maximum number of errors a command buffer can hold. Arbitrary value
+const int kErrorBufferByteSize = 4 * kErrorRecordSize * kErrorRecordCounts + 2 * 4;  // 2 * 4 bytes to store flags and errors count
 
 #ifdef __cplusplus
 }  // namespace glsl

@@ -99,12 +99,12 @@ void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevi
 
 void gpuav::Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                       const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    // Always passing false is kind of a hack since this Get call is expected to retrieve the shared resources from the map, not
-    // allocate them, so use_shader_object will not be used
-    PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources(false, record_obj.location);
-    auto pipeline = shared_resources->renderpass_to_pipeline.pop(renderPass);
-    if (pipeline != shared_resources->renderpass_to_pipeline.end()) {
-        DispatchDestroyPipeline(device, pipeline->second, nullptr);
+    PreDrawResources::SharedResources *shared_resources = GetSharedDrawIndirectValidationResources();
+    if (shared_resources) {
+        auto pipeline = shared_resources->renderpass_to_pipeline.pop(renderPass);
+        if (pipeline != shared_resources->renderpass_to_pipeline.end()) {
+            DispatchDestroyPipeline(device, pipeline->second, nullptr);
+        }
     }
     BaseClass::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator, record_obj);
 }

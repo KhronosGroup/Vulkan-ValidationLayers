@@ -544,15 +544,9 @@ bool gpuav::Validator::LogMessageInstRayQuery(const uint32_t *debug_record, std:
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources &cmd_resources,
-                                                  uint32_t operation_index, uint32_t *const debug_output_buffer,
-                                                  const std::vector<DescSetState> &descriptor_sets, const Location &loc) {
-    const uint32_t total_words = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
-    // A zero here means that the shader instrumentation didn't write anything.
-    // If you have nothing to say, don't say it here.
-    if (0 == total_words) {
-        return false;
-    }
+bool gpuav::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources &cmd_resources,
+                                                 uint32_t operation_index, uint32_t *const debug_record,
+                                                 const std::vector<DescSetState> &descriptor_sets, const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
     // The number of words actually written by the shaders is determined by the size of the buffer
@@ -562,22 +556,6 @@ bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, Vk
     // is hard-coded to process only one record because it expects the buffer to be large enough to
     // hold only one record. If there is a desire to process more than one record, this function needs
     // to be modified to loop over records and the buffer size increased.
-
-    VkShaderModule shader_module_handle = VK_NULL_HANDLE;
-    VkPipeline pipeline_handle = VK_NULL_HANDLE;
-    VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
-    vvl::span<const uint32_t> pgm;
-    // The first record starts at this offset after the total_words.
-    const uint32_t *debug_record = &debug_output_buffer[spvtools::kDebugOutputDataOffset];
-    // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
-    // by the instrumented shader.
-    auto it = shader_map.find(debug_record[glsl::kHeaderShaderIdOffset]);
-    if (it != shader_map.end()) {
-        shader_module_handle = it->second.shader_module;
-        pipeline_handle = it->second.pipeline;
-        shader_object_handle = it->second.shader_object;
-        pgm = it->second.pgm;
-    }
 
     std::string error_msg;
     std::string vuid_msg;
@@ -599,12 +577,27 @@ bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, Vk
     }
 
     if (error_found) {
+        VkShaderModule shader_module_handle = VK_NULL_HANDLE;
+        VkPipeline pipeline_handle = VK_NULL_HANDLE;
+        VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
+        vvl::span<const uint32_t> pgm;
+
+        // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
+        // by the instrumented shader.
+        auto it = shader_map.find(debug_record[glsl::kHeaderShaderIdOffset]);
+        if (it != shader_map.end()) {
+            shader_module_handle = it->second.shader_module;
+            pipeline_handle = it->second.pipeline;
+            shader_object_handle = it->second.shader_object;
+            pgm = it->second.pgm;
+        }
+
         std::string stage_message;
         std::string common_message;
         std::string filename_message;
         std::string source_message;
-        GenerateStageMessage(debug_record, stage_message);
-        UtilGenerateCommonMessage(debug_report, cmd_buffer, debug_record, shader_module_handle, pipeline_handle,
+        GenerateStageMessage(error_record, stage_message);
+        UtilGenerateCommonMessage(debug_report, cmd_buffer, error_record, shader_module_handle, pipeline_handle,
                                   shader_object_handle, cmd_resources.pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
 
@@ -619,53 +612,26 @@ bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, Vk
         }
     }
 
-    if (error_found) {
-        // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
-        const uint32_t words_to_clear = std::min(total_words, output_buffer_size - spvtools::kDebugOutputDataOffset);
-        debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
-        memset(&debug_output_buffer[spvtools::kDebugOutputDataOffset], 0, sizeof(uint32_t) * words_to_clear);
-    }
-
     return error_found;
 }
 
-bool gpuav::CommandResources::LogErrorIfAny(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                            const uint32_t operation_index) {
-    bool error_found = false;
-    uint32_t *output_buffer = nullptr;
-    VkResult result = vmaMapMemory(validator.vmaAllocator, output_mem_block.allocation, reinterpret_cast<void **>(&output_buffer));
-    if (result == VK_SUCCESS) {
-        const uint32_t total_words = output_buffer[spvtools::kDebugOutputSizeOffset];
-        // A zero here means that the shader instrumentation didn't write anything.
-        if (total_words != 0) {
-            const LogObjectList objlist(queue, cmd_buffer);
-            error_found |= LogValidationMessage(validator, queue, cmd_buffer, output_buffer, operation_index, objlist);
-        }
-        output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
-        vmaUnmapMemory(validator.vmaAllocator, output_mem_block.allocation);
-    }
-    return error_found;
-}
-
-bool gpuav::CommandResources::LogValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
+bool gpuav::CommandResources::LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
                                                    uint32_t *output_buffer_begin, const uint32_t operation_index,
                                                    const LogObjectList &objlist) {
     const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
     const Location loc(command);
     bool error_logged =
-        validator.AnalyzeAndGenerateMessages(cmd_buffer, queue, *this, operation_index, output_buffer_begin,
-                                             di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), loc);
+        validator.AnalyzeAndGenerateMessage(cmd_buffer, queue, *this, operation_index, output_buffer_begin,
+                                            di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), loc);
 
     if (!error_logged) {
-        uint32_t *debug_record = &output_buffer_begin[spvtools::kDebugOutputDataOffset];
-        error_logged = LogCustomValidationMessage(validator, queue, cmd_buffer, debug_record, operation_index, objlist);
+        error_logged = LogCustomValidationMessage(validator, output_buffer_begin, operation_index, objlist);
     }
     return error_logged;
 }
 
-bool gpuav::PreDrawResources::LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                                         const uint32_t *debug_record, const uint32_t operation_index,
-                                                         const LogObjectList &objlist) {
+bool gpuav::PreDrawResources::LogCustomValidationMessage(Validator &validator, const uint32_t *debug_record,
+                                                         const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
     bool error_logged = false;
     if (debug_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDraw) {
@@ -771,9 +737,8 @@ bool gpuav::PreDrawResources::LogCustomValidationMessage(gpuav::Validator &valid
     return error_logged;
 }
 
-bool gpuav::PreDispatchResources::LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                                             const uint32_t *debug_record, const uint32_t operation_index,
-                                                             const LogObjectList &objlist) {
+bool gpuav::PreDispatchResources::LogCustomValidationMessage(Validator &validator, const uint32_t *debug_record,
+                                                             const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
     bool error_logged = false;
     if (debug_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
@@ -815,8 +780,7 @@ bool gpuav::PreDispatchResources::LogCustomValidationMessage(gpuav::Validator &v
     return error_logged;
 }
 
-bool gpuav::PreTraceRaysResources::LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue,
-                                                              VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+bool gpuav::PreTraceRaysResources::LogCustomValidationMessage(Validator &validator, const uint32_t *debug_record,
                                                               const uint32_t operation_index, const LogObjectList &objlist) {
     using namespace glsl;
 
@@ -869,8 +833,7 @@ bool gpuav::PreTraceRaysResources::LogCustomValidationMessage(gpuav::Validator &
     return error_logged;
 }
 
-bool gpuav::PreCopyBufferToImageResources::LogCustomValidationMessage(gpuav::Validator &validator, VkQueue queue,
-                                                                      VkCommandBuffer cmd_buffer, const uint32_t *debug_record,
+bool gpuav::PreCopyBufferToImageResources::LogCustomValidationMessage(Validator &validator, const uint32_t *debug_record,
                                                                       const uint32_t operation_index,
                                                                       const LogObjectList &objlist) {
     using namespace glsl;

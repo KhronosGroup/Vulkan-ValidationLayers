@@ -28,6 +28,7 @@
 
 #include "gpu_error_header.h"
 #include "gpu_shaders_constants.h"
+#include "gpu_inst_common_descriptor_sets.h"
 
 layout(buffer_reference) buffer DescriptorSetData;
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorLayoutData {
@@ -47,19 +48,13 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState 
     uint data[];
 };
 
-layout(set = kDefaultDescriptorSet, binding = 0, std430) buffer inst_OutputBuffer {
-    uint flags;
-    uint written_count;
-    uint data[];
-} inst_output_buffer;
-
 struct DescriptorSetRecord {
     DescriptorLayoutData layout_data;
     DescriptorSetInData in_data;
     DescriptorSetOutData out_data;
 };
 
-layout(set = kDefaultDescriptorSet, binding = kBindingBindlessDescriptor, std430) buffer inst_bindless_StateBuffer {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer inst_bindless_StateBuffer {
     GlobalState global_state;
     DescriptorSetRecord desc_sets[32];
 } inst_bindless_state_buffer;
@@ -162,25 +157,36 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
     } while (false);
 
     if (0u != error) {
-        uint rec_len = 14u;
-        uint write_pos = atomicAdd(inst_output_buffer.written_count, rec_len);
-        if ((write_pos + rec_len) <= uint(inst_output_buffer.data.length())) {
-            inst_output_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = rec_len;
-            inst_output_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
-            inst_output_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
-            inst_output_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
-            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-            inst_output_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+        
+        const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
+        const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
+        const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
+        
+        if (max_cmd_errors_count_reached) return false;
+        
+        uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
+        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+        
+        if (errors_buffer_not_filled) {
+            inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
+            inst_errors_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
+            inst_errors_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
+            inst_errors_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
+            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-            inst_output_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBindlessDescriptor;
-            inst_output_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
+            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBindlessDescriptor;
+            inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
             
-            inst_output_buffer.data[write_pos + kInstBindlessDescSetOffset] = desc_set;
-            inst_output_buffer.data[write_pos + kInstBindlessDescBindingOffset] = binding;
-            inst_output_buffer.data[write_pos + kInstBindlessDescIndexOffset] = desc_index;
-            inst_output_buffer.data[write_pos + kInstBindlessCustom_0] = param_0;
-            inst_output_buffer.data[write_pos + kInstBindlessCustom_1] = param_1;
+			inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
+
+            inst_errors_buffer.data[write_pos + kInstBindlessDescSetOffset] = desc_set;
+            inst_errors_buffer.data[write_pos + kInstBindlessDescBindingOffset] = binding;
+            inst_errors_buffer.data[write_pos + kInstBindlessDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_0] = param_0;
+            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_1] = param_1;
         }
         return false;
     }

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "vma/vma.h"
+
 namespace gpuav {
 class Validator;
 struct DescBindingInfo;
@@ -24,6 +26,13 @@ struct DescBindingInfo;
 struct DeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
+    void Destroy(VmaAllocator allocator) {
+        if (buffer != VK_NULL_HANDLE) {
+            vmaDestroyBuffer(allocator, buffer, allocation);
+            buffer = VK_NULL_HANDLE;
+            allocation = VK_NULL_HANDLE;
+        }
+    }
 };
 
 struct AccelerationStructureBuildValidationState {
@@ -51,17 +60,22 @@ class CommandResources {
     CommandResources(const CommandResources &) = default;
     CommandResources &operator=(const CommandResources &) = default;
 
-    bool LogErrorIfAny(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, const uint32_t operation_index);
-    bool LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *output_buffer_begin,
+    // Return iff an error was logged
+    bool LogValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer, uint32_t *error_record,
                               const uint32_t operation_index, const LogObjectList &objlist);
-    virtual bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                            const uint32_t *debug_record, const uint32_t operation_index,
-                                            const LogObjectList &objlist) { return false; }
+    // Return iff an error was logged
+    virtual bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
+                                            const LogObjectList &objlist) {
+        return false;
+    }
 
-    DeviceMemoryBlock output_mem_block{};
-
-    VkDescriptorSet output_buffer_desc_set = VK_NULL_HANDLE;
-    VkDescriptorPool output_buffer_desc_pool = VK_NULL_HANDLE;
+    // {CommandBuffer::per_command_resources index, dispatch/draw/trace_rays index}
+    static constexpr uint32_t push_constant_words = 2;
+    VkPushConstantRange GetPushConstantRange();
+    VkDescriptorSet instrumentation_desc_set = VK_NULL_HANDLE;
+    VkDescriptorPool instrumentation_desc_pool = VK_NULL_HANDLE;
+    uint32_t operation_index =
+        0;  // Draw/dispatch/trace rays index in cmd buffer. 0 for all other operations (TODO: maintain it correctly)
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     bool uses_robustness = false;  // Only used in AnalyseAndeGenerateMessages, to output using LogWarning instead of LogError. It needs to be removed
     bool uses_shader_object = false;       // Some VU are dependent if used with pipeline or shader object
@@ -90,9 +104,8 @@ class PreDrawResources : public CommandResources {
     bool emit_task_error = false;  // Used to decide between mesh error and task error
 
     void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                    const uint32_t *debug_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist) final;
+    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist);
 
     struct SharedResources : SharedValidationResources {
         VkShaderModule shader_module = VK_NULL_HANDLE;
@@ -116,9 +129,8 @@ class PreDispatchResources : public CommandResources {
     static constexpr uint32_t push_constant_words = 4;
 
     void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                    const uint32_t *debug_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist) final;
+    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist);
 
     struct SharedResources : SharedValidationResources {
         VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
@@ -134,15 +146,12 @@ class PreTraceRaysResources : public CommandResources {
   public:
     ~PreTraceRaysResources() {}
 
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
     VkDeviceAddress indirect_data_address = 0;
     static constexpr uint32_t push_constant_words = 5;
 
     void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                    const uint32_t *debug_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist) final;
+    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist);
 
     struct SharedResources : SharedValidationResources {
         VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
@@ -171,9 +180,8 @@ class PreCopyBufferToImageResources : public CommandResources {
     VmaAllocation copy_src_regions_allocation = VK_NULL_HANDLE;
 
     void Destroy(Validator &validator) final;
-    bool LogCustomValidationMessage(Validator &validator, VkQueue queue, VkCommandBuffer cmd_buffer,
-                                    const uint32_t *debug_record, const uint32_t operation_index,
-                                    const LogObjectList &objlist) final;
+    bool LogCustomValidationMessage(Validator &validator, const uint32_t *error_record, const uint32_t operation_index,
+                                    const LogObjectList &objlist);
 
     struct SharedResources : SharedValidationResources {
         VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;

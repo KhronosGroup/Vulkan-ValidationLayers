@@ -221,6 +221,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/gpu_pre_trace_rays_rgen.cpp
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h
+    gpu_validation/gpu_constants.h
     gpu_validation/gpu_descriptor_set.cpp
     gpu_validation/gpu_descriptor_set.h
     gpu_validation/gpu_error_message.cpp

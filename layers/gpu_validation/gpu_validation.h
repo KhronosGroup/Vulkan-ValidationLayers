@@ -116,10 +116,16 @@ class Validator : public gpu_tracker::Validator {
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, const Location& loc);
 
-    // Allocate per action (draw, dispatch, trace rays) command validation resources. Should only be used by action commands
-    [[nodiscard]] CommandResources AllocateActionCommandResources(const VkCommandBuffer cmd_buffer,
-                                                                  const VkPipelineBindPoint bind_point, const Location& loc,
-                                                                  const CmdIndirectState* indirect_state = nullptr);
+    void BindDiagnosticCallsCommonDescSet(const LockedSharedPtr<CommandBuffer, WriteLockGuard>& cmd_buffer_state,
+                                          VkPipelineBindPoint bind_point, VkPipelineLayout pipeline_layout, uint32_t cmd_index,
+                                          uint32_t resource_index);
+
+    // Should only be used by action commands.
+    // Allocate per action (draw, dispatch, trace rays) command validation resources,
+    // and bind descriptor sets needed for shader instrumentation.
+    [[nodiscard]] gpuav::CommandResources AllocateActionCommandResources(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point,
+                                                                         const Location& loc,
+                                                                         const CmdIndirectState* indirect_state = nullptr);
     // Allocate memory for the output block that the gpu will use to return any error information
     [[nodiscard]] bool AllocateOutputMem(DeviceMemoryBlock& output_mem, const Location& loc);
 
@@ -139,11 +145,17 @@ class Validator : public gpu_tracker::Validator {
   private:
     VkPipeline GetDrawValidationPipeline(PreDrawResources::SharedResources& shared_draw_resources, VkRenderPass render_pass,
                                          const Location& loc);
-    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources(bool use_shader_objects, const Location& loc);
-    PreDispatchResources::SharedResources* GetSharedDispatchIndirectValidationResources(bool use_shader_objects,
+    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources(VkDescriptorSetLayout error_output_desc_set,
+                                                                                bool use_shader_objects, const Location& loc);
+    // This overload returns nullptr if shared resources have not been created
+    PreDrawResources::SharedResources* GetSharedDrawIndirectValidationResources();
+    PreDispatchResources::SharedResources* GetSharedDispatchIndirectValidationResources(VkDescriptorSetLayout error_output_desc_set,
+                                                                                        bool use_shader_objects,
                                                                                         const Location& loc);
-    PreTraceRaysResources::SharedResources* GetSharedTraceRaysValidationResources(const Location& loc);
-    PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources(const Location& loc);
+    PreTraceRaysResources::SharedResources* GetSharedTraceRaysValidationResources(VkDescriptorSetLayout error_output_desc_layout,
+                                                                                  const Location& loc);
+    PreCopyBufferToImageResources::SharedResources* GetSharedCopyBufferToImageValidationResources(
+        VkDescriptorSetLayout error_output_set_layout, const Location& loc);
 
     void StoreCommandResources(const VkCommandBuffer cmd_buffer, std::unique_ptr<CommandResources> command_resources,
                                const Location& loc);
@@ -161,9 +173,9 @@ class Validator : public gpu_tracker::Validator {
     // ---------------------
   public:
     // Return true iff a error has been found
-    bool AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources& cmd_resources,
-                                    uint32_t operation_index, uint32_t* const debug_output_buffer,
-                                    const std::vector<DescSetState>& descriptor_sets, const Location& loc);
+    bool AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQueue queue, CommandResources& cmd_resources,
+                                   uint32_t operation_index, uint32_t* const error_record,
+                                   const std::vector<DescSetState>& descriptor_sets, const Location& loc);
 
   private:
     // Return true iff an error has been found in debug_record, among the list of errors this function manages

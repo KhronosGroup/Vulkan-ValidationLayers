@@ -32,7 +32,7 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
         return;
     }
     const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
-    output_buffer_size = *size_string ? atoi(size_string) : 1024;
+    output_buffer_byte_size = *size_string ? atoi(size_string) : 1024;
 
     std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
     vvl::ToLower(verbose_string);
@@ -49,7 +49,7 @@ void debug_printf::Validator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo
                                                 VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT |
                                                 gpu_tracker::kShaderStageAllRayTracing,
                                             NULL};
-    bindings_.push_back(binding);
+    validation_bindings_.push_back(binding);
 
     BaseClass::CreateDevice(pCreateInfo, loc);
 
@@ -643,7 +643,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
 
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    result = desc_set_manager->GetDescriptorSets(1, &desc_pool, debug_desc_layout, &desc_sets);
+    result = desc_set_manager->GetDescriptorSets(1, &desc_pool, debug_desc_layout_, &desc_sets);
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(cmd_buffer, loc, "Unable to allocate descriptor sets.  Device could become unstable.");
@@ -652,7 +652,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     }
 
     VkDescriptorBufferInfo output_desc_buffer_info = {};
-    output_desc_buffer_info.range = output_buffer_size;
+    output_desc_buffer_info.range = output_buffer_byte_size;
 
     auto cb_node = GetWrite<debug_printf::CommandBuffer>(cmd_buffer);
     if (!cb_node) {
@@ -674,7 +674,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     // Allocate memory for the output block that the gpu will use to return values for printf
     DeviceMemoryBlock output_block = {};
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = output_buffer_size;
+    buffer_info.size = output_buffer_byte_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -689,7 +689,7 @@ void debug_printf::Validator::AllocateDebugPrintfResources(const VkCommandBuffer
     uint32_t *data;
     result = vmaMapMemory(vmaAllocator, output_block.allocation, reinterpret_cast<void **>(&data));
     if (result == VK_SUCCESS) {
-        memset(data, 0, output_buffer_size);
+        memset(data, 0, output_buffer_byte_size);
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
