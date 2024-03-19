@@ -373,13 +373,11 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
-    VkFence fence_handle = fence.handle();
+    vkt::Fence fence(*m_device);
 
     uint32_t image_index;
-    vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handle, &image_index);
-    vk::WaitForFences(device(), 1, &fence_handle, VK_TRUE, kWaitTimeout);
+    vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
     m_commandBuffer->begin();
 
@@ -798,8 +796,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     const auto images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index;
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
@@ -1367,8 +1364,7 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     VkSwapchainKHR swapchain;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
 
     uint32_t imageIndex;
     vk::AcquireNextImageKHR(device(), swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &imageIndex);

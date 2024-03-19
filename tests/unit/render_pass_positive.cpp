@@ -199,8 +199,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
 
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &depth_image_view.handle(), 100, 100);
-
-    vkt::Fence fence(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 100, 100, 1, &clear);

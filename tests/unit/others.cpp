@@ -1211,11 +1211,8 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
                                                  });
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
-    vkt::Fence fence(*m_device, fence_create_info);
-
-    VkEventCreateInfo event_create_info = vku::InitStructHelper();
-    vkt::Event event(*m_device, event_create_info);
+    vkt::Fence fence(*m_device);
+    vkt::Event event(*m_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
     {

@@ -4590,9 +4590,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
 
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
-    VkFence fence_handle = fence.handle();
+    vkt::Fence fence(*m_device);
     VkResult wait_result;
     vkt::CommandBuffer cbd;
     test.InitFromPool(cbd);
@@ -4609,7 +4607,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     // Two copies *better* finish in a second...
     const uint64_t kFourSeconds = 1U << 30;
     // Copy A to B
-    test.Submit0(test.cba, VK_NULL_HANDLE, 0U, VK_NULL_HANDLE, fence_handle);
+    test.Submit0(test.cba, VK_NULL_HANDLE, 0U, VK_NULL_HANDLE, fence.handle());
     // Copy A to C
     test.Submit0(test.cbb);
     // Wait for A to B
@@ -5030,8 +5028,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     const VkQueue q = m_default_queue->handle();
     const VkDevice dev = m_device->handle();
 
-    VkFenceCreateInfo fence_ci = vku::InitStructHelper();
-    vkt::Fence fence(*m_device, fence_ci);
+    vkt::Fence fence(*m_device);
     VkFence h_fence = fence.handle();
 
     // Test stability requires that we wait on pending operations before returning starts the Vk*Obj destructors

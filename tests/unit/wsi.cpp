@@ -563,8 +563,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
-    vkt::Fence error_fence;
-    error_fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence error_fence(*m_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-surface-07783");
     uint32_t image_i;
@@ -689,8 +688,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
-    vkt::Fence error_fence;
-    error_fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence error_fence(*m_device);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImage2KHR-surface-07784");
     VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
@@ -1626,9 +1624,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     auto images2 = GetSwapchainImages(swapchain2);
 
     uint32_t image_indices[2];
-    vkt::Fence fence, fence2;
-    fence.init(*m_device, vkt::Fence::create_info());
-    fence2.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
+    vkt::Fence fence2(*m_device);
     VkFence fence_handles[2];
     fence_handles[0] = fence.handle();
     fence_handles[1] = fence2.handle();
@@ -1706,8 +1703,7 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     const auto images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index;
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
@@ -3219,8 +3215,7 @@ TEST_F(NegativeWsi, PresentInfoParameters) {
     RETURN_IF_SKIP(InitSwapchain());
 
     uint32_t image_index;
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
@@ -3246,8 +3241,7 @@ TEST_F(NegativeWsi, PresentRegionsKHR) {
     RETURN_IF_SKIP(InitSwapchain());
 
     uint32_t image_index;
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
@@ -3314,13 +3308,11 @@ TEST_F(PositiveWsi, UseDestroyedSwapchain) {
     swapchain_images.resize(swapchain_images_count);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
-    VkFence fence_handle = fence.handle();
+    vkt::Fence fence(*m_device);
     uint32_t index;
-    vk::ResetFences(device(), 1, &fence_handle);
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handle, &index);
-    vk::WaitForFences(device(), 1, &fence_handle, VK_TRUE, kWaitTimeout);
+    vk::ResetFences(device(), 1, &fence.handle());
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &index);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = swapchain_images[index];
@@ -3437,10 +3429,8 @@ TEST_F(NegativeWsi, PresentDuplicatedSwapchain) {
 
     auto images = GetSwapchainImages(m_swapchain);
 
-    vkt::Fence fence1;
-    fence1.init(*m_device, vkt::Fence::create_info());
-    vkt::Fence fence2;
-    fence2.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence1(*m_device);
+    vkt::Fence fence2(*m_device);
 
     VkSwapchainKHR swapchains[2] = {m_swapchain, m_swapchain};
     uint32_t image_indices[2];

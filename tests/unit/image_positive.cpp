@@ -518,8 +518,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vkt::Fence fence;
-    fence.init(*m_device, vkt::Fence::create_info());
+    vkt::Fence fence(*m_device);
     m_commandBuffer->QueueCommandBuffer(fence);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
