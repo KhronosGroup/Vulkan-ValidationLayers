@@ -178,13 +178,13 @@ class Validator : public gpu_tracker::Validator {
                                    const std::vector<DescSetState>& descriptor_sets, const Location& loc);
 
   private:
-    // Return true iff an error has been found in debug_record, among the list of errors this function manages
-    bool LogMessageInstBindlessDescriptor(const uint32_t* debug_record, std::string& out_error_msg, std::string& out_vuid_msg,
+    // Return true iff an error has been found in error_record, among the list of errors this function manages
+    bool LogMessageInstBindlessDescriptor(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
                                           const CommandResources& cmd_resources, const std::vector<DescSetState>& descriptor_sets,
                                           bool& out_oob_access) const;
-    bool LogMessageInstBufferDeviceAddress(const uint32_t* debug_record, std::string& out_error_msg, std::string& out_vuid_msg,
+    bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
                                            bool& out_oob_access) const;
-    bool LogMessageInstRayQuery(const uint32_t* debug_record, std::string& out_error_msg, std::string& out_vuid_msg) const;
+    bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg) const;
 
     // gpu_setup.cpp
     // -------------
