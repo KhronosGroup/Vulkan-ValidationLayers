@@ -1,6 +1,6 @@
-/* Copyright (c) 2019, 2021, 2023 The Khronos Group Inc.
- * Copyright (c) 2019, 2021, 2023 Valve Corporation
- * Copyright (c) 2019, 2021, 2023 LunarG, Inc.
+/* Copyright (c) 2019, 2021, 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2019, 2021, 2023-2024 Valve Corporation
+ * Copyright (c) 2019, 2021, 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@
 
 #include <vulkan/vulkan.h>
 #include "generated/vk_extension_helper.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
 
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
 
 // VkDescriptorSetLayoutBinding
-static inline bool operator==(const safe_VkDescriptorSetLayoutBinding &lhs, const safe_VkDescriptorSetLayoutBinding &rhs) {
+static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding &lhs, const vku::safe_VkDescriptorSetLayoutBinding &rhs) {
     if ((lhs.binding != rhs.binding) || (lhs.descriptorType != rhs.descriptorType) ||
         (lhs.descriptorCount != rhs.descriptorCount) || (lhs.stageFlags != rhs.stageFlags) ||
         !hash_util::SimilarForNullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
@@ -45,8 +45,8 @@ static inline bool operator==(const safe_VkDescriptorSetLayoutBinding &lhs, cons
 
 namespace std {
 template <>
-struct hash<safe_VkDescriptorSetLayoutBinding> {
-    size_t operator()(const safe_VkDescriptorSetLayoutBinding &value) const {
+struct hash<vku::safe_VkDescriptorSetLayoutBinding> {
+    size_t operator()(const vku::safe_VkDescriptorSetLayoutBinding &value) const {
         hash_util::HashCombiner hc;
         hc << value.binding << value.descriptorType << value.descriptorCount << value.stageFlags;
         if (value.pImmutableSamplers) {

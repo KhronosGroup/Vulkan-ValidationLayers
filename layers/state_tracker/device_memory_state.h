@@ -19,7 +19,7 @@
 #pragma once
 #include "state_tracker/state_object.h"
 #include "containers/range_vector.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace vvl {
 struct MemRange {
@@ -46,7 +46,7 @@ struct DedicatedBinding {
 // Data struct for tracking memory object
 class DeviceMemory : public StateObject {
   public:
-    const safe_VkMemoryAllocateInfo safe_allocate_info;
+    const vku::safe_VkMemoryAllocateInfo safe_allocate_info;
     const VkMemoryAllocateInfo &allocate_info;
 
     const VkExternalMemoryHandleTypeFlags export_handle_types;  // from VkExportMemoryAllocateInfo::handleTypes

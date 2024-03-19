@@ -102,7 +102,7 @@ class Validator : public ValidationStateTracker {
     WriteLockGuard WriteLock() override;
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
-                                   safe_VkDeviceCreateInfo *modified_create_info) override;
+                                   vku::safe_VkDeviceCreateInfo *modified_create_info) override;
     void CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
@@ -217,7 +217,7 @@ class Validator : public ValidationStateTracker {
     VmaAllocator vmaAllocator = {};
     VmaPool output_buffer_pool = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager;
-    vl_concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
+    vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> validation_bindings_;
 
     gpuav::DeviceMemoryBlock indices_buffer{};

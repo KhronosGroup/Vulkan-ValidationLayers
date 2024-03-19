@@ -59,9 +59,9 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                          phys_dev_props_core11.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
 
-    if (pipeline_state && pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pVertexInputState) {
+    if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
         const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoKHR>(
-            pipeline_state->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pVertexInputState->pNext);
+            pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
         if (vertex_input_divisor_state && phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE &&
             firstInstance != 0u) {
             for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {

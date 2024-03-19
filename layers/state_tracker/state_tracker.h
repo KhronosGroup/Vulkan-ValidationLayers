@@ -80,7 +80,7 @@ struct CreateShaderModule;
 using ShaderModuleUniqueIds = std::unordered_map<VkShaderStageFlagBits, uint32_t>;
 
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
-    vl_concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;                 \
+    vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;               \
     template <typename Dummy>                                                                         \
     struct MapTraits<state_type, Dummy> {                                                             \
         static constexpr bool kInstanceScope = instance_scope;                                        \
@@ -343,7 +343,7 @@ class ValidationStateTracker : public ValidationObject {
         if (found_it == map.end()) {
             return nullptr;
         }
-        // NOTE: vl_concurrent_unordered_map::find() makes a copy of the value, so it is safe to move out.
+        // NOTE: vvl::concurrent_unordered_map::find() makes a copy of the value, so it is safe to move out.
         // But this will break everything, when switching to a different map type.
         return std::static_pointer_cast<State>(std::move(found_it->second));
     }
@@ -1875,9 +1875,9 @@ class ValidationStateTracker : public ValidationObject {
     mutable std::shared_mutex buffer_address_lock_;
 
     // < external format, features >
-    vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
+    vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
     // < external format, colorAttachmentFormat > (VK_ANDROID_external_format_resolve)
-    vl_concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
+    vvl::concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
 
     std::atomic<VkDeviceSize> descriptorBufferAddressSpaceSize = {0u};
     std::atomic<VkDeviceSize> resourceDescriptorBufferAddressSpaceSize = {0u};

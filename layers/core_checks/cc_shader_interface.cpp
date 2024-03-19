@@ -44,7 +44,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     // or have 2 variables in a location
     std::map<uint32_t, AttribInputPair> location_map;
 
-    safe_VkPipelineVertexInputStateCreateInfo const *input_state = pipeline.InputState();
+    vku::safe_VkPipelineVertexInputStateCreateInfo const *input_state = pipeline.InputState();
     if (!input_state) {
         // if using vertex and mesh, will hit an error, but still might get here
         return skip;

@@ -24,7 +24,7 @@
 #include "state_tracker/chassis_modification_state.h"
 
 bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
-                                            const safe_VkRayTracingPipelineCreateInfoCommon &create_info,
+                                            const vku::safe_VkRayTracingPipelineCreateInfoCommon &create_info,
                                             VkPipelineCreateFlags flags, const Location &create_info_loc) const {
     bool skip = false;
     bool isKHR = create_info_loc.function == Func::vkCreateRayTracingPipelinesKHR;
@@ -44,7 +44,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
                 const Location library_info_loc = create_info_loc.dot(Field::pLibraryInfo);
                 const Location library_loc = library_info_loc.dot(Field::pLibraries, i);
                 const auto library_pipelinestate = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
-                const auto &library_create_info = library_pipelinestate->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
+                const auto &library_create_info = library_pipelinestate->RayTracingCreateInfo();
                 if (library_create_info.maxPipelineRayRecursionDepth != create_info.maxPipelineRayRecursionDepth) {
                     skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591", device, library_loc,
                                      "was created with maxPipelineRayRecursionDepth (%" PRIu32 ") which is not equal %s (%" PRIu32
@@ -181,8 +181,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             continue;
         }
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const auto create_info = pipeline->GetCreateInfo<VkRayTracingPipelineCreateInfoNV>();
-        using CIType = vvl::base_type<decltype(pCreateInfos)>;
+        const auto &create_info = pipeline->RayTracingCreateInfo();
         if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const vvl::Pipeline> base_pipeline;
             const auto bpi = create_info.basePipelineIndex;
@@ -200,7 +199,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
                     "the base pipeline must have been created with the VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT flag set.");
             }
         }
-        skip |= ValidateRayTracingPipeline(*pipeline, pipeline->GetCreateInfo<CIType>(), pCreateInfos[i].flags, create_info_loc);
+        skip |= ValidateRayTracingPipeline(*pipeline, create_info, pCreateInfos[i].flags, create_info_loc);
         skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
@@ -227,8 +226,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             continue;
         }
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const auto create_info = pipeline->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
-        using CIType = vvl::base_type<decltype(pCreateInfos)>;
+        const auto &create_info = pipeline->RayTracingCreateInfo();
         if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const vvl::Pipeline> base_pipeline;
             const auto bpi = create_info.basePipelineIndex;
@@ -246,7 +244,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                     "the base pipeline must have been created with the VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT flag set.");
             }
         }
-        skip |= ValidateRayTracingPipeline(*pipeline, pipeline->GetCreateInfo<CIType>(), pCreateInfos[i].flags, create_info_loc);
+        skip |= ValidateRayTracingPipeline(*pipeline, create_info, pCreateInfos[i].flags, create_info_loc);
         skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");

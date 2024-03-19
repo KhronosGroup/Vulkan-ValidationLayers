@@ -537,7 +537,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, const StageCreateInfo &create_info,
+bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *spec, const StageCreateInfo &create_info,
                                          const Location &loc) const {
     bool skip = false;
     if (!spec) {

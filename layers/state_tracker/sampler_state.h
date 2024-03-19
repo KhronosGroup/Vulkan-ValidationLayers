@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include "generated/vk_safe_struct.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 // Note: some of the types in this header are needed by both the DescriptorSet and Pipeline
 // state objects. It is helpful to have a separate header to avoid circular #include madness.
@@ -59,7 +59,7 @@ namespace vvl {
 
 class Sampler : public StateObject {
   public:
-    const safe_VkSamplerCreateInfo safe_create_info;
+    const vku::safe_VkSamplerCreateInfo safe_create_info;
     const VkSamplerCreateInfo &create_info;
 
     const VkSamplerYcbcrConversion samplerConversion;

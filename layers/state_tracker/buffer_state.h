@@ -30,7 +30,7 @@ class VideoProfileDesc;
 
 class Buffer : public Bindable {
   public:
-    const safe_VkBufferCreateInfo safe_create_info;
+    const vku::safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &create_info;
 
     const VkMemoryRequirements requirements;
@@ -75,7 +75,7 @@ class Buffer : public Bindable {
 
 class BufferView : public StateObject {
   public:
-    const safe_VkBufferViewCreateInfo safe_create_info;
+    const vku::safe_VkBufferViewCreateInfo safe_create_info;
     const VkBufferViewCreateInfo &create_info;
 
     std::shared_ptr<Buffer> buffer_state;
