@@ -70,8 +70,6 @@ class Semaphore : public RefcountedStateObject {
         uint64_t seq;
         uint64_t payload;
 
-        bool operator<(const SemOp &rhs) const { return payload < rhs.payload; }
-
         bool IsWait() const { return op_type == kWait; }
         bool IsSignal() const { return op_type == kSignal; }
         bool IsAcquire() const { return op_type == kBinaryAcquire; }
