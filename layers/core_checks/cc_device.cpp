@@ -758,6 +758,8 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     bool skip = false;
+    // In case of DEVICE_LOST, all execution is considered over
+    if (is_device_lost) return false;
     auto cp_state = Get<vvl::CommandPool>(commandPool);
     if (!cp_state) { return false; }
     // Verify that command buffers in pool are complete (not in-flight)
