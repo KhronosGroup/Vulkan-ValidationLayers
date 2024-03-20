@@ -38,7 +38,6 @@
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_pre_trace_rays_rgen.h"
-#include "generated/gpu_as_inspection_comp.h"
 #include "generated/gpu_inst_shader_hash.h"
 #include "generated/gpu_pre_copy_buffer_to_image_comp.h"
 

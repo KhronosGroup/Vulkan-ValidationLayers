@@ -31,7 +31,6 @@ typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRan
 struct create_shader_object_api_state;
 
 namespace gpuav {
-class AccelerationStructureNV;
 class AccelerationStructureKHR;
 class Buffer;
 class BufferView;
@@ -43,7 +42,6 @@ class Sampler;
 class DescriptorSet;
 struct DescSetState;
 struct CmdIndirectState;
-struct AccelerationStructureBuildValidationInfo;
 
 struct GpuVuid {
     const char* uniform_access_oob_06935 = kVUIDUndefined;
@@ -74,7 +72,6 @@ struct GpuVuid {
 }  // namespace gpuav
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureKHR, gpuav::AccelerationStructureKHR, vvl::AccelerationStructureKHR)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureNV, gpuav::AccelerationStructureNV, vvl::AccelerationStructureNV)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, vvl::BufferView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, vvl::CommandBuffer)
@@ -184,11 +181,6 @@ class Validator : public gpu_tracker::Validator {
     std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView iv,
                                                          const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2KHR ff,
                                                          const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) final;
-    std::shared_ptr<vvl::AccelerationStructureNV> CreateAccelerationStructureState(
-        VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo) final;
-    std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
-        VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
-        std::shared_ptr<vvl::Buffer>&& buf_state) final;
     std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) final;
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) final;
@@ -199,27 +191,14 @@ class Validator : public gpu_tracker::Validator {
                                             const VkQueueFamilyProperties& queueFamilyProperties) override;
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
-    void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo, const Location& loc);
-
-    void Destroy(AccelerationStructureBuildValidationInfo& as_validation_info);
 
     // gpu_record.cpp
     // --------------
   public:
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
-    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                         const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                         const RecordObject& record_obj) override;
-
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj, void* cb_state_data) override;
-
-    void PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
-                                                      VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
-                                                      VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                      VkBuffer scratch, VkDeviceSize scratchOffset,
-                                                      const RecordObject& record_obj) override;
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
 

@@ -145,11 +145,6 @@ void gpuav::CommandBuffer::ResetCBState() {
     }
     di_input_buffer_list.clear();
     current_bindless_buffer = VK_NULL_HANDLE;
-
-    for (auto &as_validation_buffer_info : as_validation_buffers) {
-        gpuav->Destroy(as_validation_buffer_info);
-    }
-    as_validation_buffers.clear();
 }
 
 bool gpuav::CommandBuffer::PreProcess() {
@@ -212,35 +207,11 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
             }
         }
     }
-    ProcessAccelerationStructure(queue, loc);
+
     state_.UpdateCmdBufImageLayouts(*this);
 }
 
-void gpuav::CommandBuffer::ProcessAccelerationStructure(VkQueue queue, const Location &loc) {
-    if (!has_build_as_cmd) {
-        return;
-    }
-    for (const auto &as_validation_buffer_info : as_validation_buffers) {
-        glsl::AccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
 
-        VkResult result = vmaMapMemory(state_.vmaAllocator, as_validation_buffer_info.buffer_allocation,
-                                       reinterpret_cast<void **>(&mapped_validation_buffer));
-        if (result == VK_SUCCESS) {
-            if (mapped_validation_buffer->invalid_handle_found > 0) {
-                const std::array<uint32_t, 2> invalid_handles = {mapped_validation_buffer->invalid_handle_bits_0,
-                                                                 mapped_validation_buffer->invalid_handle_bits_1};
-                const uint64_t invalid_handle = vvl_bit_cast<uint64_t>(invalid_handles);
-
-                state_.LogError(
-                    "UNASSIGNED-AccelerationStructure", as_validation_buffer_info.acceleration_structure, loc,
-                    "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
-                    "handle (%" PRIu64 ")",
-                    invalid_handle);
-            }
-            vmaUnmapMemory(state_.vmaAllocator, as_validation_buffer_info.buffer_allocation);
-        }
-    }
-}
 
 gpuav::Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp)
     : gpu_tracker::Queue(state, q, index, flags, qfp) {}

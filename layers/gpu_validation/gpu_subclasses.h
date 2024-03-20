@@ -66,27 +66,12 @@ struct CmdIndirectState {
     VkDeviceAddress indirectDeviceAddress;
 };
 
-struct AccelerationStructureBuildValidationInfo {
-    // The acceleration structure that is being built.
-    VkAccelerationStructureNV acceleration_structure = VK_NULL_HANDLE;
-
-    // The descriptor pool and descriptor set being used to validate a given build.
-    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-
-    // The storage buffer used by the validating compute shader which contains info about
-    // the valid handles and which is written to communicate found invalid handles.
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VmaAllocation buffer_allocation = VK_NULL_HANDLE;
-};
-
 class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
     // per validated command state
     std::vector<std::unique_ptr<CommandResources>> per_command_resources;
     // per vkCmdBindDescriptorSet() state
     std::vector<DescBindingInfo> di_input_buffer_list;
-    std::vector<AccelerationStructureBuildValidationInfo> as_validation_buffers;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
 
     CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
@@ -101,7 +86,6 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
   private:
     Validator &state_;
     void ResetCBState();
-    void ProcessAccelerationStructure(VkQueue queue, const Location &loc);
 };
 
 class Queue : public gpu_tracker::Queue {
