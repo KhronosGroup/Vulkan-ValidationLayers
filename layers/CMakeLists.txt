@@ -146,7 +146,6 @@ target_sources(vvl PRIVATE
     best_practices/best_practices_validation.h
     containers/qfo_transfer.h
     containers/range_vector.h
-    containers/sparse_containers.h
     containers/subresource_adapter.cpp
     containers/subresource_adapter.h
     core_checks/cc_android.cpp
