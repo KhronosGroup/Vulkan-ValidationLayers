@@ -61,20 +61,26 @@ class Semaphore : public RefcountedStateObject {
     }
 
     struct SemOp {
-        SemOp(OpType ot, Queue *q, uint64_t queue_seq, uint64_t timeline_payload, Func command = Func::Empty)
-            : op_type(ot), command(command), queue(q), seq(queue_seq), payload(timeline_payload) {}
+        SemOp(OpType ot, Queue *q, uint64_t queue_seq, Func command = Func::Empty)
+            : op_type(ot), command(command), queue(q), seq(queue_seq) {}
 
         OpType op_type;
         Func command;
         Queue *queue;
         uint64_t seq;
-        uint64_t payload;
 
         bool IsWait() const { return op_type == kWait; }
         bool IsSignal() const { return op_type == kSignal; }
         bool IsAcquire() const { return op_type == kBinaryAcquire; }
 
         void Notify() const;
+    };
+
+    // SemOpTemp fill is renamed to SemOp in one of the next commits,
+    // and original SemOp is renamed to something that characterizes just queue submission
+    struct SemOpTemp : SemOp {
+        uint64_t payload;
+        SemOpTemp(const SemOp &op, uint64_t payload) : SemOp(op), payload(payload) {}
     };
 
     struct TimePoint {
@@ -87,7 +93,6 @@ class Semaphore : public RefcountedStateObject {
         }
         void AddWaitOp(const SemOp &op) {
             assert(op.op_type == kWait);
-            assert(wait_ops.empty() || wait_ops[0].payload == op.payload);
             wait_ops.emplace_back(op);
         }
         std::optional<SemOp> signal_op;
@@ -131,7 +136,7 @@ class Semaphore : public RefcountedStateObject {
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, 0,
+          completed_{SemOp(type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, 0),
                      type_create_info ? type_create_info->initialValue : 0},
           next_payload_(completed_.payload + 1),
           dev_data_(dev) {
@@ -155,7 +160,7 @@ class Semaphore : public RefcountedStateObject {
     }
     // This is the most recently completed operation. It is returned by value so that the caller
     // has a correct copy even if something else is completing on this queue in a different thread.
-    SemOp Completed() const {
+    SemOpTemp Completed() const {
         auto guard = ReadLock();
         return completed_;
     }
@@ -180,7 +185,7 @@ class Semaphore : public RefcountedStateObject {
     void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
-    std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
+    std::optional<SemOpTemp> LastOp(const std::function<bool(const SemOp &, uint64_t, bool is_pending)> &filter = nullptr) const;
 
     // Returns queue submission associated with the last binary signal.
     std::optional<SubmissionLocator> GetLastBinarySignalSubmission() const;
@@ -209,7 +214,7 @@ class Semaphore : public RefcountedStateObject {
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
 
     // the most recently completed operation
-    SemOp completed_;
+    SemOpTemp completed_;
     // next payload value for binary semaphore operations
     uint64_t next_payload_;
 
@@ -263,5 +268,5 @@ struct SemaphoreSubmitState {
     bool CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_command) const;
 
     bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-                             std::function<bool(const vvl::Semaphore::SemOp &, bool is_pending)> compare_func);
+                             std::function<bool(const vvl::Semaphore::SemOp &, uint64_t, bool is_pending)> compare_func);
 };

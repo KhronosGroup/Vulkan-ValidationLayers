@@ -27,7 +27,7 @@ void vvl::Semaphore::EnqueueSignal(vvl::Queue *queue, uint64_t queue_seq, uint64
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         payload = next_payload_++;
     }
-    SemOp sig_op(kSignal, queue, queue_seq, payload);
+    SemOp sig_op(kSignal, queue, queue_seq);
     auto result = timeline_.emplace(payload, sig_op);
     if (!result.second) {
         // timeline semaphore wait before signal
@@ -37,14 +37,13 @@ void vvl::Semaphore::EnqueueSignal(vvl::Queue *queue, uint64_t queue_seq, uint64
 
 void vvl::Semaphore::EnqueueWait(vvl::Queue *queue, uint64_t queue_seq, uint64_t &payload) {
     auto guard = WriteLock();
-    SemOp wait_op(kWait, queue, queue_seq, payload);
+    SemOp wait_op(kWait, queue, queue_seq);
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         if (timeline_.empty()) {
-            completed_ = wait_op;
+            completed_ = SemOpTemp(wait_op, payload);
             return;
         }
         payload = timeline_.rbegin()->first;
-        wait_op.payload = payload;
     } else {
         if (payload <= completed_.payload) {
             return;
@@ -60,29 +59,31 @@ void vvl::Semaphore::EnqueueAcquire(vvl::Func command) {
     auto guard = WriteLock();
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto payload = next_payload_++;
-    SemOp acquire(kBinaryAcquire, nullptr, 0, payload, command);
+    SemOp acquire(kBinaryAcquire, nullptr, 0);
+    acquire.command = command;
     timeline_.emplace(payload, acquire);
 }
 
-std::optional<SemOp> vvl::Semaphore::LastOp(const std::function<bool(const SemOp &, bool)> &filter) const {
+std::optional<vvl::Semaphore::SemOpTemp> vvl::Semaphore::LastOp(
+    const std::function<bool(const SemOp &, uint64_t, bool)> &filter) const {
     auto guard = ReadLock();
-    std::optional<SemOp> result;
+    std::optional<SemOpTemp> result;
 
     for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
+        uint64_t payload = pos->first;
         auto &timepoint = pos->second;
         for (auto &op : timepoint.wait_ops) {
-            assert(op.payload == timepoint.wait_ops[0].payload);
-            if (!filter || filter(op, true)) {
-                result.emplace(op);
+            if (!filter || filter(op, payload, true)) {
+                result.emplace(SemOpTemp(op, payload));
                 break;
             }
         }
-        if (!result && timepoint.signal_op && (!filter || filter(*timepoint.signal_op, true))) {
-            result.emplace(*timepoint.signal_op);
+        if (!result && timepoint.signal_op && (!filter || filter(*timepoint.signal_op, payload, true))) {
+            result.emplace(SemOpTemp(*timepoint.signal_op, payload));
             break;
         }
     }
-    if (!result && (!filter || filter(completed_, false))) {
+    if (!result && (!filter || filter(completed_, completed_.payload, false))) {
         result.emplace(completed_);
     }
     return result;
@@ -137,7 +138,6 @@ void vvl::Semaphore::TimePoint::Notify() const {
         signal_op->Notify();
     }
     for (auto &wait : wait_ops) {
-        assert(wait.payload == wait_ops[0].payload);
         wait.Notify();
     }
 }
@@ -178,11 +178,10 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
 
     if (retire_here) {
         if (timepoint.signal_op) {
-            completed_ = *timepoint.signal_op;
+            completed_ = SemOpTemp(*timepoint.signal_op, payload);
         }
         for (auto &wait : timepoint.wait_ops) {
-            assert(wait.payload == timepoint.wait_ops[0].payload);
-            completed_ = wait;
+            completed_ = SemOpTemp(wait, payload);
         }
         timepoint.completed.set_value();
         timeline_.erase(timeline_.begin());
@@ -216,7 +215,7 @@ std::shared_future<void> vvl::Semaphore::Wait(uint64_t payload) {
         already_done.set_value();
         return result;
     }
-    SemOp wait_op(kWait, nullptr, 0, payload);
+    SemOp wait_op(kWait, nullptr, 0);
     auto result = timeline_.emplace(payload, TimePoint(wait_op));
     auto &timepoint = result.first->second;
     if (!result.second) {
@@ -278,7 +277,7 @@ void vvl::Semaphore::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
         assert(type == VK_SEMAPHORE_TYPE_BINARY);  // checked by validation phase
         // Exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's
         // payload as executing a semaphore wait operation
-        auto filter = [](const Semaphore::SemOp &op, bool is_pending) {
+        auto filter = [](const Semaphore::SemOp &op, uint64_t, bool is_pending) {
             return is_pending && CanWaitBinarySemaphoreAfterOperation(op.op_type);
         };
         auto last_op = LastOp(filter);
@@ -347,24 +346,25 @@ bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_st
     return true;
 }
 
-bool SemaphoreSubmitState::CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-                                               std::function<bool(const vvl::Semaphore::SemOp &, bool is_pending)> compare_func) {
+bool SemaphoreSubmitState::CheckSemaphoreValue(
+    const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
+    std::function<bool(const vvl::Semaphore::SemOp &, uint64_t, bool is_pending)> compare_func) {
     auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
     // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
     if (current_signal != timeline_signals.end()) {
-        vvl::Semaphore::SemOp sig_op(vvl::Semaphore::kSignal, nullptr, 0, current_signal->second);
-        if (compare_func(sig_op, false)) {
+        vvl::Semaphore::SemOp sig_op(vvl::Semaphore::kSignal, nullptr, 0);
+        if (compare_func(sig_op, current_signal->second, false)) {
             where = "current submit's signal";
-            bad_value = sig_op.payload;
+            bad_value = current_signal->second;
             return true;
         }
     }
     auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
     if (current_wait != timeline_waits.end()) {
-        vvl::Semaphore::SemOp wait_op(vvl::Semaphore::kWait, nullptr, 0, current_wait->second);
-        if (compare_func(wait_op, false)) {
+        vvl::Semaphore::SemOp wait_op(vvl::Semaphore::kWait, nullptr, 0);
+        if (compare_func(wait_op, current_wait->second, false)) {
             where = "current submit's wait";
-            bad_value = wait_op.payload;
+            bad_value = current_wait->second;
             return true;
         }
     }
