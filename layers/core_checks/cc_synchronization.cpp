@@ -63,7 +63,7 @@ struct TimelineMaxDiffCheck {
     // compute the differents between 2 timeline values, without rollover if the difference is greater than INT64_MAX
     uint64_t AbsDiff(uint64_t a, uint64_t b) { return a > b ? a - b : b - a; }
 
-    bool operator()(const vvl::Semaphore::SemOp &op, bool is_pending) { return AbsDiff(value, op.payload) > max_diff; }
+    bool operator()(const vvl::Semaphore::SemOp &, uint64_t payload, bool is_pending) { return AbsDiff(value, payload) > max_diff; }
 
     uint64_t value;
     uint64_t max_diff;
@@ -202,16 +202,16 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
         case VK_SEMAPHORE_TYPE_TIMELINE: {
             uint64_t bad_value = 0;
             std::string where;
-            auto must_be_greater = [value](const vvl::Semaphore::SemOp &op, bool is_pending) {
+            auto must_be_greater = [value](const vvl::Semaphore::SemOp &op, uint64_t payload, bool is_pending) {
                 if (!op.IsSignal()) {
                     return false;
                 }
                 // duplicate signal values are never allowed.
-                if (value == op.payload) {
+                if (value == payload) {
                     return true;
                 }
                 // exact value ordering cannot be determined until execution time
-                return !is_pending && value < op.payload;
+                return !is_pending && value < payload;
             };
             if (CheckSemaphoreValue(*semaphore_state, where, bad_value, must_be_greater)) {
                 const auto &vuid = GetQueueSubmitVUID(signal_semaphore_loc, SubmitError::kTimelineSemSmallValue);
@@ -1402,8 +1402,8 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
                          FormatHandle(pSignalInfo->semaphore).c_str(), completed.payload);
         return skip;
     }
-    auto exceeds_pending = [pSignalInfo](const vvl::Semaphore::SemOp &op, bool is_pending) {
-        return is_pending && op.IsSignal() && pSignalInfo->value >= op.payload;
+    auto exceeds_pending = [pSignalInfo](const vvl::Semaphore::SemOp &op, uint64_t payload, bool is_pending) {
+        return is_pending && op.IsSignal() && pSignalInfo->value >= payload;
     };
     auto last_op = semaphore_state->LastOp(exceeds_pending);
     if (last_op) {
