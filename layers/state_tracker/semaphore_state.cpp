@@ -198,7 +198,7 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
         guard.unlock();
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
-            dev_data_.LogError("INTERNAL-ERROR-VkSemaphore-state-timeout", Handle(), loc,
+            validator.LogError("INTERNAL-ERROR-VkSemaphore-state-timeout", Handle(), loc,
                                "The Validation Layers hit a timeout waiting for timeline semaphore state to update (this is most "
                                "likely a validation bug)."
                                " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
@@ -229,11 +229,11 @@ void vvl::Semaphore::NotifyAndWait(const Location &loc, uint64_t payload) {
     if (scope_ == kInternal) {
         Notify(payload);
         auto waiter = Wait(payload);
-        dev_data_.BeginBlockingOperation();
+        validator.BeginBlockingOperation();
         auto result = waiter.wait_until(GetCondWaitTimeout());
-        dev_data_.EndBlockingOperation();
+        validator.EndBlockingOperation();
         if (result != std::future_status::ready) {
-            dev_data_.LogError("UNASSIGNED-VkSemaphore-state-timeout", Handle(), loc,
+            validator.LogError("UNASSIGNED-VkSemaphore-state-timeout", Handle(), loc,
                                "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
                                " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
                                completed_.payload, payload);

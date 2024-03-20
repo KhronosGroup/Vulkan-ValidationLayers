@@ -126,9 +126,9 @@ class Image : public Bindable {
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
-    Image(const ValidationStateTracker *dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
+    Image(const ValidationStateTracker *validator, VkImage handle, const VkImageCreateInfo *pCreateInfo,
           VkFormatFeatureFlags2KHR features);
-    Image(const ValidationStateTracker *dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+    Image(const ValidationStateTracker *validator, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
     Image(Image const &rh_obj) = delete;
     std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
@@ -334,10 +334,10 @@ class Swapchain : public StateObject {
     const safe_VkImageCreateInfo image_create_info;
 
     std::shared_ptr<vvl::Surface> surface;
-    ValidationStateTracker *dev_data;
+    ValidationStateTracker *validator;
     uint32_t acquired_images = 0;
 
-    Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
+    Swapchain(ValidationStateTracker *validator, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 
     ~Swapchain() {
         if (!Destroyed()) {

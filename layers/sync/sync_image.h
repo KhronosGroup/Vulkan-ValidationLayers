@@ -23,18 +23,18 @@ namespace syncval_state {
 
 class ImageState : public vvl::Image {
   public:
-    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
+    ImageState(const ValidationStateTracker *validator, VkImage img, const VkImageCreateInfo *pCreateInfo,
                VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, features), opaque_base_address_(0U) {}
+        : vvl::Image(validator, img, pCreateInfo, features), opaque_base_address_(0U) {}
 
-    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+    ImageState(const ValidationStateTracker *validator, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
                uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
-        : vvl::Image(dev_data, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
+        : vvl::Image(validator, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
     bool IsSimplyBound() const;
 
-    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
+    void SetOpaqueBaseAddress(ValidationStateTracker &validator);
 
     VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
     bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
@@ -63,7 +63,7 @@ class ImageViewState : public vvl::ImageView {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker *dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
+    Swapchain(ValidationStateTracker *validator, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
     ~Swapchain() { Destroy(); }
     void RecordPresentedImage(PresentedImage &&presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);

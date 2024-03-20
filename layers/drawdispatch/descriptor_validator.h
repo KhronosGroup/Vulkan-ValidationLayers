@@ -44,7 +44,7 @@ class DescriptorValidator {
 
    template <typename T>
    std::string FormatHandle(T&& h) const {
-       return dev_state.FormatHandle(std::forward<T>(h));
+       return validator.FormatHandle(std::forward<T>(h));
     }
 
     bool ValidateBinding(const DescriptorBindingInfo& binding_info, const vvl::DescriptorBinding& binding) const;
@@ -76,7 +76,7 @@ class DescriptorValidator {
     bool ValidateSamplerDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index, VkSampler sampler, bool is_immutable,
                                    const vvl::Sampler* sampler_state) const;
 
-    ValidationStateTracker& dev_state;
+    ValidationStateTracker& validator;
     vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
     const uint32_t set_index;

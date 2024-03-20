@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2021, 2023 Valve Corporation
- * Copyright (c) 2019-2021, 2023 LunarG, Inc.
+ * Copyright (c) 2019-2021, 2023-2024 Valve Corporation
+ * Copyright (c) 2019-2021, 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ struct BufferBarrier : QueueFamilyBarrier {
           size(barrier.size) {}
 
     VulkanTypedHandle GetTypedHandle() const { return VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer); }
-    const std::shared_ptr<const vvl::Buffer> GetResourceState(const ValidationStateTracker& state_tracker) const;
+    const std::shared_ptr<const vvl::Buffer> GetResourceState(const ValidationStateTracker& validator) const;
 };
 
 struct ImageBarrier : QueueFamilyBarrier {
@@ -176,7 +176,7 @@ struct ImageBarrier : QueueFamilyBarrier {
           subresourceRange(barrier.subresourceRange) {}
 
     VulkanTypedHandle GetTypedHandle() const { return VulkanTypedHandle(image, kVulkanObjectTypeImage); }
-    const std::shared_ptr<const vvl::Image> GetResourceState(const ValidationStateTracker& state_tracker) const;
+    const std::shared_ptr<const vvl::Image> GetResourceState(const ValidationStateTracker& validator) const;
 };
 
 }  // namespace sync_utils

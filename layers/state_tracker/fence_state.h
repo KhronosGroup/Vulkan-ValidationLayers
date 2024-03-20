@@ -56,14 +56,14 @@ class Fence : public RefcountedStateObject {
         kExternalPermanent,
     };
     // Default constructor
-    Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
+    Fence(ValidationStateTracker &validator, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
         : RefcountedStateObject(handle, kVulkanObjectTypeFence),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
           state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),
           completed_(),
           waiter_(completed_.get_future()),
-          dev_data_(dev) {}
+          validator(validator) {}
 
     VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
 
@@ -120,7 +120,7 @@ class Fence : public RefcountedStateObject {
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
     PresentSync present_sync_;
-    ValidationStateTracker &dev_data_;
+    ValidationStateTracker &validator;
 };
 
 }  // namespace vvl

@@ -121,10 +121,10 @@ class Semaphore : public RefcountedStateObject {
         return export_info ? export_info->handleTypes : 0;
     }
 
-    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
-        : Semaphore(dev, handle, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
+    Semaphore(ValidationStateTracker &validator, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
+        : Semaphore(validator, handle, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
-    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
+    Semaphore(ValidationStateTracker &validator, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
               const VkSemaphoreCreateInfo *pCreateInfo)
         : RefcountedStateObject(handle, kVulkanObjectTypeSemaphore),
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -136,7 +136,7 @@ class Semaphore : public RefcountedStateObject {
           completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, 0,
                      type_create_info ? type_create_info->initialValue : 0},
           next_payload_(completed_.payload + 1),
-          dev_data_(dev) {
+          validator(validator) {
     }
 
     VkSemaphore VkHandle() const { return handle_.Cast<VkSemaphore>(); }
@@ -220,7 +220,7 @@ class Semaphore : public RefcountedStateObject {
     // can use the same payload value.
     std::map<uint64_t, TimePoint> timeline_;
     mutable std::shared_mutex lock_;
-    ValidationStateTracker &dev_data_;
+    ValidationStateTracker &validator;
 };
 
 // NOTE: Present semaphores are waited on by the implementation, not queue operations.

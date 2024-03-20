@@ -1840,7 +1840,7 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
 
         auto queue_submit_validation = [this, commandBuffer, src_buffer_state, dst_buffer_state, regionCount, src_ranges,
                                         dst_ranges, loc,
-                                        vuid](const ValidationStateTracker &device_data, const class vvl::Queue &queue_state,
+                                        vuid](const ValidationStateTracker &validator, const class vvl::Queue &queue_state,
                                               const vvl::CommandBuffer &cb_state) -> bool {
             bool skip = false;
             for (uint32_t i = 0; i < regionCount; ++i) {

@@ -48,9 +48,9 @@ typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRan
 // class.
 class CORE_CMD_BUFFER_STATE : public vvl::CommandBuffer {
   public:
-    CORE_CMD_BUFFER_STATE(ValidationStateTracker* dev_data, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+    CORE_CMD_BUFFER_STATE(ValidationStateTracker* validator, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                           const vvl::CommandPool* cmd_pool)
-        : vvl::CommandBuffer(dev_data, cb, pCreateInfo, cmd_pool) {}
+        : vvl::CommandBuffer(validator, cb, pCreateInfo, cmd_pool) {}
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
@@ -170,7 +170,7 @@ class CoreChecks : public ValidationStateTracker {
                                         const ImageBarrier& img_barrier,
                                         const vvl::CommandBuffer* primary_cb_state = nullptr) const;
 
-    static bool ValidateConcurrentBarrierAtSubmit(const Location& loc, const ValidationStateTracker& state_data,
+    static bool ValidateConcurrentBarrierAtSubmit(const Location& loc, const ValidationStateTracker& validator,
                                                   const vvl::Queue& queue_data, const vvl::CommandBuffer& cb_state,
                                                   const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
                                                   uint32_t dst_queue_family);

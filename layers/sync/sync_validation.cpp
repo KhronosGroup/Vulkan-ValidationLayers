@@ -3076,7 +3076,7 @@ bool syncval_state::ImageState::IsSimplyBound() const {
     return simple;
 }
 
-void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &dev_data) {
+void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &validator) {
     // This is safe to call if already called to simplify caller logic
     // NOTE: Not asserting IsTiled, as there could in future be other reasons for opaque representations
     if (opaque_base_address_) return;
@@ -3096,7 +3096,7 @@ void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &dev
         // The size of the opaque range is based on the SyncVal *internal* representation of the tiled resource, unrelated
         // to the acutal size of the the resource in device memory. If differing representations become possible, the allocated
         // size would need to be changed to those representation's size requirements.
-        opaque_base = dev_data.AllocFakeMemory(fragment_encoder->TotalSize());
+        opaque_base = validator.AllocFakeMemory(fragment_encoder->TotalSize());
     }
     opaque_base_address_ = opaque_base;
 }

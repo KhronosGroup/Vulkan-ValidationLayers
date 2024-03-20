@@ -1045,7 +1045,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
                                             const EventToStageMap &local_event_signal_info, VkQueue waiting_queue,
                                             const Location &loc) {
     bool skip = false;
-    const ValidationStateTracker *state_data = cb_state.dev_data;
+    const ValidationStateTracker *validator = cb_state.validator;
     VkPipelineStageFlags2KHR stage_mask = 0;
     const auto max_event = std::min((firstEventIndex + eventCount), cb_state.events.size());
     for (size_t event_index = firstEventIndex; event_index < max_event; ++event_index) {
@@ -1062,24 +1062,23 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
             stage_mask |= signal_info->second;
             // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
         } else {
-            auto event_state = state_data->Get<vvl::Event>(event);
+            auto event_state = validator->Get<vvl::Event>(event);
             assert(event_state);  // caught with VUID-vkCmdWaitEvents-pEvents-parameter
             stage_mask |= event_state->signal_src_stage_mask;
 
             if (event_state->signaling_queue != VK_NULL_HANDLE && event_state->signaling_queue != waiting_queue) {
                 const LogObjectList objlist(cb_state.Handle(), event, event_state->signaling_queue, waiting_queue);
-                skip |=
-                    state_data->LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, Location(command),
-                                         "waits for event %s on the queue %s but the event was signaled on a different queue %s",
-                                         state_data->FormatHandle(event).c_str(), state_data->FormatHandle(waiting_queue).c_str(),
-                                         state_data->FormatHandle(event_state->signaling_queue).c_str());
+                skip |= validator->LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, Location(command),
+                                            "waits for event %s on the queue %s but the event was signaled on a different queue %s",
+                                            validator->FormatHandle(event).c_str(), validator->FormatHandle(waiting_queue).c_str(),
+                                            validator->FormatHandle(event_state->signaling_queue).c_str());
             }
         }
     }
     // TODO: Need to validate that host_bit is only set if set event is called
     // but set event can be called at any time.
     if (sourceStageMask != stage_mask && sourceStageMask != (stage_mask | VK_PIPELINE_STAGE_HOST_BIT)) {
-        skip |= state_data->LogError(
+        skip |= validator->LogError(
             "VUID-vkCmdWaitEvents-srcStageMask-parameter", cb_state.Handle(), loc,
             "Submitting cmdbuffer with call to VkCmdWaitEvents using srcStageMask %s which must be the bitwise OR of the stageMask "
             "parameters used in calls to vkCmdSetEvent and VK_PIPELINE_STAGE_HOST_BIT if used with vkSetEvent but instead is %s.",
@@ -1910,8 +1909,8 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBu
             vvl::LocationCapture loc_capture(loc);
             cb_state.queue_submit_functions.emplace_back(
                 [loc_capture, typed_handle, src_queue_family, dst_queue_family](
-                    const ValidationStateTracker &device_data, const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) {
-                    return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
+                    const ValidationStateTracker &validator, const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) {
+                    return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), validator, queue_state, cb_state, typed_handle,
                                                              src_queue_family, dst_queue_family);
                 });
         }
@@ -2106,54 +2105,53 @@ using sync_vuid_maps::QueueError;
 
 class ValidatorState {
   public:
-    ValidatorState(const ValidationStateTracker *device_data, const LogObjectList &obj, const Location &location,
+    ValidatorState(const ValidationStateTracker *validator, const LogObjectList &obj, const Location &location,
                    const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
-        : device_data_(device_data),
+        : validator_(validator),
           objects_(std::move(obj)),
           loc_(location),
           barrier_handle_(barrier_handle),
           sharing_mode_(sharing_mode),
-          limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())) {}
+          limit_(static_cast<uint32_t>(validator->physical_device_state->queue_family_properties.size())) {}
 
     // Log the messages using boilerplate from object state, and Vu specific information from the template arg
     // One and two family versions, in the single family version, Vu holds the name of the passed parameter
     bool LogMsg(QueueError vu_index, uint32_t family, const char *param_name) const {
         const std::string val_code = GetBarrierQueueVUID(loc_, vu_index);
         const char *annotation = GetFamilyAnnotation(family);
-        return device_data_->LogError(val_code, objects_, loc_,
-                                      "barrier using %s %s created with sharingMode %s, has %s %" PRIu32 "%s. %s", GetTypeString(),
-                                      device_data_->FormatHandle(barrier_handle_).c_str(), GetModeString(), param_name, family,
-                                      annotation, kQueueErrorSummary.at(vu_index).c_str());
+        return validator_->LogError(val_code, objects_, loc_,
+                                    "barrier using %s %s created with sharingMode %s, has %s %" PRIu32 "%s. %s", GetTypeString(),
+                                    validator_->FormatHandle(barrier_handle_).c_str(), GetModeString(), param_name, family,
+                                    annotation, kQueueErrorSummary.at(vu_index).c_str());
     }
 
     bool LogMsg(QueueError vu_index, uint32_t src_family, uint32_t dst_family) const {
         const std::string val_code = GetBarrierQueueVUID(loc_, vu_index);
         const char *src_annotation = GetFamilyAnnotation(src_family);
         const char *dst_annotation = GetFamilyAnnotation(dst_family);
-        return device_data_->LogError(val_code, objects_, loc_,
-                                      "barrier using %s %s created with sharingMode %s, has srcQueueFamilyIndex %" PRIu32
-                                      "%s and dstQueueFamilyIndex %" PRIu32 "%s. %s",
-                                      GetTypeString(), device_data_->FormatHandle(barrier_handle_).c_str(), GetModeString(),
-                                      src_family, src_annotation, dst_family, dst_annotation,
-                                      kQueueErrorSummary.at(vu_index).c_str());
+        return validator_->LogError(val_code, objects_, loc_,
+                                    "barrier using %s %s created with sharingMode %s, has srcQueueFamilyIndex %" PRIu32
+                                    "%s and dstQueueFamilyIndex %" PRIu32 "%s. %s",
+                                    GetTypeString(), validator_->FormatHandle(barrier_handle_).c_str(), GetModeString(), src_family,
+                                    src_annotation, dst_family, dst_annotation, kQueueErrorSummary.at(vu_index).c_str());
     }
 
     // This abstract Vu can only be tested at submit time, thus we need a callback from the closure containing the needed
     // data. Note that the mem_barrier is copied to the closure as the lambda lifespan exceed the guarantees of validity for
     // application input.
-    static bool ValidateAtQueueSubmit(const vvl::Queue *queue_state, const ValidationStateTracker *device_data,
-                                      uint32_t src_family, uint32_t dst_family, const ValidatorState &val) {
+    static bool ValidateAtQueueSubmit(const vvl::Queue *queue_state, const ValidationStateTracker *validator, uint32_t src_family,
+                                      uint32_t dst_family, const ValidatorState &val) {
         uint32_t queue_family = queue_state->queueFamilyIndex;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
             const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
-            return device_data->LogError("VUID-vkQueueSubmit-pSubmits-04626", queue_state->Handle(), val.loc_,
-                                         "barrier submitted to queue with family index %" PRIu32
-                                         ", using %s %s created with sharingMode %s, has "
-                                         "srcQueueFamilyIndex %" PRIu32 "%s and dstQueueFamilyIndex %" PRIu32
-                                         "%s. Source or destination queue family must match submit queue family, if not ignored.",
-                                         queue_family, val.GetTypeString(), device_data->FormatHandle(val.barrier_handle_).c_str(),
-                                         val.GetModeString(), src_family, src_annotation, dst_family, dst_annotation);
+            return validator->LogError("VUID-vkQueueSubmit-pSubmits-04626", queue_state->Handle(), val.loc_,
+                                       "barrier submitted to queue with family index %" PRIu32
+                                       ", using %s %s created with sharingMode %s, has "
+                                       "srcQueueFamilyIndex %" PRIu32 "%s and dstQueueFamilyIndex %" PRIu32
+                                       "%s. Source or destination queue family must match submit queue family, if not ignored.",
+                                       queue_family, val.GetTypeString(), validator->FormatHandle(val.barrier_handle_).c_str(),
+                                       val.GetModeString(), src_family, src_annotation, dst_family, dst_annotation);
         }
         return false;
     }
@@ -2191,7 +2189,7 @@ class ValidatorState {
     VkSharingMode GetSharingMode() const { return sharing_mode_; }
 
   protected:
-    const ValidationStateTracker *device_data_;
+    const ValidationStateTracker *validator_;
     const LogObjectList objects_;
     const Location loc_;
     const VulkanTypedHandle barrier_handle_;
@@ -2199,11 +2197,11 @@ class ValidatorState {
     const uint32_t limit_;
 };
 
-static bool Validate(const CoreChecks *device_data, const ValidatorState &val, const uint32_t src_queue_family,
+static bool Validate(const CoreChecks *validator, const ValidatorState &val, const uint32_t src_queue_family,
                      const uint32_t dst_queue_family) {
     bool skip = false;
 
-    if (!IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {
+    if (!IsExtEnabled(validator->device_extensions.vk_khr_external_memory)) {
         if (src_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
             skip |= val.LogMsg(QueueError::kSrcNoExternalExt, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
@@ -2229,7 +2227,7 @@ static bool Validate(const CoreChecks *device_data, const ValidatorState &val, c
         }
     }
 
-    if (!IsExtEnabled(device_data->device_extensions.vk_ext_queue_family_foreign)) {
+    if (!IsExtEnabled(validator->device_extensions.vk_ext_queue_family_foreign)) {
         if (src_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
             skip |= val.LogMsg(QueueError::kSrcNoForeignExt, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
@@ -2237,7 +2235,7 @@ static bool Validate(const CoreChecks *device_data, const ValidatorState &val, c
         }
     }
 
-    if (!device_data->enabled_features.synchronization2 && val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
+    if (!validator->enabled_features.synchronization2 && val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
         if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && src_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
             skip |= val.LogMsg(QueueError::kSync1ConcurrentSrc, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
@@ -2277,13 +2275,13 @@ static bool ValidateHostStage(const ValidationObject *validation_obj, const LogO
 
 }  // namespace barrier_queue_families
 
-bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker &state_data,
+bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker &validator,
                                                    const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state,
                                                    const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
                                                    uint32_t dst_queue_family) {
     using barrier_queue_families::ValidatorState;
-    ValidatorState val(&state_data, LogObjectList(cb_state.Handle()), loc, typed_handle, VK_SHARING_MODE_CONCURRENT);
-    return ValidatorState::ValidateAtQueueSubmit(&queue_state, &state_data, src_queue_family, dst_queue_family, val);
+    ValidatorState val(&validator, LogObjectList(cb_state.Handle()), loc, typed_handle, VK_SHARING_MODE_CONCURRENT);
+    return ValidatorState::ValidateAtQueueSubmit(&queue_state, &validator, src_queue_family, dst_queue_family, val);
 }
 
 bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const Location &field_loc,

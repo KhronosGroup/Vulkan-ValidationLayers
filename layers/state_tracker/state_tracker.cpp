@@ -687,13 +687,13 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     // The current object represents the VkInstance, look up / create the object for the device.
     ValidationObject *device_object = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     ValidationObject *validation_data = device_object->GetValidationObject(this->container_type);
-    ValidationStateTracker *device_state = static_cast<ValidationStateTracker *>(validation_data);
+    ValidationStateTracker *validator = static_cast<ValidationStateTracker *>(validation_data);
 
-    device_state->instance_state = this;
+    validator->instance_state = this;
     // Save local link to this device's physical device state
-    device_state->physical_device_state = Get<vvl::PhysicalDevice>(gpu).get();
+    validator->physical_device_state = Get<vvl::PhysicalDevice>(gpu).get();
     // finish setup in the object representing the device
-    device_state->CreateDevice(pCreateInfo, record_obj.location);
+    validator->CreateDevice(pCreateInfo, record_obj.location);
 }
 
 std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,

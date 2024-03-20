@@ -416,7 +416,7 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void debug_printf::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
-    auto *device_state = static_cast<debug_printf::Validator *>(dev_data);
+    auto *device_state = static_cast<debug_printf::Validator *>(validator);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
         auto &gpu_buffer_list = buffer_infos;
         uint32_t draw_index = 0;
@@ -757,7 +757,7 @@ void debug_printf::CommandBuffer::Reset() {
 }
 
 void debug_printf::CommandBuffer::ResetCBState() {
-    auto debug_printf = static_cast<debug_printf::Validator *>(dev_data);
+    auto debug_printf = static_cast<debug_printf::Validator *>(validator);
     // Free the device memory and descriptor set(s) associated with a command buffer.
     if (debug_printf->aborted) {
         return;

@@ -19,16 +19,16 @@
 #include "state_tracker/state_tracker.h"
 
 namespace vvl {
-static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker *validator, const VkShaderCreateInfoEXT &pCreateInfo) {
     ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
-        set_layouts[i] = dev_data->Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
+        set_layouts[i] = validator->Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
     }
     return set_layouts;
 }
 
-ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
+ShaderObject::ShaderObject(ValidationStateTracker *validator, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
                            std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders,
                            uint32_t unique_shader_id)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
@@ -39,7 +39,7 @@ ShaderObject::ShaderObject(ValidationStateTracker *dev_data, const VkShaderCreat
       gpu_validation_shader_id(unique_shader_id),
       active_slots(GetActiveSlots(entrypoint)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      set_layouts(GetSetLayouts(dev_data, create_info)),
+      set_layouts(GetSetLayouts(validator, create_info)),
       push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
     if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {

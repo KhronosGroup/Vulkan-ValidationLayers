@@ -132,7 +132,7 @@ void gpuav::CommandBuffer::Reset() {
 }
 
 void gpuav::CommandBuffer::ResetCBState() {
-    auto gpuav = static_cast<Validator *>(dev_data);
+    auto gpuav = static_cast<Validator *>(validator);
     // Free the device memory and descriptor set(s) associated with a command buffer.
 
     for (auto &cmd_info : per_command_resources) {
@@ -159,7 +159,7 @@ bool gpuav::CommandBuffer::PreProcess() {
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
-    auto *device_state = static_cast<Validator *>(dev_data);
+    auto *device_state = static_cast<Validator *>(validator);
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;
     uint32_t ray_trace_index = 0;

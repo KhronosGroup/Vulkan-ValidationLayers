@@ -1410,7 +1410,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
     return skip;
 }
 
-vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
+vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *validator, VkDescriptorSet descriptorSet,
                                                   const vvl::DescriptorUpdateTemplate *template_state, const void *pData,
                                                   VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
@@ -1421,7 +1421,7 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
                                               ? create_info.descriptorSetLayout
                                               : push_layout;
-    auto layout_obj = device_data->Get<vvl::DescriptorSetLayout>(effective_dsl);
+    auto layout_obj = validator->Get<vvl::DescriptorSetLayout>(effective_dsl);
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
@@ -1514,9 +1514,9 @@ std::string vvl::DescriptorSet::StringifySetAndLayout() const {
     auto layout_handle = layout_->Handle();
     std::ostringstream str;
     if (IsPushDescriptor()) {
-        str << "Push Descriptors defined with " << state_data_->FormatHandle(layout_handle);
+        str << "Push Descriptors defined with " << validator_->FormatHandle(layout_handle);
     } else {
-        str << state_data_->FormatHandle(Handle()) << " allocated with " << state_data_->FormatHandle(layout_handle);
+        str << validator_->FormatHandle(Handle()) << " allocated with " << validator_->FormatHandle(layout_handle);
     }
     return str.str();
 }
@@ -1645,7 +1645,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
     using TexelDescriptor = vvl::TexelDescriptor;
     bool skip = false;
 
-    auto device_data = this;
+    auto validator = this;
 
     if (dst_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
         auto dst_iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
@@ -1719,7 +1719,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet &update, con
                 if (!src_iter.updated()) continue;
                 auto buffer_view = static_cast<const TexelDescriptor &>(*src_iter).GetBufferView();
                 if (buffer_view) {
-                    auto bv_state = device_data->Get<vvl::BufferView>(buffer_view);
+                    auto bv_state = validator->Get<vvl::BufferView>(buffer_view);
                     if (!bv_state) {
                         const LogObjectList objlist(update.srcSet);
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", objlist, copy_loc,
@@ -2154,7 +2154,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
                     if (pSetLayoutSize == nullptr) {
                         const auto pool = cb_state.command_pool;
-                        DispatchGetDescriptorSetLayoutSizeEXT(pool->dev_data->device, set_layout->VkHandle(), &setLayoutSize);
+                        DispatchGetDescriptorSetLayoutSizeEXT(pool->validator->device, set_layout->VkHandle(), &setLayoutSize);
                     } else {
                         setLayoutSize = *pSetLayoutSize;
                     }
@@ -2170,7 +2170,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                                 // must validate is just the offset of the last binding.
                                 const auto pool = cb_state.command_pool;
                                 uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(j)->binding;
-                                DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->dev_data->device, set_layout->VkHandle(),
+                                DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->validator->device, set_layout->VkHandle(),
                                                                                binding, &setLayoutSize);
 
                                 // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the

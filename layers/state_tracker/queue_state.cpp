@@ -116,7 +116,7 @@ void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
     auto waiter = Wait(until_seq);
     auto result = waiter.wait_until(GetCondWaitTimeout());
     if (result != std::future_status::ready) {
-        dev_data_.LogError(
+        validator.LogError(
             "INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
             "The Validation Layers hit a timeout waiting for queue state to update (this is most likely a validation bug)."
             " seq=%" PRIu64 " until=%" PRIu64,

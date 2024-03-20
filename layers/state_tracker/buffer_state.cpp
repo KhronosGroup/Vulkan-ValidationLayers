@@ -26,9 +26,9 @@ static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCrea
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
-static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker *dev_data, VkBuffer buffer) {
+static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker *validator, VkBuffer buffer) {
     VkMemoryRequirements result{};
-    DispatchGetBufferMemoryRequirements(dev_data->device, buffer, &result);
+    DispatchGetBufferMemoryRequirements(validator->device, buffer, &result);
     return result;
 }
 
@@ -54,15 +54,15 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
 
 namespace vvl {
 
-Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
+Buffer::Buffer(ValidationStateTracker *validator, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
     : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
-      requirements(GetMemoryRequirements(dev_data, handle)),
+      requirements(GetMemoryRequirements(validator, handle)),
       usage(GetBufferUsageFlags(create_info)),
-      supported_video_profiles(dev_data->video_profile_cache_.Get(
-          dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+      supported_video_profiles(validator->video_profile_cache_.Get(
+          validator->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
         tracker_.emplace<BindableSparseMemoryTracker>(&requirements,
                                                       (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);

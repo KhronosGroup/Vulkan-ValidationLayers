@@ -78,13 +78,13 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
 
 class Queue: public StateObject {
   public:
-    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,
+    Queue(ValidationStateTracker &validator, VkQueue handle, uint32_t index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties)
         : StateObject(handle, kVulkanObjectTypeQueue),
           queueFamilyIndex(index),
           flags(flags),
           queueFamilyProperties(queueFamilyProperties),
-          dev_data_(dev_data) {}
+          validator(validator) {}
 
     ~Queue() { Destroy(); }
     void Destroy() override;
@@ -131,7 +131,7 @@ class Queue: public StateObject {
     QueueSubmission *NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
-    ValidationStateTracker &dev_data_;
+    ValidationStateTracker &validator;
 
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held
