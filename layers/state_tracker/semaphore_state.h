@@ -185,7 +185,8 @@ class Semaphore : public RefcountedStateObject {
     void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
-    std::optional<SemOpTemp> LastOp(const std::function<bool(const SemOp &, uint64_t, bool is_pending)> &filter = nullptr) const;
+    std::optional<SemOpTemp> LastOp(
+        const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter = nullptr) const;
 
     // Returns queue submission associated with the last binary signal.
     std::optional<SubmissionLocator> GetLastBinarySignalSubmission() const;
@@ -268,5 +269,5 @@ struct SemaphoreSubmitState {
     bool CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_command) const;
 
     bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-                             std::function<bool(const vvl::Semaphore::SemOp &, uint64_t, bool is_pending)> compare_func);
+                             std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func);
 };
