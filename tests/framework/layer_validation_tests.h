@@ -530,7 +530,6 @@ class PositiveRayTracingPipelineNV : public PositiveRayTracingPipeline {};
 class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 class PositiveGpuAVRayTracing : public GpuAVRayTracingTest {};
-class NegativeGpuAVRayTracingNV : public NegativeGpuAVRayTracing {};
 
 class RenderPassTest : public VkLayerTest {};
 class NegativeRenderPass : public RenderPassTest {};
