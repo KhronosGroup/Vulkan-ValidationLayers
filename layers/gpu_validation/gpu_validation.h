@@ -22,6 +22,7 @@
 #include "gpu_validation/gpu_descriptor_set.h"
 #include "gpu_validation/gpu_resources.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/shader_object_state.h"
 
 #include <typeinfo>
 #include <unordered_map>
@@ -504,6 +505,7 @@ struct RestorablePipelineState {
     std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
     std::vector<uint8_t> push_constants_data;
     PushConstantRangesId push_constants_ranges;
+    std::vector<vvl::ShaderObject*> shader_objects;
 
     RestorablePipelineState(vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point) { Create(cb_state, bind_point); }
 

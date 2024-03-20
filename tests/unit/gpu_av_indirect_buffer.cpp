@@ -741,7 +741,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     ptr->x = 2;
     ptr->y = 3;  // over
     ptr->z = 1;
-    // VkDispatchIndirectCommand[2] - valid inbetween
+    // VkDispatchIndirectCommand[2] - valid in between
     ptr++;
     ptr->x = 1;
     ptr->y = 1;

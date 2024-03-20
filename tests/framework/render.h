@@ -105,6 +105,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(uint32_t targets, const VkImageView *dsBinding);
     void InitDynamicRenderTarget(VkFormat format = VK_FORMAT_UNDEFINED);
     VkImageView GetDynamicRenderTarget() const;
+    VkRect2D GetRenderTargetArea() const;
     void DestroyRenderTarget();
 
     static bool IgnoreDisableChecks();

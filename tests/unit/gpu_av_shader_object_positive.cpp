@@ -96,7 +96,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     vert_descriptor_set.UpdateDescriptorSets();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
@@ -114,7 +114,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     vert_create_info.pNext = nullptr;
     const vkt::Shader vertShader2(*m_device, vert_create_info);
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader2, fragShader);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,

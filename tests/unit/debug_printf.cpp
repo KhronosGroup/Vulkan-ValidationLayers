@@ -1046,7 +1046,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
                          &descriptor_set.layout_.handle());
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     {
         const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                                 VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
@@ -1081,7 +1081,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
         multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
         {
             const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
@@ -1113,7 +1113,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         ptr[2] = 2;
         buffer.memory().unmap();
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
         {
             const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
@@ -1171,7 +1171,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
                              &descriptor_set.layout_.handle());
 
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
         {
             const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
@@ -1268,7 +1268,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
                          GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, SPV_ENV_VULKAN_1_3));
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,

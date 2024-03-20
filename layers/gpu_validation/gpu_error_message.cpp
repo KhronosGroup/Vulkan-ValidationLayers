@@ -157,7 +157,7 @@ void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandB
         }
     }
     strm << std::dec << std::noshowbase;
-    strm << "Shader Instruction Index = " << error_record[gpuav::glsl::kHeaderInstructionIdOffset] << ". ";
+    strm << "Shader Instruction Index = " << debug_record[gpuav::glsl::kHeaderInstructionIdOffset] << ". ";
     msg = strm.str();
 }
 

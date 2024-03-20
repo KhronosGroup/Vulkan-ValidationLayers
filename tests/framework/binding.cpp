@@ -1391,7 +1391,7 @@ void CommandBuffer::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
     }
 }
 
-void CommandBuffer::BeginRenderingColor(const VkImageView imageView) {
+void CommandBuffer::BeginRenderingColor(const VkImageView imageView, VkRect2D render_area) {
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageView = imageView;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1400,7 +1400,7 @@ void CommandBuffer::BeginRenderingColor(const VkImageView imageView) {
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &color_attachment;
     renderingInfo.layerCount = 1;
-    renderingInfo.renderArea = {{0, 0}, {1, 1}};
+    renderingInfo.renderArea = render_area;
 
     BeginRendering(renderingInfo);
 }

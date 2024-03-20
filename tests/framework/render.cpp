@@ -1083,6 +1083,8 @@ VkImageView VkRenderFramework::GetDynamicRenderTarget() const {
     return m_framebuffer_attachments[0];
 }
 
+VkRect2D VkRenderFramework::GetRenderTargetArea() const { return {{0, 0}, {m_width, m_height}}; }
+
 void VkRenderFramework::DestroyRenderTarget() {
     vk::DestroyRenderPass(device(), m_renderPass, nullptr);
     m_renderPass = VK_NULL_HANDLE;

@@ -1063,10 +1063,10 @@ gpuav::PreDispatchResources::SharedResources *gpuav::Validator::GetSharedDispatc
         shader_ci.codeSize = gpu_pre_dispatch_comp_size * sizeof(uint32_t);
         shader_ci.pCode = gpu_pre_dispatch_comp;
         shader_ci.pName = "main";
-        shader_ci.setLayoutCount = 1u;
-        shader_ci.pSetLayouts = &shared_resources->ds_layout;
-        shader_ci.pushConstantRangeCount = 1;
-        shader_ci.pPushConstantRanges = &push_constant_range;
+        shader_ci.setLayoutCount = pipeline_layout_ci.setLayoutCount;
+        shader_ci.pSetLayouts = pipeline_layout_ci.pSetLayouts;
+        shader_ci.pushConstantRangeCount = pipeline_layout_ci.pushConstantRangeCount;
+        shader_ci.pPushConstantRanges = pipeline_layout_ci.pPushConstantRanges;
         result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &shared_resources->shader_object);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, loc, "Unable to create shader object. Aborting GPU-AV");
