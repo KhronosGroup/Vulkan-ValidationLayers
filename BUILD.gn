@@ -118,7 +118,6 @@ vvl_sources = [
   "layers/containers/custom_containers.h",
   "layers/containers/qfo_transfer.h",
   "layers/containers/range_vector.h",
-  "layers/containers/sparse_containers.h",
   "layers/containers/subresource_adapter.cpp",
   "layers/containers/subresource_adapter.h",
   "layers/core_checks/cc_android.cpp",
