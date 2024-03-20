@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2023 The Khronos Group Inc.
- * Copyright (c) 2019-2023 Valve Corporation
- * Copyright (c) 2019-2023 LunarG, Inc.
- * Copyright (C) 2019-2022 Google Inc.
+/* Copyright (c) 2019-2024 The Khronos Group Inc.
+ * Copyright (c) 2019-2024 Valve Corporation
+ * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (C) 2019-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,9 +50,7 @@ class AspectParameters {
   public:
     virtual ~AspectParameters() {}
     static const AspectParameters* Get(VkImageAspectFlags);
-    typedef uint32_t (*MaskIndexFunc)(VkImageAspectFlags);
     virtual VkImageAspectFlags AspectMask() const = 0;
-    virtual MaskIndexFunc MaskToIndexFunction() const = 0;
     virtual uint32_t AspectCount() const = 0;
     virtual const VkImageAspectFlagBits* AspectBits() const = 0;
 };
@@ -87,7 +85,6 @@ class RangeEncoder {
           mip_size_(0),
           aspect_size_(0),
           aspect_bits_(nullptr),
-          mask_index_function_(nullptr),
           encode_function_(nullptr),
           decode_function_(nullptr),
           lower_bound_function_(nullptr),
@@ -250,7 +247,6 @@ class RangeEncoder {
     const size_t mip_size_;
     const size_t aspect_size_;
     const VkImageAspectFlagBits* const aspect_bits_;
-    uint32_t (*const mask_index_function_)(VkImageAspectFlags);
     IndexType (RangeEncoder::*encode_function_)(const Subresource&) const;
     Subresource (RangeEncoder::*decode_function_)(const IndexType&) const;
     uint32_t (RangeEncoder::*lower_bound_function_)(VkImageAspectFlags aspect_mask) const;
@@ -390,7 +386,7 @@ class ImageRangeEncoder : public RangeEncoder {
     inline bool Is3D() const { return is_3_d_; }
     inline bool IsInterleaveY() const { return y_interleave_; }
     inline bool IsCompressed() const { return is_compressed_; }
-    const VkExtent3D& TexelExtent() const { return texel_extent_; }
+    const VkExtent3D& TexelBlockExtent() const { return texel_block_extent_; }
 
     using SubresInfoVector = std::vector<SubresInfo>;
 
@@ -400,7 +396,7 @@ class ImageRangeEncoder : public RangeEncoder {
     small_vector<IndexType, 4, uint32_t> aspect_sizes_;
     small_vector<VkExtent2D, 4, uint32_t> aspect_extent_divisors_;
     IndexType total_size_;
-    VkExtent3D texel_extent_;
+    VkExtent3D texel_block_extent_;
     bool is_3_d_;
     bool linear_image_;
     bool y_interleave_;
