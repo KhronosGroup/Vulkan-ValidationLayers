@@ -423,6 +423,16 @@ void gpuav::RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipe
             push_constants_data = cb_state.push_constant_data;
             push_constants_ranges = pipeline_layout->push_constant_ranges;
         }
+    } else {
+        assert(shader_objects.empty());
+        if (lv_bind_point == BindPoint_Graphics) {
+            shader_objects = last_bound.GetAllBoundGraphicsShaders();
+        } else if (lv_bind_point == BindPoint_Compute) {
+            auto compute_shader = last_bound.GetShaderState(ShaderObjectStage::COMPUTE);
+            if (compute_shader) {
+                shader_objects.emplace_back(compute_shader);
+            }
+        }
     }
 }
 
@@ -451,6 +461,15 @@ void gpuav::RestorablePipelineState::Restore(VkCommandBuffer command_buffer) con
                                          push_constant_range.offset, push_constant_range.size, push_constants_data.data());
             }
         }
+    }
+    if (!shader_objects.empty()) {
+        std::vector<VkShaderStageFlagBits> stages;
+        std::vector<VkShaderEXT> shaders;
+        for (const vvl::ShaderObject *shader_obj : shader_objects) {
+            stages.emplace_back(shader_obj->create_info.stage);
+            shaders.emplace_back(shader_obj->VkHandle());
+        }
+        DispatchCmdBindShadersEXT(command_buffer, static_cast<uint32_t>(shader_objects.size()), stages.data(), shaders.data());
     }
 }
 

@@ -1017,7 +1017,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void EndRenderPass();
     void BeginRendering(const VkRenderingInfoKHR &renderingInfo);
-    void BeginRenderingColor(const VkImageView imageView);
+    void BeginRenderingColor(const VkImageView imageView, VkRect2D render_area);
     void EndRendering();
 
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);

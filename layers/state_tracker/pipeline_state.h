@@ -753,6 +753,7 @@ struct LastBound {
     bool HasShaderObjects() const;
     bool IsValidShaderBound(ShaderObjectStage stage) const;
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
+    std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
     bool IsAnyGraphicsShaderBound() const;
 };
 

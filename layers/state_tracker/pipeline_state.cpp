@@ -986,6 +986,34 @@ bool LastBound::IsValidShaderOrNullBound(ShaderObjectStage stage) const {
     return shader_object_bound[static_cast<uint32_t>(stage)];
 }
 
+std::vector<vvl::ShaderObject *> LastBound::GetAllBoundGraphicsShaders() {
+    std::vector<vvl::ShaderObject *> shaders;
+
+    if (IsValidShaderBound(ShaderObjectStage::VERTEX)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::VERTEX)]);
+    }
+    if (IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::TESSELLATION_CONTROL)]);
+    }
+    if (IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::TESSELLATION_EVALUATION)]);
+    }
+    if (IsValidShaderBound(ShaderObjectStage::GEOMETRY)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::GEOMETRY)]);
+    }
+    if (IsValidShaderBound(ShaderObjectStage::FRAGMENT)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::FRAGMENT)]);
+    }
+    if (IsValidShaderBound(ShaderObjectStage::TASK)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::TASK)]);
+    }
+    if (IsValidShaderBound(ShaderObjectStage::MESH)) {
+        shaders.emplace_back(shader_object_states[static_cast<uint32_t>(ShaderObjectStage::MESH)]);
+    }
+
+    return shaders;
+}
+
 bool LastBound::IsAnyGraphicsShaderBound() const {
     return IsValidShaderBound(ShaderObjectStage::VERTEX) ||
         IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL) ||

@@ -15,6 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
+#include "../layers/gpu_shaders/gpu_shaders_constants.h"
 
 TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
@@ -229,7 +230,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
 
     m_commandBuffer->begin();
     if (shader_objects) {
-        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     } else {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     }
@@ -255,6 +256,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     }
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(true);
+    vk::DeviceWaitIdle(*m_device);
     m_errorMonitor->VerifyFound();
     DestroyRenderTarget();
     if (shader_objects) {
@@ -274,7 +276,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall) {
            x = vec4(bar.x, bar.y, 0, 1);
         }
         )glsl";
-    std::vector<const char *> expected_errors(6, "VUID-vkCmdDraw-uniformBuffers-06935");
+    std::vector<const char *> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-uniformBuffers-06935");
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
@@ -294,7 +296,7 @@ TEST_F(NegativeGpuAVOOB, StorageBufferTooSmall) {
         }
         )glsl";
 
-    std::vector<const char *> expected_errors(6, "VUID-vkCmdDraw-storageBuffers-06936");
+    std::vector<const char *> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-storageBuffers-06936");
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
@@ -319,7 +321,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallArray) {
         }
         )glsl";
 
-    std::vector<const char *> expected_errors(6, "VUID-vkCmdDraw-uniformBuffers-06935");
+    std::vector<const char *> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-uniformBuffers-06935");
     ShaderBufferSizeTest(64,  // buffer size
                          0,   // binding offset
                          64,  // binding range
@@ -345,7 +347,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallNestedStruct) {
         }
         )glsl";
 
-    std::vector<const char *> expected_errors(6, "VUID-vkCmdDraw-uniformBuffers-06935");
+    std::vector<const char *> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-uniformBuffers-06935");
     ShaderBufferSizeTest(8,  // buffer size
                          0,  // binding offset
                          8,  // binding range
@@ -364,7 +366,8 @@ TEST_F(NegativeGpuAVOOB, ObjectUniformBufferTooSmall) {
         }
         )glsl";
 
-    std::vector<const char *> expecetd_errors(6, "Descriptor size is 4 and highest byte accessed was 7");
+    std::vector<const char *> expecetd_errors(gpuav::glsl::kMaxErrorsPerCmd,
+                                              "Descriptor size is 4 and highest byte accessed was 7");
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
