@@ -41,12 +41,12 @@ static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
     }
 }
 
-bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos,
+bool BestPractices::ValidateMultisampledBlendingArm(uint32_t create_info_count, const VkGraphicsPipelineCreateInfo* create_infos,
                                                     const Location& create_info_loc) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < createInfoCount; i++) {
-        auto create_info = &pCreateInfos[i];
+    for (uint32_t i = 0; i < create_info_count; i++) {
+        auto create_info = &create_infos[i];
 
         if (!create_info->pColorBlendState || !create_info->pMultisampleState ||
             create_info->pMultisampleState->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||

@@ -381,19 +381,19 @@ ExternalOperationsInfo GetExternalOperationsInfo(const void *pNext) {
 }
 }  // namespace
 
-bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo &allocate_info,
                                                          VkMemoryAllocateFlags flags, const Location &allocate_info_loc) const {
     bool skip = false;
 
     // Used to remove platform ifdef logic below
-    const ExternalOperationsInfo ext = GetExternalOperationsInfo(pAllocateInfo->pNext);
+    const ExternalOperationsInfo ext = GetExternalOperationsInfo(allocate_info.pNext);
 
-    if (!ext.has_export && ext.total_import_ops == 0 && pAllocateInfo->allocationSize == 0) {
+    if (!ext.has_export && ext.total_import_ops == 0 && allocate_info.allocationSize == 0) {
         skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-07897", device, allocate_info_loc.dot(Field::allocationSize),
                          "is 0.");
     }
 
-    auto opaque_alloc_info = vku::FindStructInPNextChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
+    auto opaque_alloc_info = vku::FindStructInPNextChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(allocate_info.pNext);
     if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
         const Location address_loc =
             allocate_info_loc.pNext(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress);
@@ -474,11 +474,11 @@ bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const 
                              host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
         }
 
-        if (SafeModulo(pAllocateInfo->allocationSize,
+        if (SafeModulo(allocate_info.allocationSize,
                        phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-01745", device, allocate_info_loc.dot(Field::allocationSize),
                              "(%" PRIuLEAST64 ") is not a multiple of minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
-                             pAllocateInfo->allocationSize,
+                             allocate_info.allocationSize,
                              phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
         }
 
@@ -487,16 +487,16 @@ bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const 
             VkMemoryHostPointerPropertiesEXT host_pointer_props = vku::InitStructHelper();
             DispatchGetMemoryHostPointerPropertiesEXT(device, ext.import_info_host_pointer->handleType,
                                                       ext.import_info_host_pointer->pHostPointer, &host_pointer_props);
-            if (((1 << pAllocateInfo->memoryTypeIndex) & host_pointer_props.memoryTypeBits) == 0) {
+            if (((1 << allocate_info.memoryTypeIndex) & host_pointer_props.memoryTypeBits) == 0) {
                 skip |= LogError(
                     "VUID-VkMemoryAllocateInfo-memoryTypeIndex-01744", device, allocate_info_loc.dot(Field::memoryTypeIndex),
                     "is %" PRIu32 " but VkMemoryHostPointerPropertiesEXT::memoryTypeBits is 0x%" PRIx32 " with handleType %s.",
-                    pAllocateInfo->memoryTypeIndex, host_pointer_props.memoryTypeBits,
+                    allocate_info.memoryTypeIndex, host_pointer_props.memoryTypeBits,
                     string_VkExternalMemoryHandleTypeFlagBits(ext.import_info_host_pointer->handleType));
             }
         }
 
-        auto dedicated_allocate_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+        auto dedicated_allocate_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info.pNext);
         if (dedicated_allocate_info) {
             if (dedicated_allocate_info->buffer != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02806", device,
@@ -513,9 +513,8 @@ bool StatelessValidation::ValidateAllocateMemoryExternal(VkDevice device, const 
     }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    skip |=
-        ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-06780",
-                                    allocate_info_loc, "VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT", pAllocateInfo->pNext);
+    skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-06780",
+                                        allocate_info_loc, "VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT", allocate_info.pNext);
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
     return skip;

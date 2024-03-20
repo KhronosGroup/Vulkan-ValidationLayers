@@ -99,19 +99,19 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     return skip;
 }
 
-bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo *pCreateInfo,
+bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo &create_info,
                                                                 const Location &loc) const {
     bool skip = false;
 
     const auto *required_subgroup_size_features =
-        vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(pCreateInfo->pNext);
+        vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(create_info.pNext);
 
     if (required_subgroup_size_features) {
-        if ((pCreateInfo->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0) {
+        if ((create_info.flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02754", device, loc.dot(Field::flags),
                              "(%s) includes VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT while "
                              "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT is included in the pNext chain.",
-                             string_VkPipelineShaderStageCreateFlags(pCreateInfo->flags).c_str());
+                             string_VkPipelineShaderStageCreateFlags(create_info.flags).c_str());
         }
     }
     return skip;
@@ -482,7 +482,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                            create_info.pStages[stage_index].pName);
                 }
 
-                ValidatePipelineShaderStageCreateInfo(&create_info.pStages[stage_index], stage_loc);
+                ValidatePipelineShaderStageCreateInfo(create_info.pStages[stage_index], stage_loc);
             }
         }
 
@@ -861,7 +861,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     }
 
                     for (uint32_t order_i = 0; order_i < coarse_sample_order_struct->customSampleOrderCount; ++order_i) {
-                        skip |= ValidateCoarseSampleOrderCustomNV(&coarse_sample_order_struct->pCustomSampleOrders[order_i],
+                        skip |= ValidateCoarseSampleOrderCustomNV(coarse_sample_order_struct->pCustomSampleOrders[order_i],
                                                                   coarse_sample_loc.dot(Field::pCustomSampleOrders, order_i));
                     }
                 }
@@ -1429,7 +1429,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
             }
         }
 
-        ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].stage, create_info_loc.dot(Field::stage));
+        ValidatePipelineShaderStageCreateInfo(pCreateInfos[i].stage, create_info_loc.dot(Field::stage));
     }
     return skip;
 }

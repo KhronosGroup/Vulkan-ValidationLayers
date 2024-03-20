@@ -220,18 +220,18 @@ class CoreChecks : public ValidationStateTracker {
                                       const QueueFamilyBarrier& barrier, const VulkanTypedHandle& handle,
                                       VkSharingMode sharing_mode) const;
     bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
-                                                 VkSwapchainCreateInfoKHR const* create_info,
+                                                 const VkSwapchainCreateInfoKHR& create_info,
                                                  const vvl::Surface* surface_state) const;
     bool ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
-                                                   const VkSurfaceCapabilitiesKHR* capabilities,
-                                                   VkSwapchainCreateInfoKHR const* create_info,
+                                                   const VkSurfaceCapabilitiesKHR& capabilities,
+                                                   const VkSwapchainCreateInfoKHR& create_info,
                                                    const vvl::Surface* surface_state) const;
-    bool ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const* pCreateInfo, const vvl::Surface* surface_state,
+    bool ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_info, const vvl::Surface* surface_state,
                                  const vvl::Swapchain* old_swapchain_state, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
                                            const Location& loc) const;
     bool ValidatePipelineBindPoint(const vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point, const Location& loc) const;
-    bool ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappedMemoryRange* pMemoryRanges,
+    bool ValidateMemoryIsMapped(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges,
                                 const ErrorObject& error_obj) const;
     bool ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges,
                                                const ErrorObject& error_obj) const;
@@ -242,9 +242,9 @@ class CoreChecks : public ValidationStateTracker {
                                             const Location& loc) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const Location& loc) const;
     bool ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence,
-                                  uint32_t* pImageIndex, const Location& loc, const char* semaphore_type_vuid) const;
-    bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin, const Location& loc) const;
-    bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo, const Location& loc) const;
+                                  const Location& loc, const char* semaphore_type_vuid) const;
+    bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo& begin_info, const Location& begin_info_loc) const;
+    bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo& begin_info, const Location& begin_info_loc) const;
     bool ValidatePrimaryCommandBuffer(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
@@ -441,8 +441,8 @@ class CoreChecks : public ValidationStateTracker {
                                   VkDeviceSize count_buffer_offset, const Location& loc) const;
     bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
                                                       const std::shared_ptr<const vvl::ImageView>& image_view_state,
-                                                      const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info,
-                                                      const Location& attachment_loc, const Location& loc) const;
+                                                      const VkMultisampledRenderToSingleSampledInfoEXT& msrtss_info,
+                                                      const Location& attachment_loc, const Location& rendering_info_loc) const;
 
     bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const LogObjectList& objlist, const Location loc,
                                                  const char* vuid) const;
@@ -738,7 +738,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBufferViewBuffer(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                   const Location& loc) const;
 
-    bool ValidateImageFormatFeatures(const VkImageCreateInfo* pCreateInfo, const Location& loc) const;
+    bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc) const;
 
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage, const ErrorObject& error_obj) const override;
@@ -814,7 +814,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout>& layouts) const;
 
-    bool VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
+    bool VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo& begin_info,
                                                const vvl::Framebuffer& framebuffer_state, const Location& rp_begin_loc) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
@@ -1245,7 +1245,7 @@ class CoreChecks : public ValidationStateTracker {
                                        const RecordObject& record_obj) override;
     void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                     const RecordObject& record_obj) override;
-    bool IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo* pAllocateInfo) const;
+    bool IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo& allocate_info) const;
     bool HasExternalMemoryImportSupport(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const;
     bool HasExternalMemoryImportSupport(const vvl::Image& image, VkExternalMemoryHandleTypeFlagBits handle_type) const;
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
@@ -1347,15 +1347,15 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateRenderingInfoAttachment(const std::shared_ptr<const vvl::ImageView>& image_view,
                                          const VkRenderingInfo* pRenderingInfo, const LogObjectList& objlist,
                                          const Location& loc) const;
-    bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                                  const Location& rendering_info) const;
-    bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                                   const Location& rendering_info) const;
-    bool ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                           const Location& rendering_info) const;
+    bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                                  const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                                   const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                           const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingMultisampledRenderToSingleSampled(VkCommandBuffer commandBuffer,
-                                                                 const VkRenderingInfo* pRenderingInfo,
-                                                                 const Location& rendering_info) const;
+                                                                 const VkRenderingInfo& rendering_info,
+                                                                 const Location& rendering_info_loc) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
@@ -2063,8 +2063,8 @@ class CoreChecks : public ValidationStateTracker {
                                                                   const uint32_t* pIndirectStrides,
                                                                   const uint32_t* const* ppMaxPrimitiveCounts,
                                                                   const ErrorObject& error_obj) const override;
-    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* pInfo, const VulkanTypedHandle& handle,
-                                                  const Location& info_loc) const;
+    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR& as_info,
+                                                  const VulkanTypedHandle& handle, const Location& info_loc) const;
     bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                         const ErrorObject& error_obj) const override;

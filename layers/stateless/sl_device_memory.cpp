@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     auto flags_info = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
     const VkMemoryAllocateFlags flags = flags_info ? flags_info->flags : 0;
 
-    skip |= ValidateAllocateMemoryExternal(device, pAllocateInfo, flags, allocate_info_loc);
+    skip |= ValidateAllocateMemoryExternal(device, *pAllocateInfo, flags, allocate_info_loc);
 
     if (flags) {
         const Location flags_loc = allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
@@ -67,14 +67,12 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     return skip;
 }
 
-bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirementsKHR *pInfo,
+bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
+                                                                const VkDeviceImageMemoryRequirements &memory_requirements,
                                                                 const Location &loc) const {
     bool skip = false;
 
-    if (!pInfo || !pInfo->pCreateInfo) {
-        return skip;
-    }
-    const auto &create_info = *(pInfo->pCreateInfo);
+    const auto &create_info = *(memory_requirements.pCreateInfo);
     if (vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
         skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device, loc,
                          "pNext chain contains VkImageSwapchainCreateInfoKHR.");
@@ -85,17 +83,17 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     }
 
     if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
-        if (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
+        if (memory_requirements.planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
             skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
                              "is VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.");
         } else if ((create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL) &&
-                   !IsOnlyOneValidPlaneAspect(create_info.format, pInfo->planeAspect)) {
+                   !IsOnlyOneValidPlaneAspect(create_info.format, memory_requirements.planeAspect)) {
             skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419", device, loc.dot(Field::planeAspect),
-                             "is %s but is invalid for %s.", string_VkImageAspectFlags(pInfo->planeAspect).c_str(),
+                             "is %s but is invalid for %s.", string_VkImageAspectFlags(memory_requirements.planeAspect).c_str(),
                              string_VkFormat(create_info.format));
         }
     }
-    const uint64_t external_format = GetExternalFormat(pInfo->pCreateInfo->pNext);
+    const uint64_t external_format = GetExternalFormat(memory_requirements.pCreateInfo->pNext);
     if (external_format != 0) {
         skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pNext-06996", device, loc.dot(Field::pCreateInfo),
                          "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".", external_format);
@@ -110,7 +108,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
                                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, error_obj.location.dot(Field::pInfo));
+    skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
 
     return skip;
 }
@@ -120,7 +118,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, error_obj.location.dot(Field::pInfo));
+    skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
 
     return skip;
 }

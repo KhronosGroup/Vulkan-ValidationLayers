@@ -22,12 +22,12 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
-bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachmentCount,
-                                        const VkImageView* image_views, const Location& loc) const {
+bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachment_count,
+                                        const VkImageView* attachments, const Location& loc) const {
     bool skip = false;
 
     // Check for non-transient attachments that should be transient and vice versa
-    for (uint32_t i = 0; i < attachmentCount; ++i) {
+    for (uint32_t i = 0; i < attachment_count; ++i) {
         const auto& attachment = rpci->pAttachments[i];
         bool attachment_should_be_transient =
             (attachment.loadOp != VK_ATTACHMENT_LOAD_OP_LOAD && attachment.storeOp != VK_ATTACHMENT_STORE_OP_STORE);
@@ -37,7 +37,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
                                                attachment.stencilStoreOp != VK_ATTACHMENT_STORE_OP_STORE);
         }
 
-        auto view_state = Get<vvl::ImageView>(image_views[i]);
+        auto view_state = Get<vvl::ImageView>(attachments[i]);
         if (view_state) {
             const auto& ici = view_state->image_state->create_info;
 

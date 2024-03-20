@@ -313,7 +313,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
-            ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].pStages[stage_index],
+            ValidatePipelineShaderStageCreateInfo(pCreateInfos[i].pStages[stage_index],
                                                   create_info_loc.dot(Field::pStages, stage_index));
         }
         auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
@@ -450,7 +450,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
             const Location stage_loc = create_info_loc.dot(Field::pStages, stage_index);
-            ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].pStages[stage_index], stage_loc);
+            ValidatePipelineShaderStageCreateInfo(pCreateInfos[i].pStages[stage_index], stage_loc);
 
             const auto stage = pCreateInfos[i].pStages[stage_index].stage;
             constexpr std::array allowed_stages = {VK_SHADER_STAGE_RAYGEN_BIT_KHR,       VK_SHADER_STAGE_ANY_HIT_BIT_KHR,
@@ -708,15 +708,15 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMe
     return skip;
 }
 
-bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo,
+bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR &as_info,
                                                                    const VulkanTypedHandle &handle,
                                                                    const Location &info_loc) const {
     bool skip = false;
-    if (!(pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR ||
-          pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR)) {
+    if (!(as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR ||
+          as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR)) {
         const LogObjectList objlist(handle);
         skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-mode-03410", objlist, info_loc.dot(Field::mode), "is %s.",
-                         string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
+                         string_VkCopyAccelerationStructureModeKHR(as_info.mode));
     }
     return skip;
 }
@@ -726,7 +726,7 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(VkD
                                                                              const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                                              const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
+    skip |= ValidateCopyAccelerationStructureInfoKHR(*pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
     const auto *acc_struct_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_struct_features || acc_struct_features->accelerationStructureHostCommands == VK_FALSE) {
@@ -748,18 +748,17 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
                          "accelerationStructure feature was not enabled.");
     }
 
-    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
+    skip |= ValidateCopyAccelerationStructureInfoKHR(*pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
     return skip;
 }
 
-bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-                                                                           const VulkanTypedHandle &handle,
-                                                                           const Location &loc) const {
+bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(
+    const VkCopyMemoryToAccelerationStructureInfoKHR &as_info, const VulkanTypedHandle &handle, const Location &loc) const {
     bool skip = false;
-    if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
+    if (as_info.mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
         const LogObjectList objlist(handle);
         skip |= LogError("VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-03413", objlist, loc.dot(Field::mode), "is %s.",
-                         string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
+                         string_VkCopyAccelerationStructureModeKHR(as_info.mode));
     }
     return skip;
 }
@@ -769,7 +768,7 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
     const ErrorObject &error_obj) const {
     bool skip = false;
     const Location info_loc = error_obj.location.dot(Field::pInfo);
-    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, error_obj.handle, info_loc);
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(*pInfo, error_obj.handle, info_loc);
     const auto *acc_struct_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_struct_features || acc_struct_features->accelerationStructureHostCommands == VK_FALSE) {
@@ -800,7 +799,7 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStruc
     }
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
-    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, error_obj.handle, info_loc);
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(*pInfo, error_obj.handle, info_loc);
     if (SafeModulo(pInfo->src.deviceAddress, 256) != 0) {
         skip |= LogError("VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-03743", commandBuffer,
                          info_loc.dot(Field::src).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",

@@ -32,17 +32,17 @@
 #include "state_tracker/render_pass_state.h"
 #include "sync/sync_vuid_maps.h"
 
-bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInfo, const Location &loc) const {
+bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
 
     // validates based on imageCreateFormatFeatures from vkspec.html#resources-image-creation-limits
     VkFormatFeatureFlags2KHR tiling_features = 0;
-    const VkImageTiling image_tiling = pCreateInfo->tiling;
-    const VkFormat image_format = pCreateInfo->format;
+    const VkImageTiling image_tiling = create_info.tiling;
+    const VkFormat image_format = create_info.format;
 
     if (image_format == VK_FORMAT_UNDEFINED) {
         // VU 01975 states format can't be undefined unless an android externalFormat
-        const uint64_t external_format = GetExternalFormat(pCreateInfo->pNext);
+        const uint64_t external_format = GetExternalFormat(create_info.pNext);
         if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (0 != external_format)) {
             auto it = ahb_ext_formats_map.find(external_format);
             if (it != ahb_ext_formats_map.end()) {
@@ -52,9 +52,9 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         vvl::unordered_set<uint64_t> drm_format_modifiers;
         const VkImageDrmFormatModifierExplicitCreateInfoEXT *drm_explicit =
-            vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext);
         const VkImageDrmFormatModifierListCreateInfoEXT *drm_implicit =
-            vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(create_info.pNext);
 
         if (drm_explicit != nullptr) {
             drm_format_modifiers.insert(drm_explicit->drmFormatModifier);
@@ -104,22 +104,22 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     }
 
     // Lack of disjoint format feature support while using the flag
-    if (vkuFormatIsMultiplane(image_format) && ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
+    if (vkuFormatIsMultiplane(image_format) && ((create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
         ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR) == 0)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_CREATE_DISJOINT_BIT, but %s doesn't support "
                          "VK_FORMAT_FEATURE_DISJOINT_BIT.\n"
                          "(supported features: %s)",
-                         string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
+                         string_VkFormat(create_info.format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
     if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT) == 0) &&
-        (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
+        (create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, but %s doesn't support "
                          "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT.\n"
                          "(supported features: %s)",
-                         string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
+                         string_VkFormat(create_info.format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
     return skip;
@@ -534,7 +534,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    skip |= ValidateImageFormatFeatures(pCreateInfo, create_info_loc);
+    skip |= ValidateImageFormatFeatures(*pCreateInfo, create_info_loc);
 
     // Check compatibility with VK_KHR_portability_subset
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {

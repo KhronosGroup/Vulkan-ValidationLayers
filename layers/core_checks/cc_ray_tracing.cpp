@@ -1438,20 +1438,20 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     return skip;
 }
 
-bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo,
+bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR &as_info,
                                                           const VulkanTypedHandle &handle, const Location &info_loc) const {
     bool skip = false;
-    if (pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR) {
-        auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
+    if (as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR) {
+        auto src_as_state = Get<vvl::AccelerationStructureKHR>(as_info.src);
         if (!(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
-            const LogObjectList objlist(handle, pInfo->src);
+            const LogObjectList objlist(handle, as_info.src);
             skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-src-03411", objlist, info_loc.dot(Field::src),
                              "(%s) must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR"
                              "if mode is VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR.",
-                             FormatHandle(pInfo->src).c_str());
+                             FormatHandle(as_info.src).c_str());
         }
     }
-    auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
+    auto src_accel_state = Get<vvl::AccelerationStructureKHR>(as_info.src);
     if (src_accel_state) {
         if (!src_accel_state->built) {
             skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963", device, info_loc.dot(Field::src),
@@ -1462,7 +1462,7 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
         skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::src),
                                               "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
     }
-    auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
+    auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(as_info.dst);
     if (dst_accel_state) {
         auto buffer_state = Get<vvl::Buffer>(dst_accel_state->create_info.buffer);
         skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::dst),
@@ -1485,19 +1485,18 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    if (pInfo) {
-        const Location info_loc = error_obj.location.dot(Field::pInfo);
-        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, info_loc);
-        auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
-        if (src_accel_state) {
-            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_accel_state->buffer_state, info_loc.dot(Field::src),
-                                                  "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
-        }
-        auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
-        if (dst_accel_state) {
-            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_accel_state->buffer_state, info_loc.dot(Field::dst),
-                                                  "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
-        }
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |= ValidateCopyAccelerationStructureInfoKHR(*pInfo, error_obj.handle, info_loc);
+    auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
+    if (src_accel_state) {
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_accel_state->buffer_state, info_loc.dot(Field::src),
+                                              "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
+    }
+    auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
+    if (dst_accel_state) {
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_accel_state->buffer_state, info_loc.dot(Field::dst),
+                                              "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
     }
     return skip;
 }
@@ -1518,25 +1517,23 @@ bool CoreChecks::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, Vk
     skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
                                       "VUID-vkCopyAccelerationStructureKHR-deferredOperation-03678");
 
-    if (pInfo) {
-        const Location info_loc = error_obj.location.dot(Field::pInfo);
-        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
-        auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
-        if (src_accel_state) {
-            skip |= ValidateAccelStructBufferMemoryIsHostVisible(*src_accel_state, info_loc.dot(Field::src),
-                                                                 "VUID-vkCopyAccelerationStructureKHR-buffer-03727");
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |= ValidateCopyAccelerationStructureInfoKHR(*pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
+    auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src);
+    if (src_accel_state) {
+        skip |= ValidateAccelStructBufferMemoryIsHostVisible(*src_accel_state, info_loc.dot(Field::src),
+                                                             "VUID-vkCopyAccelerationStructureKHR-buffer-03727");
 
-            skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*src_accel_state, info_loc.dot(Field::src),
-                                                                      "VUID-vkCopyAccelerationStructureKHR-buffer-03780");
-        }
-        auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
-        if (dst_accel_state) {
-            skip |= ValidateAccelStructBufferMemoryIsHostVisible(*dst_accel_state, info_loc.dot(Field::dst),
-                                                                 "VUID-vkCopyAccelerationStructureKHR-buffer-03728");
+        skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*src_accel_state, info_loc.dot(Field::src),
+                                                                  "VUID-vkCopyAccelerationStructureKHR-buffer-03780");
+    }
+    auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst);
+    if (dst_accel_state) {
+        skip |= ValidateAccelStructBufferMemoryIsHostVisible(*dst_accel_state, info_loc.dot(Field::dst),
+                                                             "VUID-vkCopyAccelerationStructureKHR-buffer-03728");
 
-            skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*dst_accel_state, info_loc.dot(Field::dst),
-                                                                      "VUID-vkCopyAccelerationStructureKHR-buffer-03781");
-        }
+        skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*dst_accel_state, info_loc.dot(Field::dst),
+                                                                  "VUID-vkCopyAccelerationStructureKHR-buffer-03781");
     }
     return skip;
 }

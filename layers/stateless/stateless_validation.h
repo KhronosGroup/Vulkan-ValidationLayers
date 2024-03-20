@@ -534,7 +534,7 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidateString(const Location &loc, const std::string &vuid, const char *validateString) const;
 
-    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order, const Location &order_loc) const;
+    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const;
 
     bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
                                      const Location &loc) const;
@@ -543,7 +543,7 @@ class StatelessValidation : public ValidationObject {
     bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const;
     bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkAccelerationStructureNV object_handle,
                                              const Location &loc) const;
-    bool ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo, const Location &loc) const;
+    bool ValidateSwapchainCreateInfo(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
 
     bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
 
@@ -583,7 +583,7 @@ class StatelessValidation : public ValidationObject {
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                     const ErrorObject &error_obj) const;
 
-    bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo *pCreateInfo, const Location &loc) const;
+    bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo &create_info, const Location &loc) const;
     bool ValidatePipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo &rendering_struct, const Location &loc) const;
     bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location create_info_loc) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -930,9 +930,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                                const ErrorObject &error_obj) const;
-    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo, const VulkanTypedHandle &handle,
-                                                  const Location &info_loc) const;
-    bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR &as_info,
+                                                  const VulkanTypedHandle &handle, const Location &info_loc) const;
+    bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR &as_info,
                                                           const VulkanTypedHandle &handle, const Location &loc) const;
 
     bool manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -1038,7 +1038,7 @@ class StatelessValidation : public ValidationObject {
                                                                const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
                                                                const ErrorObject &error_obj) const;
 
-    bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirementsKHR *pInfo,
+    bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements &memory_requirements,
                                                const Location &loc) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
@@ -1097,7 +1097,7 @@ class StatelessValidation : public ValidationObject {
                                                      const ErrorObject &error_obj) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-    bool ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo, VkMemoryAllocateFlags flags,
+    bool ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo &allocate_info, VkMemoryAllocateFlags flags,
                                         const Location &allocate_info_loc) const;
 #include "generated/stateless_validation_helper.h"
 };  // Class StatelessValidation
