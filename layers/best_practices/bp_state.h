@@ -31,13 +31,13 @@ class BestPractices;
 namespace bp_state {
 class Image : public vvl::Image {
   public:
-    Image(const ValidationStateTracker* validator, VkImage handle, const VkImageCreateInfo* pCreateInfo,
+    Image(const ValidationStateTracker& validator, VkImage handle, const VkImageCreateInfo* pCreateInfo,
           VkFormatFeatureFlags2KHR features)
         : vvl::Image(validator, handle, pCreateInfo, features) {
         SetupUsages();
     }
 
-    Image(const ValidationStateTracker* validator, VkImage handle, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
+    Image(const ValidationStateTracker& validator, VkImage handle, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
         : vvl::Image(validator, handle, pCreateInfo, swapchain, swapchain_index, features) {
         SetupUsages();
@@ -100,7 +100,7 @@ class PhysicalDevice : public vvl::PhysicalDevice {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker* validator, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR handle)
+    Swapchain(ValidationStateTracker& validator, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR handle)
         : vvl::Swapchain(validator, pCreateInfo, handle) {}
 
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
@@ -189,7 +189,7 @@ struct CommandBufferStateNV {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(BestPractices* bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
+    CommandBuffer(BestPractices& bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const vvl::CommandPool* pool);
 
     RenderPassState render_pass_state;
@@ -203,7 +203,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 
 class DescriptorPool : public vvl::DescriptorPool {
   public:
-    DescriptorPool(ValidationStateTracker* validator, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* pCreateInfo)
+    DescriptorPool(ValidationStateTracker& validator, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* pCreateInfo)
         : vvl::DescriptorPool(validator, handle, pCreateInfo) {}
 
     uint32_t freed_count{0};
@@ -211,7 +211,7 @@ class DescriptorPool : public vvl::DescriptorPool {
 
 class Pipeline : public vvl::Pipeline {
   public:
-    Pipeline(const ValidationStateTracker* validator, const VkGraphicsPipelineCreateInfo* pCreateInfo,
+    Pipeline(const ValidationStateTracker& validator, const VkGraphicsPipelineCreateInfo* pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
              std::shared_ptr<const vvl::PipelineLayout>&& layout, CreateShaderModuleStates* csm_states);
 

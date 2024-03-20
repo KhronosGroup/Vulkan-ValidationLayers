@@ -76,7 +76,7 @@ gpuav::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPo
 
 gpuav::DescriptorSet::~DescriptorSet() {
     Destroy();
-    Validator *gv_dev = static_cast<Validator *>(validator_);
+    Validator *gv_dev = static_cast<Validator *>(&validator_);
     vmaDestroyBuffer(gv_dev->vmaAllocator, layout_.buffer, layout_.allocation);
 }
 
@@ -86,7 +86,7 @@ VkDeviceAddress gpuav::DescriptorSet::GetLayoutState() {
         return layout_.device_addr;
     }
     uint32_t num_bindings = (GetBindingCount() > 0) ? GetLayout()->GetMaxBinding() + 1 : 0;
-    Validator *gv_dev = static_cast<Validator *>(validator_);
+    Validator *gv_dev = static_cast<Validator *>(&validator_);
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
     // 1 uvec2 to store num_bindings and 1 for each binding's data
     buffer_info.size = (1 + num_bindings) * sizeof(glsl::BindingLayout);
@@ -278,7 +278,7 @@ void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::Descripto
 
 std::shared_ptr<gpuav::DescriptorSet::State> gpuav::DescriptorSet::GetCurrentState() {
     auto guard = Lock();
-    Validator *gv_dev = static_cast<Validator *>(validator_);
+    Validator *gv_dev = static_cast<Validator *>(&validator_);
     uint32_t cur_version = current_version_.load();
     if (last_used_state_ && last_used_state_->version == cur_version) {
         return last_used_state_;
@@ -378,7 +378,7 @@ std::shared_ptr<gpuav::DescriptorSet::State> gpuav::DescriptorSet::GetCurrentSta
 
 std::shared_ptr<gpuav::DescriptorSet::State> gpuav::DescriptorSet::GetOutputState() {
     auto guard = Lock();
-    Validator *gv_dev = static_cast<Validator *>(validator_);
+    Validator *gv_dev = static_cast<Validator *>(&validator_);
     uint32_t cur_version = current_version_.load();
     if (output_state_) {
         return output_state_;

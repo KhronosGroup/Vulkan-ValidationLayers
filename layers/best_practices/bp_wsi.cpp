@@ -386,5 +386,5 @@ void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, V
 
 std::shared_ptr<vvl::Swapchain> BestPractices::CreateSwapchainState(const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                                     VkSwapchainKHR handle) {
-    return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<bp_state::Swapchain>(this, pCreateInfo, handle));
+    return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<bp_state::Swapchain>(*this, pCreateInfo, handle));
 }

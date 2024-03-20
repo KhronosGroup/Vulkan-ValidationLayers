@@ -23,11 +23,11 @@ namespace syncval_state {
 
 class ImageState : public vvl::Image {
   public:
-    ImageState(const ValidationStateTracker *validator, VkImage img, const VkImageCreateInfo *pCreateInfo,
+    ImageState(const ValidationStateTracker &validator, VkImage img, const VkImageCreateInfo *pCreateInfo,
                VkFormatFeatureFlags2KHR features)
         : vvl::Image(validator, img, pCreateInfo, features), opaque_base_address_(0U) {}
 
-    ImageState(const ValidationStateTracker *validator, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+    ImageState(const ValidationStateTracker &validator, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
                uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
         : vvl::Image(validator, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
@@ -63,7 +63,7 @@ class ImageViewState : public vvl::ImageView {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker *validator, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
+    Swapchain(ValidationStateTracker &validator, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
     ~Swapchain() { Destroy(); }
     void RecordPresentedImage(PresentedImage &&presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);

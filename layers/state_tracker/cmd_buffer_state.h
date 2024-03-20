@@ -100,7 +100,7 @@ class Event : public StateObject {
 // Track command pools and their command buffers
 class CommandPool : public StateObject {
   public:
-    ValidationStateTracker *validator;
+    ValidationStateTracker &validator;
     const VkCommandPoolCreateFlags createFlags;
     const uint32_t queueFamilyIndex;
     const VkQueueFlags queue_flags;
@@ -108,7 +108,7 @@ class CommandPool : public StateObject {
     // Cmd buffers allocated from this pool
     vvl::unordered_map<VkCommandBuffer, CommandBuffer *> commandBuffers;
 
-    CommandPool(ValidationStateTracker *validator, VkCommandPool handle, const VkCommandPoolCreateInfo *pCreateInfo,
+    CommandPool(ValidationStateTracker &validator, VkCommandPool handle, const VkCommandPoolCreateInfo *pCreateInfo,
                 VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
 
@@ -136,7 +136,7 @@ class CommandBuffer : public RefcountedStateObject {
     VkCommandBufferInheritanceInfo inheritanceInfo;
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
-    ValidationStateTracker *validator;
+    ValidationStateTracker &validator;
     bool unprotected;  // can't be used for protected memory
     bool hasRenderPassInstance;
     bool suspendsRenderPassInstance;
@@ -458,7 +458,7 @@ class CommandBuffer : public RefcountedStateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(ValidationStateTracker *validator, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pAllocateInfo,
+    CommandBuffer(ValidationStateTracker &validator, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pAllocateInfo,
                   const vvl::CommandPool *cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }

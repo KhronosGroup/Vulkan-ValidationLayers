@@ -40,7 +40,7 @@
 #include "generated/gpu_inst_shader_hash.h"
 
 std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo *pCreateInfo) {
-    return std::make_shared<Buffer>(this, buf, pCreateInfo, *desc_heap);
+    return std::make_shared<Buffer>(*this, buf, pCreateInfo, *desc_heap);
 }
 
 std::shared_ptr<vvl::BufferView> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
@@ -78,7 +78,7 @@ std::shared_ptr<vvl::DescriptorSet> gpuav::Validator::CreateDescriptorSet(
 std::shared_ptr<vvl::CommandBuffer> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer cb,
                                                                            const VkCommandBufferAllocateInfo *pCreateInfo,
                                                                            const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(this, cb, pCreateInfo, pool));
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, cb, pCreateInfo, pool));
 }
 
 std::shared_ptr<vvl::Queue> gpuav::Validator::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,

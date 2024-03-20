@@ -756,9 +756,9 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const QueryObject &query_obj, Func command,
                                     VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
     bool skip = false;
-    auto validator = cb_state.validator;
+    const auto &validator = cb_state.validator;
 
-    auto query_pool_state = validator->Get<vvl::QueryPool>(query_obj.pool);
+    auto query_pool_state = validator.Get<vvl::QueryPool>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->create_info;
 
     QueryState state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
@@ -793,12 +793,12 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const Qu
                                : unexpected_caller_vuid;
         assert(strcmp(vuid, unexpected_caller_vuid) != 0);
 
-        skip |= validator->LogError(vuid, objlist, loc,
-                                    "%s and query %" PRIu32
-                                    ": query not reset. "
-                                    "After query pool creation, each query must be reset before it is used. "
-                                    "Queries must also be reset between uses.",
-                                    validator->FormatHandle(query_obj.pool).c_str(), query_obj.slot);
+        skip |= validator.LogError(vuid, objlist, loc,
+                                   "%s and query %" PRIu32
+                                   ": query not reset. "
+                                   "After query pool creation, each query must be reset before it is used. "
+                                   "Queries must also be reset between uses.",
+                                   validator.FormatHandle(query_obj.pool).c_str(), query_obj.slot);
     }
 
     return skip;
@@ -806,8 +806,8 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const Qu
 
 bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, const QueryObject &query_obj, Func command,
                                           VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
-    auto validator = cb_state.validator;
-    auto query_pool_state = validator->Get<vvl::QueryPool>(query_obj.pool);
+    const auto &validator = cb_state.validator;
+    auto query_pool_state = validator.Get<vvl::QueryPool>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->create_info;
     const Location loc(command);
 
@@ -817,23 +817,23 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
 
     if (perfPass >= query_pool_state->n_performance_passes) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-        skip |= validator->LogError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
-                                    "Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.", perfPass,
-                                    query_pool_state->n_performance_passes, validator->FormatHandle(query_obj.pool).c_str());
+        skip |= validator.LogError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
+                                   "Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.", perfPass,
+                                   query_pool_state->n_performance_passes, validator.FormatHandle(query_obj.pool).c_str());
     }
 
     if (!cb_state.performance_lock_acquired || cb_state.performance_lock_released) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-        skip |= validator->LogError("VUID-vkQueueSubmit-pCommandBuffers-03220", objlist, loc,
-                                    "Commandbuffer %s was submitted and contains a performance query but the"
-                                    "profiling lock was not held continuously throughout the recording of commands.",
-                                    validator->FormatHandle(cb_state).c_str());
+        skip |= validator.LogError("VUID-vkQueueSubmit-pCommandBuffers-03220", objlist, loc,
+                                   "Commandbuffer %s was submitted and contains a performance query but the"
+                                   "profiling lock was not held continuously throughout the recording of commands.",
+                                   validator.FormatHandle(cb_state).c_str());
     }
 
     QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-        skip |= validator->LogError(
+        skip |= validator.LogError(
             query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-None-02863" : "VUID-vkCmdBeginQuery-None-02863", objlist, loc,
             "VkQuery begin command recorded in a command buffer that, either directly or "
             "through secondary command buffers, also contains a vkCmdResetQueryPool command "
@@ -841,14 +841,14 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
     }
 
     if (firstPerfQueryPool != VK_NULL_HANDLE) {
-        if (firstPerfQueryPool != query_obj.pool && !validator->enabled_features.performanceCounterMultipleQueryPools) {
+        if (firstPerfQueryPool != query_obj.pool && !validator.enabled_features.performanceCounterMultipleQueryPools) {
             const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-            skip |= validator->LogError(
+            skip |= validator.LogError(
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
                 objlist, loc,
                 "Commandbuffer %s contains more than one performance query pool but "
                 "performanceCounterMultipleQueryPools is not enabled.",
-                validator->FormatHandle(cb_state).c_str());
+                validator.FormatHandle(cb_state).c_str());
         }
     } else {
         firstPerfQueryPool = query_obj.pool;
@@ -887,7 +887,7 @@ void CoreChecks::EnqueueVerifyEndQuery(vvl::CommandBuffer &cb_state, const Query
         if (!do_validate) return false;
         bool skip = false;
         // NOTE: validator == this, but the compiler "Visual Studio 16" complains Get is ambiguous if validator isn't used
-        auto query_pool_state = cb_state_arg.validator->Get<vvl::QueryPool>(query_obj.pool);
+        auto query_pool_state = cb_state_arg.validator.Get<vvl::QueryPool>(query_obj.pool);
         if (query_pool_state->has_perf_scope_command_buffer && (cb_state_arg.command_count - 1) != query_obj.end_command_index) {
             const LogObjectList objlist(cb_state_arg.Handle(), query_pool_state->Handle());
             const Location loc(command);
@@ -1058,15 +1058,15 @@ void CoreChecks::PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, V
                                                 vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                                 uint32_t perfPass, QueryMap *localQueryToStateMap) {
             if (!do_validate) return false;
-            const auto validator = cb_state_arg.validator;
+            const auto &validator = cb_state_arg.validator;
             bool skip = false;
             for (uint32_t i = 0; i < queryCount; i++) {
                 QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
                 if (state == QUERYSTATE_ENDED) {
                     const LogObjectList objlist(cb_state_arg.Handle(), queryPool);
-                    skip |= validator->LogError("VUID-vkCmdResetQueryPool-firstQuery-02862", objlist, record_obj.location,
-                                                "Query index %" PRIu32 " was begun and reset in the same command buffer.",
-                                                firstQuery + i);
+                    skip |= validator.LogError("VUID-vkCmdResetQueryPool-firstQuery-02862", objlist, record_obj.location,
+                                               "Query index %" PRIu32 " was begun and reset in the same command buffer.",
+                                               firstQuery + i);
                     break;
                 }
             }
@@ -1196,22 +1196,22 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
                                             vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                             uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        const auto validator = cb_state_arg.validator;
+        const auto &validator = cb_state_arg.validator;
         bool skip = false;
         for (uint32_t i = 0; i < queryCount; i++) {
             QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
             QueryResultType result_type = GetQueryResultType(state, flags);
             if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
                 const LogObjectList objlist(cb_state_arg.Handle(), queryPool);
-                skip |= validator->LogError("VUID-vkCmdCopyQueryPoolResults-None-08752", objlist, record_obj.location,
-                                            "Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
-                                            validator->FormatHandle(queryPool).c_str(), firstQuery + i,
-                                            string_QueryResultType(result_type));
+                skip |= validator.LogError("VUID-vkCmdCopyQueryPoolResults-None-08752", objlist, record_obj.location,
+                                           "Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
+                                           validator.FormatHandle(queryPool).c_str(), firstQuery + i,
+                                           string_QueryResultType(result_type));
             }
         }
 
         // NOTE: validator == this, but the compiler "Visual Studio 16" complains Get is ambiguous if validator isn't used
-        auto query_pool_state = cb_state_arg.validator->Get<vvl::QueryPool>(queryPool);
+        auto query_pool_state = cb_state_arg.validator.Get<vvl::QueryPool>(queryPool);
         skip |= ValidateQueryPoolWasReset(*query_pool_state, firstQuery, queryCount, record_obj.location, localQueryToStateMap,
                                           perfPass);
 

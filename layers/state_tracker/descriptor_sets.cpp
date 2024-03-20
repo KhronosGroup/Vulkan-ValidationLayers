@@ -36,7 +36,7 @@ static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPool
     return counts;
 }
 
-vvl::DescriptorPool::DescriptorPool(ValidationStateTracker *validator, const VkDescriptorPool handle,
+vvl::DescriptorPool::DescriptorPool(ValidationStateTracker &validator, const VkDescriptorPool handle,
                                     const VkDescriptorPoolCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeDescriptorPool),
       safe_create_info(pCreateInfo),
@@ -64,10 +64,10 @@ void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info
     for (uint32_t i = 0; i < alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = validator->CreateDescriptorSet(descriptor_sets[i], this, ds_data->layout_nodes[i], variable_count);
+        auto new_ds = validator.CreateDescriptorSet(descriptor_sets[i], this, ds_data->layout_nodes[i], variable_count);
 
         sets_.emplace(descriptor_sets[i], new_ds.get());
-        validator->Add(std::move(new_ds));
+        validator.Add(std::move(new_ds));
     }
 }
 
@@ -89,7 +89,7 @@ void vvl::DescriptorPool::Free(uint32_t count, const VkDescriptorSet *descriptor
                 descriptor_count = layout.GetDescriptorCountFromIndex(j);
                 available_counts_[type_index] += descriptor_count;
             }
-            validator->Destroy<vvl::DescriptorSet>(iter->first);
+            validator.Destroy<vvl::DescriptorSet>(iter->first);
             sets_.erase(iter);
         }
     }
@@ -99,7 +99,7 @@ void vvl::DescriptorPool::Reset() {
     auto guard = WriteLock();
     // For every set off of this pool, clear it, remove from setMap, and free vvl::DescriptorSet
     for (auto entry : sets_) {
-        validator->Destroy<vvl::DescriptorSet>(entry.first);
+        validator.Destroy<vvl::DescriptorSet>(entry.first);
     }
     sets_.clear();
     // Reset available count for each type and available sets for this pool
@@ -380,12 +380,12 @@ void vvl::AllocateDescriptorSetsData::Init(uint32_t count) { layout_nodes.resize
 
 vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool_state,
                                   const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
-                                  vvl::DescriptorSet::StateTracker *validator)
+                                  ValidationStateTracker *validator)
     : StateObject(handle, kVulkanObjectTypeDescriptorSet),
       some_update_(false),
       pool_state_(pool_state),
       layout_(layout),
-      validator_(validator),
+      validator_(*validator),
       variable_count_(variable_count),
       change_count_(0) {
     // Foreach binding, create default descriptors of given type
@@ -409,7 +409,7 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 if (immut) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        auto sampler = validator->GetConstCastShared<vvl::Sampler>(immut[di]);
+                        auto sampler = validator_.GetConstCastShared<vvl::Sampler>(immut[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
                             binding->updated[di] = true;
@@ -425,7 +425,7 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 if (immut) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        auto sampler = validator->GetConstCastShared<vvl::Sampler>(immut[di]);
+                        auto sampler = validator_.GetConstCastShared<vvl::Sampler>(immut[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
                             binding->updated[di] = true;
@@ -522,7 +522,7 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
         if (iter.AtEnd() || !orig_binding.IsConsistent(iter.CurrentBinding())) {
             break;
         }
-        iter->WriteUpdate(*this, *validator_, update, i, iter.CurrentBinding().IsBindless());
+        iter->WriteUpdate(*this, validator_, update, i, iter.CurrentBinding().IsBindless());
         iter.updated(true);
     }
     if (update.descriptorCount) {
@@ -549,7 +549,7 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
                 const auto &mutable_src = static_cast<const MutableDescriptor &>(src);
                 type = mutable_src.ActiveType();
             }
-            dst.CopyUpdate(*this, *validator_, src, src_iter.CurrentBinding().IsBindless(), type);
+            dst.CopyUpdate(*this, validator_, src, src_iter.CurrentBinding().IsBindless(), type);
             some_update_ = true;
             ++change_count_;
             dst_iter.updated(true);
@@ -571,10 +571,10 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
 //   to be used in a draw by the given cb_state
-void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *validator, vvl::CommandBuffer *cb_state, vvl::Func command,
+void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker &validator, vvl::CommandBuffer *cb_state, vvl::Func command,
                                          const vvl::Pipeline *pipe, const BindingVariableMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
-    if (validator->disabled[image_layout_validation]) {
+    if (validator.disabled[image_layout_validation]) {
         return;
     }
 
@@ -755,11 +755,11 @@ void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const Validation
     UpdateKnownValidView(is_bindless);
 }
 
-void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *validator, vvl::CommandBuffer *cb_state) {
+void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker &validator, vvl::CommandBuffer *cb_state) {
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
-        validator->CallSetImageViewInitialLayoutCallback(cb_state, *iv_state, image_layout_);
+        validator.CallSetImageViewInitialLayoutCallback(cb_state, *iv_state, image_layout_);
     }
 }
 
@@ -1134,11 +1134,11 @@ void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType src_type, const 
     }
 }
 
-void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *validator, vvl::CommandBuffer *cb_state) {
+void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker &validator, vvl::CommandBuffer *cb_state) {
     auto active_class = DescriptorTypeToClass(active_descriptor_type_);
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {
-            validator->CallSetImageViewInitialLayoutCallback(cb_state, *image_view_state_, image_layout_);
+            validator.CallSetImageViewInitialLayoutCallback(cb_state, *image_view_state_, image_layout_);
         }
     }
 }

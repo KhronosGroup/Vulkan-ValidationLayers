@@ -89,7 +89,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     std::vector<AccelerationStructureBuildValidationInfo> as_validation_buffers;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
 
-    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
+    CommandBuffer(Validator &validator, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const vvl::CommandPool *pool);
     ~CommandBuffer();
 
     bool PreProcess() final;
@@ -99,14 +100,14 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     void Reset() final;
 
   private:
-    Validator &state_;
+    Validator &validator_;
     void ResetCBState();
     void ProcessAccelerationStructure(VkQueue queue, const Location &loc);
 };
 
 class Queue : public gpu_tracker::Queue {
   public:
-    Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp);
+    Queue(Validator &validator, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp);
 
   protected:
     uint64_t PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
@@ -114,7 +115,7 @@ class Queue : public gpu_tracker::Queue {
 
 class Buffer : public vvl::Buffer {
   public:
-    Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
+    Buffer(ValidationStateTracker &validator, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;

@@ -226,9 +226,9 @@ VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
-gpu_tracker::CommandBuffer::CommandBuffer(gpu_tracker::Validator *ga, VkCommandBuffer cb,
+gpu_tracker::CommandBuffer::CommandBuffer(gpu_tracker::Validator &validator, VkCommandBuffer cb,
                                           const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
-    : vvl::CommandBuffer(ga, cb, pCreateInfo, pool) {}
+    : vvl::CommandBuffer(validator, cb, pCreateInfo, pool) {}
 
 ReadLockGuard gpu_tracker::Validator::ReadLock() const {
     if (fine_grained_locking) {
@@ -479,17 +479,17 @@ void gpu_tracker::Validator::PreCallRecordDestroyDevice(VkDevice device, const V
     desc_set_manager.reset();
 }
 
-gpu_tracker::Queue::Queue(gpu_tracker::Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+gpu_tracker::Queue::Queue(gpu_tracker::Validator &validator, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
                           const VkQueueFamilyProperties &queueFamilyProperties)
-    : vvl::Queue(state, q, index, flags, queueFamilyProperties), state_(state) {}
+    : vvl::Queue(validator, q, index, flags, queueFamilyProperties), validator_(validator) {}
 
 gpu_tracker::Queue::~Queue() {
     if (barrier_command_buffer_) {
-        DispatchFreeCommandBuffers(state_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
+        DispatchFreeCommandBuffers(validator_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
         barrier_command_buffer_ = VK_NULL_HANDLE;
     }
     if (barrier_command_pool_) {
-        DispatchDestroyCommandPool(state_.device, barrier_command_pool_, NULL);
+        DispatchDestroyCommandPool(validator_.device, barrier_command_pool_, NULL);
         barrier_command_pool_ = VK_NULL_HANDLE;
     }
 }
@@ -502,9 +502,9 @@ void gpu_tracker::Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
         VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
         pool_create_info.queueFamilyIndex = queueFamilyIndex;
-        result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
+        result = DispatchCreateCommandPool(validator_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
-            state_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
+            validator_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
             barrier_command_pool_ = VK_NULL_HANDLE;
             return;
         }
@@ -513,10 +513,10 @@ void gpu_tracker::Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         buffer_alloc_info.commandPool = barrier_command_pool_;
         buffer_alloc_info.commandBufferCount = 1;
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        result = DispatchAllocateCommandBuffers(state_.device, &buffer_alloc_info, &barrier_command_buffer_);
+        result = DispatchAllocateCommandBuffers(validator_.device, &buffer_alloc_info, &barrier_command_buffer_);
         if (result != VK_SUCCESS) {
-            state_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
-            DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
+            validator_.ReportSetupProblem(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
+            DispatchDestroyCommandPool(validator_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
             return;
@@ -528,17 +528,17 @@ void gpu_tracker::Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
         VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
-        result = DispatchCreateSemaphore(state_.device, &semaphore_create_info, nullptr, &barrier_sem_);
+        result = DispatchCreateSemaphore(validator_.device, &semaphore_create_info, nullptr, &barrier_sem_);
         if (result != VK_SUCCESS) {
-            state_.ReportSetupProblem(state_.device, loc, "Unable to create barrier semaphore.");
-            DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
+            validator_.ReportSetupProblem(validator_.device, loc, "Unable to create barrier semaphore.");
+            DispatchDestroyCommandPool(validator_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
             return;
         }
 
         // Hook up command buffer dispatch
-        state_.vkSetDeviceLoaderData(state_.device, barrier_command_buffer_);
+        validator_.vkSetDeviceLoaderData(validator_.device, barrier_command_buffer_);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
@@ -601,7 +601,7 @@ void gpu_tracker::Queue::Retire(vvl::QueueSubmission &submission) {
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &barrier_sem_;
         wait_info.pValues = &submission.seq;
-        DispatchWaitSemaphoresKHR(state_.device, &wait_info, 1000000000);
+        DispatchWaitSemaphoresKHR(validator_.device, &wait_info, 1000000000);
 
         for (auto &cbs : retiring_) {
             for (auto &cb : cbs) {

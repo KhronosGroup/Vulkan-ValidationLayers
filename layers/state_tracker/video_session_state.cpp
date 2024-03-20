@@ -253,8 +253,8 @@ void VideoProfileDesc::Cache::Release(VideoProfileDesc const *desc) {
 VideoPictureResource::VideoPictureResource()
     : image_view_state(nullptr), image_state(nullptr), base_array_layer(0), range(), coded_offset(), coded_extent() {}
 
-VideoPictureResource::VideoPictureResource(ValidationStateTracker const *validator, VkVideoPictureResourceInfoKHR const &res)
-    : image_view_state(validator->Get<ImageView>(res.imageViewBinding)),
+VideoPictureResource::VideoPictureResource(ValidationStateTracker const &validator, VkVideoPictureResourceInfoKHR const &res)
+    : image_view_state(validator.Get<ImageView>(res.imageViewBinding)),
       image_state(image_view_state ? image_view_state->image_state : nullptr),
       base_array_layer(res.baseArrayLayer),
       range(GetImageSubresourceRange(image_view_state.get(), res.baseArrayLayer)),
@@ -438,7 +438,7 @@ class RateControlStateMismatchRecorder {
     mutable std::string string_{};
 };
 
-bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTracker *validator, const VideoSession *vs_state,
+bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTracker &validator, const VideoSession *vs_state,
                                                        const safe_VkVideoBeginCodingInfoKHR &begin_info,
                                                        const Location &loc) const {
     bool skip = false;
@@ -567,27 +567,27 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
 #undef CHECK_RC_LAYER_INFO
 
         if (mismatch_recorder.HasMismatch()) {
-            skip |= validator->LogError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254", vs_state->Handle(), loc,
-                                        "The video encode rate control information specified when beginning the video coding scope "
-                                        "does not match the currently configured video encode rate control state for %s:\n%s",
-                                        validator->FormatHandle(vs_state->Handle()).c_str(), mismatch_recorder.c_str());
+            skip |= validator.LogError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254", vs_state->Handle(), loc,
+                                       "The video encode rate control information specified when beginning the video coding scope "
+                                       "does not match the currently configured video encode rate control state for %s:\n%s",
+                                       validator.FormatHandle(vs_state->Handle()).c_str(), mismatch_recorder.c_str());
         }
 
     } else {
         if (encode_.rate_control_state.base.rateControlMode != VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR) {
-            skip |= validator->LogError(
-                "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08253", vs_state->Handle(), loc,
-                "No VkVideoEncodeRateControlInfoKHR structure was specified when beginning the "
-                "video coding scope but the currently set video encode rate control mode for %s is %s.",
-                validator->FormatHandle(vs_state->Handle()).c_str(),
-                string_VkVideoEncodeRateControlModeFlagBitsKHR(encode_.rate_control_state.base.rateControlMode));
+            skip |=
+                validator.LogError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08253", vs_state->Handle(), loc,
+                                   "No VkVideoEncodeRateControlInfoKHR structure was specified when beginning the "
+                                   "video coding scope but the currently set video encode rate control mode for %s is %s.",
+                                   validator.FormatHandle(vs_state->Handle()).c_str(),
+                                   string_VkVideoEncodeRateControlModeFlagBitsKHR(encode_.rate_control_state.base.rateControlMode));
         }
     }
 
     return skip;
 }
 
-VideoSession::VideoSession(ValidationStateTracker *validator, VkVideoSessionKHR handle,
+VideoSession::VideoSession(ValidationStateTracker &validator, VkVideoSessionKHR handle,
                            VkVideoSessionCreateInfoKHR const *pCreateInfo, std::shared_ptr<const VideoProfileDesc> &&profile_desc)
     : StateObject(handle, kVulkanObjectTypeVideoSessionKHR),
       safe_create_info(pCreateInfo),
@@ -600,13 +600,13 @@ VideoSession::VideoSession(ValidationStateTracker *validator, VkVideoSessionKHR 
       device_state_mutex_(),
       device_state_(pCreateInfo->maxDpbSlots) {}
 
-VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(ValidationStateTracker *validator, VkVideoSessionKHR vs) {
+VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(ValidationStateTracker &validator, VkVideoSessionKHR vs) {
     uint32_t memory_requirement_count;
-    DispatchGetVideoSessionMemoryRequirementsKHR(validator->device, vs, &memory_requirement_count, nullptr);
+    DispatchGetVideoSessionMemoryRequirementsKHR(validator.device, vs, &memory_requirement_count, nullptr);
 
     std::vector<VkVideoSessionMemoryRequirementsKHR> memory_requirements(memory_requirement_count,
                                                                          vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
-    DispatchGetVideoSessionMemoryRequirementsKHR(validator->device, vs, &memory_requirement_count, memory_requirements.data());
+    DispatchGetVideoSessionMemoryRequirementsKHR(validator.device, vs, &memory_requirement_count, memory_requirements.data());
 
     MemoryBindingMap memory_bindings;
     for (uint32_t i = 0; i < memory_requirement_count; ++i) {

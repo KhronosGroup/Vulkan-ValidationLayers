@@ -122,7 +122,7 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
             auto &imgs_binding = static_cast<vvl::ImageSamplerBinding &>(binding);
             for (auto index : indices) {
                 auto &descriptor = imgs_binding.descriptors[index];
-                descriptor.UpdateDrawState(&validator, &cb_state);
+                descriptor.UpdateDrawState(validator, &cb_state);
             }
             skip |= ValidateDescriptors(binding_info, imgs_binding, indices);
             break;
@@ -131,7 +131,7 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
             auto &img_binding = static_cast<vvl::ImageBinding &>(binding);
             for (auto index : indices) {
                 auto &descriptor = img_binding.descriptors[index];
-                descriptor.UpdateDrawState(&validator, &cb_state);
+                descriptor.UpdateDrawState(validator, &cb_state);
             }
             skip |= ValidateDescriptors(binding_info, img_binding, indices);
             break;

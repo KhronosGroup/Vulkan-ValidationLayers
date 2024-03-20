@@ -48,7 +48,7 @@ typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRan
 // class.
 class CORE_CMD_BUFFER_STATE : public vvl::CommandBuffer {
   public:
-    CORE_CMD_BUFFER_STATE(ValidationStateTracker* validator, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+    CORE_CMD_BUFFER_STATE(ValidationStateTracker& validator, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                           const vvl::CommandPool* cmd_pool)
         : vvl::CommandBuffer(validator, cb, pCreateInfo, cmd_pool) {}
 
@@ -2442,6 +2442,6 @@ class CoreChecks : public ValidationStateTracker {
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) override {
-        return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CORE_CMD_BUFFER_STATE>(this, cb, create_info, pool));
+        return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CORE_CMD_BUFFER_STATE>(*this, cb, create_info, pool));
     }
 };  // Class CoreChecks

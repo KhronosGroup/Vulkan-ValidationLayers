@@ -832,7 +832,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     bool skip = false;
     auto queue_state = Get<vvl::Queue>(queue);
 
-    SemaphoreSubmitState sem_submit_state(this, queue,
+    SemaphoreSubmitState sem_submit_state(*this, queue,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
 
     const Location present_info_loc = error_obj.location.dot(Struct::VkPresentInfoKHR, Field::pPresentInfo);

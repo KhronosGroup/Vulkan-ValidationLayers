@@ -79,7 +79,7 @@ class Pipeline : public StateObject {
         struct Traits {};
 
         CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const vvl::RenderPass> rpstate,
-                   const ValidationStateTracker *validator);
+                   const ValidationStateTracker &validator);
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoNV *ci) : raytracing(ci) {}
@@ -169,20 +169,20 @@ class Pipeline : public StateObject {
     CreateShaderModuleStates *csm_states = nullptr;
 
     // Executable or legacy pipeline
-    Pipeline(const ValidationStateTracker *validator, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+    Pipeline(const ValidationStateTracker &validator, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
              std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
-    Pipeline(const ValidationStateTracker *validator, const VkComputePipelineCreateInfo *pCreateInfo,
+    Pipeline(const ValidationStateTracker &validator, const VkComputePipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              CreateShaderModuleStates *csm_states = nullptr);
 
-    Pipeline(const ValidationStateTracker *validator, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+    Pipeline(const ValidationStateTracker &validator, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              CreateShaderModuleStates *csm_states = nullptr);
 
-    Pipeline(const ValidationStateTracker *validator, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
+    Pipeline(const ValidationStateTracker &validator, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              CreateShaderModuleStates *csm_states = nullptr);
 
@@ -467,21 +467,18 @@ class Pipeline : public StateObject {
     }
 
     template <typename CreateInfo>
-    static bool ContainsSubState(const ValidationObject *vo, const CreateInfo &create_info,
+    static bool ContainsSubState(const ValidationStateTracker *validator, const CreateInfo &create_info,
                                  VkGraphicsPipelineLibraryFlagsEXT sub_state) {
         constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
         VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
 
         // Check linked libraries
         auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-        if (link_info) {
-            auto validator = dynamic_cast<const ValidationStateTracker *>(vo);
-            if (validator) {
-                const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
-                for (const auto handle : libs) {
-                    auto lib = validator->Get<vvl::Pipeline>(handle);
-                    current_state |= lib->graphics_lib_type;
-                }
+        if (link_info && validator) {
+            const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
+            for (const auto handle : libs) {
+                auto lib = validator->Get<vvl::Pipeline>(handle);
+                current_state |= lib->graphics_lib_type;
             }
         }
 
@@ -524,6 +521,7 @@ class Pipeline : public StateObject {
 
     // This is a helper that is meant to be used during safe_VkPipelineRenderingCreateInfo construction to determine whether or not
     // certain fields should be ignored based on graphics pipeline state
+    // TODO - This is only a pointer to ValidationStateTracker because we are trying to do state tracking outside the state tracker
     static bool PnextRenderingInfoCustomCopy(const ValidationStateTracker *validator,
                                              const VkGraphicsPipelineCreateInfo &graphics_info, VkBaseOutStructure *safe_struct,
                                              const VkBaseOutStructure *in_struct) {

@@ -161,7 +161,7 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence>& fence_, 
 FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence>& fence_, const PresentedImage& image, ResourceUsageTag tag_)
     : fence(fence_), tag(tag_), queue_id(kQueueIdInvalid), acquired(image, tag) {}
 
-syncval_state::Swapchain::Swapchain(ValidationStateTracker* validator, const VkSwapchainCreateInfoKHR* pCreateInfo,
+syncval_state::Swapchain::Swapchain(ValidationStateTracker& validator, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                     VkSwapchainKHR swapchain)
     : vvl::Swapchain(validator, pCreateInfo, swapchain) {}
 

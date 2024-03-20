@@ -26,7 +26,7 @@ class Validator;
 
 class Queue : public vvl::Queue {
   public:
-    Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+    Queue(Validator &validator, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties);
     virtual ~Queue();
 
@@ -36,7 +36,7 @@ class Queue : public vvl::Queue {
     void SubmitBarrier(const Location &loc, uint64_t seq);
     void Retire(vvl::QueueSubmission &) override;
 
-    Validator &state_;
+    Validator &validator_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
@@ -45,7 +45,8 @@ class Queue : public vvl::Queue {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
+    CommandBuffer(Validator &validator, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const vvl::CommandPool *pool);
 
     virtual bool PreProcess() = 0;
     virtual void PostProcess(VkQueue queue, const Location &loc) = 0;

@@ -30,7 +30,7 @@ class DescriptorSet : public vvl::DescriptorSet {
   public:
     DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
                   const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
-                  ValidationStateTracker *state_data);
+                  ValidationStateTracker *validator);
     virtual ~DescriptorSet();
     void Destroy() override { last_used_state_.reset(); };
     struct State {

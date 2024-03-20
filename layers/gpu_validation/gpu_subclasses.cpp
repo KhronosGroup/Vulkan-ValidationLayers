@@ -20,9 +20,9 @@
 #include "gpu_vuids.h"
 #include "drawdispatch/descriptor_validator.h"
 
-gpuav::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
+gpuav::Buffer::Buffer(ValidationStateTracker &validator, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
                       DescriptorHeap &desc_heap_)
-    : vvl::Buffer(dev_data, buff, pCreateInfo),
+    : vvl::Buffer(validator, buff, pCreateInfo),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(buff, kVulkanObjectTypeBuffer))) {}
 
@@ -115,9 +115,9 @@ void gpuav::AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_no
     vvl::AccelerationStructureNV::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-gpuav::CommandBuffer::CommandBuffer(gpuav::Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+gpuav::CommandBuffer::CommandBuffer(gpuav::Validator &validator, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                                     const vvl::CommandPool *pool)
-    : gpu_tracker::CommandBuffer(ga, cb, pCreateInfo, pool), state_(*ga) {}
+    : gpu_tracker::CommandBuffer(validator, cb, pCreateInfo, pool), validator_(validator) {}
 
 gpuav::CommandBuffer::~CommandBuffer() { Destroy(); }
 
@@ -132,7 +132,7 @@ void gpuav::CommandBuffer::Reset() {
 }
 
 void gpuav::CommandBuffer::ResetCBState() {
-    auto gpuav = static_cast<Validator *>(validator);
+    auto gpuav = static_cast<Validator *>(&validator);
     // Free the device memory and descriptor set(s) associated with a command buffer.
 
     for (auto &cmd_info : per_command_resources) {
@@ -153,13 +153,13 @@ void gpuav::CommandBuffer::ResetCBState() {
 }
 
 bool gpuav::CommandBuffer::PreProcess() {
-    state_.UpdateInstrumentationBuffer(this);
+    validator_.UpdateInstrumentationBuffer(this);
     return !per_command_resources.empty() || has_build_as_cmd;
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
-    auto *device_state = static_cast<Validator *>(validator);
+    auto *device_state = static_cast<Validator *>(&validator);
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;
     uint32_t ray_trace_index = 0;
@@ -196,7 +196,7 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                 validated_desc_sets.emplace(set.state->VkHandle());
                 assert(set.output_state);
 
-                vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
+                vvl::DescriptorValidator context(validator_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
                 auto used_descs = set.output_state->UsedDescriptors(*set.state);
                 // For each used binding ...
                 for (const auto &u : used_descs) {
@@ -213,7 +213,7 @@ void gpuav::CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         }
     }
     ProcessAccelerationStructure(queue, loc);
-    state_.UpdateCmdBufImageLayouts(*this);
+    validator_.UpdateCmdBufImageLayouts(*this);
 }
 
 void gpuav::CommandBuffer::ProcessAccelerationStructure(VkQueue queue, const Location &loc) {
@@ -223,7 +223,7 @@ void gpuav::CommandBuffer::ProcessAccelerationStructure(VkQueue queue, const Loc
     for (const auto &as_validation_buffer_info : as_validation_buffers) {
         glsl::AccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
 
-        VkResult result = vmaMapMemory(state_.vmaAllocator, as_validation_buffer_info.buffer_allocation,
+        VkResult result = vmaMapMemory(validator_.vmaAllocator, as_validation_buffer_info.buffer_allocation,
                                        reinterpret_cast<void **>(&mapped_validation_buffer));
         if (result == VK_SUCCESS) {
             if (mapped_validation_buffer->invalid_handle_found > 0) {
@@ -231,22 +231,23 @@ void gpuav::CommandBuffer::ProcessAccelerationStructure(VkQueue queue, const Loc
                                                                  mapped_validation_buffer->invalid_handle_bits_1};
                 const uint64_t invalid_handle = vvl_bit_cast<uint64_t>(invalid_handles);
 
-                state_.LogError(
+                validator_.LogError(
                     "UNASSIGNED-AccelerationStructure", as_validation_buffer_info.acceleration_structure, loc,
                     "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
                     "handle (%" PRIu64 ")",
                     invalid_handle);
             }
-            vmaUnmapMemory(state_.vmaAllocator, as_validation_buffer_info.buffer_allocation);
+            vmaUnmapMemory(validator_.vmaAllocator, as_validation_buffer_info.buffer_allocation);
         }
     }
 }
 
-gpuav::Queue::Queue(Validator &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &qfp)
-    : gpu_tracker::Queue(state, q, index, flags, qfp) {}
+gpuav::Queue::Queue(Validator &validator, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+                    const VkQueueFamilyProperties &qfp)
+    : gpu_tracker::Queue(validator, q, index, flags, qfp) {}
 
 uint64_t gpuav::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     auto loc = submissions[0].loc.Get();
-    static_cast<gpuav::Validator&>(state_).UpdateBDABuffer(loc);
+    static_cast<gpuav::Validator &>(validator_).UpdateBDABuffer(loc);
     return gpu_tracker::Queue::PreSubmit(std::move(submissions));
 }

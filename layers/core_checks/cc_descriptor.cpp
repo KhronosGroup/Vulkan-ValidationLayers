@@ -1410,7 +1410,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
     return skip;
 }
 
-vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *validator, VkDescriptorSet descriptorSet,
+vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker &validator, VkDescriptorSet descriptorSet,
                                                   const vvl::DescriptorUpdateTemplate *template_state, const void *pData,
                                                   VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
@@ -1421,7 +1421,7 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
                                               ? create_info.descriptorSetLayout
                                               : push_layout;
-    auto layout_obj = validator->Get<vvl::DescriptorSetLayout>(effective_dsl);
+    auto layout_obj = validator.Get<vvl::DescriptorSetLayout>(effective_dsl);
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
@@ -1514,9 +1514,9 @@ std::string vvl::DescriptorSet::StringifySetAndLayout() const {
     auto layout_handle = layout_->Handle();
     std::ostringstream str;
     if (IsPushDescriptor()) {
-        str << "Push Descriptors defined with " << validator_->FormatHandle(layout_handle);
+        str << "Push Descriptors defined with " << validator_.FormatHandle(layout_handle);
     } else {
-        str << validator_->FormatHandle(Handle()) << " allocated with " << validator_->FormatHandle(layout_handle);
+        str << validator_.FormatHandle(Handle()) << " allocated with " << validator_.FormatHandle(layout_handle);
     }
     return str.str();
 }
@@ -2154,7 +2154,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
                     if (pSetLayoutSize == nullptr) {
                         const auto pool = cb_state.command_pool;
-                        DispatchGetDescriptorSetLayoutSizeEXT(pool->validator->device, set_layout->VkHandle(), &setLayoutSize);
+                        DispatchGetDescriptorSetLayoutSizeEXT(pool->validator.device, set_layout->VkHandle(), &setLayoutSize);
                     } else {
                         setLayoutSize = *pSetLayoutSize;
                     }
@@ -2170,7 +2170,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                                 // must validate is just the offset of the last binding.
                                 const auto pool = cb_state.command_pool;
                                 uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(j)->binding;
-                                DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->validator->device, set_layout->VkHandle(),
+                                DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->validator.device, set_layout->VkHandle(),
                                                                                binding, &setLayoutSize);
 
                                 // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the
@@ -3623,7 +3623,7 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
     if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
         // decode the templatized data and leverage the non-template UpdateDescriptor helper functions.
         // Translate the templated update into a normal update for validation...
-        vvl::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state.get(), pData);
+        vvl::DecodedTemplateUpdate decoded_update(*this, descriptorSet, template_state.get(), pData);
         return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()),
                                             decoded_update.desc_writes.data(), 0, nullptr, error_obj.location);
     }
@@ -3712,7 +3712,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
             // Create an empty proxy in order to use the existing descriptor set update validation
             vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
             // Decode the template into a set of write updates
-            vvl::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
+            vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
             // Validate the decoded update against the proxy_ds
             skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                                   decoded_template.desc_writes.data(), loc);

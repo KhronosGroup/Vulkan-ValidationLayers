@@ -156,10 +156,10 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
             }
 
             auto& graphics_info = pCreateInfos[idx0];
-            auto state_info = dynamic_cast<ValidationStateTracker*>(layer_data);
+            auto validator = dynamic_cast<ValidationStateTracker *>(layer_data);
             PNextCopyState pnext_copy_state = {
-                [state_info, &graphics_info](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
-                    return vvl::Pipeline::PnextRenderingInfoCustomCopy(state_info, graphics_info, safe_struct, in_struct);
+                [validator, &graphics_info](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
+                    return vvl::Pipeline::PnextRenderingInfoCustomCopy(validator, graphics_info, safe_struct, in_struct);
                 }};
             local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment, &pnext_copy_state);
 

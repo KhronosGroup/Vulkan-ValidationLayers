@@ -31,7 +31,7 @@
 #include "sync/sync_vuid_maps.h"
 
 struct CommandBufferSubmitState {
-    const CoreChecks *core;
+    const CoreChecks &validator;
     const vvl::Queue *queue_state;
     QFOTransferCBScoreboards<QFOImageTransferBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
@@ -48,7 +48,7 @@ struct CommandBufferSubmitState {
     EventToStageMap local_event_signal_info;
     vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
 
-    CommandBufferSubmitState(const CoreChecks *c, const vvl::Queue *q) : core(c), queue_state(q) {
+    CommandBufferSubmitState(const CoreChecks &validator, const vvl::Queue *q) : validator(validator), queue_state(q) {
         // Queue label state is updated during PostRecord phase.
         // Copy state to be able to track labels during validation.
         cmdbuf_label_stack = queue_state->cmdbuf_label_stack;
@@ -58,13 +58,13 @@ struct CommandBufferSubmitState {
 
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
-        skip |= core->ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
+        skip |= validator.ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
         const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
-        skip |= core->ValidatePrimaryCommandBufferState(
+        skip |= validator.ValidatePrimaryCommandBufferState(
             loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)), &qfo_image_scoreboards,
             &qfo_buffer_scoreboards);
-        skip |= core->ValidateQueueFamilyIndices(loc, cb_state, queue_state->VkHandle());
+        skip |= validator.ValidateQueueFamilyIndices(loc, cb_state, queue_state->VkHandle());
         skip |= ValidateCmdBufLabelMatching(loc, cb_state);
 
         // Potential early exit here as bad object state may crash in delayed function calls
@@ -74,7 +74,7 @@ struct CommandBufferSubmitState {
 
         // Call submit-time functions to validate or update local mirrors of state (to preserve const-ness at validate time)
         for (auto &function : cb_state.queue_submit_functions) {
-            skip |= function(*core, *queue_state, cb_state);
+            skip |= function(validator, *queue_state, cb_state);
         }
         for (auto &function : cb_state.eventUpdates) {
             skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, local_event_signal_info,
@@ -87,13 +87,13 @@ struct CommandBufferSubmitState {
         }
 
         for (const auto &it : cb_state.video_session_updates) {
-            auto video_session_state = core->Get<vvl::VideoSession>(it.first);
+            auto video_session_state = validator.Get<vvl::VideoSession>(it.first);
             auto local_state_it = local_video_session_state.find(it.first);
             if (local_state_it == local_video_session_state.end()) {
                 local_state_it = local_video_session_state.insert({it.first, video_session_state->DeviceStateCopy()}).first;
             }
             for (const auto &function : it.second) {
-                skip |= function(core, video_session_state.get(), local_state_it->second, /*do_validate*/ true);
+                skip |= function(validator, video_session_state.get(), local_state_it->second, /*do_validate*/ true);
             }
         }
         return skip;
@@ -127,10 +127,11 @@ private:
                 previous_debug_region =
                     std::string("The previous debug region before the invalid command is '") + last_closed_cmdbuf_label + "'.";
             }
-            skip |= core->LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912", cb_state.Handle(), loc,
+            skip |=
+                validator.LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912", cb_state.Handle(), loc,
                                    "(%s) contains vkCmdEndDebugUtilsLabelEXT that does not have a matching "
                                    "vkCmdBeginDebugUtilsLabelEXT in this or one of the previously submitted command buffers. %s",
-                                   core->FormatHandle(cb_state).c_str(), previous_debug_region.c_str());
+                                   validator.FormatHandle(cb_state).c_str(), previous_debug_region.c_str());
         }
         return skip;
     }
@@ -149,8 +150,8 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     }
 
     auto queue_state = Get<vvl::Queue>(queue);
-    CommandBufferSubmitState cb_submit_state(this, queue_state.get());
-    SemaphoreSubmitState sem_submit_state(this, queue, queue_state->queueFamilyProperties.queueFlags);
+    CommandBufferSubmitState cb_submit_state(*this, queue_state.get());
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queueFamilyProperties.queueFlags);
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -316,8 +317,8 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     }
 
     auto queue_state = Get<vvl::Queue>(queue);
-    CommandBufferSubmitState cb_submit_state(this, queue_state.get());
-    SemaphoreSubmitState sem_submit_state(this, queue, queue_state->queueFamilyProperties.queueFlags);
+    CommandBufferSubmitState cb_submit_state(*this, queue_state.get());
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queueFamilyProperties.queueFlags);
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -656,7 +657,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                          string_VkQueueFlags(queue_flags).c_str());
     }
 
-    SemaphoreSubmitState sem_submit_state(this, queue, queue_flags);
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_flags);
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const Location bind_info_loc = error_obj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];

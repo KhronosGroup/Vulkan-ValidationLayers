@@ -237,7 +237,7 @@ static inline bool CanWaitBinarySemaphoreAfterOperation(Semaphore::OpType op_typ
 
 class CoreChecks;
 struct SemaphoreSubmitState {
-    const CoreChecks *core;
+    const CoreChecks &validator;
     VkQueue queue;
     VkQueueFlags queue_flags;
 
@@ -251,8 +251,8 @@ struct SemaphoreSubmitState {
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
 
-    SemaphoreSubmitState(const CoreChecks *core_, VkQueue q_, VkQueueFlags queue_flags_)
-        : core(core_), queue(q_), queue_flags(queue_flags_) {}
+    SemaphoreSubmitState(const CoreChecks &validator, VkQueue q_, VkQueueFlags queue_flags_)
+        : validator(validator), queue(q_), queue_flags(queue_flags_) {}
 
     bool CannotWaitBinary(const vvl::Semaphore &semaphore_state) const;
 
