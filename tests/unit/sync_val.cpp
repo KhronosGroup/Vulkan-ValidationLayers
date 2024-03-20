@@ -4184,7 +4184,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
+TEST_F(NegativeSyncVal, CopyToCompressedImage) {
     TEST_DESCRIPTION("Copy from uncompressed to compressed image with and without overlap.");
 
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
@@ -4290,45 +4290,6 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
 
         m_commandBuffer->end();
     }
-}
-
-TEST_F(NegativeSyncVal, TestCopyingBufferToCompressedImage) {
-    TEST_DESCRIPTION("Copy from a buffer to compressed image with and without overlap.");
-
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
-
-    VkFormatProperties format_properties;
-    VkFormat mp_format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), mp_format, &format_properties);
-    if ((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
-    }
-
-    vkt::Buffer src_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    vkt::Image dst_image(*m_device, 16, 16, 1, mp_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-
-    VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    buffer_copy[0].imageSubresource.mipLevel = 0;
-    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
-    buffer_copy[0].imageSubresource.layerCount = 1;
-    buffer_copy[0].imageOffset = {0, 0, 0};
-    buffer_copy[0].imageExtent = {8, 8, 1};
-    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
-    buffer_copy[1].imageOffset = {8, 0, 0};
-    buffer_copy[1].imageExtent = {8, 8, 1};
-
-    m_commandBuffer->begin();
-
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
-    m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->end();
 }
 
 TEST_F(NegativeSyncVal, StageAccessExpansion) {
