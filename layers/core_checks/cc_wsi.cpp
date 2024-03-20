@@ -39,37 +39,37 @@ static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D m
     return true;
 }
 
-static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {
+static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(const VkSwapchainCreateInfoKHR &create_info) {
     VkImageCreateInfo result = vku::InitStructHelper();
 
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
     }
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) result.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) result.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
     }
 
     result.imageType = VK_IMAGE_TYPE_2D;
-    result.format = pCreateInfo->imageFormat;
-    result.extent.width = pCreateInfo->imageExtent.width;
-    result.extent.height = pCreateInfo->imageExtent.height;
+    result.format = create_info.imageFormat;
+    result.extent.width = create_info.imageExtent.width;
+    result.extent.height = create_info.imageExtent.height;
     result.extent.depth = 1;
     result.mipLevels = 1;
-    result.arrayLayers = pCreateInfo->imageArrayLayers;
+    result.arrayLayers = create_info.imageArrayLayers;
     result.samples = VK_SAMPLE_COUNT_1_BIT;
     result.tiling = VK_IMAGE_TILING_OPTIMAL;
-    result.usage = pCreateInfo->imageUsage;
-    result.sharingMode = pCreateInfo->imageSharingMode;
-    result.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
-    result.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
+    result.usage = create_info.imageUsage;
+    result.sharingMode = create_info.imageSharingMode;
+    result.queueFamilyIndexCount = create_info.queueFamilyIndexCount;
+    result.pQueueFamilyIndices = create_info.pQueueFamilyIndices;
     result.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     return result;
 }
 
 bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location &create_info_loc,
-                                                         VkSwapchainCreateInfoKHR const *create_info,
+                                                         const VkSwapchainCreateInfoKHR &create_info,
                                                          const vvl::Surface *surface_state) const {
     bool skip = false;
     std::vector<VkPresentModeKHR> present_modes{};
@@ -85,7 +85,7 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
     }
 
     // Validate VkSwapchainPresentModesCreateInfoEXT data
-    auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info->pNext);
+    auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info.pNext);
     if (swapchain_present_modes_ci) {
         // Ensure surface state is non-null if not using surfaceless_query
         assert(surface_state);
@@ -128,19 +128,19 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
 }
 
 bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const Location &create_info_loc,
-                                                           const VkSurfaceCapabilitiesKHR *capabilities,
-                                                           VkSwapchainCreateInfoKHR const *create_info,
+                                                           const VkSurfaceCapabilitiesKHR &capabilities,
+                                                           const VkSwapchainCreateInfoKHR &create_info,
                                                            const vvl::Surface *surface_state) const {
     bool skip = false;
-    auto pres_scale_ci = vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info->pNext);
+    auto pres_scale_ci = vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info.pNext);
     if ((!pres_scale_ci) || (pres_scale_ci && (pres_scale_ci->scalingBehavior == 0))) {
-        if (!IsExtentInsideBounds(create_info->imageExtent, capabilities->minImageExtent, capabilities->maxImageExtent)) {
+        if (!IsExtentInsideBounds(create_info.imageExtent, capabilities.minImageExtent, capabilities.maxImageExtent)) {
             skip |= LogError(
                 "VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
                 "(%s), which is outside the bounds returned by "
                 "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%s), minImageExtent = (%s), maxImageExtent = (%s).",
-                string_VkExtent2D(create_info->imageExtent).c_str(), string_VkExtent2D(capabilities->currentExtent).c_str(),
-                string_VkExtent2D(capabilities->minImageExtent).c_str(), string_VkExtent2D(capabilities->maxImageExtent).c_str());
+                string_VkExtent2D(create_info.imageExtent).c_str(), string_VkExtent2D(capabilities.currentExtent).c_str(),
+                string_VkExtent2D(capabilities.minImageExtent).c_str(), string_VkExtent2D(capabilities.maxImageExtent).c_str());
         }
     }
 
@@ -231,13 +231,13 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
         }
 
         if ((pres_scale_ci->scalingBehavior != 0) &&
-            (!IsExtentInsideBounds(create_info->imageExtent, scaling_caps.minScaledImageExtent,
+            (!IsExtentInsideBounds(create_info.imageExtent, scaling_caps.minScaledImageExtent,
                                    scaling_caps.maxScaledImageExtent))) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07782", device, create_info_loc.dot(Field::imageExtent),
                          "(%s), which is outside the bounds returned in "
                          "VkSurfacePresentScalingCapabilitiesEXT minScaledImageExtent = (%s), "
                          "maxScaledImageExtent = (%s).",
-                         string_VkExtent2D(create_info->imageExtent).c_str(),
+                         string_VkExtent2D(create_info.imageExtent).c_str(),
                          string_VkExtent2D(scaling_caps.minScaledImageExtent).c_str(),
                          string_VkExtent2D(scaling_caps.maxScaledImageExtent).c_str())) {
                 skip |= true;
@@ -245,7 +245,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
         }
 
         // Further validation for when a VkSwapchainPresentModesCreateInfoEXT struct is *also* in the pNext chain
-        const auto *present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info->pNext);
+        const auto *present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info.pNext);
         if (present_modes_ci) {
             for (uint32_t i = 0; i < present_modes_ci->presentModeCount; i++) {
                 const Location present_mode_loc =
@@ -297,7 +297,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
     return skip;
 }
 
-bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreateInfo, const vvl::Surface *surface_state,
+bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_info, const vvl::Surface *surface_state,
                                          const vvl::Swapchain *old_swapchain_state, const Location &create_info_loc) const {
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
@@ -317,23 +317,23 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     }
 
     if (old_swapchain_state) {
-        if (old_swapchain_state->create_info.surface != pCreateInfo->surface) {
-            if (LogError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", pCreateInfo->oldSwapchain,
+        if (old_swapchain_state->create_info.surface != create_info.surface) {
+            if (LogError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", create_info.oldSwapchain,
                          create_info_loc.dot(Field::oldSwapchain), "surface is not pCreateInfo->surface")) {
                 return true;
             }
         }
         if (old_swapchain_state->retired) {
-            if (LogError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", pCreateInfo->oldSwapchain,
+            if (LogError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", create_info.oldSwapchain,
                          create_info_loc.dot(Field::oldSwapchain), "is retired")) {
                 return true;
             }
         }
     }
 
-    if ((pCreateInfo->imageExtent.width == 0) || (pCreateInfo->imageExtent.height == 0)) {
+    if ((create_info.imageExtent.width == 0) || (create_info.imageExtent.height == 0)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageExtent-01689", device, create_info_loc.dot(Field::imageExtent),
-                     "(%s) is invalid.", string_VkExtent2D(pCreateInfo->imageExtent).c_str())) {
+                     "(%s) is invalid.", string_VkExtent2D(create_info.imageExtent).c_str())) {
             return true;
         }
     }
@@ -342,16 +342,17 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     VkSurfaceFullScreenExclusiveInfoEXT full_screen_info_copy = vku::InitStructHelper();
     VkSurfaceFullScreenExclusiveWin32InfoEXT win32_full_screen_info_copy = vku::InitStructHelper();
-    const auto *full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
+    const auto *full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(create_info.pNext);
     if (full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
         full_screen_info_copy = *full_screen_info;
         full_screen_info_copy.pNext = surface_caps_query_pnext;
         surface_caps_query_pnext = &full_screen_info_copy;
 
         if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
-            const auto *win32_full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
+            const auto *win32_full_screen_info =
+                vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(create_info.pNext);
             if (!win32_full_screen_info) {
-                const LogObjectList objlist(device, pCreateInfo->surface);
+                const LogObjectList objlist(device, create_info.surface);
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-pNext-02679", objlist, create_info_loc,
                              "pNext chain contains "
                              "VkSurfaceFullScreenExclusiveInfoEXT, but does not contain "
@@ -368,7 +369,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 #endif
     VkSurfacePresentModeEXT present_mode_info = vku::InitStructHelper();
     if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
-        present_mode_info.presentMode = pCreateInfo->presentMode;
+        present_mode_info.presentMode = create_info.presentMode;
         present_mode_info.pNext = surface_caps_query_pnext;
         surface_caps_query_pnext = &present_mode_info;
     }
@@ -379,37 +380,37 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
-    if ((pCreateInfo->preTransform & current_transform) != pCreateInfo->preTransform) {
+    if ((create_info.preTransform & current_transform) != create_info.preTransform) {
         skip |= LogPerformanceWarning("WARNING-Swapchain-PreTransform", physical_device, create_info_loc.dot(Field::preTransform),
                                       "(%s) doesn't match the currentTransform (%s) returned by "
                                       "vkGetPhysicalDeviceSurfaceCapabilitiesKHR, the presentation engine will transform the image "
                                       "content as part of the presentation operation.",
-                                      string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform),
+                                      string_VkSurfaceTransformFlagBitsKHR(create_info.preTransform),
                                       string_VkSurfaceTransformFlagBitsKHR(current_transform));
     }
 
-    const VkPresentModeKHR present_mode = pCreateInfo->presentMode;
+    const VkPresentModeKHR present_mode = create_info.presentMode;
     const bool shared_present_mode = (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == present_mode ||
                                       VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == present_mode);
 
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
     // Shared Present Mode must have a minImageCount of 1
-    if ((pCreateInfo->minImageCount < surface_caps2.surfaceCapabilities.minImageCount) && !shared_present_mode) {
+    if ((create_info.minImageCount < surface_caps2.surfaceCapabilities.minImageCount) && !shared_present_mode) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-02839", device, create_info_loc.dot(Field::minImageCount),
                      "%" PRIu32 ", which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                     pCreateInfo->minImageCount, surface_caps2.surfaceCapabilities.minImageCount,
+                     create_info.minImageCount, surface_caps2.surfaceCapabilities.minImageCount,
                      surface_caps2.surfaceCapabilities.maxImageCount)) {
             return true;
         }
     }
 
     if ((surface_caps2.surfaceCapabilities.maxImageCount > 0) &&
-        (pCreateInfo->minImageCount > surface_caps2.surfaceCapabilities.maxImageCount)) {
+        (create_info.minImageCount > surface_caps2.surfaceCapabilities.maxImageCount)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-minImageCount-01272", device, create_info_loc.dot(Field::minImageCount),
                      "%" PRIu32 ", which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                     pCreateInfo->minImageCount, surface_caps2.surfaceCapabilities.minImageCount,
+                     create_info.minImageCount, surface_caps2.surfaceCapabilities.minImageCount,
                      surface_caps2.surfaceCapabilities.maxImageCount)) {
             return true;
         }
@@ -417,8 +418,8 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
     // VkSurfaceCapabilitiesKHR::supportedTransforms.
-    if (!pCreateInfo->preTransform || (pCreateInfo->preTransform & (pCreateInfo->preTransform - 1)) ||
-        !(pCreateInfo->preTransform & surface_caps2.surfaceCapabilities.supportedTransforms)) {
+    if (!create_info.preTransform || (create_info.preTransform & (create_info.preTransform - 1)) ||
+        !(create_info.preTransform & surface_caps2.surfaceCapabilities.supportedTransforms)) {
         std::stringstream ss;
         for (int i = 0; i < 32; i++) {
             if ((1 << i) & surface_caps2.surfaceCapabilities.supportedTransforms) {
@@ -431,8 +432,8 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
     // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
-    if (!pCreateInfo->compositeAlpha || (pCreateInfo->compositeAlpha & (pCreateInfo->compositeAlpha - 1)) ||
-        !((pCreateInfo->compositeAlpha) & surface_caps2.surfaceCapabilities.supportedCompositeAlpha)) {
+    if (!create_info.compositeAlpha || (create_info.compositeAlpha & (create_info.compositeAlpha - 1)) ||
+        !((create_info.compositeAlpha) & surface_caps2.surfaceCapabilities.supportedCompositeAlpha)) {
         std::stringstream ss;
         for (int i = 0; i < 32; i++) {
             if ((1 << i) & surface_caps2.surfaceCapabilities.supportedCompositeAlpha) {
@@ -443,14 +444,14 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
                         "is not supported, support values are:\n%s.", ss.str().c_str());
     }
     // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
-    if (pCreateInfo->imageArrayLayers > surface_caps2.surfaceCapabilities.maxImageArrayLayers) {
+    if (create_info.imageArrayLayers > surface_caps2.surfaceCapabilities.maxImageArrayLayers) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", device, create_info_loc.dot(Field::imageArrayLayers),
-                     "%" PRIu32 " is more than maxImageArrayLayers %" PRIu32 ".", pCreateInfo->imageArrayLayers,
+                     "%" PRIu32 " is more than maxImageArrayLayers %" PRIu32 ".", create_info.imageArrayLayers,
                      surface_caps2.surfaceCapabilities.maxImageArrayLayers)) {
             return true;
         }
     }
-    const VkImageUsageFlags image_usage = pCreateInfo->imageUsage;
+    const VkImageUsageFlags image_usage = create_info.imageUsage;
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & surface_caps2.surfaceCapabilities.supportedUsageFlags)) && !shared_present_mode) {
@@ -461,7 +462,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         }
     }
 
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
         const bool is_required_ext_enabled = IsExtEnabled(instance_extensions.vk_khr_surface_protected_capabilities);
 
         // Assume that the "protected" flag is not supported if VK_KHR_surface_protected_capabilities is not enabled
@@ -469,7 +470,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
         if (is_required_ext_enabled) {
             VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
-            surface_info.surface = pCreateInfo->surface;
+            surface_info.surface = create_info.surface;
             VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = vku::InitStructHelper();
             VkSurfaceCapabilities2KHR surface_capabilities =
                 vku::InitStructHelper(&surface_protected_capabilities);
@@ -503,15 +504,15 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             formats = physical_device_state->surfaceless_query_state.formats;
         }
         for (const auto &format : formats) {
-            if (pCreateInfo->imageFormat == format.surfaceFormat.format) {
+            if (create_info.imageFormat == format.surfaceFormat.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
                 found_format = true;
-                if (pCreateInfo->imageColorSpace == format.surfaceFormat.colorSpace) {
+                if (create_info.imageColorSpace == format.surfaceFormat.colorSpace) {
                     found_match = true;
                     break;
                 }
             } else {
-                if (pCreateInfo->imageColorSpace == format.surfaceFormat.colorSpace) {
+                if (create_info.imageColorSpace == format.surfaceFormat.colorSpace) {
                     found_color_space = true;
                 }
             }
@@ -519,13 +520,13 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         if (!found_match) {
             if (!found_format) {
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01273", device, create_info_loc.dot(Field::imageFormat),
-                             "is %s.", string_VkFormat(pCreateInfo->imageFormat))) {
+                             "is %s.", string_VkFormat(create_info.imageFormat))) {
                     return true;
                 }
             }
             if (!found_color_space) {
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01273", device, create_info_loc.dot(Field::imageColorSpace),
-                             "is %s.", string_VkColorSpaceKHR(pCreateInfo->imageColorSpace))) {
+                             "is %s.", string_VkColorSpaceKHR(create_info.imageColorSpace))) {
                     return true;
                 }
             }
@@ -534,7 +535,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     if (!IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1)) {
         // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
-        if (!IsExtentInsideBounds(pCreateInfo->imageExtent, surface_caps2.surfaceCapabilities.minImageExtent,
+        if (!IsExtentInsideBounds(create_info.imageExtent, surface_caps2.surfaceCapabilities.minImageExtent,
                                   surface_caps2.surfaceCapabilities.maxImageExtent)) {
             safe_VkSurfaceCapabilities2KHR cached_capabilities{};
             if (surface_state) {
@@ -544,31 +545,31 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
                 cached_capabilities = physical_device_state->surfaceless_query_state.capabilities;
             }
-            if (!IsExtentInsideBounds(pCreateInfo->imageExtent, cached_capabilities.surfaceCapabilities.minImageExtent,
+            if (!IsExtentInsideBounds(create_info.imageExtent, cached_capabilities.surfaceCapabilities.minImageExtent,
                                       cached_capabilities.surfaceCapabilities.maxImageExtent)) {
                 // TODO - Combine VUs with other same VUID
                 skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
                                  "(%s), which is outside the bounds returned by "
                                  "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%s), minImageExtent = (%s), "
                                  "maxImageExtent = (%s).",
-                                 string_VkExtent2D(pCreateInfo->imageExtent).c_str(),
+                                 string_VkExtent2D(create_info.imageExtent).c_str(),
                                  string_VkExtent2D(surface_caps2.surfaceCapabilities.currentExtent).c_str(),
                                  string_VkExtent2D(surface_caps2.surfaceCapabilities.minImageExtent).c_str(),
                                  string_VkExtent2D(surface_caps2.surfaceCapabilities.maxImageExtent).c_str());
             }
         }
     } else {
-        skip |= ValidateSwapchainPresentModesCreateInfo(present_mode, create_info_loc, pCreateInfo, surface_state);
-        skip |= ValidateSwapchainPresentScalingCreateInfo(present_mode, create_info_loc, &surface_caps2.surfaceCapabilities,
-                                                          pCreateInfo, surface_state);
+        skip |= ValidateSwapchainPresentModesCreateInfo(present_mode, create_info_loc, create_info, surface_state);
+        skip |= ValidateSwapchainPresentScalingCreateInfo(present_mode, create_info_loc, surface_caps2.surfaceCapabilities,
+                                                          create_info, surface_state);
     }
     // Validate state for shared presentable case
     if (shared_present_mode) {
-        if (pCreateInfo->minImageCount != 1) {
+        if (create_info.minImageCount != 1) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-minImageCount-01383", device, create_info_loc,
                          "called with presentMode %s, but minImageCount value is %d. For shared presentable image, minImageCount "
                          "must be 1.",
-                         string_VkPresentModeKHR(present_mode), pCreateInfo->minImageCount)) {
+                         string_VkPresentModeKHR(present_mode), create_info.minImageCount)) {
                 return true;
             }
         }
@@ -576,48 +577,48 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = vku::InitStructHelper();
         VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&shared_present_capabilities);
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
-        surface_info.surface = pCreateInfo->surface;
+        surface_info.surface = create_info.surface;
         DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(), &surface_info, &capabilities2);
 
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device, create_info_loc.dot(Field::imageUsage),
                          "(%s), but the supported flag bits for %s present mode are %s.",
-                         string_VkImageUsageFlags(image_usage).c_str(), string_VkPresentModeKHR(pCreateInfo->presentMode),
+                         string_VkImageUsageFlags(image_usage).c_str(), string_VkPresentModeKHR(create_info.presentMode),
                          string_VkImageUsageFlags(shared_present_capabilities.sharedPresentSupportedUsageFlags).c_str())) {
                 return true;
             }
         }
     }
 
-    if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
-        bool skip1 = ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+    if ((create_info.imageSharingMode == VK_SHARING_MODE_CONCURRENT) && create_info.pQueueFamilyIndices) {
+        bool skip1 = ValidatePhysicalDeviceQueueFamilies(create_info.queueFamilyIndexCount, create_info.pQueueFamilyIndices,
                                                          create_info_loc, "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428");
         if (skip1) return true;
     }
 
     // Validate pCreateInfo->imageUsage against GetPhysicalDeviceFormatProperties
-    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(pCreateInfo->imageFormat);
+    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(create_info.imageFormat);
     const VkFormatFeatureFlags2KHR tiling_features = format_properties.optimalTilingFeatures;
 
     if (tiling_features == 0) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL has no supported format features on this "
                      "physical device.",
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_SAMPLED_BIT.",
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_STORAGE_BIT.",
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
@@ -625,7 +626,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
@@ -633,7 +634,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
@@ -642,12 +643,12 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     }
 
-    const VkImageCreateInfo image_create_info = GetSwapchainImpliedImageCreateInfo(pCreateInfo);
+    const VkImageCreateInfo image_create_info = GetSwapchainImpliedImageCreateInfo(create_info);
     VkImageFormatProperties image_properties = {};
     const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
         physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
@@ -668,29 +669,29 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     }
 
     // Validate pCreateInfo->imageArrayLayers against VkImageFormatProperties::maxArrayLayers
-    if (pCreateInfo->imageArrayLayers > image_properties.maxArrayLayers) {
+    if (create_info.imageArrayLayers > image_properties.maxArrayLayers) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageArrayLayers),
                      "%" PRIu32 ", but Maximum value returned by vkGetPhysicalDeviceImageFormatProperties() is %d "
                      "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
-                     pCreateInfo->imageArrayLayers, image_properties.maxArrayLayers, string_VkFormat(pCreateInfo->imageFormat))) {
+                     create_info.imageArrayLayers, image_properties.maxArrayLayers, string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     }
 
     // Validate pCreateInfo->imageExtent against VkImageFormatProperties::maxExtent
-    if ((pCreateInfo->imageExtent.width > image_properties.maxExtent.width) ||
-        (pCreateInfo->imageExtent.height > image_properties.maxExtent.height)) {
+    if ((create_info.imageExtent.width > image_properties.maxExtent.width) ||
+        (create_info.imageExtent.height > image_properties.maxExtent.height)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageExtent),
                      "(%s), which is bigger than max extent (%s)"
                      "returned by vkGetPhysicalDeviceImageFormatProperties(): "
                      "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
-                     string_VkExtent2D(pCreateInfo->imageExtent).c_str(), string_VkExtent3D(image_properties.maxExtent).c_str(),
-                     string_VkFormat(pCreateInfo->imageFormat))) {
+                     string_VkExtent2D(create_info.imageExtent).c_str(), string_VkExtent3D(image_properties.maxExtent).c_str(),
+                     string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     }
 
-    if ((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) && physical_device_count == 1) {
+    if ((create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) && physical_device_count == 1) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429", device, create_info_loc.dot(Field::flags),
                      "containing VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR"
                      "but logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1."
@@ -702,7 +703,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         }
     }
 
-    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
+    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(create_info.pNext);
     if (image_compression_control && !enabled_features.imageCompressionControlSwapchain) {
         skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-06752", device, create_info_loc.dot(Field::pNext),
                          "contains VkImageCompressionControlEXT, but imageCompressionControlSwapchain is not enabled");
@@ -716,7 +717,7 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
                                                    const ErrorObject &error_obj) const {
     auto surface_state = Get<vvl::Surface>(pCreateInfo->surface);
     auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfo->oldSwapchain);
-    return ValidateCreateSwapchain(pCreateInfo, surface_state.get(), old_swapchain_state.get(),
+    return ValidateCreateSwapchain(*pCreateInfo, surface_state.get(), old_swapchain_state.get(),
                                    error_obj.location.dot(Field::pCreateInfo));
 }
 
@@ -1100,7 +1101,7 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
         for (uint32_t i = 0; i < swapchainCount; i++) {
             auto surface_state = Get<vvl::Surface>(pCreateInfos[i].surface);
             auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfos[i].oldSwapchain);
-            skip |= ValidateCreateSwapchain(&pCreateInfos[i], surface_state.get(), old_swapchain_state.get(),
+            skip |= ValidateCreateSwapchain(pCreateInfos[i], surface_state.get(), old_swapchain_state.get(),
                                             error_obj.location.dot(Field::pCreateInfos, i));
         }
     }
@@ -1108,8 +1109,7 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
 }
 
 bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                          VkFence fence, uint32_t *pImageIndex, const Location &loc,
-                                          const char *semaphore_type_vuid) const {
+                                          VkFence fence, const Location &loc, const char *semaphore_type_vuid) const {
     bool skip = false;
     const bool version_2 = loc.function != Func::vkAcquireNextImageKHR;
     auto semaphore_state = Get<vvl::Semaphore>(semaphore);
@@ -1199,7 +1199,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
 bool CoreChecks::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                     VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
                                                     const ErrorObject &error_obj) const {
-    return ValidateAcquireNextImage(device, swapchain, timeout, semaphore, fence, pImageIndex, error_obj.location,
+    return ValidateAcquireNextImage(device, swapchain, timeout, semaphore, fence, error_obj.location,
                                     "VUID-vkAcquireNextImageKHR-semaphore-03265");
 }
 
@@ -1213,8 +1213,7 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
     skip |= ValidateDeviceMaskToZero(pAcquireInfo->deviceMask, objlist, acquire_info_loc.dot(Field::deviceMask),
                                      "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
     skip |= ValidateAcquireNextImage(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
-                                     pAcquireInfo->fence, pImageIndex, error_obj.location,
-                                     "VUID-VkAcquireNextImageInfoKHR-semaphore-03266");
+                                     pAcquireInfo->fence, error_obj.location, "VUID-VkAcquireNextImageInfoKHR-semaphore-03266");
     return skip;
 }
 

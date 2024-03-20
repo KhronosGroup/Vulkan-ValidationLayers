@@ -44,79 +44,77 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice de
     return skip;
 }
 
-bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo, const Location &loc) const {
+bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const {
     bool skip = false;
 
-    if (pCreateInfo != nullptr) {
-        // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-        if (pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) {
-            // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
-            if (pCreateInfo->queueFamilyIndexCount <= 1) {
-                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01278", device, loc.dot(Field::imageSharingMode),
-                                 "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
-                                 pCreateInfo->queueFamilyIndexCount);
-            }
-
-            // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
-            // queueFamilyIndexCount uint32_t values
-            if (pCreateInfo->pQueueFamilyIndices == nullptr) {
-                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01277", device, loc.dot(Field::imageSharingMode),
-                                 "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");
-            }
+    // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
+    if (create_info.imageSharingMode == VK_SHARING_MODE_CONCURRENT) {
+        // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
+        if (create_info.queueFamilyIndexCount <= 1) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01278", device, loc.dot(Field::imageSharingMode),
+                             "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
+                             create_info.queueFamilyIndexCount);
         }
 
-        skip |= ValidateNotZero(pCreateInfo->imageArrayLayers == 0, "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
-                                loc.dot(Field::imageArrayLayers));
+        // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
+        // queueFamilyIndexCount uint32_t values
+        if (create_info.pQueueFamilyIndices == nullptr) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01277", device, loc.dot(Field::imageSharingMode),
+                             "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");
+        }
+    }
 
-        // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
-        const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
-        if (format_list_info) {
-            const uint32_t viewFormatCount = format_list_info->viewFormatCount;
-            if (((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (viewFormatCount > 1)) {
-                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
-                                 loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
-                                 "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
-                                 viewFormatCount, string_VkImageCreateFlags(pCreateInfo->flags).c_str());
-            }
+    skip |= ValidateNotZero(create_info.imageArrayLayers == 0, "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
+                            loc.dot(Field::imageArrayLayers));
 
-            // Using the first format, compare the rest of the formats against it that they are compatible
-            for (uint32_t i = 1; i < viewFormatCount; i++) {
-                if (vkuFormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
-                    vkuFormatCompatibilityClass(format_list_info->pViewFormats[i])) {
-                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,
-                                     loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
-                                     "(%s) and pViewFormats[0] (%s) are not compatible in the pNext chain.",
-                                     string_VkFormat(format_list_info->pViewFormats[i]),
-                                     string_VkFormat(format_list_info->pViewFormats[0]));
-                }
-            }
+    // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
+    const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(create_info.pNext);
+    if (format_list_info) {
+        const uint32_t viewFormatCount = format_list_info->viewFormatCount;
+        if (((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (viewFormatCount > 1)) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
+                             loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
+                             "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
+                             viewFormatCount, string_VkImageCreateFlags(create_info.flags).c_str());
         }
 
-        // Validate VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR
-        if ((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) {
-            if (format_list_info == nullptr) {
-                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext does not contain "
-                                 "VkImageFormatListCreateInfo.");
-            } else if (format_list_info->viewFormatCount == 0) {
-                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
-                                 loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
-            } else {
-                bool found_base_format = false;
-                for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
-                    if (format_list_info->pViewFormats[i] == pCreateInfo->imageFormat) {
-                        found_base_format = true;
-                        break;
-                    }
+        // Using the first format, compare the rest of the formats against it that they are compatible
+        for (uint32_t i = 1; i < viewFormatCount; i++) {
+            if (vkuFormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
+                vkuFormatCompatibilityClass(format_list_info->pViewFormats[i])) {
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,
+                                 loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
+                                 "(%s) and pViewFormats[0] (%s) are not compatible in the pNext chain.",
+                                 string_VkFormat(format_list_info->pViewFormats[i]),
+                                 string_VkFormat(format_list_info->pViewFormats[0]));
+            }
+        }
+    }
+
+    // Validate VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR
+    if ((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) {
+        if (format_list_info == nullptr) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                             "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext does not contain "
+                             "VkImageFormatListCreateInfo.");
+        } else if (format_list_info->viewFormatCount == 0) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                             "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
+                             loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
+        } else {
+            bool found_base_format = false;
+            for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
+                if (format_list_info->pViewFormats[i] == create_info.imageFormat) {
+                    found_base_format = true;
+                    break;
                 }
-                if (!found_base_format) {
-                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                                     "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
-                                     "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
-                                     "imageFormat (%s).",
-                                     string_VkFormat(pCreateInfo->imageFormat));
-                }
+            }
+            if (!found_base_format) {
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
+                                 "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
+                                 "imageFormat (%s).",
+                                 string_VkFormat(create_info.imageFormat));
             }
         }
     }
@@ -127,7 +125,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice devi
                                                                    const VkAllocationCallbacks *pAllocator,
                                                                    VkSwapchainKHR *pSwapchain, const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidateSwapchainCreateInfo(pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
+    skip |= ValidateSwapchainCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
@@ -139,7 +137,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevi
     bool skip = false;
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            skip |= ValidateSwapchainCreateInfo(&pCreateInfos[i], error_obj.location.dot(Field::pCreateInfos, i));
+            skip |= ValidateSwapchainCreateInfo(pCreateInfos[i], error_obj.location.dot(Field::pCreateInfos, i));
         }
     }
     return skip;

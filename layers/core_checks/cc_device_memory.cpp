@@ -209,36 +209,36 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory memory, const vvl::Bindabl
     return skip;
 }
 
-bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAllocateInfo) const {
+bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo &allocate_info) const {
     const VkExternalMemoryHandleTypeFlags ignored_allocation = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT |
                                                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT |
                                                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    const auto import_memory_win32 = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+    const auto import_memory_win32 = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(allocate_info.pNext);
     if (import_memory_win32 && (import_memory_win32->handleType & ignored_allocation) != 0) {
         return true;
     }
 #endif
-    const auto import_memory_fd = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+    const auto import_memory_fd = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(allocate_info.pNext);
     if (import_memory_fd && (import_memory_fd->handleType & ignored_allocation) != 0) {
         return true;
     }
-    const auto import_memory_host_pointer = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
+    const auto import_memory_host_pointer = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(allocate_info.pNext);
     if (import_memory_host_pointer && (import_memory_host_pointer->handleType & ignored_allocation) != 0) {
         return true;
     }
 
     // Handles 01874 cases
-    const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
+    const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
     if (export_info && (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        const auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+        const auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info.pNext);
         if (dedicated_info && dedicated_info->image) {
             return true;
         }
     }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-    const auto import_memory_zircon = vku::FindStructInPNextChain<VkImportMemoryZirconHandleInfoFUCHSIA>(pAllocateInfo->pNext);
+    const auto import_memory_zircon = vku::FindStructInPNextChain<VkImportMemoryZirconHandleInfoFUCHSIA>(allocate_info.pNext);
     if (import_memory_zircon && (import_memory_zircon->handleType & ignored_allocation) != 0) {
         return true;
     }
@@ -313,7 +313,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(*pAllocateInfo, allocate_info_loc);
     } else {
-        if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
+        if (!IsZeroAllocationSizeAllowed(*pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-07899", device, allocate_info_loc.dot(Field::allocationSize),
                              "is 0.");
         }
@@ -405,7 +405,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01797", objlist, image_loc,
                                  "(%s) was created with VK_IMAGE_CREATE_DISJOINT_BIT.", FormatHandle(dedicated_image).c_str());
             } else {
-                if (!IsZeroAllocationSizeAllowed(pAllocateInfo) &&
+                if (!IsZeroAllocationSizeAllowed(*pAllocateInfo) &&
                     (pAllocateInfo->allocationSize != image_state->requirements[0].size) && !imported_ahb_buffer &&
                     !imported_qnx_buffer) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-02964", objlist,
@@ -425,8 +425,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             const LogObjectList objlist(device, dedicated_buffer);
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
             auto buffer_state = Get<vvl::Buffer>(dedicated_buffer);
-            if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
-                !imported_ahb_buffer && !imported_qnx_buffer) {
+            if (!IsZeroAllocationSizeAllowed(*pAllocateInfo) &&
+                (pAllocateInfo->allocationSize != buffer_state->requirements.size) && !imported_ahb_buffer &&
+                !imported_qnx_buffer) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
                                  allocate_info_loc.dot(Field::allocationSize),
                                  "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
@@ -1227,45 +1228,44 @@ bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryU
     return skip;
 }
 
-bool CoreChecks::ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappedMemoryRange *pMemoryRanges,
+bool CoreChecks::ValidateMemoryIsMapped(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges,
                                         const ErrorObject &error_obj) const {
     bool skip = false;
-    for (uint32_t i = 0; i < memoryRangeCount; ++i) {
+    for (uint32_t i = 0; i < mem_range_count; ++i) {
         const Location memory_range_loc = error_obj.location.dot(Field::pMemoryRanges, i);
-        auto mem_info = Get<vvl::DeviceMemory>(pMemoryRanges[i].memory);
+        auto mem_info = Get<vvl::DeviceMemory>(mem_ranges[i].memory);
         if (!mem_info) {
             continue;
         }
         // Makes sure the memory is already mapped
         if (mem_info->mapped_range.size == 0) {
-            skip |= LogError("VUID-VkMappedMemoryRange-memory-00684", pMemoryRanges[i].memory, memory_range_loc,
+            skip |= LogError("VUID-VkMappedMemoryRange-memory-00684", mem_ranges[i].memory, memory_range_loc,
                              "Attempting to use memory (%s) that is not currently host mapped.",
-                             FormatHandle(pMemoryRanges[i].memory).c_str());
+                             FormatHandle(mem_ranges[i].memory).c_str());
         }
 
-        if (pMemoryRanges[i].size == VK_WHOLE_SIZE) {
-            if (mem_info->mapped_range.offset > pMemoryRanges[i].offset) {
-                skip |=
-                    LogError("VUID-VkMappedMemoryRange-size-00686", pMemoryRanges[i].memory, memory_range_loc.dot(Field::offset),
-                             "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is VK_WHOLE_SIZE).",
-                             pMemoryRanges[i].offset, mem_info->mapped_range.offset);
+        if (mem_ranges[i].size == VK_WHOLE_SIZE) {
+            if (mem_info->mapped_range.offset > mem_ranges[i].offset) {
+                skip |= LogError("VUID-VkMappedMemoryRange-size-00686", mem_ranges[i].memory, memory_range_loc.dot(Field::offset),
+                                 "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is VK_WHOLE_SIZE).",
+                                 mem_ranges[i].offset, mem_info->mapped_range.offset);
             }
         } else {
-            if (mem_info->mapped_range.offset > pMemoryRanges[i].offset) {
+            if (mem_info->mapped_range.offset > mem_ranges[i].offset) {
                 skip |=
-                    LogError("VUID-VkMappedMemoryRange-size-00685", pMemoryRanges[i].memory, memory_range_loc.dot(Field::offset),
+                    LogError("VUID-VkMappedMemoryRange-size-00685", mem_ranges[i].memory, memory_range_loc.dot(Field::offset),
                              "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is not VK_WHOLE_SIZE).",
-                             pMemoryRanges[i].offset, mem_info->mapped_range.offset);
+                             mem_ranges[i].offset, mem_info->mapped_range.offset);
             }
             const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
                                           ? mem_info->allocate_info.allocationSize
                                           : (mem_info->mapped_range.offset + mem_info->mapped_range.size);
-            if ((data_end < (pMemoryRanges[i].offset + pMemoryRanges[i].size))) {
-                skip |= LogError("VUID-VkMappedMemoryRange-size-00685", pMemoryRanges[i].memory, memory_range_loc,
+            if ((data_end < (mem_ranges[i].offset + mem_ranges[i].size))) {
+                skip |= LogError("VUID-VkMappedMemoryRange-size-00685", mem_ranges[i].memory, memory_range_loc,
                                  "size (%" PRIu64 ") plus offset (%" PRIu64
                                  ") "
                                  "exceed the Memory Object's upper-bound (%" PRIu64 ").",
-                                 pMemoryRanges[i].size, pMemoryRanges[i].offset, data_end);
+                                 mem_ranges[i].size, mem_ranges[i].offset, data_end);
             }
         }
     }

@@ -19,7 +19,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
-bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order,
+bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order,
                                                             const Location &order_loc) const {
     bool skip = false;
 
@@ -42,7 +42,7 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     const SampleOrderInfo *sample_order_info;
     uint32_t info_idx = 0;
     for (sample_order_info = nullptr; info_idx < sample_order_infos.size(); ++info_idx) {
-        if (sample_order_infos[info_idx].shadingRate == order->shadingRate) {
+        if (sample_order_infos[info_idx].shadingRate == order.shadingRate) {
             sample_order_info = &sample_order_infos[info_idx];
             break;
         }
@@ -55,33 +55,33 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
         return skip;
     }
 
-    if (order->sampleCount == 0 || (order->sampleCount & (order->sampleCount - 1)) ||
-        !(order->sampleCount & device_limits.framebufferNoAttachmentsSampleCounts)) {
+    if (order.sampleCount == 0 || (order.sampleCount & (order.sampleCount - 1)) ||
+        !(order.sampleCount & device_limits.framebufferNoAttachmentsSampleCounts)) {
         skip |= LogError("VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074", device, order_loc,
                          "sampleCount (=%" PRIu32
                          ") must "
                          "correspond to a sample count enumerated in VkSampleCountFlags whose corresponding bit "
                          "is set in framebufferNoAttachmentsSampleCounts.",
-                         order->sampleCount);
+                         order.sampleCount);
     }
 
-    if (order->sampleLocationCount != order->sampleCount * sample_order_info->width * sample_order_info->height) {
+    if (order.sampleLocationCount != order.sampleCount * sample_order_info->width * sample_order_info->height) {
         skip |= LogError("VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075", device, order_loc,
                          "sampleLocationCount (=%" PRIu32
                          ") must "
                          "be equal to the product of sampleCount (=%" PRIu32
                          "), the fragment width for shadingRate "
                          "(=%" PRIu32 "), and the fragment height for shadingRate (=%" PRIu32 ").",
-                         order->sampleLocationCount, order->sampleCount, sample_order_info->width, sample_order_info->height);
+                         order.sampleLocationCount, order.sampleCount, sample_order_info->width, sample_order_info->height);
     }
 
-    if (order->sampleLocationCount > phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples) {
+    if (order.sampleLocationCount > phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples) {
         skip |= LogError(
             "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076", device, order_loc,
             "sampleLocationCount (=%" PRIu32
             ") must "
             "be less than or equal to VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateMaxCoarseSamples (=%" PRIu32 ").",
-            order->sampleLocationCount, phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples);
+            order.sampleLocationCount, phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples);
     }
 
     // Accumulate a bitmask tracking which (x,y,sample) tuples are seen. Expect
@@ -90,8 +90,8 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     // implementation to support more than 32 bits for samplemask.
     assert(phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples <= 64);
     uint64_t sample_locations_mask = 0;
-    for (uint32_t i = 0; i < order->sampleLocationCount; ++i) {
-        const VkCoarseSampleLocationNV *sample_loc = &order->pSampleLocations[i];
+    for (uint32_t i = 0; i < order.sampleLocationCount; ++i) {
+        const VkCoarseSampleLocationNV *sample_loc = &order.pSampleLocations[i];
         if (sample_loc->pixelX >= sample_order_info->width) {
             skip |= LogError("VUID-VkCoarseSampleLocationNV-pixelX-02078", device, order_loc,
                              "pixelX must be less than the width (in pixels) of the fragment.");
@@ -100,16 +100,16 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
             skip |= LogError("VUID-VkCoarseSampleLocationNV-pixelY-02079", device, order_loc,
                              "pixelY must be less than the height (in pixels) of the fragment.");
         }
-        if (sample_loc->sample >= order->sampleCount) {
+        if (sample_loc->sample >= order.sampleCount) {
             skip |= LogError("VUID-VkCoarseSampleLocationNV-sample-02080", device, order_loc,
                              "sample must be less than the number of coverage samples in each pixel belonging to the fragment.");
         }
         uint32_t idx =
-            sample_loc->sample + order->sampleCount * (sample_loc->pixelX + sample_order_info->width * sample_loc->pixelY);
+            sample_loc->sample + order.sampleCount * (sample_loc->pixelX + sample_order_info->width * sample_loc->pixelY);
         sample_locations_mask |= 1ULL << idx;
     }
 
-    uint64_t expected_mask = (order->sampleLocationCount == 64) ? ~0ULL : ((1ULL << order->sampleLocationCount) - 1);
+    uint64_t expected_mask = (order.sampleLocationCount == 64) ? ~0ULL : ((1ULL << order.sampleLocationCount) - 1);
     if (sample_locations_mask != expected_mask) {
         skip |= LogError(
             "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077", device, order_loc,

@@ -230,7 +230,7 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                          const ErrorObject& error_obj) const override;
-    bool ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachmentCount, const VkImageView* image_views,
+    bool ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachment_count, const VkImageView* attachments,
                              const Location& loc) const;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
@@ -285,7 +285,7 @@ class BestPractices : public ValidationStateTracker {
                                  const RecordObject& record_obj) override;
     bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                    const ErrorObject& error_obj) const override;
-    bool ValidateMultisampledBlendingArm(uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos,
+    bool ValidateMultisampledBlendingArm(uint32_t create_info_count, const VkGraphicsPipelineCreateInfo* create_infos,
                                          const Location& create_info_loc) const;
 
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
