@@ -111,7 +111,8 @@ class ObjectLifetimes : public ValidationObject {
     void DestroyQueueDataStructures();
     bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer, const Location &loc) const;
     bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) const;
-    bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const Location &loc) const;
+    bool ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
+                                               const Location &create_info_loc) const;
     bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const;
     bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
                                  const char *wrong_parent_vuid, const Location &loc) const;
