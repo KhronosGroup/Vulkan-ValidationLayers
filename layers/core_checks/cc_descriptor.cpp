@@ -462,33 +462,34 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
     return skip;
 }
 
-bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, uint32_t max_binding,
-                                                         uint32_t *update_after_bind, const Location &loc) const {
+bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLayoutCreateInfo &create_info, uint32_t max_binding,
+                                                         uint32_t *update_after_bind, const Location &create_info_loc) const {
     bool skip = false;
-    const auto *flags_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
+    const auto *flags_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(create_info.pNext);
     if (!flags_info) {
         return skip;
     }
-    if (flags_info->bindingCount != 0 && flags_info->bindingCount != pCreateInfo->bindingCount) {
+    if (flags_info->bindingCount != 0 && flags_info->bindingCount != create_info.bindingCount) {
         skip |= LogError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-bindingCount-03002", device,
-                         loc.pNext(Struct::VkDescriptorSetLayoutBindingFlagsCreateInfo, Field::bindingCount),
+                         create_info_loc.pNext(Struct::VkDescriptorSetLayoutBindingFlagsCreateInfo, Field::bindingCount),
                          "(%" PRIu32 ") is different from pCreateInfo->bindingCount (%" PRIu32 ").", flags_info->bindingCount,
-                         pCreateInfo->bindingCount);
+                         create_info.bindingCount);
     }
 
-    if (flags_info->bindingCount != pCreateInfo->bindingCount) {
+    if (flags_info->bindingCount != create_info.bindingCount) {
         return skip;  // nothing left to validate
     }
-    for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
-        const auto &binding_info = pCreateInfo->pBindings[i];
-        const Location binding_flags_loc = loc.pNext(Struct::VkDescriptorSetLayoutBindingFlagsCreateInfo, Field::pBindingFlags, i);
+    for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
+        const auto &binding_info = create_info.pBindings[i];
+        const Location binding_flags_loc =
+            create_info_loc.pNext(Struct::VkDescriptorSetLayoutBindingFlagsCreateInfo, Field::pBindingFlags, i);
 
         if (flags_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
             *update_after_bind = i;
-            if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) == 0) {
+            if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) == 0) {
                 skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-03000", device, binding_flags_loc,
                                  "includes VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT but pCreateInfo->flags is %s.",
-                                 string_VkDescriptorSetLayoutCreateFlags(pCreateInfo->flags).c_str());
+                                 string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
             }
 
             if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
@@ -627,7 +628,7 @@ bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLa
             }
         }
 
-        const bool push_descriptor_set = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0;
+        const bool push_descriptor_set = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0;
         if (push_descriptor_set && (flags_info->pBindingFlags[i] & (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                                                                     VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                                                                     VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT))) {
@@ -640,25 +641,23 @@ bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLa
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                          const VkAllocationCallbacks *pAllocator,
-                                                          VkDescriptorSetLayout *pSetLayout, const ErrorObject &error_obj) const {
+bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
+                                                       const Location &create_info_loc) const {
     bool skip = false;
     vvl::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
 
-    const bool push_descriptor_set = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0;
+    const bool push_descriptor_set = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0;
 
     uint32_t max_binding = 0;
 
-    uint32_t update_after_bind = pCreateInfo->bindingCount;
-    uint32_t uniform_buffer_dynamic = pCreateInfo->bindingCount;
-    uint32_t storage_buffer_dynamic = pCreateInfo->bindingCount;
-    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    uint32_t update_after_bind = create_info.bindingCount;
+    uint32_t uniform_buffer_dynamic = create_info.bindingCount;
+    uint32_t storage_buffer_dynamic = create_info.bindingCount;
 
-    for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
+    for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
         const Location binding_loc = create_info_loc.dot(Field::pBindings, i);
-        const auto &binding_info = pCreateInfo->pBindings[i];
+        const auto &binding_info = create_info.pBindings[i];
         max_binding = std::max(max_binding, binding_info.binding);
 
         if (!bindings.insert(binding_info.binding).second) {
@@ -682,14 +681,14 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                                      binding_info.descriptorCount);
                 }
                 if ((binding_info.descriptorCount > phys_dev_ext_props.inline_uniform_block_props.maxInlineUniformBlockSize) &&
-                    !(pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                    !(create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
                     skip |= LogError(
                         "VUID-VkDescriptorSetLayoutBinding-descriptorType-08004", device, binding_loc.dot(Field::descriptorCount),
                         "(%" PRIu32 ") but must be less than or equal to maxInlineUniformBlockSize (%" PRIu32
                         "), but "
                         "pCreateInfo->flags is %s.",
                         binding_info.descriptorCount, phys_dev_ext_props.inline_uniform_block_props.maxInlineUniformBlockSize,
-                        string_VkDescriptorSetLayoutCreateFlags(pCreateInfo->flags).c_str());
+                        string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
                 }
             }
         } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
@@ -729,7 +728,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                          "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but pImmutableSamplers is not NULL.");
         }
 
-        if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
+        if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
             if (binding_info.descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER) {
                 skip |= LogError(
                     "VUID-VkDescriptorSetLayoutBinding-flags-08005", device, binding_loc.dot(Field::descriptorType),
@@ -755,17 +754,17 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
         total_descriptors += binding_info.descriptorCount;
     }
 
-    skip |= ValidateDescriptorSetLayoutBindingFlags(pCreateInfo, max_binding, &update_after_bind, create_info_loc);
+    skip |= ValidateDescriptorSetLayoutBindingFlags(create_info, max_binding, &update_after_bind, create_info_loc);
 
-    if (update_after_bind < pCreateInfo->bindingCount) {
-        if (uniform_buffer_dynamic < pCreateInfo->bindingCount) {
+    if (update_after_bind < create_info.bindingCount) {
+        if (uniform_buffer_dynamic < create_info.bindingCount) {
             skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001", device,
                              create_info_loc.dot(Field::pBindings, update_after_bind),
                              "has VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT "
                              "flag, but pBindings[%" PRIu32 "] has descriptor type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC.",
                              uniform_buffer_dynamic);
         }
-        if (storage_buffer_dynamic < pCreateInfo->bindingCount) {
+        if (storage_buffer_dynamic < create_info.bindingCount) {
             skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001", device,
                              create_info_loc.dot(Field::pBindings, update_after_bind),
                              "has VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT "
@@ -775,13 +774,37 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
     }
 
     if ((push_descriptor_set) && (total_descriptors > phys_dev_ext_props.push_descriptor_props.maxPushDescriptors)) {
-        skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-00281", device, error_obj.location,
-                         "for push descriptor, total descriptor count in layout (%" PRIu64
-                         ") must not be greater than maxPushDescriptors (%" PRIu32 ").",
-                         total_descriptors, phys_dev_ext_props.push_descriptor_props.maxPushDescriptors);
+        skip |= LogError(
+            "VUID-VkDescriptorSetLayoutCreateInfo-flags-00281", device, create_info_loc.dot(Field::flags),
+            "contains VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR, but the total descriptor count in layout (%" PRIu64
+            ") must not be greater than maxPushDescriptors (%" PRIu32 ").",
+            total_descriptors, phys_dev_ext_props.push_descriptor_props.maxPushDescriptors);
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator,
+                                                          VkDescriptorSetLayout *pSetLayout, const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                              VkDescriptorSetLayoutSupport *pSupport,
+                                                              const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device,
+                                                                 const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                                 VkDescriptorSetLayoutSupport *pSupport,
+                                                                 const ErrorObject &error_obj) const {
+    return PreCallValidateGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, error_obj);
 }
 
 // Validate that the state of this set is appropriate for the given bindings and dynamic_offsets at Draw time

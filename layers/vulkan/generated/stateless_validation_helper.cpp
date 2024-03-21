@@ -14691,6 +14691,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice 
                                     "VUID-VkDescriptorSetLayoutSupport-pNext-pNext",
                                     "VUID-VkDescriptorSetLayoutSupport-sType-unique", VK_NULL_HANDLE, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, error_obj);
     return skip;
 }
 
