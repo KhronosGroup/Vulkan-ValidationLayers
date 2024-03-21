@@ -148,7 +148,7 @@ TEST_F(PositiveWsi, CreateXcbSurface) {
     surface_create_info.connection = xcb_connection;
     surface_create_info.window = xcb_window;
 
-    VkSurfaceKHR vulkan_surface;
+    VkSurfaceKHR vulkan_surface{};
     vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
 
     vk::DestroySurfaceKHR(instance(), vulkan_surface, nullptr);
