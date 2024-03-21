@@ -113,16 +113,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
     gp_ci_.renderPass = layer_test_.renderPass();
 }
 
-CreatePipelineHelper::~CreatePipelineHelper() {
-    if (pipeline_cache_ != VK_NULL_HANDLE) {
-        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
-        pipeline_cache_ = VK_NULL_HANDLE;
-    }
-    if (pipeline_ != VK_NULL_HANDLE) {
-        vk::DestroyPipeline(device_->handle(), pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-    }
-}
+CreatePipelineHelper::~CreatePipelineHelper() { Destroy(); }
 
 void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl); }
 
@@ -131,6 +122,17 @@ void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const
     fs_ = std::make_unique<VkShaderObj>(&layer_test_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT);
     // We shouldn't need a fragment shader but add it to be able to run on more devices
     shader_stages_ = {vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo()};
+}
+
+void CreatePipelineHelper::Destroy() {
+    if (pipeline_cache_ != VK_NULL_HANDLE) {
+        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
+        pipeline_cache_ = VK_NULL_HANDLE;
+    }
+    if (pipeline_ != VK_NULL_HANDLE) {
+        vk::DestroyPipeline(device_->handle(), pipeline_, nullptr);
+        pipeline_ = VK_NULL_HANDLE;
+    }
 }
 
 // Designed for majority of cases that just need to simply add dynamic state
@@ -312,16 +314,7 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void
     cp_ci_.layout = VK_NULL_HANDLE;
 }
 
-CreateComputePipelineHelper::~CreateComputePipelineHelper() {
-    if (pipeline_cache_ != VK_NULL_HANDLE) {
-        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
-        pipeline_cache_ = VK_NULL_HANDLE;
-    }
-    if (pipeline_ != VK_NULL_HANDLE) {
-        vk::DestroyPipeline(device_->handle(), pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-    }
-}
+CreateComputePipelineHelper::~CreateComputePipelineHelper() { Destroy(); }
 
 void CreateComputePipelineHelper::InitShaderInfo() {
     cs_ = std::make_unique<VkShaderObj>(&layer_test_, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -334,6 +327,17 @@ void CreateComputePipelineHelper::InitPipelineCache() {
     }
     VkResult err = vk::CreatePipelineCache(device_->handle(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_EQ(VK_SUCCESS, err);
+}
+
+void CreateComputePipelineHelper::Destroy() {
+    if (pipeline_cache_ != VK_NULL_HANDLE) {
+        vk::DestroyPipelineCache(device_->handle(), pipeline_cache_, nullptr);
+        pipeline_cache_ = VK_NULL_HANDLE;
+    }
+    if (pipeline_ != VK_NULL_HANDLE) {
+        vk::DestroyPipeline(device_->handle(), pipeline_, nullptr);
+        pipeline_ = VK_NULL_HANDLE;
+    }
 }
 
 void CreateComputePipelineHelper::LateBindPipelineInfo() {
