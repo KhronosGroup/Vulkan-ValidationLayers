@@ -5163,3 +5163,22 @@ TEST_F(NegativeDescriptors, PushDescriptorWithoutInfo) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDescriptors, GetSupportMutableDescriptorType) {
+    TEST_DESCRIPTION("Test vkGetDescriptorSetLayoutSupport with mutable descriptor set layout support");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo set_layout_ci = vku::InitStructHelper();
+    set_layout_ci.bindingCount = 1;
+    set_layout_ci.pBindings = &binding;
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303");
+    vk::GetDescriptorSetLayoutSupport(device(), &set_layout_ci, &support);
+    m_errorMonitor->VerifyFound();
+}

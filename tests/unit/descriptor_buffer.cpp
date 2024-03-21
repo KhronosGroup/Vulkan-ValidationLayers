@@ -136,6 +136,20 @@ TEST_F(NegativeDescriptorBuffer, SetLayout) {
     }
 }
 
+TEST_F(NegativeDescriptorBuffer, GetSupportSetLayout) {
+    TEST_DESCRIPTION("call vkGetDescriptorSetLayoutSupport on Descriptor buffer set layout tests.");
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                               nullptr};
+    const VkDescriptorSetLayoutCreateFlags flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1U, &binding);
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-08000");
+    vk::GetDescriptorSetLayoutSupport(device(), &dslci, &support);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorBuffer, SetLayoutInlineUniformBlockEXT) {
     TEST_DESCRIPTION("Descriptor buffer set layout tests.");
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
