@@ -61,17 +61,12 @@ class Semaphore : public RefcountedStateObject {
     }
 
     struct SemOp {
-        SemOp(OpType ot, Queue *q, uint64_t queue_seq, Func command = Func::Empty)
-            : op_type(ot), command(command), queue(q), seq(queue_seq) {}
+        SemOp(Queue *q, uint64_t queue_seq, Func command = Func::Empty)
+            : command(command), queue(q), seq(queue_seq) {}
 
-        OpType op_type;
         Func command;
         Queue *queue;
         uint64_t seq;
-
-        bool IsWait() const { return op_type == kWait; }
-        bool IsSignal() const { return op_type == kSignal; }
-        bool IsAcquire() const { return op_type == kBinaryAcquire; }
 
         void Notify() const;
     };
@@ -79,23 +74,25 @@ class Semaphore : public RefcountedStateObject {
     // SemOpTemp fill is renamed to SemOp in one of the next commits,
     // and original SemOp is renamed to something that characterizes just queue submission
     struct SemOpTemp : SemOp {
+        OpType op_type;
         uint64_t payload;
-        SemOpTemp(const SemOp &op, uint64_t payload) : SemOp(op), payload(payload) {}
+        SemOpTemp(const SemOp &op, OpType op_type, uint64_t payload) : SemOp(op), op_type(op_type), payload(payload) {}
     };
 
     struct TimePoint {
-        TimePoint(SemOp &op) : signal_op(), completed(), waiter(completed.get_future()) {
-            if (op.op_type == kWait) {
-                AddWaitOp(op);
-            } else {
+        TimePoint(OpType op_type, SemOp &op) : signal_op(), completed(), waiter(completed.get_future()) {
+            if (op_type == kWait) {
+                wait_ops.emplace_back(op);
+            } else if (op_type == kSignal) {
                 signal_op.emplace(op);
+            } else {
+                assert(op_type == kBinaryAcquire);
+                acquire_op.emplace(op);
             }
         }
-        void AddWaitOp(const SemOp &op) {
-            assert(op.op_type == kWait);
-            wait_ops.emplace_back(op);
-        }
+
         std::optional<SemOp> signal_op;
+        std::optional<SemOp> acquire_op;
         small_vector<SemOp, 1, uint32_t> wait_ops;
         std::promise<void> completed;
         std::shared_future<void> waiter;
@@ -136,7 +133,7 @@ class Semaphore : public RefcountedStateObject {
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          completed_{SemOp(type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, 0),
+          completed_{SemOp(nullptr, 0), type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone,
                      type_create_info ? type_create_info->initialValue : 0},
           next_payload_(completed_.payload + 1),
           dev_data_(dev) {
