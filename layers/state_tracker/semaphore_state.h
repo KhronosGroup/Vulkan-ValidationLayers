@@ -18,6 +18,7 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
+#include "state_tracker/submission_reference.h"
 #include <future>
 #include <map>
 #include <mutex>
@@ -29,7 +30,6 @@ class ValidationStateTracker;
 namespace vvl {
 
 class Queue;
-struct SubmissionLocator;
 
 class Semaphore : public RefcountedStateObject {
   public:
@@ -60,39 +60,29 @@ class Semaphore : public RefcountedStateObject {
         }
     }
 
-    struct SemOp {
-        SemOp(Queue *q, uint64_t queue_seq) : queue(q), seq(queue_seq) {}
-
-        Queue *queue;
-        uint64_t seq;
-
-        void Notify() const;
-    };
-
-    // SemOpTemp fill is renamed to SemOp in one of the next commits,
-    // and original SemOp is renamed to something that characterizes just queue submission
-    struct SemOpTemp : SemOp {
+    struct SemOp : SubmissionReference {
         OpType op_type;
         uint64_t payload;
         std::optional<Func> acquire_command;
-        SemOpTemp(const SemOp &op, OpType op_type, uint64_t payload) : SemOp(op), op_type(op_type), payload(payload) {}
-        SemOpTemp(Func acquire_command, uint64_t payload)
-            : SemOp(nullptr, 0), op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
+        SemOp(const SubmissionReference &submit_ref, OpType op_type, uint64_t payload)
+            : SubmissionReference(submit_ref), op_type(op_type), payload(payload) {}
+        SemOp(Func acquire_command, uint64_t payload)
+            : op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
     };
 
     struct TimePoint {
-        TimePoint(OpType op_type, SemOp &op) : signal_op(), completed(), waiter(completed.get_future()) {
+        TimePoint(OpType op_type, SubmissionReference &submit_ref) : signal_op(), completed(), waiter(completed.get_future()) {
             if (op_type == kWait) {
-                wait_ops.emplace_back(op);
+                wait_ops.emplace_back(submit_ref);
             } else {
                 assert(op_type == kSignal);
-                signal_op.emplace(op);
+                signal_op.emplace(submit_ref);
             }
         }
         TimePoint(Func command) : acquire_command(command), completed(), waiter(completed.get_future()) {}
 
-        std::optional<SemOp> signal_op;
-        small_vector<SemOp, 1, uint32_t> wait_ops;
+        std::optional<SubmissionReference> signal_op;
+        small_vector<SubmissionReference, 1, uint32_t> wait_ops;
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
@@ -133,7 +123,7 @@ class Semaphore : public RefcountedStateObject {
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
           flags(pCreateInfo->flags),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          completed_{SemOp(nullptr, 0), type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone,
+          completed_{SubmissionReference{}, type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone,
                      type_create_info ? type_create_info->initialValue : 0},
           next_payload_(completed_.payload + 1),
           dev_data_(dev) {
@@ -157,7 +147,7 @@ class Semaphore : public RefcountedStateObject {
     }
     // This is the most recently completed operation. It is returned by value so that the caller
     // has a correct copy even if something else is completing on this queue in a different thread.
-    SemOpTemp Completed() const {
+    SemOp Completed() const {
         auto guard = ReadLock();
         return completed_;
     }
@@ -182,11 +172,11 @@ class Semaphore : public RefcountedStateObject {
     void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
-    std::optional<SemOpTemp> LastOp(
+    std::optional<SemOp> LastOp(
         const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter = nullptr) const;
 
     // Returns queue submission associated with the last binary signal.
-    std::optional<SubmissionLocator> GetLastBinarySignalSubmission() const;
+    std::optional<SubmissionReference> GetLastBinarySignalSubmission() const;
 
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
@@ -212,7 +202,7 @@ class Semaphore : public RefcountedStateObject {
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
 
     // the most recently completed operation
-    SemOpTemp completed_;
+    SemOp completed_;
     // next payload value for binary semaphore operations
     uint64_t next_payload_;
 
