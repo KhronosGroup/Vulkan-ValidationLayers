@@ -376,6 +376,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
 TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     TEST_DESCRIPTION("Copy mutable descriptors.");
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
@@ -420,6 +421,12 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
     create_info.bindingCount = 2;
     create_info.pBindings = bindings;
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    vk::GetDescriptorSetLayoutSupportKHR(device(), &create_info, &support);
+    if (!support.supported) {
+        GTEST_SKIP() << "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER not supported as a mutable type";
+    }
 
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
     VkDescriptorSetLayout set_layout_handle = set_layout.handle();
@@ -474,13 +481,10 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_struct_features = vku::InitStructHelper(&mutable_descriptor_type_features);
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&acc_struct_features);
-    GetPhysicalDeviceFeatures2(bda_features);
-    RETURN_IF_SKIP(InitState(nullptr, &bda_features));
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
 
     std::array descriptor_types = {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR};
 
@@ -520,6 +524,12 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
     create_info.bindingCount = bindings.size();
     create_info.pBindings = bindings.data();
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    vk::GetDescriptorSetLayoutSupport(device(), &create_info, &support);
+    if (!support.supported) {
+        GTEST_SKIP() << "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR not supported as a mutable type";
+    }
 
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
 
