@@ -201,7 +201,6 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
 
     const VkIndexType ib_type = cmd_state.index_buffer_binding.index_type;
     const auto& ib_mem_state = *ib_state->MemState();
-    const VkDeviceSize ib_mem_offset = ib_mem_state.mapped_range.offset;
     const void* ib_mem = ib_mem_state.p_driver_data;
     bool primitive_restart_enable = false;
 
@@ -217,7 +216,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
     if (ib_mem && last_bound.IsUsing()) {
         const uint32_t scan_stride = GetIndexAlignment(ib_type);
-        const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + ib_mem_offset + firstIndex * scan_stride;
+        const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + firstIndex * scan_stride;
         const uint8_t* scan_end = scan_begin + indexCount * scan_stride;
 
         // Min and max are important to track for some Mali architectures. In older Mali devices without IDVS, all
