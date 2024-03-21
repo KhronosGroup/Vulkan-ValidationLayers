@@ -36,6 +36,8 @@ struct ObjTrackState {
 };
 
 typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
+// Used for GPL and we know there are at most only 4 libraries that should be used
+typedef vl_concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6> object_list_map_type;
 
 class ObjectLifetimes : public ValidationObject {
     using Func = vvl::Func;
@@ -59,6 +61,7 @@ class ObjectLifetimes : public ValidationObject {
     object_map_type object_map[kVulkanObjectTypeMax + 1];
     // Special-case map for swapchain images
     object_map_type swapchain_image_map;
+    object_list_map_type linked_graphics_pipeline_map;
 
     void *device_createinfo_pnext;
     bool null_descriptor_enabled;
@@ -122,6 +125,7 @@ class ObjectLifetimes : public ValidationObject {
     bool TracksObject(uint64_t object_handle, VulkanObjectType object_type) const;
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
                              const char *wrong_parent_vuid, const Location &loc, VulkanObjectType parent_type) const;
+    bool CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid, const Location &loc) const;
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_vuid,

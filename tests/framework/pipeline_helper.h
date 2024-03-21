@@ -53,6 +53,7 @@ class CreatePipelineHelper {
     const VkPipeline &Handle() const { return pipeline_; }
     void InitShaderInfo();
     void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
+    void Destroy();
 
     void LateBindPipelineInfo();
     VkResult CreateGraphicsPipeline(bool do_late_bind = true);
@@ -143,6 +144,7 @@ class CreateComputePipelineHelper {
 
     const VkPipeline &Handle() const { return pipeline_; }
     void InitShaderInfo();
+    void Destroy();
 
     void LateBindPipelineInfo();
     VkResult CreateComputePipeline(bool do_late_bind = true);

@@ -1122,21 +1122,6 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
     return skip;
 }
 
-void ObjectLifetimes::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
-                                                            uint32_t createInfoCount,
-                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const RecordObject& record_obj) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
-                         record_obj.location.dot(Field::pPipelines, index));
-        }
-    }
-}
-
 bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache,
                                                             uint32_t createInfoCount,
                                                             const VkComputePipelineCreateInfo* pCreateInfos,
@@ -1205,11 +1190,6 @@ bool ObjectLifetimes::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline
                                   "VUID-vkDestroyPipeline-pipeline-00767", error_obj.location);
 
     return skip;
-}
-
-void ObjectLifetimes::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
-                                                   const RecordObject& record_obj) {
-    RecordDestroyObject(pipeline, kVulkanObjectTypePipeline);
 }
 
 bool ObjectLifetimes::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,

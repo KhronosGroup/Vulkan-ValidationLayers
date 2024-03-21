@@ -49,6 +49,11 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
 
     // If this instance of lifetime validation tracks the object, report success
     if (TracksObject(object_handle, object_type)) {
+        // special case if for pipeline if using GPL
+        // If destroying, even if the child libraries are gone, the user still a way to remove the bad parent pipeline library
+        if (object_type == kVulkanObjectTypePipeline && loc.function != Func::vkDestroyPipeline) {
+            return CheckPipelineObjectValidity(object_handle, invalid_handle_vuid, loc);
+        }
         return skip;
     }
     // Object not found, look for it in other device object maps
@@ -106,6 +111,30 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
                     ") was created, allocated or retrieved from %s, but command is using (or its dispatchable parameter is "
                     "associated with) %s",
                     string_VulkanObjectType(object_type), object_handle, other_handle_str.c_str(), handle_str.c_str());
+}
+
+bool ObjectLifetimes::CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid,
+                                                  const Location &loc) const {
+    bool skip = false;
+    const auto &itr = linked_graphics_pipeline_map.find(object_handle);
+    if (itr == linked_graphics_pipeline_map.end()) {
+        return skip;  // no-linked
+    }
+    for (const auto &pipeline : itr->second) {
+        if (!TracksObject(pipeline->handle, kVulkanObjectTypePipeline)) {
+            skip |= LogError(invalid_handle_vuid, instance, loc,
+                             "Invalid VkPipeline Object 0x%" PRIxLEAST64
+                             " as it was created with VkPipelineLibraryCreateInfoKHR::pLibraries 0x%" PRIxLEAST64
+                             " that doesn't exist anymore. The application must maintain the lifetime of a pipeline library based "
+                             "on the pipelines that link with it.",
+                             object_handle, pipeline->handle);
+            break;
+        } else {
+            // Libaries pipeline can have their own nested libraries
+            skip |= CheckPipelineObjectValidity(pipeline->handle, invalid_handle_vuid, loc);
+        }
+    }
+    return skip;
 }
 
 void ObjectLifetimes::DestroyObjectSilently(uint64_t object, VulkanObjectType object_type) {
@@ -1455,4 +1484,39 @@ bool ObjectLifetimes::PreCallValidateGetPrivateData(VkDevice device, VkObjectTyp
                        "VUID-vkGetPrivateData-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
 
     return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
+                                                            uint32_t createInfoCount,
+                                                            const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                            const RecordObject &record_obj) {
+    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
+                         record_obj.location.dot(Field::pPipelines, index));
+
+            if (auto pNext = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index].pNext)) {
+                if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
+                    const uint64_t linked_handle = HandleToUint64(pPipelines[index]);
+                    small_vector<std::shared_ptr<ObjTrackState>, 4> libraries;
+                    for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
+                        const uint64_t library_handle = HandleToUint64(pNext->pLibraries[index2]);
+                        const auto &linked_pipeline = object_map[kVulkanObjectTypePipeline].find(library_handle);
+                        libraries.emplace_back(linked_pipeline->second);
+                    }
+                    linked_graphics_pipeline_map.insert(linked_handle, libraries);
+                }
+            }
+        }
+    }
+}
+
+void ObjectLifetimes::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
+                                                   const RecordObject &record_obj) {
+    RecordDestroyObject(pipeline, kVulkanObjectTypePipeline);
+
+    linked_graphics_pipeline_map.erase(HandleToUint64(pipeline));
 }
