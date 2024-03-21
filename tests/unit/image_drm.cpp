@@ -47,7 +47,7 @@ TEST_F(NegativeImageDrm, Basic) {
 
     {
         VkImageFormatProperties dummy_props;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248");
+        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248");
         vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_info.format, image_info.imageType,
                                                    image_info.tiling, image_info.usage, image_info.flags, &dummy_props);
         m_errorMonitor->VerifyFound();
@@ -72,8 +72,8 @@ TEST_F(NegativeImageDrm, Basic) {
     fake_plane_layout.depthPitch = 1;
 
     image_info.pNext = (void *)&drm_format_mod_explicit;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
+    m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
+    m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
     CreateImageTest(*this, &image_info, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
 
     // reset dummy plane layout
@@ -121,13 +121,13 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
     image_format_info.flags = 0;
 
     VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     image_format_info.pNext = nullptr;
     image_format_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
@@ -135,7 +135,7 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
     format_list.viewFormatCount = 0;  // Invalid
     image_format_info.pNext = &format_list;
     image_format_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 }
@@ -191,7 +191,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     VkImageSubresource subresource{};
     subresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
     VkSubresourceLayout layout{};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-09433");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout-tiling-09433");
     vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
     m_errorMonitor->VerifyFound();
 }
@@ -223,7 +223,7 @@ TEST_F(NegativeImageDrm, DeviceImageMemoryRequirements) {
 
     VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 }
@@ -333,11 +333,11 @@ TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {
     vkt::Image image(*m_device, image_info);
 
     VkImageDrmFormatModifierPropertiesEXT props = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272");
     vk::GetImageDrmFormatModifierPropertiesEXT(device(), image.handle(), &props);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-parameter");
     VkImage bad_image = CastFromUint64<VkImage>(0xFFFFEEEE);
     vk::GetImageDrmFormatModifierPropertiesEXT(device(), bad_image, &props);
     m_errorMonitor->VerifyFound();
@@ -364,13 +364,13 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfo) {
 
     VkImageFormatProperties2 image_properties = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 
     drm_format_modifier.queueFamilyIndexCount = 2;
     drm_format_modifier.pQueueFamilyIndices = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 }
@@ -406,7 +406,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
 
     // Count too large
     queue_family_indices[0] = queue_family_property_count + 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 
@@ -414,7 +414,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     queue_family_indices[0] = 0;
     queue_family_indices[1] = 0;
     drm_format_modifier.queueFamilyIndexCount = queue_family_property_count;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316");
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 }
@@ -473,7 +473,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
 
     // should be VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT
     image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02282");
+    m_errorMonitor->SetDesiredError("VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02282");
     vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
     m_errorMonitor->VerifyFound();
 }
@@ -576,7 +576,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     plane_info[1].planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
     plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02284");
+    m_errorMonitor->SetDesiredError("VUID-VkBindImagePlaneMemoryInfo-planeAspect-02284");
     vk::BindImageMemory2(device(), 3, bind_info);
     m_errorMonitor->VerifyFound();
 }

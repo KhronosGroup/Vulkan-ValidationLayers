@@ -57,31 +57,31 @@ TEST_F(NegativeMemory, MapMemory) {
 
     uint8_t *pData;
     // Attempt to map memory size 0 is invalid
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-size-00680");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-size-00680");
     vk::MapMemory(device(), mem, 0, 0, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00678");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-memory-00678");
     vk::MapMemory(device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
     // Unmap the memory to avoid re-map error
     vk::UnmapMemory(device(), mem);
     // overstep offset with VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-offset-00679");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-offset-00679");
     vk::MapMemory(device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep offset w/o VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-offset-00679");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-offset-00679");
     vk::MapMemory(device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-size-00681");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-size-00681");
     vk::MapMemory(device(), mem, 1, allocation_size, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Now error due to unmapping memory that's not mapped
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUnmapMemory-memory-00689");
+    m_errorMonitor->SetDesiredError("VUID-vkUnmapMemory-memory-00689");
     vk::UnmapMemory(device(), mem);
     m_errorMonitor->VerifyFound();
 
@@ -90,7 +90,7 @@ TEST_F(NegativeMemory, MapMemory) {
     VkMappedMemoryRange mmr = vku::InitStructHelper();
     mmr.memory = mem;
     mmr.offset = atom_size;  // Error b/c offset less than offset of mapped mem
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00685");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00685");
     vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
@@ -99,7 +99,7 @@ TEST_F(NegativeMemory, MapMemory) {
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
     mmr.offset = atom_size;
     mmr.size = 4 * atom_size;  // Flushing bounds exceed mapped bounds
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00685");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00685");
     vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
@@ -108,7 +108,7 @@ TEST_F(NegativeMemory, MapMemory) {
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 2 * atom_size, 4 * atom_size, 0, (void **)&pData));
     mmr.offset = atom_size;
     mmr.size = VK_WHOLE_SIZE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00686");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00686");
     vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
@@ -119,7 +119,7 @@ TEST_F(NegativeMemory, MapMemory) {
         ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
         mmr.offset = 3;  // Not a multiple of atom_size
         mmr.size = VK_WHOLE_SIZE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-offset-00687");
+        m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-offset-00687");
         vk::FlushMappedMemoryRanges(device(), 1, &mmr);
         m_errorMonitor->VerifyFound();
 
@@ -128,7 +128,7 @@ TEST_F(NegativeMemory, MapMemory) {
         ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
         mmr.offset = atom_size;
         mmr.size = 2 * atom_size + 1;  // Not a multiple of atom_size
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01390");
+        m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-01390");
         vk::FlushMappedMemoryRanges(device(), 1, &mmr);
         m_errorMonitor->VerifyFound();
 
@@ -137,7 +137,7 @@ TEST_F(NegativeMemory, MapMemory) {
         ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size + 1, 0, (void **)&pData));
         mmr.offset = atom_size;
         mmr.size = VK_WHOLE_SIZE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");
+        m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-01389");
         vk::FlushMappedMemoryRanges(device(), 1, &mmr);
         m_errorMonitor->VerifyFound();
     }
@@ -146,11 +146,11 @@ TEST_F(NegativeMemory, MapMemory) {
     vk::UnmapMemory(device(), mem);
     mmr.offset = 0;
     mmr.size = VK_WHOLE_SIZE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-memory-00684");
     vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-memory-00684");
     vk::InvalidateMappedMemoryRanges(device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
@@ -222,14 +222,14 @@ TEST_F(NegativeMemory, MapMemory2) {
     // Attempt to map memory size 0 is invalid
     map_info.offset = 0;
     map_info.size = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-size-07960");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-size-07960");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
     map_info.offset = 0;
     map_info.size = VK_WHOLE_SIZE;
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory2KHR(device(), &map_info, (void **)&pData));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-memory-07958");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-memory-07958");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
@@ -238,17 +238,17 @@ TEST_F(NegativeMemory, MapMemory2) {
     // overstep offset with VK_WHOLE_SIZE
     map_info.offset = allocation_size + 1;
     map_info.size = VK_WHOLE_SIZE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-offset-07959");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-offset-07959");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
     map_info.offset = 1,
     map_info.size = allocation_size;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-size-07961");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-size-07961");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Now error due to unmapping memory that's not mapped
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryUnmapInfoKHR-memory-07964");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryUnmapInfoKHR-memory-07964");
     vk::UnmapMemory2KHR(device(), &unmap_info);
     m_errorMonitor->VerifyFound();
 }
@@ -261,7 +261,7 @@ TEST_F(NegativeMemory, MapMemoryNullppData) {
     ASSERT_TRUE(m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory memory(*m_device, memory_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-ppData-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-ppData-parameter");
     vk::MapMemory(device(), memory.handle(), 0, VK_WHOLE_SIZE, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -282,7 +282,7 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     vkt::DeviceMemory memory(*m_device, mem_alloc);
     void *mapped_address = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00682");
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-memory-00682");
     m_errorMonitor->SetUnexpectedError("VUID-vkMapMemory-memory-00683");
     vk::MapMemory(device(), memory.handle(), 0, VK_WHOLE_SIZE, 0, &mapped_address);
     m_errorMonitor->VerifyFound();
@@ -292,11 +292,11 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     memory_range.memory = memory.handle();
     memory_range.offset = 0;
     memory_range.size = VK_WHOLE_SIZE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-memory-00684");
     vk::FlushMappedMemoryRanges(device(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-memory-00684");
     vk::InvalidateMappedMemoryRanges(device(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
 }
@@ -322,7 +322,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
     map_info.size = 32;
     uint8_t *pData;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-memory-07962");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-memory-07962");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 }
@@ -360,7 +360,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
 
     // No VkMemoryMapPlacedInfoEXT
     void *pData;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09570");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09570");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -368,7 +368,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
     map_info.pNext = &placed_info;
 
     // No VkMemoryMapPlacedInfoEXT::pPlacedAddress == NULL
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09570");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09570");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -384,7 +384,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
     placed_info.pPlacedAddress = ((char *)addr) + (map_placed_props.minPlacedMemoryMapAlignment / 2);
 
     // Unaligned VkMemoryMapPlacedInfoEXT::pPlacedAddress
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapPlacedInfoEXT-pPlacedAddress-09577");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapPlacedInfoEXT-pPlacedAddress-09577");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 }
@@ -427,7 +427,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedEnabled) {
 
     void *pData;
     // Unaligned offset
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09573");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09573");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -435,7 +435,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedEnabled) {
     map_info.size = allocation_size - (map_placed_props.minPlacedMemoryMapAlignment / 2);
 
     // Unaligned size
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09574");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09574");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 }
@@ -478,7 +478,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
 
     void *pData;
     // Non-zero offset
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09571");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09571");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -486,7 +486,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
     map_info.size = allocation_size - map_placed_props.minPlacedMemoryMapAlignment;
 
     // Not VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-flags-09572");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09572");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 }
@@ -496,7 +496,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     VkResult err;
     bool pass;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-07460");
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-07460");
 
     RETURN_IF_SKIP(Init());
 
@@ -549,7 +549,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     m_errorMonitor->VerifyFound();
 
     // This particular VU should output three objects in its error message. Verify this works correctly.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VK_OBJECT_TYPE_IMAGE");
+    m_errorMonitor->SetDesiredError("VK_OBJECT_TYPE_IMAGE");
     err = vk::BindImageMemory(device(), image, mem2, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -578,7 +578,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     }
     vkt::DeviceMemory mem(*m_device, image_alloc_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceMemoryCommitment-memory-00690");
+    m_errorMonitor->SetDesiredError("VUID-vkGetDeviceMemoryCommitment-memory-00690");
     VkDeviceSize size;
     vk::GetDeviceMemoryCommitment(device(), mem.handle(), &size);
     m_errorMonitor->VerifyFound();
@@ -632,7 +632,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
         GTEST_SKIP() << "No invalid memory type index could be found";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-01047");
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-01047");
     vkt::DeviceMemory mem(*m_device, mem_alloc);
     vk::BindImageMemory(device(), image.handle(), mem.handle(), 0);
     m_errorMonitor->VerifyFound();
@@ -679,11 +679,11 @@ TEST_F(NegativeMemory, BindMemory) {
         vk::FreeMemory(device(), image_mem, nullptr);
         vk::FreeMemory(device(), buffer_mem, nullptr);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-parameter");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-parameter");
         vk::BindImageMemory(device(), image.handle(), image_mem, 0);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-parameter");
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-parameter");
         vk::BindBufferMemory(device(), buffer.handle(), buffer_mem, 0);
         m_errorMonitor->VerifyFound();
     }
@@ -707,12 +707,12 @@ TEST_F(NegativeMemory, BindMemory) {
         vkt::DeviceMemory buffer_mem(*m_device, buffer_alloc_info);
 
         vk::BindImageMemory(device(), image.handle(), image_mem.handle(), 0);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-07460");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-07460");
         vk::BindImageMemory(device(), image.handle(), image_mem.handle(), 0);
         m_errorMonitor->VerifyFound();
 
         vk::BindBufferMemory(device(), buffer.handle(), buffer_mem.handle(), 0);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-07459");
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-07459");
         vk::BindBufferMemory(device(), buffer.handle(), buffer_mem.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
@@ -739,14 +739,14 @@ TEST_F(NegativeMemory, BindMemory) {
         {
             if (image_mem_reqs.alignment > 1) {
                 VkDeviceSize image_offset = 1;
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memoryOffset-01048");
+                m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memoryOffset-01048");
                 vk::BindImageMemory(device(), image.handle(), image_mem.handle(), image_offset);
                 m_errorMonitor->VerifyFound();
             }
 
             if (buffer_mem_reqs.alignment > 1) {
                 VkDeviceSize buffer_offset = 1;
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
+                m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memoryOffset-01036");
                 vk::BindBufferMemory(device(), buffer.handle(), buffer_mem.handle(), buffer_offset);
                 m_errorMonitor->VerifyFound();
             }
@@ -756,13 +756,13 @@ TEST_F(NegativeMemory, BindMemory) {
         {
             VkDeviceSize image_offset =
                 (image_alloc_info.allocationSize + image_mem_reqs.alignment) & ~(image_mem_reqs.alignment - 1);
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memoryOffset-01046");
+            m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memoryOffset-01046");
             vk::BindImageMemory(device(), image.handle(), image_mem.handle(), image_offset);
             m_errorMonitor->VerifyFound();
 
             VkDeviceSize buffer_offset =
                 (buffer_alloc_info.allocationSize + buffer_mem_reqs.alignment) & ~(buffer_mem_reqs.alignment - 1);
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01031");
+            m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memoryOffset-01031");
             vk::BindBufferMemory(device(), buffer.handle(), buffer_mem.handle(), buffer_offset);
             m_errorMonitor->VerifyFound();
         }
@@ -772,14 +772,14 @@ TEST_F(NegativeMemory, BindMemory) {
         {
             VkDeviceSize image_offset = (image_mem_reqs.size - 1) & ~(image_mem_reqs.alignment - 1);
             if ((image_offset > 0) && (image_mem_reqs.size < (image_alloc_info.allocationSize - image_mem_reqs.alignment))) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-size-01049");
+                m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-size-01049");
                 vk::BindImageMemory(device(), image.handle(), image_mem.handle(), image_offset);
                 m_errorMonitor->VerifyFound();
             }
 
             VkDeviceSize buffer_offset = (buffer_mem_reqs.size - 1) & ~(buffer_mem_reqs.alignment - 1);
             if (buffer_offset > 0) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-size-01037");
+                m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-size-01037");
                 vk::BindBufferMemory(device(), buffer.handle(), buffer_mem.handle(), buffer_offset);
                 m_errorMonitor->VerifyFound();
             }
@@ -810,7 +810,7 @@ TEST_F(NegativeMemory, BindMemory) {
                     sparse_mem_alloc.memoryTypeIndex = 0;
                     m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
                     vkt::DeviceMemory memory(*m_device, sparse_mem_alloc);
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01045");
+                    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01045");
                     vk::BindImageMemory(device(), sparse_image.handle(), memory.handle(), 0);
                     m_errorMonitor->VerifyFound();
                 }
@@ -834,7 +834,7 @@ TEST_F(NegativeMemory, BindMemory) {
                 sparse_mem_alloc.memoryTypeIndex = 0;
                 m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
                 vkt::DeviceMemory memory(*m_device, sparse_mem_alloc);
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-01030");
+                m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01030");
                 vk::BindBufferMemory(device(), sparse_buffer.handle(), memory.handle(), 0);
                 m_errorMonitor->VerifyFound();
             }
@@ -880,7 +880,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
                                         VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
     if (image_unsupported_mem_type_bits != 0 && found_type) {
         vkt::DeviceMemory memory(*m_device, image_alloc_info);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-01047");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-01047");
         vk::BindImageMemory(device(), image.handle(), memory.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
@@ -890,7 +890,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
                                                  VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
     if (buffer_unsupported_mem_type_bits != 0 && found_type) {
         vkt::DeviceMemory memory(*m_device, buffer_alloc_info);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-01035");
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-01035");
         vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
@@ -929,14 +929,14 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
         if (buffer_mem_reqs.alignment > 1) {
             VkDeviceSize buffer_offset = 1;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
+            m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memoryOffset-01036");
             vk::BindBufferMemory(device(), buffer, buffer_mem, buffer_offset);
             m_errorMonitor->VerifyFound();
 
             // Should trigger same VUID even when image was never checked
             // this makes an assumption that the driver will return the same image requirements for same createImageInfo where even
             // being close to running out of heap space
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
+            m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memoryOffset-01036");
             vk::BindBufferMemory(device(), unchecked_buffer, unchecked_buffer_mem, buffer_offset);
             m_errorMonitor->VerifyFound();
         }
@@ -974,14 +974,14 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
         if (image_mem_reqs.alignment > 1) {
             VkDeviceSize image_offset = 1;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memoryOffset-01048");
+            m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memoryOffset-01048");
             vk::BindImageMemory(device(), image, image_mem, image_offset);
             m_errorMonitor->VerifyFound();
 
             // Should trigger same VUID even when image was never checked
             // this makes an assumption that the driver will return the same image requirements for same createImageInfo where even
             // being close to running out of heap space
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memoryOffset-01048");
+            m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memoryOffset-01048");
             vk::BindImageMemory(device(), unchecked_image, unchecked_image_mem, image_offset);
             m_errorMonitor->VerifyFound();
         }
@@ -1070,7 +1070,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
             bind_image_info[1].memory = mp_image_mem[1];
             bind_image_info[1].memoryOffset = 1;  // off alignment
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01620");
             vk::BindImageMemory2KHR(device(), 2, bind_image_info);
             m_errorMonitor->VerifyFound();
 
@@ -1081,7 +1081,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
             bind_image_info[0].memory = mp_unchecked_image_mem[0];
             bind_image_info[1].image = mp_unchecked_image;
             bind_image_info[1].memory = mp_unchecked_image_mem[1];
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01620");
             vk::BindImageMemory2KHR(device(), 2, bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1145,13 +1145,13 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         bind_image_info[1].memoryOffset = 0;
         bind_image_info[2] = bind_image_info[0];  // duplicate bind
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-04006");
         vk::BindImageMemory2KHR(device(), 3, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Bind same image to 2 different memory in same array
         bind_image_info[1].image = image_a;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-04006");
         vk::BindImageMemory2KHR(device(), 2, bind_image_info);
         m_errorMonitor->VerifyFound();
     }
@@ -1232,7 +1232,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         bind_image_info[2].pNext = (void *)&plane_memory_info[0];
         bind_image_info[2].image = mp_image_b;
         bind_image_info[2].memory = mp_image_b_mem[0];
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-02858");
         vk::BindImageMemory2KHR(device(), 3, bind_image_info);
         m_errorMonitor->VerifyFound();
 
@@ -1240,7 +1240,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         bind_image_info[3].pNext = nullptr;
         bind_image_info[3].image = normal_image;
         bind_image_info[3].memory = normal_image_mem;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-02858");
         vk::BindImageMemory2KHR(device(), 4, bind_image_info);
         m_errorMonitor->VerifyFound();
 
@@ -1252,13 +1252,13 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         bind_image_info[5].pNext = (void *)&plane_memory_info[1];
         bind_image_info[5].image = mp_image_b;
         bind_image_info[5].memory = mp_image_b_mem[1];
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-04006");
         vk::BindImageMemory2KHR(device(), 6, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Try binding image_a with no plane specified
         bind_image_info[0].pNext = nullptr;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-07736");
+        m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-07736");
         vk::BindImageMemory2KHR(device(), 1, bind_image_info);
         m_errorMonitor->VerifyFound();
         bind_image_info[0].pNext = (void *)&plane_memory_info[0];
@@ -1277,7 +1277,7 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     VkResult err;
     bool pass;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-parameter");
 
     RETURN_IF_SKIP(Init());
 
@@ -1350,7 +1350,7 @@ TEST_F(NegativeMemory, AllocationCount) {
         fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     }
     RETURN_IF_SKIP(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
+    m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
@@ -1400,7 +1400,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     vkt::DeviceMemory image_mem(*m_device, mem_alloc);
 
     // Introduce error, do not call vk::BindImageMemory(device(), image, image_mem, 0);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-00003");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-00003");
 
     m_commandBuffer->begin();
     VkClearColorValue ccv;
@@ -1450,7 +1450,7 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     region.imageExtent.width = 4;
     region.imageExtent.depth = 1;
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -1473,15 +1473,13 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vkt::Buffer wrong_buffer(*m_device, buffer_info, vkt::no_mem);
 
     // Bind with wrong buffer
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-01508");
+    m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-01508");
     vk::BindBufferMemory(m_device->handle(), wrong_buffer.handle(), dedicated_buffer_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset (same VUID)
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindBufferMemory-memory-01508");  // offset must be zero
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindBufferMemory-size-01037");  // offset pushes us past size
+    m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-01508");  // offset must be zero
+    m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-size-01037");    // offset pushes us past size
     auto offset = buffer.memory_requirements().alignment;
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), offset);
     m_errorMonitor->VerifyFound();
@@ -1505,15 +1503,13 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     dedicated_image_memory.init(*m_device, image_alloc_info);
 
     // Bind with wrong image
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02628");
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02628");
     vk::BindImageMemory(m_device->handle(), wrong_image.handle(), dedicated_image_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset (same VUID)
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindImageMemory-memory-02628");  // offset must be zero
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindImageMemory-size-01049");  // offset pushes us past size
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02628");  // offset must be zero
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-size-01049");    // offset pushes us past size
     auto image_offset = image.memory_requirements().alignment;
     vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), image_offset);
     m_errorMonitor->VerifyFound();
@@ -1566,18 +1562,16 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     vkt::Image larger_image(*m_device, image_info, vkt::no_mem);
 
     // Bind with a larger image (not supported, and not enough memory)
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02629");
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02629");
     if (larger_image.memory_requirements().size > image.memory_requirements().size) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-size-01049");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-size-01049");
     }
     vk::BindImageMemory(m_device->handle(), larger_image.handle(), dedicated_image_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindImageMemory-memory-02629");  // offset must be zero
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindImageMemory-size-01049");  // offset pushes us past size
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02629");  // offset must be zero
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-size-01049");    // offset pushes us past size
     auto image_offset = image.memory_requirements().alignment;
     vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), image_offset);
     m_errorMonitor->VerifyFound();
@@ -1619,7 +1613,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     VkBufferDeviceAddressInfoEXT info = vku::InitStructHelper();
     info.buffer = buffer;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02600");
     vk::GetBufferDeviceAddressEXT(device(), &info);
     m_errorMonitor->VerifyFound();
 
@@ -1653,9 +1647,9 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
     VkBufferDeviceAddressInfoEXT info = vku::InitStructHelper();
     info.buffer = buffer;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02601");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+    m_errorMonitor->SetDesiredError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02601");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02600");
     vk::GetBufferDeviceAddressEXT(device(), &info);
     m_errorMonitor->VerifyFound();
 }
@@ -1691,7 +1685,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     VkBufferDeviceAddressInfoKHR info = vku::InitStructHelper();
     info.buffer = buffer;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02600");
     vk::GetBufferDeviceAddressKHR(device(), &info);
     m_errorMonitor->VerifyFound();
 
@@ -1703,17 +1697,17 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     VkDeviceMemory buffer_mem;
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339");
+    m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-bufferDeviceAddress-03339");
     vk::BindBufferMemory(device(), buffer, buffer_mem, 0);
     m_errorMonitor->VerifyFound();
 
     VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();
     mem_opaque_addr_info.memory = buffer_mem;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
     vk::GetDeviceMemoryOpaqueCaptureAddressKHR(device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
     vk::GetDeviceMemoryOpaqueCaptureAddressKHR(device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
@@ -1755,13 +1749,13 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     VkBufferDeviceAddressInfoKHR info = vku::InitStructHelper();
     info.buffer = buffer;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02601");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+    m_errorMonitor->SetDesiredError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02601");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02600");
     vk::GetBufferDeviceAddressKHR(device(), &info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
+    m_errorMonitor->SetDesiredError("VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
     vk::GetBufferOpaqueCaptureAddressKHR(device(), &info);
     m_errorMonitor->VerifyFound();
 
@@ -1774,8 +1768,8 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
     VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();
     mem_opaque_addr_info.memory = buffer_mem;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
+    m_errorMonitor->SetDesiredError("VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
     vk::GetDeviceMemoryOpaqueCaptureAddressKHR(device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
@@ -1785,8 +1779,8 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
     buffer_alloc_info.pNext = &alloc_flags;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-flags-03330");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-flags-03331");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-flags-03330");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-flags-03331");
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
     m_errorMonitor->VerifyFound();
 }
@@ -1798,7 +1792,7 @@ TEST_F(NegativeMemory, MemoryType) {
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-pAllocateInfo-01714");
+    m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-pAllocateInfo-01714");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
@@ -1817,7 +1811,7 @@ TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-pAllocateInfo-01713");
+    m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-pAllocateInfo-01713");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
@@ -1860,7 +1854,7 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
         GTEST_SKIP() << "Valid memory type index not found";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-deviceCoherentMemory-02790");
+    m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-deviceCoherentMemory-02790");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = deviceCoherentMemoryTypeIndex;
@@ -1940,7 +1934,7 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     // Both image and buffer set in dedicated allocation
     dedicated_allocate_info.image = normal_image;
     dedicated_allocate_info.buffer = normal_buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01432");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfo-image-01432");
     vk::AllocateMemory(device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
@@ -1953,14 +1947,14 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
         dedicated_allocate_info.image = sparse_image;
         dedicated_allocate_info.buffer = VK_NULL_HANDLE;
         memory_allocate_info.allocationSize = sparse_image_memory_req.size;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01434");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfo-image-01434");
         vk::AllocateMemory(device(), &memory_allocate_info, NULL, &device_memory);
         m_errorMonitor->VerifyFound();
 
         dedicated_allocate_info.image = VK_NULL_HANDLE;
         dedicated_allocate_info.buffer = sparse_buffer;
         memory_allocate_info.allocationSize = sparse_buffer_memory_req.size;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01436");
         vk::AllocateMemory(device(), &memory_allocate_info, NULL, &device_memory);
         m_errorMonitor->VerifyFound();
     }
@@ -1977,7 +1971,7 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
         dedicated_allocate_info.image = disjoint_image;
         dedicated_allocate_info.buffer = VK_NULL_HANDLE;
         memory_allocate_info.allocationSize = mem_req2.memoryRequirements.size;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01797");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfo-image-01797");
         vk::AllocateMemory(device(), &memory_allocate_info, NULL, &device_memory);
         m_errorMonitor->VerifyFound();
     }
@@ -1992,14 +1986,14 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     dedicated_allocate_info.image = normal_image;
     dedicated_allocate_info.buffer = VK_NULL_HANDLE;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-02964");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfo-image-02964");
     vk::AllocateMemory(device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
     memory_allocate_info.allocationSize = normal_buffer_memory_req.size - 1;
     dedicated_allocate_info.image = VK_NULL_HANDLE;
     dedicated_allocate_info.buffer = normal_buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965");
     vk::AllocateMemory(device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
@@ -2048,7 +2042,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         VkResult err = vk::CreateImage(device(), &image_create_info, NULL, &image);
         ASSERT_EQ(VK_SUCCESS, err);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-01588");
+        m_errorMonitor->SetDesiredError("VUID-vkGetImageMemoryRequirements-image-01588");
         VkMemoryRequirements memory_requirements;
         vk::GetImageMemoryRequirements(device(), image, &memory_requirements);
         m_errorMonitor->VerifyFound();
@@ -2057,7 +2051,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         mem_req_info2.image = image;
         VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01589");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryRequirementsInfo2-image-01589");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
@@ -2067,7 +2061,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         mem_req_info2.pNext = &image_plane_req;
         mem_req_info2.image = image;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
+        m_errorMonitor->SetDesiredError("VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
@@ -2076,7 +2070,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         mem_req_info2.pNext = &image_plane_req;
         mem_req_info2.image = image;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
+        m_errorMonitor->SetDesiredError("VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
@@ -2091,7 +2085,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         mem_req_info2.pNext = &image_plane_req;
         mem_req_info2.image = image;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01590");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
@@ -2109,7 +2103,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
 
         // Disjoint bit isn't set as likely not even supported by non-planar format
         m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02280");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryRequirementsInfo2-image-02280");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
@@ -2133,7 +2127,7 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&export_memory_info_nv);
     export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-00640");
     mem_alloc.pNext = &export_memory_info;
     vk::AllocateMemory(device(), &mem_alloc, NULL, &mem);
     m_errorMonitor->VerifyFound();
@@ -2160,7 +2154,7 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChainWin32) {
         VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&export_memory_info_win32_nv);
         export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-00640");
         mem_alloc.pNext = &export_memory_info;
         vk::AllocateMemory(device(), &mem_alloc, NULL, &mem);
         m_errorMonitor->VerifyFound();
@@ -2174,7 +2168,7 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChainWin32) {
         import_memory_info_win32_nv.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
         m_errorMonitor->SetUnexpectedError("VUID-VkMemoryAllocateInfo-None-06657");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00641");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-00641");
         mem_alloc.pNext = &import_memory_info_win32_nv;
         vk::AllocateMemory(device(), &mem_alloc, NULL, &mem);
         m_errorMonitor->VerifyFound();
@@ -2208,7 +2202,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
 
     VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 }
@@ -2244,12 +2238,12 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
 
     VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 
     device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 
@@ -2311,13 +2305,13 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     bind_buffer_info.memory = buffer_memory.handle();
     bind_buffer_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606");
+    m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606");
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 
     bind_buffer_memory_device_group.deviceIndexCount = create_device_pnext.physicalDeviceCount;
     device_indices[0] = create_device_pnext.physicalDeviceCount;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607");
+    m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607");
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
     device_indices[0] = 0;
@@ -2353,7 +2347,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     bind_image_info.memory = image_memory.handle();
     bind_image_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634");
+    m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634");
     vk::BindImageMemory2(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2372,7 +2366,7 @@ TEST_F(NegativeMemory, MemoryPriorityOutOfRange) {
     memory_ai.memoryTypeIndex = 0;
 
     VkDeviceMemory memory;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602");
     vk::AllocateMemory(*m_device, &memory_ai, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 }
@@ -2386,11 +2380,11 @@ TEST_F(NegativeMemory, SetDeviceMemoryPriority) {
     vkt::DeviceMemory buffer_memory;
     buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
+    m_errorMonitor->SetDesiredError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
     vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), -0.01f);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
+    m_errorMonitor->SetDesiredError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
     vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), 1.01f);
     m_errorMonitor->VerifyFound();
 
@@ -2417,7 +2411,7 @@ TEST_F(NegativeMemory, BadMemoryBindMemory2) {
     image_bind_info.memory = bad_memory;
     image_bind_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01632");
+    m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01632");
     vk::BindImageMemory2KHR(device(), 1, &image_bind_info);
     m_errorMonitor->VerifyFound();
 }

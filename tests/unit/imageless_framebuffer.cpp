@@ -344,7 +344,7 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     framebufferCreateInfo.attachmentCount = 1;
 
     // Imageless framebuffer creation bit not present
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03189");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03189");
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
     m_errorMonitor->VerifyFound();
 }
@@ -399,7 +399,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
 
     // Attachments info not present
     framebufferCreateInfo.pNext = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03190");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03190");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferCreateInfo.pNext = &framebufferAttachmentsCreateInfo;
@@ -409,7 +409,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[2] = {framebufferAttachmentImageInfo,
                                                                               framebufferAttachmentImageInfo};
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = framebufferAttachmentImageInfos;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03191");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03191");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
@@ -417,35 +417,35 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
 
     // Mismatched format list
     attachmentFormat = VK_FORMAT_B8G8R8A8_UNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03205");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03205");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Mismatched format list
     attachmentFormat = VK_FORMAT_B8G8R8A8_UNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03205");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03205");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Mismatched layer count, multiview disabled
     framebufferCreateInfo.layers = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-04546");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-04546");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferCreateInfo.layers = 1;
 
     // Mismatched width
     framebufferCreateInfo.width += 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04541");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04541");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferCreateInfo.width -= 1;
 
     // Mismatched height
     framebufferCreateInfo.height += 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04542");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04542");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferCreateInfo.height -= 1;
@@ -527,28 +527,28 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
 
     // Color attachment, mismatched usage
     framebufferAttachmentImageInfos[0].usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03201");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03201");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[0].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     // Color resolve attachment, mismatched usage
     framebufferAttachmentImageInfos[1].usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03201");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03201");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[1].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     // Depth stencil attachment, mismatched usage
     framebufferAttachmentImageInfos[2].usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03202");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03202");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[2].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
     // Color attachment, mismatched usage
     framebufferAttachmentImageInfos[3].usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03204");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03204");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[3].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
@@ -636,28 +636,28 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
 
     // Color attachment, mismatched layer count
     framebufferAttachmentImageInfos[0].layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-03198");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-03198");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[0].layerCount = 2;
 
     // Color resolve attachment, mismatched layer count
     framebufferAttachmentImageInfos[1].layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-03198");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-03198");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[1].layerCount = 2;
 
     // Depth stencil attachment, mismatched layer count
     framebufferAttachmentImageInfos[2].layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-03198");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-03198");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[2].layerCount = 2;
 
     // Input attachment, mismatched layer count
     framebufferAttachmentImageInfos[3].layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-03198");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-03198");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
@@ -721,21 +721,21 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
 
     // Color attachment, mismatched layer count
     framebufferAttachmentImageInfos[0].layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-03198");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-03198");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[0].layerCount = 2;
 
     // Depth resolve attachment, mismatched image usage
     framebufferAttachmentImageInfos[1].usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-03203");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03203");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferAttachmentImageInfos[1].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
     // Depth resolve attachment, mismatched layer count
     framebufferAttachmentImageInfos[1].layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-03198");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-03198");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
@@ -780,7 +780,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04549");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04549");
     vkt::Framebuffer fb(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 }
@@ -828,7 +828,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width * 2;
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04543");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04543");
         vkt::Framebuffer fb(*m_device, fb_info);
         m_errorMonitor->VerifyFound();
     }
@@ -836,7 +836,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
     {
         fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height * 2;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04544");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04544");
         vkt::Framebuffer fb(*m_device, fb_info);
         m_errorMonitor->VerifyFound();
     }
@@ -845,7 +845,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
     {
         fbai_info.layerCount = 2;
         fb_info.layers = 3;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04545");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04545");
         vkt::Framebuffer fb(*m_device, fb_info);
         m_errorMonitor->VerifyFound();
     }
@@ -898,7 +898,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
     ;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-08921");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-08921");
     vkt::Framebuffer fb(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 }
@@ -974,7 +974,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
         framebufferCreateInfo.pNext = nullptr;
         framebufferCreateInfo.flags = 0;
         framebufferCreateInfo.pAttachments = &imageView3D.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04113");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04113");
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         m_errorMonitor->VerifyFound();
     }
@@ -1038,7 +1038,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     // VkFramebufferCreateInfo -pNext-> VkFramebufferAttachmentsCreateInfo
     //                                             |-> VkFramebufferAttachmentImageInfo -pNext-> INVALID
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferAttachmentImageInfo-pNext-pNext");
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         m_errorMonitor->VerifyFound();
     }
@@ -1048,7 +1048,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
         fb_fdm.pNext = nullptr;
         fb_aci_fdm.pNext = &invalid_struct;
         // Has parent struct name in VUID since child stucture don't have a pNext VU
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pNext-pNext");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pNext-pNext");
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         m_errorMonitor->VerifyFound();
     }
@@ -1057,7 +1057,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     {
         fb_aci_fdm.pNext = nullptr;
         framebufferCreateInfo.pNext = &invalid_struct;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pNext-pNext");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pNext-pNext");
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         m_errorMonitor->VerifyFound();
     }
@@ -1093,7 +1093,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageFormat) {
     fb_ci.attachmentCount = 1;
     fb_ci.pAttachments = &imageView.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferAttachmentImageInfo-viewFormatCount-09536");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferAttachmentImageInfo-viewFormatCount-09536");
     vkt::Framebuffer framebuffer(*m_device, fb_ci);
     m_errorMonitor->VerifyFound();
 }

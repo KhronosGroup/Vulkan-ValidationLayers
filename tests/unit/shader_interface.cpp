@@ -82,7 +82,7 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
         "    color = vec4(1);\n"
         "}\n";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
     VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
     // maxFragmentInputComponents is not reached because GLSL should not be including any input fragment stage built-ins by default
@@ -149,7 +149,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     // only maxFragmentInputComponents is reached
     VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
     VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -198,14 +198,14 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
             }
             case 1: {
                 // component and location limit (maxVertexOutputComponents)
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
                 VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
                 m_errorMonitor->VerifyFound();
                 break;
             }
             case 2: {
                 // just component limit (maxVertexOutputComponents)
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
                 VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -263,12 +263,12 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
         "}\n";
 
     // maxVertexOutputComponents
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
     VkShaderObj vs(this, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 
     // maxFragmentInputComponents
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
     VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -320,14 +320,14 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
             }
             case 1: {
                 // (maxFragmentInputComponents)
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
                 VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
                 m_errorMonitor->VerifyFound();
                 break;
             }
             case 2: {
                 // (maxFragmentInputComponents)
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
                 VkShaderObj fs(this, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -1098,7 +1098,7 @@ TEST_F(NegativeShaderInterface, InputOutputMismatch) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpEntryPoint-07754");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1614,7 +1614,7 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirv) {
         )";
 
     // VUID-StandaloneSpirv-Location-04919
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
     auto fs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -1652,7 +1652,7 @@ TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferGlslang3) {
         void main() {}
     )glsl";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -1700,10 +1700,10 @@ TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }

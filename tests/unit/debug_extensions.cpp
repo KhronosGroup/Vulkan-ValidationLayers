@@ -110,18 +110,18 @@ TEST_F(NegativeDebugExtensions, DebugMarkerSetObject) {
     name_info.object = (uint64_t)VK_NULL_HANDLE;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectNameInfoEXT-object-01491");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01491");
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     name_info.object = (uint64_t)memory.handle();
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectNameInfoEXT-objectType-01490");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectNameInfoEXT-objectType-01490");
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectNameInfoEXT-object-01492");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01492");
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 }
@@ -174,19 +174,19 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     name_info.pObjectName = memory_name.c_str();
 
     // Pass in bad handle make sure ObjectTracker catches it
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
     name_info.objectHandle = (uint64_t)0xcadecade;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     // Pass in null handle
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588");
+    m_errorMonitor->SetDesiredError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588");
     name_info.objectHandle = 0;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     // Pass in 'unknown' object type and see if parameter validation catches it
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587");
+    m_errorMonitor->SetDesiredError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587");
     name_info.objectHandle = (uint64_t)memory_2.handle();
     name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
@@ -285,18 +285,18 @@ TEST_F(NegativeDebugExtensions, DebugMarkerSetUtils) {
     name_info.tagName = 1;
     name_info.tagSize = 4;
     name_info.pTag = tags;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectTagInfoEXT-object-01494");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01494");
     vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     name_info.object = (uint64_t)memory.handle();
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectTagInfoEXT-objectType-01493");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectTagInfoEXT-objectType-01493");
     vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugMarkerObjectTagInfoEXT-object-01495");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectTagInfoEXT-object-01495");
     vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 }
@@ -318,7 +318,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
     callback_create_info.pfnUserCallback = DebugUtilsCallback;
     callback_create_info.pUserData = &callback_data;
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
     m_errorMonitor->VerifyFound();
 }
@@ -402,7 +402,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
     name_info.objectHandle = (uint64_t)second_device.handle();
     name_info.pObjectName = object_name;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874");
+    m_errorMonitor->SetDesiredError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874");
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
@@ -443,7 +443,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     name_info.objectType = VK_OBJECT_TYPE_SAMPLER;
     name_info.objectHandle = bad_handle;
     name_info.pObjectName = object_name;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
@@ -459,7 +459,7 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer) {
     vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
@@ -483,7 +483,7 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer2) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
     m_default_queue->submit(cb1, false);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
@@ -509,7 +509,7 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.end();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
     m_default_queue->submit({&cb0, &cb1}, vkt::Fence{}, false);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
@@ -522,7 +522,7 @@ TEST_F(NegativeDebugExtensions, DebugLabelSecondaryCommandBuffer) {
 
     vkt::CommandBuffer cb(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     cb.begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
     vk::CmdEndDebugUtilsLabelEXT(cb);
     m_errorMonitor->VerifyFound();
     cb.end();

@@ -2303,7 +2303,7 @@ class VideoEncodeRateControlTestUtils {
             for (auto allowed_vuid : allowed_vuids) {
                 test_->Monitor().SetAllowedFailureMsg(allowed_vuid);
             }
-            test_->Monitor().SetDesiredFailureMsg(kErrorBit, expected_vuid);
+            test_->Monitor().SetDesiredError(expected_vuid);
             cb.BeginVideoCoding(context_.Begin().RateControl(rc_info));
             test_->Monitor().VerifyFound();
             cb.BeginVideoCoding(context_.Begin());
@@ -2315,7 +2315,7 @@ class VideoEncodeRateControlTestUtils {
             for (auto allowed_vuid : allowed_vuids) {
                 test_->Monitor().SetAllowedFailureMsg(allowed_vuid);
             }
-            test_->Monitor().SetDesiredFailureMsg(kErrorBit, expected_vuid);
+            test_->Monitor().SetDesiredError(expected_vuid);
             cb.ControlVideoCoding(context_.Control().RateControl(rc_info));
             test_->Monitor().VerifyFound();
         } else {
@@ -2341,7 +2341,7 @@ class VideoEncodeRateControlTestUtils {
         cb.EndVideoCoding(context_.End());
         cb.end();
 
-        test_->Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254");
+        test_->Monitor().SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254");
         context_.Queue().submit(cb, false);
         test_->Monitor().VerifyFound();
         test_->DeviceObj()->wait();
