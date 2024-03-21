@@ -512,6 +512,24 @@ TEST_F(NegativePushDescriptor, SetLayout) {
     }
 }
 
+TEST_F(NegativePushDescriptor, GetSupportSetLayout) {
+    TEST_DESCRIPTION("call vkGetDescriptorSetLayoutSupport on push descriptor set layout with invalid bindings.");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280");
+    vk::GetDescriptorSetLayoutSupportKHR(device(), &ds_layout_ci, &support);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativePushDescriptor, SetLayoutMutableDescriptor) {
     TEST_DESCRIPTION("Create mutable descriptor set layout.");
 
