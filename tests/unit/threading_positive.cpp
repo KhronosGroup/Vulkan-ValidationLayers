@@ -204,7 +204,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     std::atomic<bool> bailout{false};
 
     for (uint32_t i = 0; i < count; ++i) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     }
 
     m_errorMonitor->SetBailout(&bailout);

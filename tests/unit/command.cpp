@@ -21,7 +21,7 @@
 TEST_F(NegativeCommand, CommandPoolConsistency) {
     TEST_DESCRIPTION("Allocate command buffers from one command pool and attempt to delete them from another.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-pCommandBuffers-parent");
 
     RETURN_IF_SKIP(Init());
 
@@ -103,7 +103,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     secondary.end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-image-04073");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-04073");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -120,7 +120,7 @@ TEST_F(NegativeCommand, IndexBufferNotBound) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-07312");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-None-07312");
     // Use DrawIndexed w/o an index buffer bound
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -140,7 +140,7 @@ TEST_F(NegativeCommand, IndexBufferDestroyed) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     index_buffer.destroy();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-recording");
     // Use DrawIndexed w/o an index buffer bound
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -162,24 +162,24 @@ TEST_F(NegativeCommand, IndexBufferSizeOffset) {
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 512, VK_INDEX_TYPE_UINT16);
 
     // draw one past the end of the buffer
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 256, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // draw one too many indices
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 257, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
 
     // draw one too many indices
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 513, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // draw one past the end of the buffer using the offset
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 512, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -201,19 +201,19 @@ TEST_F(NegativeCommand, MissingClearAttachment) {
     VkClearAttachment color_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 2, VkClearValue{}};
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07271");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     color_attachment.colorAttachment = VK_ATTACHMENT_UNUSED;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07271");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeCommand, SecondaryCommandbufferAsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit.");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-00075");
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-00075");
 
     RETURN_IF_SKIP(Init());
 
@@ -232,7 +232,7 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
 
     vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.begin();
@@ -250,7 +250,7 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
 }
 
 TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -276,7 +276,7 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
     InitRenderTarget();
 
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -336,7 +336,7 @@ TEST_F(NegativeCommand, PushConstants) {
     // Check for invalid offset and size
     for (const auto &iter : range_tests) {
         pc_range = iter.range;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, iter.msg);
+        m_errorMonitor->SetDesiredError(iter.msg);
         vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -345,7 +345,7 @@ TEST_F(NegativeCommand, PushConstants) {
     pc_range.offset = 0;
     pc_range.size = 16;
     pc_range.stageFlags = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
     vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
@@ -418,7 +418,7 @@ TEST_F(NegativeCommand, PushConstants) {
 
     // Check for invalid stage flag
     // Note that VU 07790 isn't reached due to parameter validation
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), 0, 0, 16, dummy_values);
     m_errorMonitor->VerifyFound();
 
@@ -431,27 +431,27 @@ TEST_F(NegativeCommand, PushConstants) {
 
     // Wrong cmd stages for extant range
     // No range for all cmd stages -- "VUID-vkCmdPushConstants-offset-01795" VUID-vkCmdPushConstants-offset-01795
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-offset-01795");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-01795");
     // Missing cmd stages for found overlapping range -- "VUID-vkCmdPushConstants-offset-01796" VUID-vkCmdPushConstants-offset-01796
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-offset-01796");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-01796");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_GEOMETRY_BIT, 0, 16,
                          dummy_values);
     m_errorMonitor->VerifyFound();
 
     // Wrong no extant range
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-offset-01795");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-01795");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 4,
                          dummy_values);
     m_errorMonitor->VerifyFound();
 
     // Wrong overlapping extent
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-offset-01795");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-01795");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(),
                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 20, dummy_values);
     m_errorMonitor->VerifyFound();
 
     // Wrong stage flags for valid overlapping range
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-offset-01796");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-01796");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, dummy_values);
     m_errorMonitor->VerifyFound();
 
@@ -475,14 +475,14 @@ TEST_F(NegativeCommand, PushConstant2PipelineLayoutCreateInfo) {
     pc_info.layout = VK_NULL_HANDLE;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantsInfoKHR-layout-09496");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantsInfoKHR-layout-09496");
     vk::CmdPushConstants2KHR(m_commandBuffer->handle(), &pc_info);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
 
 TEST_F(NegativeCommand, NoBeginCommandBuffer) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
 
     RETURN_IF_SKIP(Init());
     vkt::CommandBuffer commandBuffer(*m_device, m_commandPool);
@@ -499,7 +499,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
 
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-recording");
 
     // A pool we can reset in.
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -527,7 +527,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedNoReset) {
 
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-recording");
 
     // A pool we can reset in.
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -567,7 +567,7 @@ TEST_F(NegativeCommand, CascadedInvalidation) {
     // destroying the event should invalidate both primary and secondary CB
     vk::DestroyEvent(device(), event, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 }
@@ -577,7 +577,7 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     // Then cause 2 errors for attempting to reset CB w/o having
     // VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT set for the pool from
     // which CBs were allocated. Note that this bit is off by default.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00049");
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00049");
 
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
@@ -597,13 +597,13 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     vk::BeginCommandBuffer(commandBuffer.handle(), &cmd_buf_info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetCommandBuffer-commandBuffer-00046");
+    m_errorMonitor->SetDesiredError("VUID-vkResetCommandBuffer-commandBuffer-00046");
     VkCommandBufferResetFlags flags = 0;  // Don't care about flags for this test
     // Reset attempt will trigger error due to incorrect CommandPool state
     vk::ResetCommandBuffer(commandBuffer.handle(), flags);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00050");
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00050");
     // Transition CB to RECORDED state
     vk::EndCommandBuffer(commandBuffer.handle());
     // Now attempting to Begin will implicitly reset, which triggers error
@@ -620,7 +620,7 @@ TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
     VkCommandBufferBeginInfo cmd_buf_info = vku::InitStructHelper();
     cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-02840");
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-02840");
     vk::BeginCommandBuffer(commandBuffer.handle(), &cmd_buf_info);
     m_errorMonitor->VerifyFound();
 }
@@ -628,7 +628,7 @@ TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
 TEST_F(NegativeCommand, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-renderpass");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -652,7 +652,7 @@ TEST_F(NegativeCommand, ClearColorAttachmentsOutsideRenderPass) {
 TEST_F(NegativeCommand, ClearColorAttachmentsZeroLayercount) {
     TEST_DESCRIPTION("Call CmdClearAttachments with a pRect having a layerCount of zero.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-layerCount-01934");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-layerCount-01934");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -695,12 +695,12 @@ TEST_F(NegativeCommand, ClearColorAttachmentsZeroExtent) {
     clear_rect.layerCount = 1;
 
     clear_rect.rect.extent = {0, 1};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-rect-02682");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-rect-02682");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     clear_rect.rect.extent = {1, 0};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-rect-02683");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-rect-02683");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
@@ -727,22 +727,22 @@ TEST_F(NegativeCommand, ClearAttachmentsAspectMasks) {
     clear_rect.layerCount = 1;
 
     attachment.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00020");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-00020");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00020");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-00020");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     attachment.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-02246");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-02246");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-02246");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-02246");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
@@ -769,12 +769,12 @@ TEST_F(NegativeCommand, ClearAttachmentsImplicitCheck) {
     clear_rect.layerCount = 1;
 
     color_attachment.aspectMask = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-requiredbitmask");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     color_attachment.aspectMask = 0xffffffff;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-parameter");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
@@ -808,7 +808,7 @@ TEST_F(NegativeCommand, ClearAttachmentsDepth) {
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
 
     attachment.clearValue.depthStencil.depth = 0.0f;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07884");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07884");
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
@@ -839,7 +839,7 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
 
     attachment.clearValue.depthStencil.depth = 0.0f;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07885");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07885");
     attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
@@ -859,7 +859,7 @@ TEST_F(NegativeCommand, ClearAttachmentsOutsideRenderPass) {
     clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 1;
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-renderpass");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
@@ -874,7 +874,7 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderpass");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -893,7 +893,7 @@ TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-renderpass");
     vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
 }
@@ -913,7 +913,7 @@ TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     VkCommandBuffer handle = cb.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00088");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00088");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &handle);
     m_errorMonitor->VerifyFound();
 
@@ -934,7 +934,7 @@ TEST_F(NegativeCommand, ExecuteCommandsToSecondaryCB) {
     secondary_cb.end();
 
     main_cb.begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-09375");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-09375");
     vk::CmdExecuteCommands(main_cb.handle(), 1, &secondary_cb.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -954,7 +954,7 @@ TEST_F(NegativeCommand, SimultaneousUseSecondaryTwoExecutes) {
 
     m_commandBuffer->begin();
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, simultaneous_use_message);
+    m_errorMonitor->SetDesiredError(simultaneous_use_message);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -978,7 +978,7 @@ TEST_F(NegativeCommand, SimultaneousUseSecondarySingleExecute) {
 
     m_commandBuffer->begin();
     VkCommandBuffer cbs[] = {secondary.handle(), secondary.handle()};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, simultaneous_use_message);
+    m_errorMonitor->SetDesiredError(simultaneous_use_message);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 2, cbs);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -1008,7 +1008,7 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 2;
     submit_info.pCommandBuffers = duplicates;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, simultaneous_use_message);
+    m_errorMonitor->SetDesiredError(simultaneous_use_message);
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
@@ -1019,8 +1019,8 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     vk::BeginCommandBuffer(cmd_bufs[1], &cb_binfo);
     vk::CmdSetViewport(cmd_bufs[1], 0, 1, &viewport);
     vk::EndCommandBuffer(cmd_bufs[1]);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00071");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00071");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
@@ -1070,7 +1070,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewType-07752");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1124,7 +1124,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewType-07752");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1174,7 +1174,7 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-format-07753");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-07753");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1183,7 +1183,7 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
 }
 
 TEST_F(NegativeCommand, ResolveImageLowSampleCount) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-00257");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-00257");
 
     RETURN_IF_SKIP(Init());
 
@@ -1236,7 +1236,7 @@ TEST_F(NegativeCommand, ResolveImageLowSampleCount) {
 }
 
 TEST_F(NegativeCommand, ResolveImageHighSampleCount) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00259");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-00259");
 
     RETURN_IF_SKIP(Init());
 
@@ -1296,7 +1296,7 @@ TEST_F(NegativeCommand, ResolveImageHighSampleCount) {
 }
 
 TEST_F(NegativeCommand, ResolveImageFormatMismatch) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-01386");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-01386");
 
     RETURN_IF_SKIP(Init());
 
@@ -1420,12 +1420,12 @@ TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
     resolveRegion.extent.height = 1;
     resolveRegion.extent.depth = 1;
     // source image layout mismatch
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImageLayout-00260");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImageLayout-00260");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
     // dst image layout mismatch
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImageLayout-00262");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImageLayout-00262");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1497,7 +1497,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     resolveRegion.extent.depth = 1;
     // invalid source mip level
     resolveRegion.srcSubresource.mipLevel = image_create_info.mipLevels;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcSubresource-01709");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-01709");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1519,7 +1519,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
                                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                             1,
                                                             &resolveRegion2};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-srcSubresource-01709");
+        m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcSubresource-01709");
         vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
@@ -1527,7 +1527,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     resolveRegion.srcSubresource.mipLevel = 0;
     // invalid dest mip level
     resolveRegion.dstSubresource.mipLevel = image_create_info.mipLevels;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstSubresource-01710");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-01710");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1549,7 +1549,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
                                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                             1,
                                                             &resolveRegion2};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-dstSubresource-01710");
+        m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-dstSubresource-01710");
         vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
@@ -1557,7 +1557,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     resolveRegion.dstSubresource.mipLevel = 0;
     // invalid source array layer range
     resolveRegion.srcSubresource.baseArrayLayer = image_create_info.arrayLayers;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcSubresource-01711");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-01711");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1579,7 +1579,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
                                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                             1,
                                                             &resolveRegion2};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-srcSubresource-01711");
+        m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcSubresource-01711");
         vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
@@ -1587,7 +1587,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     resolveRegion.srcSubresource.baseArrayLayer = 0;
     // invalid dest array layer range
     resolveRegion.dstSubresource.baseArrayLayer = image_create_info.arrayLayers;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstSubresource-01712");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-01712");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1609,7 +1609,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
                                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                             1,
                                                             &resolveRegion2};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-dstSubresource-01712");
+        m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-dstSubresource-01712");
         vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
@@ -1678,8 +1678,8 @@ TEST_F(NegativeCommand, ResolveImageImageType) {
 
     // layerCount is not 1
     resolveRegion.srcSubresource.layerCount = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-layerCount-08803");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-04446");
+    m_errorMonitor->SetDesiredError("VUID-VkImageResolve-layerCount-08803");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-04446");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage3D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1687,10 +1687,10 @@ TEST_F(NegativeCommand, ResolveImageImageType) {
 
     // Set height with 1D dstImage
     resolveRegion.extent.height = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00276");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-00276");
     // Also exceed height of both images
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcOffset-00270");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstOffset-00275");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcOffset-00270");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstOffset-00275");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage1D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1698,8 +1698,8 @@ TEST_F(NegativeCommand, ResolveImageImageType) {
 
     // Set depth with 1D dstImage and 2D srcImage
     resolveRegion.extent.depth = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00278");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-00273");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-00278");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-00273");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage1D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1764,7 +1764,7 @@ TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
 
     // srcImage exceeded in x-dim
     resolveRegion.srcOffset.x = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcOffset-00269");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcOffset-00269");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1772,7 +1772,7 @@ TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
 
     // dstImage exceeded in x-dim
     resolveRegion.dstOffset.x = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstOffset-00274");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstOffset-00274");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1780,14 +1780,14 @@ TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
 
     // both image exceeded in y-dim
     resolveRegion.srcOffset.y = 32;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcOffset-00270");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcOffset-00270");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
     resolveRegion.srcOffset.y = 0;
 
     resolveRegion.dstOffset.y = 32;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstOffset-00275");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstOffset-00275");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1795,8 +1795,8 @@ TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
 
     // srcImage exceeded in z-dim
     resolveRegion.srcOffset.z = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcOffset-00272");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-00273");  // because it's a 2d image
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcOffset-00272");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-00273");  // because it's a 2d image
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1804,8 +1804,8 @@ TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
 
     // dstImage exceeded in z-dim
     resolveRegion.dstOffset.z = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstOffset-00277");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00278");  // because it's a 2d image
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstOffset-00277");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-00278");  // because it's a 2d image
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2D.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
@@ -1861,13 +1861,13 @@ TEST_F(NegativeCommand, ClearImage) {
 
     const VkImageSubresourceRange ds_range = vkt::Image::subresource_range(ds_image_create_info, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-00007");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-00007");
 
     vk::CmdClearColorImage(m_commandBuffer->handle(), ds_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &color_range);
 
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-00002");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-00002");
 
     vk::CmdClearColorImage(m_commandBuffer->handle(), color_image_no_transfer.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
                            &color_range);
@@ -1875,8 +1875,8 @@ TEST_F(NegativeCommand, ClearImage) {
     m_errorMonitor->VerifyFound();
 
     // Call CmdClearDepthStencilImage with color image
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-image-00014");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-image-02826");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-image-00014");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-image-02826");
 
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                   &clear_value, 1, &ds_range);
@@ -1903,7 +1903,7 @@ TEST_F(NegativeCommand, CommandQueueFlags) {
     command_buffer.begin();
 
     // Issue a graphics only command
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-commandBuffer-cmdpool");
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     vk::CmdSetViewport(command_buffer.handle(), 0, 1, &viewport);
     m_errorMonitor->VerifyFound();
@@ -1957,7 +1957,7 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
 
     // Try using different pool's command buffer as secondary
     command_buffer_primary.begin(&begin_info);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00094");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00094");
     vk::CmdExecuteCommands(command_buffer_primary.handle(), 1, &command_buffer_secondary.handle());
     m_errorMonitor->VerifyFound();
     command_buffer_primary.end();
@@ -1969,7 +1969,7 @@ TEST_F(NegativeCommand, ExecuteUnrecordedSecondaryCB) {
     vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     // never record secondary
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
     m_commandBuffer->begin();
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
@@ -2014,7 +2014,7 @@ TEST_F(NegativeCommand, ExecuteSecondaryCBWithLayoutMismatch) {
     pipeline(secondary, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     secondary.end();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001");
     m_commandBuffer->begin();
     pipeline(*m_commandBuffer, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
@@ -2066,7 +2066,7 @@ TEST_F(NegativeCommand, RenderPassScopeSecondaryCmdBuffer) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00100");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00100");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_inside_rp.handle());
     m_errorMonitor->VerifyFound();
 
@@ -2075,7 +2075,7 @@ TEST_F(NegativeCommand, RenderPassScopeSecondaryCmdBuffer) {
         m_renderPassClearValues.data());
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00096");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_outside_rp.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -2117,7 +2117,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00016");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-00016");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer.handle());
     m_errorMonitor->VerifyFound();
 
@@ -2151,11 +2151,11 @@ TEST_F(NegativeCommand, MultiDraw) {
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-08606");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-None-08606");
     vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-07312");  // missing index buffer
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-08606");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-None-07312");  // missing index buffer
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-None-08606");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 
@@ -2169,29 +2169,29 @@ TEST_F(NegativeCommand, MultiDraw) {
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     // Fail with index offset
     multi_draw_indices[2].firstIndex = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     // Fail with index count
     multi_draw_indices[2].firstIndex = 0;
     multi_draw_indices[2].indexCount = 512;
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
     multi_draw_indices[2].indexCount = 1;
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-stride-04936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-stride-04936");
     vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT) + 1);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-stride-04941");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-stride-04941");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT) + 1, 0);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-drawCount-04935");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-drawCount-04935");
     vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 
@@ -2199,10 +2199,10 @@ TEST_F(NegativeCommand, MultiDraw) {
         uint32_t draw_count = multi_draw_properties.maxMultiDrawCount + 1;
         std::vector<VkMultiDrawInfoEXT> max_multi_draws(draw_count);
         std::vector<VkMultiDrawIndexedInfoEXT> max_multi_indexed_draws(draw_count);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-drawCount-04934");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-drawCount-04934");
         vk::CmdDrawMultiEXT(m_commandBuffer->handle(), draw_count, max_multi_draws.data(), 1, 0, sizeof(VkMultiDrawInfoEXT));
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939");
         vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), draw_count, max_multi_indexed_draws.data(), 1, 0,
                                    sizeof(VkMultiDrawIndexedInfoEXT), 0);
         m_errorMonitor->VerifyFound();
@@ -2237,13 +2237,13 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5) {
 
     // same as calling vkCmdBindIndexBuffer (size of the buffer creation)
     vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, 1024, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 
     multi_draw_indices.indexCount = 256;  // only uses [0 - 512]
     vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, 508, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 }
@@ -2276,7 +2276,7 @@ TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
 
     // VK_WHOLE_SIZE also full size of the buffer
     vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 }
@@ -2310,7 +2310,7 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
     // should be overwritten with smaller size
     vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, 1000, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 }
@@ -2334,12 +2334,12 @@ TEST_F(NegativeCommand, MultiDrawFeatures) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-04933");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-None-04933");
     vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-04937");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-None-04937");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 }
@@ -2372,19 +2372,19 @@ TEST_F(NegativeCommand, IndirectDraw) {
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-buffer-02709");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-buffer-02709");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00488");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-00488");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer_correct.handle(), 0, 2, sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-drawCount-00540");
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), draw_buffer_correct.handle(), 0, 2, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-offset-02710");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-offset-02710");
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), draw_buffer_correct.handle(), 2, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
@@ -2422,7 +2422,7 @@ TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
 
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 0, sizeof(VkDrawIndexedIndirectCommand));
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-drawCount-02718");
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 2, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
@@ -2454,33 +2454,33 @@ TEST_F(NegativeCommand, StrideMultiDrawIndirect) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00476");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00488");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-00476");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-00488");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 100, 2);
     m_errorMonitor->VerifyFound();
 
     vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 2, 24);
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-drawCount-00528");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-drawCount-00540");
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 100, 2);
     m_errorMonitor->VerifyFound();
 
     auto draw_count = m_device->phy().limits_.maxDrawIndirectCount;
     if (draw_count != vvl::kU32Max) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-02719");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00476");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00488");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-02719");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-00476");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-00488");
         vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, draw_count + 1, 2);
         m_errorMonitor->VerifyFound();
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00487");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-drawCount-00487");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), buffer_size, 1, 2);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-drawCount-00539");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-drawCount-00539");
     vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), buffer_size, 1, 2);
     m_errorMonitor->VerifyFound();
 
@@ -2518,7 +2518,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     vkt::Buffer count_buffer(*m_device, count_buffer_create_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-buffer-02708");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-buffer-02708");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -2531,32 +2531,32 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     count_buffer_wrong.init(*m_device, count_buffer_create_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-countBuffer-02714");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " VUID-vkCmdDrawIndirectCount-countBuffer-02715");
+    m_errorMonitor->SetDesiredError(" VUID-vkCmdDrawIndirectCount-countBuffer-02715");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong.handle(), 0, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-offset-02710");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-offset-02710");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-countBufferOffset-02716");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBufferOffset-04129");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-countBufferOffset-04129");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), count_buffer_size, 1,
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-stride-03110");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-stride-03110");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -2597,7 +2597,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-None-07312");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-None-07312");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -2606,7 +2606,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 
     vkt::Buffer draw_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer_unbound.handle(), 0, count_buffer.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -2617,32 +2617,32 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     count_buffer_wrong.init(*m_device, count_buffer_create_info);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-04129");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-04129");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), count_buffer_size,
                                        1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-stride-03142");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -2676,14 +2676,14 @@ TEST_F(NegativeCommand, DrawIndirectCountFeature) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-None-04445");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-None-04445");
     vk::CmdDrawIndirectCount(m_commandBuffer->handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                              sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-None-04445");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-None-04445");
     vk::CmdDrawIndexedIndirectCount(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -2776,29 +2776,29 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
 
         m_commandBuffer->begin();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 1, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 0, nullptr);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 2, scissors);
         m_errorMonitor->VerifyFound();
 
         // This VU gets triggered before VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 0, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 2, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-pExclusiveScissors-parameter");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetExclusiveScissorNV-pExclusiveScissors-parameter");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, nullptr);
         m_errorMonitor->VerifyFound();
 
@@ -2920,7 +2920,7 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
 
     const auto max_vps = m_device->phy().limits_.maxViewports;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportWScalingNV-firstViewport-01324");
     vk::CmdSetViewportWScalingNV(m_commandBuffer->handle(), 1, max_vps, scale.data());
     m_errorMonitor->VerifyFound();
 
@@ -2997,7 +2997,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-filterCubicMinmax-02695");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-filterCubicMinmax-02695");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3014,7 +3014,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-filterCubic-02694");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-filterCubic-02694");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3081,7 +3081,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02693");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02693");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3098,7 +3098,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferSize) {
     VkDeviceSize dataSize = sizeof(uint32_t) * 4;
     vkt::Buffer buffer(*m_device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dataSize-00033");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dataSize-00033");
     m_commandBuffer->begin();
     vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(uint32_t), dataSize, (void *)update_data);
     m_commandBuffer->end();
@@ -3114,7 +3114,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
     VkDeviceSize dataSize = sizeof(uint32_t) * 4;
     vkt::Buffer buffer(*m_device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dstOffset-00032");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dstOffset-00032");
     m_commandBuffer->begin();
     vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(uint32_t) * 8, dataSize, (void *)update_data);
     m_commandBuffer->end();
@@ -3142,7 +3142,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
     vkt::CommandBuffer command_buffer(*m_device, &command_pool);
     command_buffer.begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361");
     vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -3178,13 +3178,13 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     bind_ds_info.dynamicOffsetCount = 0;
     bind_ds_info.pDynamicOffsets = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467");
     vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 
     bind_ds_info.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     bind_ds_info.descriptorSetCount = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-descriptorSetCount-arraylength");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-descriptorSetCount-arraylength");
     vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }
@@ -3204,7 +3204,7 @@ TEST_F(NegativeCommand, CmdClearColorImageNullColor) {
     isr.levelCount = 1;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pColor-04961");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pColor-04961");
     vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, nullptr, 1, &isr);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -3227,7 +3227,7 @@ TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
 
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &command_buffer_begin);
     vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-None-01978");
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-None-01978");
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 }
@@ -3268,7 +3268,7 @@ TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-blendEnable-04727");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-blendEnable-04727");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3336,13 +3336,13 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndConditionalRenderingEXT-None-01985");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndConditionalRenderingEXT-None-01985");
     vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 
     vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndConditionalRenderingEXT-None-01986");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndConditionalRenderingEXT-None-01986");
     vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->NextSubpass();
@@ -3352,7 +3352,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     m_commandBuffer->NextSubpass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndConditionalRenderingEXT-None-01987");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndConditionalRenderingEXT-None-01987");
     vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -3387,7 +3387,7 @@ TEST_F(NegativeCommand, RenderPassContentsWhenCallingCmdExecuteCommandsWithBegin
     m_commandBuffer->BeginRenderPass(m_renderPass, framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-contents-06018");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
@@ -3456,7 +3456,7 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06019");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -3508,7 +3508,7 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
@@ -3611,23 +3611,23 @@ TEST_F(NegativeCommand, ResolveUsage) {
     resolveRegion.extent.height = 1;
     resolveRegion.extent.depth = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-06762");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-06762");
     vk::CmdResolveImage(m_commandBuffer->handle(), invalidSrcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-06764");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-06764");
     vk::CmdResolveImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, invalidDstImage.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-06763");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-06763");
     vk::CmdResolveImage(m_commandBuffer->handle(), invalidSrcImage2.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2.handle(),
                         VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
     m_errorMonitor->VerifyFound();
 
     if (src_image_2_tests_valid) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-06765");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-06765");
         vk::CmdResolveImage(m_commandBuffer->handle(), srcImage2.handle(), VK_IMAGE_LAYOUT_GENERAL, invalidDstImage2.handle(),
                             VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
         m_errorMonitor->VerifyFound();
@@ -3700,12 +3700,12 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe.Handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06886");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06886");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_pipe.Handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06887");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06887");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3715,7 +3715,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_dynamic_pipe.Handle());
     vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_FRONT_AND_BACK, 1);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06887");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06887");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3743,7 +3743,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try baseMipLevel >= image.mipLevels with VK_REMAINING_MIP_LEVELS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-baseMipLevel-01470");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseMipLevel-01470");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_REMAINING_MIP_LEVELS, 0, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3751,8 +3751,8 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-baseMipLevel-01470");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pRanges-01692");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseMipLevel-01470");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01692");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3760,7 +3760,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-levelCount-01720");
+        m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-levelCount-01720");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3768,7 +3768,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try baseMipLevel + levelCount > image.mipLevels
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pRanges-01692");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01692");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3776,7 +3776,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-baseArrayLayer-01472");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseArrayLayer-01472");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3784,8 +3784,8 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-baseArrayLayer-01472");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pRanges-01693");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseArrayLayer-01472");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01693");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3793,7 +3793,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try layerCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-layerCount-01721");
+        m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-layerCount-01721");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3801,7 +3801,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
     // Try baseArrayLayer + layerCount > image.arrayLayers
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pRanges-01693");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01693");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3849,9 +3849,9 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
 
         // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was created with separate stencil usage,
         // VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageStencilUsageCreateInfo::stencilUsage used to create image
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02658");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02658");
         // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02659");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
         vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
@@ -3864,12 +3864,12 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
 
     // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the
     // VkImageCreateInfo::usage used to create image
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02659");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
     // Element of pRanges.aspect includes VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the
     // VkImageCreateInfo::usage used to create image
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02660");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02660");
     // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02659");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
     m_errorMonitor->VerifyFound();
 
@@ -3880,7 +3880,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
         image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         vkt::Image depth_image(*m_device, image_create_info, vkt::set_layout);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-image-02825");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-image-02825");
         vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), depth_image.handle(), depth_image.Layout(), &clear_value, 1,
                                       &range);
         m_errorMonitor->VerifyFound();
@@ -3907,7 +3907,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try baseMipLevel >= image.mipLevels with VK_REMAINING_MIP_LEVELS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474");
         const VkImageSubresourceRange range = {ds_aspect, 1, VK_REMAINING_MIP_LEVELS, 0, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3915,8 +3915,8 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-01694");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01694");
         const VkImageSubresourceRange range = {ds_aspect, 1, 1, 0, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3924,7 +3924,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-levelCount-01720");
+        m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-levelCount-01720");
         const VkImageSubresourceRange range = {ds_aspect, 0, 0, 0, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3932,7 +3932,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try baseMipLevel + levelCount > image.mipLevels
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-01694");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01694");
         const VkImageSubresourceRange range = {ds_aspect, 0, 2, 0, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3940,7 +3940,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3948,8 +3948,8 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-01695");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01695");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 1, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3957,7 +3957,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try layerCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-layerCount-01721");
+        m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-layerCount-01721");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 0};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3965,7 +3965,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
     // Try baseArrayLayer + layerCount > image.arrayLayers
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-01695");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01695");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 2};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -3974,7 +3974,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
 
 TEST_F(NegativeCommand, ClearColorImageWithinRenderPass) {
     // Call CmdClearColorImage within an active RenderPass
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-renderpass");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4035,8 +4035,8 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
     m_commandBuffer->begin();
     // need to handle since an element of pRanges includes VK_IMAGE_ASPECT_DEPTH_BIT without VkImageCreateInfo::usage having
     // VK_IMAGE_USAGE_TRANSFER_DST_BIT being set
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02660");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-02659");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02660");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), dst_image_bad_usage.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1,
                                   &range);
     m_errorMonitor->VerifyFound();
@@ -4047,7 +4047,7 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-renderpass");
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
     m_errorMonitor->VerifyFound();
 
@@ -4073,7 +4073,7 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearDepthStencilValue-depth-00022");
+    m_errorMonitor->SetDesiredError("VUID-VkClearDepthStencilValue-depth-00022");
     const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
     const VkClearDepthStencilValue bad_clear_value = {1.5f, 0};
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), m_depthStencil->handle(), VK_IMAGE_LAYOUT_GENERAL, &bad_clear_value, 1,
@@ -4081,7 +4081,7 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     m_errorMonitor->VerifyFound();
 
     m_renderPassClearValues[depth_attachment_index].depthStencil.depth = 1.5f;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearDepthStencilValue-depth-00022");
+    m_errorMonitor->SetDesiredError("VUID-VkClearDepthStencilValue-depth-00022");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 
@@ -4089,7 +4089,7 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     m_renderPassClearValues[depth_attachment_index].depthStencil.depth = 1.0f;
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearDepthStencilValue-depth-00022");
+    m_errorMonitor->SetDesiredError("VUID-VkClearDepthStencilValue-depth-00022");
     VkClearAttachment clear_attachment;
     clear_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     clear_attachment.clearValue.depthStencil.depth = 1.5f;
@@ -4137,7 +4137,7 @@ TEST_F(NegativeCommand, ClearColorImageImageLayout) {
     clear_range.levelCount = 1;
 
     // Fail by using bad layout for color clear (GENERAL, SHARED_PRESENT or TRANSFER_DST are permitted).
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-imageLayout-01394");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-imageLayout-01394");
     vk::CmdClearColorImage(m_commandBuffer->handle(), dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, &color_clear_value, 1,
                            &clear_range);
     m_errorMonitor->VerifyFound();
@@ -4220,7 +4220,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
         VkClearRect clear_rect_too_large = clear_rect;
         clear_rect_too_large.rect.extent.width = m_renderPassBeginInfo.renderArea.extent.width + 4;
         clear_rect_too_large.rect.extent.height = clear_rect_too_large.rect.extent.height / 2;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00016");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-00016");
         vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect_too_large);
 
         // baseLayer < render pass instance layer count
@@ -4236,13 +4236,13 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
         // baseLayer >= render pass instance layer count
         clear_rect.baseArrayLayer = 2;
         clear_rect.layerCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-06937");
         vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
 
         // baseLayer + layerCount > render pass instance layer count
         clear_rect.baseArrayLayer = 0;
         clear_rect.layerCount = 4;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-06937");
         vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
     };
 
@@ -4276,12 +4276,12 @@ TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-buffer-08784");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer-buffer-08784");
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     VkDeviceSize offsets = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-00627");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-pBuffers-00627");
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offsets);
     m_errorMonitor->VerifyFound();
 
@@ -4294,7 +4294,7 @@ TEST_F(NegativeCommand, BindIndexBufferHandles) {
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->begin();
     VkBuffer bad_buffer = CastToHandle<VkBuffer, uintptr_t>(0xbaadbeef);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-buffer-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer-buffer-parameter");
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), bad_buffer, 0, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4313,7 +4313,7 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-aspectMask-02498");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-aspectMask-02498");
     vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &color_range);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4336,7 +4336,7 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-09123");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-09123");
     vk::BeginCommandBuffer(command_buffer.handle(), &begin_info);
     m_errorMonitor->VerifyFound();
 }
@@ -4359,7 +4359,7 @@ TEST_F(NegativeCommand, ClearDepthStencilImageWithInvalidAspect) {
     range.levelCount = 1u;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-aspectMask-02824");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-aspectMask-02824");
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1u, &range);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4397,7 +4397,7 @@ TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
     VkClearColorValue clear_value = {{0, 0, 0, 0}};
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-01993");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-01993");
     vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1u, &range);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4445,9 +4445,9 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
         if (missing_depth) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07884");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07884");
         } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07885");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07885");
         }
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1u, &clear_attachment, 1u, &clear_rect);
         m_errorMonitor->VerifyFound();
@@ -4465,7 +4465,7 @@ TEST_F(NegativeCommand, CommandBufferInheritanceInfo) {
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00051");
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00051");
     vk::BeginCommandBuffer(secondary.handle(), &begin_info);
     m_errorMonitor->VerifyFound();
 
@@ -4473,7 +4473,7 @@ TEST_F(NegativeCommand, CommandBufferInheritanceInfo) {
     inheritance_info.queryFlags = VK_QUERY_CONTROL_PRECISE_BIT;
     begin_info.pInheritanceInfo = &inheritance_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-00052");
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00052");
     vk::BeginCommandBuffer(secondary.handle(), &begin_info);
     m_errorMonitor->VerifyFound();
 }

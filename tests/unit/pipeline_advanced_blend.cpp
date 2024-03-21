@@ -123,15 +123,13 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.pNext = &color_blend_advanced;
     if (!blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426");
     }
     if (!blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425");
     }
     if (!blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424");
     }
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -166,7 +164,7 @@ TEST_F(NegativePipelineAdvancedBlend, AllOperations) {
 
     // When using profiles, advancedBlendMaxColorAttachments might be zero
     m_errorMonitor->SetUnexpectedError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

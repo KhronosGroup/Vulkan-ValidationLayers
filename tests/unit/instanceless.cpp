@@ -43,7 +43,7 @@ TEST_F(NegativeInstanceless, InstanceExtensionDependencies) {
     }
     ASSERT_TRUE(InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME));  // Driver should always provide dependencies
 
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
+    Monitor().SetDesiredError("VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
     m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     const auto ici = GetInstanceCreateInfo();
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
@@ -68,7 +68,7 @@ TEST_F(NegativeInstanceless, ExtensionNestedDependency) {
     m_instance_extension_names.push_back(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
+    Monitor().SetDesiredError("VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
     const auto ici = GetInstanceCreateInfo();
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
@@ -79,7 +79,7 @@ TEST_F(NegativeInstanceless, InstanceBadStype) {
 
     auto ici = GetInstanceCreateInfo();
 
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-sType-sType");
+    Monitor().SetDesiredError("VUID-VkInstanceCreateInfo-sType-sType");
     ici.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
@@ -95,7 +95,7 @@ TEST_F(NegativeInstanceless, InstanceDuplicatePnextStype) {
 
     auto ici = GetInstanceCreateInfo();
 
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-sType-unique");
+    Monitor().SetDesiredError("VUID-VkInstanceCreateInfo-sType-unique");
     const VkValidationFeaturesEXT duplicate_pnext = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, ici.pNext};
     const VkValidationFeaturesEXT first_pnext = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, &duplicate_pnext};
     ici.pNext = &first_pnext;
@@ -113,7 +113,7 @@ TEST_F(NegativeInstanceless, InstanceAppInfoBadStype) {
     bad_app_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     ici.pApplicationInfo = &bad_app_info;
 
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkApplicationInfo-sType-sType");
+    Monitor().SetDesiredError("VUID-VkApplicationInfo-sType-sType");
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
 }
@@ -145,7 +145,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFeaturesBadFlags) {
         validation_features.pEnabledValidationFeatures = &bad_enable;
         ici.pNext = &validation_features;
 
-        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-parameter");
+        Monitor().SetDesiredError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -157,7 +157,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFeaturesBadFlags) {
         validation_features.pDisabledValidationFeatures = &bad_disable;
         ici.pNext = &validation_features;
 
-        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pDisabledValidationFeatures-parameter");
+        Monitor().SetDesiredError("VUID-VkValidationFeaturesEXT-pDisabledValidationFeatures-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -190,7 +190,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFlags) {
         validation_flags.pDisabledValidationChecks = &bad_disable;
         ici.pNext = &validation_flags;
 
-        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFlagsEXT-pDisabledValidationChecks-parameter");
+        Monitor().SetDesiredError("VUID-VkValidationFlagsEXT-pDisabledValidationChecks-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -200,7 +200,7 @@ TEST_F(NegativeInstanceless, InstanceValidationFlags) {
         validation_flags.disabledValidationCheckCount = 0;
         ici.pNext = &validation_flags;
 
-        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFlagsEXT-disabledValidationCheckCount-arraylength");
+        Monitor().SetDesiredError("VUID-VkValidationFlagsEXT-disabledValidationCheckCount-arraylength");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
@@ -244,7 +244,7 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
         VkInstance instance;
         ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance));
 
-        Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00631");
+        Monitor().SetDesiredError("VUID-vkDestroyInstance-instance-00631");
         vk::DestroyInstance(instance, &alloc_callbacks);
         Monitor().VerifyFound();
     }
@@ -281,7 +281,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     VkDevice leaked_device;
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device, &dci, nullptr, &leaked_device));
 
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00629");
+    Monitor().SetDesiredError("VUID-vkDestroyInstance-instance-00629");
     vk::DestroyInstance(instance, nullptr);
     Monitor().VerifyFound();
 }
@@ -321,7 +321,7 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     debug_report_callback.pfnCallback = callback;
     debug_report_callback.pNext = m_errorMonitor->GetDebugCreateInfo();
     ici.pNext = &debug_report_callback;
-    Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-pNext-04925");
+    Monitor().SetDesiredError("VUID-VkInstanceCreateInfo-pNext-04925");
     vk::CreateInstance(&ici, nullptr, &instance);
     Monitor().VerifyFound();
 
@@ -332,7 +332,7 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     direct_driver_loading_list.driverCount = 1u;
     direct_driver_loading_list.pDrivers = &driver;
     ici.pNext = &direct_driver_loading_list;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-pNext-09400");
+    m_errorMonitor->SetDesiredError("VUID-VkInstanceCreateInfo-pNext-09400");
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 
@@ -347,7 +347,7 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     if (ici.enabledExtensionCount > 0) {
         ici.ppEnabledExtensionNames = &m_instance_extension_names[1];
     }
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-pNext-04926");
+    m_errorMonitor->SetDesiredError("VUID-VkInstanceCreateInfo-pNext-04926");
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 }

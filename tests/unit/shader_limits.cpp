@@ -148,9 +148,9 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06376");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06376");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06377");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06377");
     auto cs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -215,13 +215,11 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
         )";
 
     // OpImageSampleImplicitLod
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06435");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
-    // // OpImageFetch
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06435");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImageSample-06436");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06435");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06436", 2);
+    // OpImageFetch
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06435");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06436", 2);
     VkShaderObj const fs(this, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
@@ -277,7 +275,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Fragment-06427");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Fragment-06427");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -337,7 +335,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
                                              SPV_SOURCE_ASM);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

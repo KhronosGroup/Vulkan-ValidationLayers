@@ -42,13 +42,13 @@ TEST_F(NegativeYcbcr, Sampler) {
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
 
     // test non external conversion with a VK_FORMAT_UNDEFINED
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test for non unorm
     sycci.format = VK_FORMAT_R8G8B8A8_SNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
     m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
@@ -65,10 +65,10 @@ TEST_F(NegativeYcbcr, Sampler) {
     sycci.format = mp_format;
 
     // No Chroma Sampler Bit set
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
     // 01651 set off twice for both xChromaOffset and yChromaOffset
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -78,7 +78,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
     sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -88,7 +88,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
     sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -96,14 +96,14 @@ TEST_F(NegativeYcbcr, Sampler) {
     sycci.forceExplicitReconstruction = VK_TRUE;
     sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // Linear chroma filtering without feature bit
     sycci.forceExplicitReconstruction = VK_FALSE;
     sycci.chromaFilter = VK_FILTER_LINEAR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -160,14 +160,14 @@ TEST_F(NegativeYcbcr, Swizzle) {
     // ycbcrModel RGB_IDENTITY
     sycci.components = identity;
     sycci.components.g = VK_COMPONENT_SWIZZLE_A;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.a
     sycci.components = identity;
     sycci.components.a = VK_COMPONENT_SWIZZLE_R;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02582");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02582");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -184,16 +184,16 @@ TEST_F(NegativeYcbcr, Swizzle) {
     // test components.r
     sycci.components = identity;
     sycci.components.r = VK_COMPONENT_SWIZZLE_G;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02583");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02583");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test components.b
     sycci.components = identity;
     sycci.components.b = VK_COMPONENT_SWIZZLE_G;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02584");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02584");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -201,7 +201,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     sycci.components = identity;
     sycci.components.r = VK_COMPONENT_SWIZZLE_B;
     sycci.components.b = VK_COMPONENT_SWIZZLE_B;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -219,24 +219,24 @@ TEST_F(NegativeYcbcr, Swizzle) {
         // Non RGB Identity can't have a explicit zero swizzle
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_ZERO;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
         vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
 
         // Non RGB Identity can't have a explicit one swizzle
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_ONE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
         vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
 
         // VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM has 3 component so RGBA conversion has implicit A as one
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_A;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
         vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
         m_errorMonitor->VerifyFound();
     }
@@ -334,7 +334,7 @@ TEST_F(NegativeYcbcr, Formats) {
     vk::GetPhysicalDeviceImageFormatProperties(gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
                                                image_create_info.usage, image_create_info.flags, &image_format_props);
     if ((image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-samples-02258");
+        m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-samples-02258");
     }
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06411");
     image_create_info = reset_create_info;
@@ -404,7 +404,7 @@ TEST_F(NegativeYcbcr, ImageViewFormat) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-format-04714");
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-format-04714");
     vkt::ImageView view(*m_device, ivci);
     m_errorMonitor->VerifyFound();
 }
@@ -458,8 +458,8 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
     // Src offsets must be multiples of compressed block sizes
     copy_region.srcOffset = {3, 4, 0};  // source offset x
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07278");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-01783");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-pRegions-07278");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-01783");
     vk::CmdCopyImage(m_commandBuffer->handle(), image_422.handle(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -467,9 +467,9 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
     // Dst offsets must be multiples of compressed block sizes
     copy_region.dstOffset = {1, 0, 0};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07281");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-01784");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00150");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-pRegions-07281");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-01784");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00150");
     vk::CmdCopyImage(m_commandBuffer->handle(), image_ucmp.handle(), VK_IMAGE_LAYOUT_GENERAL, image_422.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -477,8 +477,8 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
     // Copy extent must be multiples of compressed block sizes if not full width/height
     copy_region.extent = {31, 60, 1};  // 422 source, extent.x
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01728");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-01783");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01728");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-01783");
     vk::CmdCopyImage(m_commandBuffer->handle(), image_422.handle(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -550,42 +550,42 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-08713");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-08713");
     vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-08713");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-08713");
     vk::CmdCopyImage(m_commandBuffer->handle(), mp3_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-08714");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-08714");
     vk::CmdCopyImage(m_commandBuffer->handle(), mp3_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-08714");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-08714");
     vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01556");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-None-01549");  // since also non-compatiable
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01556");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-None-01549");  // since also non-compatiable
     vk::CmdCopyImage(m_commandBuffer->handle(), mp2_image.handle(), VK_IMAGE_LAYOUT_GENERAL, sp_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01557");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-None-01549");  // since also non-compatiable
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-01557");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-None-01549");  // since also non-compatiable
     vk::CmdCopyImage(m_commandBuffer->handle(), sp_image.handle(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -618,7 +618,7 @@ TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
                                                             VK_FILTER_NEAREST,
                                                             false};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSamplerYcbcrConversion-None-01648");
+    m_errorMonitor->SetDesiredError("VUID-vkCreateSamplerYcbcrConversion-None-01648");
     vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversions);
     m_errorMonitor->VerifyFound();
 }
@@ -658,7 +658,7 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     clear_range.layerCount = 1;
     clear_range.levelCount = 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-01545");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-01545");
     vk::CmdClearColorImage(m_commandBuffer->handle(), mp_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1,
                            &clear_range);
     m_errorMonitor->VerifyFound();
@@ -707,7 +707,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
 
     descriptor_set.WriteDescriptorImageInfo(0, image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-01946");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-01946");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -754,13 +754,13 @@ TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     subres.arrayLayer = 0;
     VkSubresourceLayout layout = {};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-08717");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout-tiling-08717");
     vk::GetImageSubresourceLayout(device(), image_2plane, &subres, &layout);
     m_errorMonitor->VerifyFound();
 
     // Query layout using color aspect, for a 3-plane image
     subres.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-08717");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout-tiling-08717");
     vk::GetImageSubresourceLayout(device(), image_3plane, &subres, &layout);
     m_errorMonitor->VerifyFound();
 
@@ -815,8 +815,8 @@ TEST_F(NegativeYcbcr, BindMemory) {
         ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
 
         // Bind disjoint with BindImageMemory instead of BindImageMemory2
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01608");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-07736");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01608");
+        m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-07736");
         vk::BindImageMemory(device(), image, image_memory, 0);
         m_errorMonitor->VerifyFound();
 
@@ -830,10 +830,10 @@ TEST_F(NegativeYcbcr, BindMemory) {
         bind_image_info.memoryOffset = 0;
 
         // Set invalid planeAspect
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283");
+        m_errorMonitor->SetDesiredError("VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283");
         // Error is thrown from not having both planes bound
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-02858");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory2-pBindInfos-02858");
         // Might happen as plane2 wasn't queried for its memroy type
         m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01619");
         m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01621");
@@ -885,7 +885,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         bind_image_info.memory = image_memory;
         bind_image_info.memoryOffset = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01618");
+        m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01618");
         vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
         m_errorMonitor->VerifyFound();
 
@@ -1006,14 +1006,14 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
         if (mem_req2.memoryRequirements.alignment > 1) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01616");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01616");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
     } else {
         // Same as 01048 but with bindImageMemory2 call
         if (image_mem_reqs.alignment > 1) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01616");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01616");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1032,7 +1032,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             bind_image_infos[1].memory = mp_image_mem[1].handle();
             bind_image_infos[1].memoryOffset = 0;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01620");
             vk::BindImageMemory2KHR(device(), 2, bind_image_infos);
             m_errorMonitor->VerifyFound();
         }
@@ -1055,7 +1055,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         if ((image2_offset > 0) &&
             (mem_req2.memoryRequirements.size < (image_alloc_info.allocationSize - mem_req2.memoryRequirements.alignment))) {
             bind_image_info.memoryOffset = image2_offset;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01617");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01617");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1064,7 +1064,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         VkDeviceSize image_offset = (image_mem_reqs.size - 1) & ~(image_mem_reqs.alignment - 1);
         if ((image_offset > 0) && (image_mem_reqs.size < (image_alloc_info.allocationSize - image_mem_reqs.alignment))) {
             bind_image_info.memoryOffset = image_offset;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01617");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01617");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1087,7 +1087,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             bind_image_infos[1].memory = mp_image_mem[1].handle();
             bind_image_infos[1].memoryOffset = 0;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01621");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01621");
             vk::BindImageMemory2KHR(device(), 2, bind_image_infos);
             m_errorMonitor->VerifyFound();
         }
@@ -1216,7 +1216,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         if (image2_unsupported_mem_type_bits != 0 && found_type) {
             vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             bind_image_info.memory = image_mem_tmp.handle();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01615");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1229,7 +1229,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         if (image_unsupported_mem_type_bits != 0 && found_type) {
             vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             bind_image_info.memory = image_mem_tmp.handle();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01615");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1264,7 +1264,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
             bind_image_infos[1].memory = mp_image_mem[1].handle();
             bind_image_infos[1].memoryOffset = 0;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01619");
+            m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01619");
             vk::BindImageMemory2KHR(device(), 2, bind_image_infos);
             m_errorMonitor->VerifyFound();
         }
@@ -1554,7 +1554,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     //   - !desc->IsImmutableSampler() will cause 02738; IOW, multi-plane conversion _requires_ an immutable sampler
     //   - !desc->IsImmutableSampler() must be removed for 01564 to get hit, but it's not clear whether or not this is
     //   correct based on the comments in the code
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-sampler-01564");
+    // m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-sampler-01564");
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
     // m_errorMonitor->VerifyFound();
@@ -1614,8 +1614,8 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
     mem_req_info2.image = image;
     VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01589");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02279");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryRequirementsInfo2-image-01589");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryRequirementsInfo2-image-02279");
     vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
     m_errorMonitor->VerifyFound();
 }
@@ -1688,7 +1688,7 @@ TEST_F(NegativeYcbcr, DrawFetch) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06550");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06550");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -1792,7 +1792,7 @@ TEST_F(NegativeYcbcr, DrawConstOffset) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-ConstOffset-06551");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-ConstOffset-06551");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();

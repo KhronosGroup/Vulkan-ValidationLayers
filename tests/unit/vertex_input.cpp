@@ -550,8 +550,7 @@ TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
     pipe.rs_state_ci_.pNext = &provoking_vertex_state_ci;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -595,7 +594,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
     m_errorMonitor->VerifyFound();
 
@@ -603,7 +602,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe3.Handle());
     m_errorMonitor->VerifyFound();
 
@@ -641,9 +640,9 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vtx_buf.handle(), &offset);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");  // index 0
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");  // index 2
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04008");  // index 0
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04008");  // index 2
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -679,8 +678,8 @@ TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 5, 1, &vtx_buf.handle(), &offset);
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 3, 1, &vtx_buf.handle(), &offset);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04008");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -732,8 +731,8 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 3, bindings, 3, attributes);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04008");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04008");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -819,9 +818,9 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     VkDeviceSize offset = 1;
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 1
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 2
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 0
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 1
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 2
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -829,9 +828,9 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     offset = 0;
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 0
     // Attribute[1] is aligned properly even with a wrong stride
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 2
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 2
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -863,7 +862,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
 
     VkDeviceSize offset = 3;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -894,7 +893,7 @@ TEST_F(NegativeVertexInput, VertexStride) {
 
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -933,7 +932,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicInput) {
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -969,7 +968,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
     const VkDeviceSize offset = 0;
     const VkDeviceSize bad_stride = 3;
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &bad_stride);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1006,7 +1005,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStrideArray) {
     VkDeviceSize strides[2] = {4, 3};
     VkBuffer buffers[2] = {buffer.handle(), buffer.handle()};
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 2, buffers, offsets, nullptr, strides);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1050,7 +1049,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     const VkDeviceSize good_stride = 4;
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &bad_stride);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1058,7 +1057,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     binding.stride = static_cast<uint32_t>(bad_stride);
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &good_stride);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1214,7 +1213,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1268,7 +1267,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1320,7 +1319,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1367,7 +1366,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatchDynamic) {
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-Input-08734");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-Input-08734");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -1438,7 +1437,7 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1473,7 +1472,7 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1508,7 +1507,7 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1571,8 +1570,8 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 4
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 7
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 4
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 7
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1623,7 +1622,7 @@ TEST_F(NegativeVertexInput, UnsupportedDivisor) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &buffer.handle(), &offset);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pNext-09461");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pNext-09461");
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 1u);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -1672,7 +1671,7 @@ TEST_F(NegativeVertexInput, UnsupportedDynamicStateDivisor) {
 
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1u, &vertex_input_binding_description, 0u, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09462");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09462");
     vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 1u);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -1687,13 +1686,13 @@ TEST_F(NegativeVertexInput, BindVertexBufferNull) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     VkDeviceSize offsets[2] = {0, 0};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-pBuffers-parameter");
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, VK_NULL_HANDLE, offsets);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-04001");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-pBuffers-04001");
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 2, buffers, offsets);
     m_errorMonitor->VerifyFound();
 
@@ -1726,7 +1725,7 @@ TEST_F(NegativeVertexInput, BindVertexBufferNullDraw) {
     VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 2, buffers, offsets);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
     m_errorMonitor->VerifyFound();
 
@@ -1752,7 +1751,7 @@ TEST_F(NegativeVertexInput, VertextBufferDestroyed) {
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &buffer.handle(), &offset);
     buffer.destroy();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-recording");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }

@@ -44,7 +44,7 @@ TEST_F(NegativePortabilitySubset, Device) {
     dev_info.ppEnabledExtensionNames =
         nullptr;  // VK_KHR_portability_subset not included in enabled extensions should trigger 04451
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pProperties-04451");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pProperties-04451");
     VkDevice device;
     vk::CreateDevice(gpu(), &dev_info, nullptr, &device);
     m_errorMonitor->VerifyFound();
@@ -61,7 +61,7 @@ TEST_F(NegativePortabilitySubset, Event) {
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateEvent-events-04468");
+    m_errorMonitor->SetDesiredError("VUID-vkCreateEvent-events-04468");
     VkEventCreateInfo eci = vku::InitStructHelper();
     VkEvent event;
     vk::CreateEvent(device(), &eci, nullptr, &event);
@@ -239,7 +239,7 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -279,7 +279,7 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription-stride-04456");
+    m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription-stride-04456");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -317,8 +317,7 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457");
+    m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -361,7 +360,7 @@ TEST_F(NegativePortabilitySubset, RasterizationState) {
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.polygonMode = VK_POLYGON_MODE_POINT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -393,7 +392,7 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -419,27 +418,23 @@ TEST_F(NegativePortabilitySubset, ColorBlendAttachmentState) {
     CreatePipelineHelper pipe(*this);
     pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
     pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -483,7 +478,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[0].pImageInfo = &img_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450");
     vk::UpdateDescriptorSets(device(), 1, descriptor_writes, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
@@ -527,7 +522,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         )glsl";
         VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06326");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tessellationShader-06326");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -548,7 +543,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo(), tes_obj.GetStageCreateInfo()};
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06327");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tessellationShader-06327");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -581,7 +576,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         raster_pipe.ia_ci_ = iasci;
         raster_pipe.tess_ci_ = tsci;
         raster_pipe.shader_stages_ = {vs_obj.GetStageCreateInfo(), fs_obj.GetStageCreateInfo()};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325");
         raster_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -603,13 +598,13 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362");
+    m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362");
     vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
     color_blend_equation.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
     color_blend_equation.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363");
+    m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363");
     vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
@@ -625,7 +620,7 @@ TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
 
     VkInstance local_instance;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-flags-06559");
+    m_errorMonitor->SetDesiredError("VUID-VkInstanceCreateInfo-flags-06559");
     vk::CreateInstance(&ici, nullptr, &local_instance);
     m_errorMonitor->VerifyFound();
 
@@ -666,7 +661,7 @@ TEST_F(VkPortabilitySubsetTest, FeatureWithoutExtension) {
     device_create_info.pQueueCreateInfos = queue_info.data();
     VkDevice testDevice;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-pNext");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
     m_errorMonitor->VerifyFound();
 }

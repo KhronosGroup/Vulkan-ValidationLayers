@@ -40,7 +40,7 @@ TEST_F(NegativeGraphicsLibrary, DSLs) {
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
     m_errorMonitor->VerifyFound();
 }
@@ -70,7 +70,7 @@ TEST_F(NegativeGraphicsLibrary, GPLDSLs) {
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
     m_errorMonitor->VerifyFound();
 }
@@ -105,7 +105,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -139,7 +139,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
 
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06614");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06614");
         frag_shader_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -166,7 +166,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSets) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds2.layout_});
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -195,7 +195,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
     m_commandBuffer->begin();
 
     // Now bind with a layout that was _not_ created with independent sets, which should trigger 06754
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -217,7 +217,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSState) {
 
     frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
     frag_shader_lib.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -286,7 +286,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
         frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09033");
         frag_shader_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -319,7 +319,7 @@ TEST_F(NegativeGraphicsLibrary, DepthStencilStateIgnored) {
     frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
 
     // forgetting VK_EXT_extended_dynamic_state3
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
     frag_shader_lib.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -362,7 +362,7 @@ TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
         frag_output_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         frag_output_lib.gp_ci_.pColorBlendState = nullptr;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09037");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09037");
         frag_output_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -378,15 +378,15 @@ TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
     pipe.LateBindPipelineInfo();
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-06602");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-06602");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-07826");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 
     pipe.gp_ci_.layout = pipe.pipeline_layout_.handle();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.cb_ci_.attachmentCount = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 
@@ -394,8 +394,8 @@ TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
     pipe.gp_ci_.stageCount = 0;
     pipe.shader_stages_.clear();
     pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stageCount-09530");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09530");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -414,7 +414,7 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -425,8 +425,8 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
         pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
         pipe.gp_ci_.pStages = pipe.shader_stages_.data();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-06602");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-06602");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-07826");
         pipe.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -437,7 +437,7 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pipe.InitPreRasterLibInfo(&vs_stage.stage_ci);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -455,7 +455,7 @@ TEST_F(NegativeGraphicsLibrary, CreateLibraryFlag) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06608");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06608");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -491,7 +491,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
         // VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is invalid
         pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
         pre_raster_lib.gpl_info->pNext = &link_info;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06609");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06609");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -504,7 +504,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
         // VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is invalid
         pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
         pre_raster_lib.gpl_info->pNext = &link_info;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06610");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06610");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -517,7 +517,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
         // VK_PIPELINE_CREATE_LIBRARY_BIT_KHR is invalid
         pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
         pre_raster_lib.gpl_info->pNext = &link_info;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-09245");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-09245");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -563,7 +563,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06756");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06756");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -608,7 +608,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
 
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06757");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06757");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -663,7 +663,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
     lib_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758");
     vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -681,7 +681,7 @@ TEST_F(NegativeGraphicsLibrary, PreRasterStateNoLayout) {
     pipe.InitPreRasterLibInfo(&vs_stage.stage_ci);
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06642");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06642");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -774,7 +774,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
 
     // Draw with pipeline created with null set
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -815,7 +815,7 @@ TEST_F(NegativeGraphicsLibrary, PreRasterWithFS) {
     pipe.InitPreRasterLibInfo(stages.data());
     pipe.gp_ci_.stageCount = 2;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06894");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -854,7 +854,7 @@ TEST_F(NegativeGraphicsLibrary, FragmentStateWithPreRaster) {
     pipe.InitFragmentLibInfo(stages.data());
     pipe.gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06895");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -869,7 +869,7 @@ TEST_F(NegativeGraphicsLibrary, StageCount) {
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pre_raster_lib.gp_ci_.stageCount = 0;
     pre_raster_lib.gp_ci_.layout = pre_raster_lib.pipeline_layout_.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06644");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
     pre_raster_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -880,7 +880,7 @@ TEST_F(NegativeGraphicsLibrary, NullStages) {
 
     CreatePipelineHelper pre_raster_lib(*this);
     pre_raster_lib.InitPreRasterLibInfo(nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06640");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06640");
     pre_raster_lib.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -899,8 +899,8 @@ TEST_F(NegativeGraphicsLibrary, MissingShaderStages) {
         // set in stateless
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
         // 02096 is effectively unrelated, but gets triggered due to lack of mesh shader extension
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-02096");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stage-02096");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -920,7 +920,7 @@ TEST_F(NegativeGraphicsLibrary, BadRenderPassPreRaster) {
     pipe.InitPreRasterLibInfo(&vs_stage.stage_ci);
     VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
     pipe.gp_ci_.renderPass = bad_rp;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06643");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06643");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -938,8 +938,8 @@ TEST_F(NegativeGraphicsLibrary, BadRenderPassFragmentShader) {
     pipe.InitFragmentLibInfo(&fs_stage.stage_ci);
     VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
     pipe.gp_ci_.renderPass = bad_rp;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06643");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06643");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -955,7 +955,7 @@ TEST_F(NegativeGraphicsLibrary, BadRenderPassFragmentOutput) {
     pipe.InitFragmentOutputLibInfo();
     VkRenderPass bad_rp = CastToHandle<VkRenderPass, uintptr_t>(0xbaadbeef);
     pipe.gp_ci_.renderPass = bad_rp;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06643");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06643");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -1014,7 +1014,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     exe_pipe_ci.layout = layout;
     exe_pipe_ci.renderPass = renderPass();
     VkPipeline pipeline;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096");
     vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &exe_pipe_ci, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 }
@@ -1062,7 +1062,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         CreatePipelineHelper vs_lib(*this);
         vs_lib.InitPreRasterLibInfo(&stage.stage_ci);
         vs_lib.gp_ci_.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07988");
         vs_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
 
@@ -1093,7 +1093,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         CreatePipelineHelper fs_lib(*this);
         fs_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         fs_lib.gp_ci_.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07988");
         fs_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -1174,8 +1174,8 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         CreatePipelineHelper pre_raster_lib(*this);
         const std::array shaders = {vs_stage.stage_ci, tcs_stage.stage_ci};
         pre_raster_lib.InitPreRasterLibInfoFromContainer(shaders);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1185,7 +1185,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         CreatePipelineHelper pre_raster_lib(*this);
         const std::array shaders = {vs_stage.stage_ci, tes_stage.stage_ci};
         pre_raster_lib.InitPreRasterLibInfoFromContainer(shaders);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00730");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-00730");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1207,7 +1207,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         exe_pipe_ci.renderPass = renderPass();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08889");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-topology-08889");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
@@ -1218,7 +1218,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
         pre_raster_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1231,7 +1231,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         tsci_bad.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         // stype-check on
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
         pre_raster_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -1243,7 +1243,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         tsci_bad = tsci;
         tsci_bad.patchControlPoints = 0;
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
         pre_raster_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -1254,7 +1254,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         tsci_bad = tsci;
         tsci_bad.patchControlPoints = m_device->phy().limits_.maxTessellationPatchSize + 1;
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
         pre_raster_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -1279,7 +1279,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         exe_pipe_ci.renderPass = renderPass();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08888");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-08888");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
@@ -1314,7 +1314,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
         exe_pipe_ci.renderPass = renderPass();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06646");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06646");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
@@ -1332,7 +1332,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         frag_out_lib.InitFragmentOutputLibInfo(&link_info);
         frag_out_lib.gp_ci_.flags =
             VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06645");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06645");
         frag_out_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -1351,7 +1351,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         CreatePipelineHelper frag_out_lib(*this);
         frag_out_lib.InitFragmentOutputLibInfo(&link_info);
         frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06647");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06647");
         frag_out_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -1447,7 +1447,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
 
     // Using an "empty" descriptor set is not legal
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(desc_sets_empty.size()), desc_sets_empty.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -1474,7 +1474,7 @@ TEST_F(NegativeGraphicsLibrary, BindLibraryPipeline) {
     pipeline.InitVertexInputLibInfo();
     pipeline.CreateGraphicsPipeline(false);
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-03382");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-03382");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -1509,13 +1509,13 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
 
     // Both a shader module ci and shader module id ci in pNext
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06844");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-06844");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     stage_ci.pNext = nullptr;
     // No shader module ci and no shader module id ci in pNext and invalid module
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06845");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-06845");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -1527,21 +1527,21 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     // shader module id ci and module not VK_NULL_HANDLE
     stage_ci.pNext = &sm_id_create_info;
     stage_ci.module = vs.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06848");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-06848");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     stage_ci.module = VK_NULL_HANDLE;
     pipe.gp_ci_.flags = 0;
     // shader module id ci and no VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     sm_id_create_info.identifierSize = VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT + 1;
     // indentifierSize too big
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-identifierSize-06852");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-identifierSize-06852");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -1574,7 +1574,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&link_info);
     pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     // no VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855");
     vkt::Pipeline exe_pipe(*m_device, pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -1601,25 +1601,25 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-08771");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-08771");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = 4;
     stage_ci.pNext = &sm_id_create_info;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884");
+    m_errorMonitor->SetDesiredError("VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884");
     vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
     m_errorMonitor->VerifyFound();
 
     VkShaderModuleCreateInfo sm_ci = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885");
+    m_errorMonitor->SetDesiredError("VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885");
     uint32_t code = 0;
     sm_ci.codeSize = 4;
     sm_ci.pCode = &code;
@@ -1686,10 +1686,8 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
     exe_ci.layout = pipeline_layout_exe.handle();
     exe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
     vkt::Pipeline exe_pipe(*m_device, exe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -1744,10 +1742,8 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayoutsMultipleSubsets) {
     VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
     exe_ci.layout = pipeline_layout_exe.handle();
     exe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
     vkt::Pipeline exe_pipe(*m_device, exe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -1801,7 +1797,7 @@ TEST_F(NegativeGraphicsLibrary, MissingLinkingLayout) {
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = VK_NULL_HANDLE;
     exe_pipe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -1839,7 +1835,7 @@ TEST_F(NegativeGraphicsLibrary, NullLibrary) {
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -1878,7 +1874,7 @@ TEST_F(NegativeGraphicsLibrary, BadLibrary) {
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -1947,7 +1943,7 @@ TEST_F(NegativeGraphicsLibrary, DynamicPrimitiveTopolgyIngoreState) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     vk::CmdSetPrimitiveTopology(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08608");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1990,7 +1986,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantStages) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -2034,7 +2030,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantSize) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -2078,7 +2074,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantMultiple) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -2121,7 +2117,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantDifferentCount) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -2166,7 +2162,7 @@ TEST_F(NegativeGraphicsLibrary, SetLayoutCount) {
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2214,7 +2210,7 @@ TEST_F(NegativeGraphicsLibrary, SetLayoutCountLinking) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -2269,7 +2265,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetLayoutCreateFlags) {
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2312,7 +2308,7 @@ TEST_F(NegativeGraphicsLibrary, BindingCount) {
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2354,7 +2350,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetLayoutBinding) {
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06612");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06612");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2398,7 +2394,7 @@ TEST_F(NegativeGraphicsLibrary, NullDSL) {
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06679");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06679");
         frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2451,7 +2447,7 @@ TEST_F(NegativeGraphicsLibrary, NullDSLLinking) {
     exe_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06681");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06681");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -2481,8 +2477,8 @@ TEST_F(NegativeGraphicsLibrary, NullLayoutPreRasterFragShader) {
     pipe.gp_ci_.subpass = 0;
     pipe.gp_ci_.layout = pipeline_layout.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06682");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06679");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06682");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06679");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2506,7 +2502,7 @@ TEST_F(NegativeGraphicsLibrary, NullLayoutPreRasterDiscardEnable) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.gp_ci_.layout = pipeline_layout.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06683");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06683");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2536,7 +2532,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateFragOutputLibrary) {
     frag_shader_lib.ms_ci_.minSampleShading = 0.2f;
     frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
     frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06633");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06633");
     frag_shader_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2566,7 +2562,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateFragShaderLibrary) {
     frag_out_lib.ms_ci_.minSampleShading = 0.5f;
     frag_out_lib.ms_ci_.sampleShadingEnable = VK_TRUE;
     frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
     frag_out_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2594,8 +2590,8 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateFragOutputNull) {
     frag_out_lib.gp_ci_.layout = pipeline_layout.handle();
     frag_out_lib.gp_ci_.pMultisampleState = nullptr;
     frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06634");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026");
     frag_out_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2624,7 +2620,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateFragShaderNull) {
     frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
     frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
     frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-09567");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-09567");
     frag_shader_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2677,7 +2673,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateBothLibrary) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
@@ -2717,7 +2713,7 @@ TEST_F(NegativeGraphicsLibrary, FragmentShadingRateStateFragShaderLibrary) {
     frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
     frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
     frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06638");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06638");
     frag_shader_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2775,7 +2771,7 @@ TEST_F(NegativeGraphicsLibrary, FragmentShadingRateStateBothLibrary) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06639");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06639");
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
@@ -2832,7 +2828,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateSampleMaskArray) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
@@ -2888,7 +2884,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateSampleMaskArrayNull) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
@@ -2932,7 +2928,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateMultipleSubsets) {
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = shader_lib.gp_ci_.layout;
     exe_pipe_ci.renderPass = renderPass();
@@ -2951,13 +2947,13 @@ TEST_F(NegativeGraphicsLibrary, VertexInput) {
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.gp_ci_.pInputAssemblyState = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-08898");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08898");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 
     // Even though pVertexInputState is ignored, still have an invalid null pInputAssemblyState
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2978,7 +2974,7 @@ TEST_F(NegativeGraphicsLibrary, VertexInputWithVertexShader) {
     pipe.gp_ci_.pInputAssemblyState = nullptr;
     pipe.gpl_info->flags |= VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-08897");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08897");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -3018,7 +3014,7 @@ TEST_F(NegativeGraphicsLibrary, MissingPreRasterization) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-08901");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08901");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -3056,7 +3052,7 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentShader) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-08909");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08909");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -3099,7 +3095,7 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentOutput) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-08909");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08909");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -3111,7 +3107,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputIgnoreStages) {
     pipe.InitVertexInputLibInfo();
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -3124,7 +3120,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentOutputIgnoreStages) {
     pipe.InitFragmentOutputLibInfo();
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
@@ -3184,7 +3180,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetLayoutNull) {
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = VK_NULL_HANDLE;
     exe_pipe_ci.renderPass = renderPass();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06730");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06730");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -3255,7 +3251,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetLayoutCompatible) {
         vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds.layout_, &ds.layout_}, {},
                                             VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
         exe_pipe_ci.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06730");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06730");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
@@ -3265,7 +3261,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetLayoutCompatible) {
         vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds.layout_, &ds2_type.layout_}, {},
                                             VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
         exe_pipe_ci.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06730");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06730");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
@@ -3275,7 +3271,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetLayoutCompatible) {
         vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds.layout_, &ds2_count.layout_}, {},
                                             VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
         exe_pipe_ci.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06730");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06730");
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }

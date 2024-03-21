@@ -43,7 +43,7 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
     // Set polygonMode to FILL_RECTANGLE_NV while the extension is not enabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-parameter");
     CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
                                       "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414");
 }

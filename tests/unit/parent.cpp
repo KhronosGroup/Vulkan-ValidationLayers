@@ -57,7 +57,7 @@ TEST_F(NegativeParent, FillBuffer) {
     vkt::Buffer buffer(*m_second_device, buffer_ci);
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-commonparent");
     vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, VK_WHOLE_SIZE, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -77,7 +77,7 @@ TEST_F(NegativeParent, BindBuffer) {
     vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferMemoryRequirements-buffer-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkGetBufferMemoryRequirements-buffer-parent");
     vk::GetBufferMemoryRequirements(m_second_device->handle(), buffer.handle(), &mem_reqs);
     m_errorMonitor->VerifyFound();
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
@@ -92,7 +92,7 @@ TEST_F(NegativeParent, BindBuffer) {
     bind_buffer_info.memory = memory.handle();
     bind_buffer_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryInfo-commonparent");
     vk::BindBufferMemory2KHR(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 }
@@ -111,7 +111,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkMemoryRequirements mem_reqs;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageMemoryRequirements-image-parent");
     vk::GetImageMemoryRequirements(m_second_device->handle(), image.handle(), &mem_reqs);
     m_errorMonitor->VerifyFound();
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
@@ -126,7 +126,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
     bind_image_info.memory = memory.handle();
     bind_image_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-commonparent");
     vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
@@ -151,7 +151,7 @@ TEST_F(NegativeParent, ImageView) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateImageView-image-09179");
+    m_errorMonitor->SetDesiredError("VUID-vkCreateImageView-image-09179");
     vk::CreateImageView(m_second_device->handle(), &ivci, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
 }
@@ -176,7 +176,7 @@ TEST_F(NegativeParent, BindPipeline) {
     vkt::Pipeline pipeline(*m_second_device, pipeline_ci);
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commonparent");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -190,7 +190,7 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
     auto features = m_device->phy().features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-commonparent");
     vkt::Framebuffer fb(*m_second_device, m_renderPass, 0, nullptr, m_width, m_height);
     m_errorMonitor->VerifyFound();
 }
@@ -241,7 +241,7 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     m_renderPassBeginInfo.framebuffer = fb.handle();
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-framebuffer-02780");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-02780");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -260,8 +260,8 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
 
     command_buffer.begin();
     // one for each the framebuffer and renderpass being different from the CommandBuffer
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-commonparent");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
     auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginRenderPass2(command_buffer.handle(), &m_renderPassBeginInfo, &subpass_begin_info);
     m_errorMonitor->VerifyFound();
@@ -281,7 +281,7 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
     ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
 
     VkBool32 supported = VK_FALSE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent");
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, instance2_surface, &supported);
     m_errorMonitor->VerifyFound();
 }
@@ -299,7 +299,7 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
     ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
 
     VkDeviceGroupPresentModeFlagsKHR flags = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent");
     vk::GetDeviceGroupSurfacePresentModesKHR(m_device->handle(), instance2_surface, &flags);
     m_errorMonitor->VerifyFound();
 }
@@ -338,7 +338,7 @@ TEST_F(NegativeParent, Instance_Surface) {
 
     // surface from a different instance
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-commonparent");
     vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
     m_errorMonitor->VerifyFound();
 }
@@ -393,7 +393,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     swapchain_ci.surface = m_surface;
     swapchain_ci.oldSwapchain = other_device_swapchain;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-commonparent");
     vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
     m_errorMonitor->VerifyFound();
     vk::DestroySwapchainKHR(instance2_device.handle(), other_device_swapchain, nullptr);
@@ -412,7 +412,7 @@ TEST_F(NegativeParent, Instance_Surface_2) {
     ASSERT_EQ(VK_SUCCESS, CreateSurface(surface_context, instance2_surface.handle, instance2));
 
     // surface from a different instance
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroySurfaceKHR-surface-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkDestroySurfaceKHR-surface-parent");
     vk::DestroySurfaceKHR(instance(), instance2_surface, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -440,7 +440,7 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
     }
 
     // debug utils messenger from a different instance
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkDestroyDebugUtilsMessengerEXT-messenger-parent");
     vk::DestroyDebugUtilsMessengerEXT(instance(), messenger, nullptr);
     m_errorMonitor->VerifyFound();
     vk::DestroyDebugUtilsMessengerEXT(instance2, messenger, nullptr);
@@ -463,7 +463,7 @@ TEST_F(NegativeParent, Instance_DebugReportCallback) {
     }
 
     // debug report callback from a different instance
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDebugReportCallbackEXT-callback-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkDestroyDebugReportCallbackEXT-callback-parent");
     vk::DestroyDebugReportCallbackEXT(instance(), callback, nullptr);
     m_errorMonitor->VerifyFound();
     vk::DestroyDebugReportCallbackEXT(instance2, callback, nullptr);
@@ -500,7 +500,7 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
     }
     // display from a different physical device
     uint32_t mode_count = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDisplayModePropertiesKHR-display-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkGetDisplayModePropertiesKHR-display-parent");
     vk::GetDisplayModePropertiesKHR(gpu(), display, &mode_count, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -539,7 +539,7 @@ TEST_F(NegativeParent, PhysicalDevice_RegisterDisplayEvent) {
     event_info.displayEvent = VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT;
     VkFence fence;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkRegisterDisplayEventEXT-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-vkRegisterDisplayEventEXT-commonparent");
     vk::RegisterDisplayEventEXT(device(), display, &event_info, nullptr, &fence);
     m_errorMonitor->VerifyFound();
 }
@@ -588,7 +588,7 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     }
     // display mode from a different physical device
     VkDisplayPlaneCapabilitiesKHR plane_capabilities{};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parent");
     vk::GetDisplayPlaneCapabilitiesKHR(gpu(), display_mode, 0, &plane_capabilities);
     m_errorMonitor->VerifyFound();
 }
@@ -618,15 +618,15 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
     pipeline_info.pipeline = pipe.Handle();
 
     uint32_t count;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
     vk::GetPipelineExecutableStatisticsKHR(*m_second_device, &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277");
     vk::GetPipelineExecutableInternalRepresentationsKHR(*m_second_device, &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
     vk::GetPipelineExecutablePropertiesKHR(*m_second_device, &pipeline_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -648,7 +648,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
                                      });
     ds.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237");
+    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237");
     ds.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -668,7 +668,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
                                      });
     ds.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239");
+    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239");
     ds.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }

@@ -38,7 +38,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndex) {
     device_ci.enabledExtensionCount = m_device_extension_names.size();
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381");
     VkDevice device;
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
@@ -73,7 +73,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
     if (m_device->phy().queue_properties_.size() > 2) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pSubmits-04626");
+        m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pSubmits-04626");
 
         // Create buffer shared to queue families 1 and 2, but submitted on queue family 0
         buffCI.queueFamilyIndexCount = 2;
@@ -173,7 +173,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
     device_create_info.enabledLayerCount = 0;
     device_create_info.enabledExtensionCount = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
     vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
     m_errorMonitor->VerifyFound();
 }
@@ -228,8 +228,8 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     device_ci.enabledExtensionCount = m_device_extension_names.size();
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654");
     VkDevice device;
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
@@ -262,7 +262,7 @@ TEST_F(NegativeDeviceQueue, QueueCount) {
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-queueCount-00382");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-queueCount-00382");
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
@@ -292,13 +292,13 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
 
     const float priority_high = 2.0f;
     device_queue_ci.pQueuePriorities = &priority_high;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383");
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 
     const float priority_low = -1.0f;
     device_queue_ci.pQueuePriorities = &priority_low;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383");
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
@@ -329,13 +329,13 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
 
     // Get implicit VU because using Transfer only instead of a Graphics-only or Compute-only queue
     commandBuffer.begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00777");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-00777");
     vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.Handle());
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00778");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-00778");
     vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
     m_errorMonitor->VerifyFound();
     commandBuffer.end();
@@ -345,7 +345,7 @@ TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     TEST_DESCRIPTION("vkCreateCommandPool with bad queue");
     RETURN_IF_SKIP(Init());
     const size_t queue_count = m_device->phy().queue_properties_.size();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
+    m_errorMonitor->SetDesiredError("VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     vkt::CommandPool commandPool(*m_device, queue_count + 1);
     m_errorMonitor->VerifyFound();
 }
@@ -377,7 +377,7 @@ TEST_F(NegativeDeviceQueue, Robustness2WithoutRobustness) {
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000");
     vk::CreateDevice(m_device->phy().handle(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
@@ -423,7 +423,7 @@ TEST_F(NegativeDeviceQueue, QueuesSameQueueFamily) {
     device_ci.pQueueCreateInfos = device_queue_ci;
 
     VkDevice device;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pQueueCreateInfos-06755");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06755");
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
@@ -462,7 +462,7 @@ TEST_F(NegativeDeviceQueue, MismatchedQueueFamiliesOnSubmit) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cmd_buff.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00074");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00074");
     vk::QueueSubmit(other_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }

@@ -437,7 +437,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     vk::EndCommandBuffer(primary_cmd);
 
     // Viewport with incorrect depth range.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");
     test_data.BeginPrimaryCommandBuffer(primary_cmd);
     vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportAlternateDepthArray);
     vk::CmdSetScissor(primary_cmd, 0, 1, test_data.kScissorArray);
@@ -448,7 +448,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     m_errorMonitor->VerifyFound();
 
     // Viewport not provided.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");
     test_data.BeginPrimaryCommandBuffer(primary_cmd);
     vk::CmdSetScissor(primary_cmd, 0, 1, test_data.kScissorArray);
     test_data.BeginRenderPass(primary_cmd);
@@ -458,7 +458,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     m_errorMonitor->VerifyFound();
 
     // Scissor not provided.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");
     test_data.BeginPrimaryCommandBuffer(primary_cmd);
     vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportArray);
     test_data.BeginRenderPass(primary_cmd);
@@ -471,8 +471,8 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     // Don't swap the loop order or you'll mess up subpass_cmd for upcoming tests.
     for (int should_fail = 1; should_fail >= 0; --should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07832");  // viewport
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07831");  // scissor
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07832");  // viewport
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07831");  // scissor
             test_data.BeginSubpassCommandBuffer(subpass_cmd, 0, nullptr);
         } else {
             test_data.BeginSubpassCommandBuffer(subpass_cmd, 1, test_data.kViewportDepthOnlyArray);
@@ -503,8 +503,8 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     // trashed afterwards).
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // scissor
         }
         std::array<VkCommandBuffer, 2> secondaries = {should_fail ? static_state_cmd : subpass_cmd,
                                                       should_fail ? subpass_cmd : static_state_cmd};
@@ -525,8 +525,8 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     // viewport/scissor pipeline.
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // scissor
         }
 
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
@@ -549,7 +549,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
 
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
         } else {
         }
 
@@ -567,16 +567,16 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     // Check that the validation layers are not okay with binding static viewport/scissor pipelines when inheritance enabled, or
     // setting viewport/scissor explicitly, but are okay if inheritance is not enabled (no regression).
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04808");
+        if (should_fail) m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-04808");
         test_data.BeginSubpassCommandBuffer(no_draw_cmd, should_fail, test_data.kViewportDepthOnlyArray);
         test_data.BindGraphicsPipeline(no_draw_cmd, false, 1);
         if (should_fail) m_errorMonitor->VerifyFound();
 
         // Check that the validation layers flag setting viewport/scissor with inheritance.
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-commandBuffer-04821");
+        if (should_fail) m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-commandBuffer-04821");
         vk::CmdSetViewport(no_draw_cmd, 0, 1, test_data.kViewportArray);
         if (should_fail) m_errorMonitor->VerifyFound();
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissor-viewportScissor2D-04789");
+        if (should_fail) m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-viewportScissor2D-04789");
         vk::CmdSetScissor(no_draw_cmd, 0, 1, test_data.kScissorArray);
         if (should_fail) m_errorMonitor->VerifyFound();
 
@@ -586,8 +586,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     // Check for at least 1 viewport depth given when enabling inheritance.
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784");
+            m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784");
         } else {
         }
         VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor = {
@@ -602,7 +601,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     }
 
     // Check for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04786");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04786");
     VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor = {
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV, nullptr, VK_TRUE, 1, test_data.kViewportArray};
     test_data.MakeBeginSecondaryCommandBuffer(pool, 0, &viewport_scissor);
@@ -621,7 +620,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
         test_data.BeginRenderPass(primary_cmd);
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
             vk::CmdExecuteCommands(primary_cmd, 1, &set_viewport_cmd);
             VkCommandBuffer secondaries[2] = {set_scissor_cmd, subpass_cmd};
             vk::CmdExecuteCommands(primary_cmd, 2, secondaries);
@@ -658,7 +657,7 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
 
     test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04782");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04782");
     test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportArray);
     m_errorMonitor->VerifyFound();
 }
@@ -687,8 +686,8 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     VkCommandPool pool = m_commandPool->handle();
 
     // Test using viewport/scissor with count state without providing it to be inherited.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // scissor
     VkCommandBuffer draw_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportArray);
     test_data.BindGraphicsPipeline(draw_cmd, true, 0 /* dynamic viewport and scissor count */);
     vk::CmdDraw(draw_cmd, 3, 1, 0, 0);
@@ -706,7 +705,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     // Test drawing with pipeline that uses more viewports than have been inherited.
     for (int i = 0; i < 4; ++i) {
         auto should_fail = i & 1;
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
+        if (should_fail) m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
 
         test_data.BeginSubpassCommandBuffer(draw_cmd, should_fail ? 1 : 2, test_data.kViewportDepthOnlyArray);
         test_data.BindGraphicsPipeline(draw_cmd, true, 2); // Uses 2 viewports
@@ -750,11 +749,11 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         auto should_fail = i & 1;
         auto use_with_count = i & 4;
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport 0 (or with count)
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor 0 (or with count)
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport 0 (or with count)
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // scissor 0 (or with count)
             if (!use_with_count) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport 1
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor 1
+                m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport 1
+                m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // scissor 1
             }
         } else {
         }
@@ -809,7 +808,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     for (int i = 0; i < 3; ++i) {
         auto should_fail = i & 1;
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport 1
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport 1
         } else {
         }
 
@@ -842,7 +841,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         auto should_fail = i & 2;
         auto inherited_incorrect_depth = i & 4;
 
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
+        if (should_fail) m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");
 
         VkViewport viewports[3];
         viewports[0] = test_data.kViewportArray[0];
@@ -916,7 +915,7 @@ TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     }
     VkCommandPool pool = m_commandPool->handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783");
     test_data.MakeBeginSubpassCommandBuffer(pool, 2, test_data.kViewportArray);
     m_errorMonitor->VerifyFound();
 }
@@ -983,7 +982,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
 
     vk::BeginCommandBuffer(secondary.handle(), &cbbi);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04809");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-04809");
     vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->VerifyFound();
 
@@ -993,7 +992,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
         CreatePipelineHelper pipe2(*this);
         pipe2.gp_ci_.pDynamicState = &dyn_state_ci;
         pipe2.CreateGraphicsPipeline();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04809");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-04809");
         vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
         m_errorMonitor->VerifyFound();
     }

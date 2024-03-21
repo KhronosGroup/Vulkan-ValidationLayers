@@ -199,7 +199,7 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-image-02901");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBindInfo-image-02901");
     vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
@@ -331,11 +331,8 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-size-01102");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-size-01102");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memoryOffset-01101", 3);
+    m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-size-01102", 2);
     vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
@@ -469,9 +466,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     if (!buffer_supports_all_mem_types) {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         if (buffer_mem_lazy) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         }
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
@@ -483,9 +480,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     if (!image_supports_all_mem_types) {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         if (image_mem_lazy) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         }
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
@@ -498,16 +495,16 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 1;
         if (!buffer_supports_all_mem_types) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         }
         if (buffer_mem_lazy) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         }
         if (!image_supports_all_mem_types) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         }
         if (image_mem_lazy) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         }
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
@@ -600,9 +597,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         if (!((1u << buffer_mem_alloc.memoryTypeIndex) & buffer_mem_reqs.memoryTypeBits)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         }
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
@@ -612,9 +609,9 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         if (!((1u << image_mem_alloc.memoryTypeIndex) & image_mem_reqs.memoryTypeBits)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         }
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
@@ -624,13 +621,13 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01097");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01097");
         if (!((1u << buffer_mem_alloc.memoryTypeIndex) & buffer_mem_reqs.memoryTypeBits)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         }
         if (!((1u << image_mem_alloc.memoryTypeIndex) & image_mem_reqs.memoryTypeBits)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-01096");
+            m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-01096");
         }
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
@@ -740,7 +737,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02730");
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -749,7 +746,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02730");
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -758,8 +755,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02730");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02730", 2);
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -769,7 +765,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 0;
         bind_info.imageBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-memory-02732");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-memory-02732");
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -933,7 +929,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 0;
-        // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        // m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02731");
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         // m_errorMonitor->VerifyFound();
     }
@@ -942,7 +938,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02731");
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -951,8 +947,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memory-02731");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02731", 2);
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -962,7 +957,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
         bind_info.bufferBindCount = 0;
         bind_info.imageOpaqueBindCount = 0;
         bind_info.imageBindCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-memory-02733");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-memory-02733");
         vk::QueueBindSparse(m_device->sparse_queues()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
@@ -1027,63 +1022,63 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
 
     // Force offset.x to invalid value
     image_bind.offset.x = granularity.width - 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-offset-01107");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-offset-01107");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.offset.x = 0u;
 
     // Force offset.y to invalid value
     image_bind.offset.y = granularity.height - 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-offset-01109");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-offset-01109");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.offset.y = 0u;
 
     // Force offset.y to invalid value
     image_bind.offset.z = granularity.depth - 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-offset-01111");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-offset-01111");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.offset.z = 0u;
 
     // Force extent.width to invalid value
     image_bind.extent.width = granularity.width - 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01108");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-extent-01108");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.extent.width = granularity.width;
 
     // Force extent.height to invalid value
     image_bind.extent.height = granularity.height - 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01110");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-extent-01110");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.extent.height = granularity.height;
 
     // Force extent.depth to invalid value
     image_bind.extent.depth = granularity.depth - 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01112");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-extent-01112");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.extent.depth = granularity.depth;
 
     // Force greater mip level
     image_bind.subresource.mipLevel = VK_REMAINING_MIP_LEVELS;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01722");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBindInfo-subresource-01722");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.subresource.mipLevel = 0;
 
     // Force greater array layer
     image_bind.subresource.arrayLayer = VK_REMAINING_ARRAY_LAYERS;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01723");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBindInfo-subresource-01723");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.subresource.arrayLayer = 0;
 
     // Force invalid aspect mask
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01106");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBindInfo-subresource-01106");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1147,21 +1142,21 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     VkQueue sparse_queue = m_device->sparse_queues()[0]->handle();
 
     image_bind.extent.width = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-09388");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-extent-09388");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     image_bind.extent = granularity;
 
     image_bind.extent.height = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-09389");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-extent-09389");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     image_bind.extent = granularity;
 
     image_bind.extent.depth = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-09390");
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-extent-09390");
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }

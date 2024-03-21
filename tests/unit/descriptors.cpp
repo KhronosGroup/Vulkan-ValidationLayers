@@ -22,7 +22,7 @@
 TEST_F(NegativeDescriptors, DescriptorPoolConsistency) {
     TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-parent");
+    m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-pDescriptorSets-parent");
 
     RETURN_IF_SKIP(Init());
 
@@ -88,7 +88,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-apiVersion-07895");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07895");
     vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
     m_errorMonitor->VerifyFound();
 
@@ -106,7 +106,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
     VkDescriptorSet descriptor_set;
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = &ds_layout_ub.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-apiVersion-07896");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07896");
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
@@ -145,7 +145,7 @@ TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-descriptorPool-00312");
+    m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-descriptorPool-00312");
     vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &descriptorSet);
     m_errorMonitor->VerifyFound();
 }
@@ -155,7 +155,7 @@ TEST_F(NegativeDescriptors, DescriptorPool) {
     // ObjectTracker should catch this.
 
     RETURN_IF_SKIP(Init());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetDescriptorPool-descriptorPool-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkResetDescriptorPool-descriptorPool-parameter");
     constexpr uint64_t fake_pool_handle = 0xbaad6001;
     VkDescriptorPool bad_pool = CastFromUint64<VkDescriptorPool>(fake_pool_handle);
     vk::ResetDescriptorPool(device(), bad_pool, 0);
@@ -185,7 +185,7 @@ TEST_F(NegativeDescriptors, DescriptorSet) {
 
     m_commandBuffer->begin();
     // Set invalid set
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &bad_set,
                               0, NULL);
     m_errorMonitor->VerifyFound();
@@ -196,7 +196,7 @@ TEST_F(NegativeDescriptors, DescriptorSet) {
     VkDescriptorSet good_set = descriptor_set.set_;
 
     // Set out of range firstSet and descriptorSetCount sum
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-firstSet-00360");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-firstSet-00360");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1, &good_set,
                               0, NULL);
@@ -209,7 +209,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayout) {
     // ObjectTracker should catch this.
     constexpr uint64_t fake_layout_handle = 0xbaad6001;
     VkDescriptorSetLayout bad_layout = CastFromUint64<VkDescriptorSetLayout>(fake_layout_handle);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter");
     RETURN_IF_SKIP(Init());
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
@@ -253,7 +253,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
     // 1) The uniform buffer is intentionally invalid here
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00324");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00324");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -273,21 +273,21 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     descriptor_write.dstBinding = 0;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 5;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -311,8 +311,8 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     imageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     descriptor_write.pImageInfo = imageInfo;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00318");  // binding 2
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");  // binding 3
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00318");  // binding 2
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");  // binding 3
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -329,27 +329,27 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     descriptor_write.dstBinding = 3;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04149");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04149");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 7;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     imageInfo[0].sampler = sampler.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04150");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04150");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstBinding = 8;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04151");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04151");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // 5) Attempt to update an immutable sampler
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02752");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02752");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }
@@ -383,7 +383,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
     vkt::ImageView image_view(*m_device, image_view_ci);
     descriptor_set.WriteDescriptorImageInfo(0, image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00336");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00336");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -455,7 +455,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
         m_commandBuffer->end();
     }
     // buffer2 just went out of scope and was destroyed
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 }
@@ -503,7 +503,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
 
     // Attempt to submit cmd buffer
     // Invalid VkBuffer
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 }
@@ -547,7 +547,7 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
                               &pipe.descriptor_set_->set_, 0, NULL);
 
     // Invalid VkBuffer - The check is made at Draw time.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is invalid or has been destroyed");
+    m_errorMonitor->SetDesiredError("that is invalid or has been destroyed");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -722,7 +722,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptorSet, 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " that is invalid or has been destroyed.");
+    m_errorMonitor->SetDesiredError(" that is invalid or has been destroyed.");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -743,7 +743,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     // Destroy sampler invalidates the cmd buffer, causing error on submit
     tmp_sampler.destroy();
     // Attempt to submit cmd buffer
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 
@@ -753,7 +753,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
 
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_commandBuffer->begin(&info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -788,12 +788,12 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     m_default_queue->submit(*m_commandBuffer);
 
     // Immediately try to update the descriptor set in the active command buffer - failure expected
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-None-03047");
+    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-None-03047");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // Immediately try to destroy the descriptor set in the active command buffer - failure expected
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309");
+    m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-pDescriptorSets-00309");
     vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &descriptorSet);
     m_errorMonitor->VerifyFound();
 
@@ -807,7 +807,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::FreeDescriptorSets(device(), ds_pool.handle(), 1, &descriptorSet);
 
     // Attempt to submit cmd buffer containing the freed descriptor set
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->submit(*m_commandBuffer, false);
     m_errorMonitor->VerifyFound();
 }
@@ -894,7 +894,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -995,7 +995,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             if (positive_test || (test_type == kExternal)) {
             } else {
                 for (const auto &err : internal_errors) {
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
+                    m_errorMonitor->SetDesiredError(err);
                 }
             }
             vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
@@ -1011,7 +1011,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             if (positive_test || (test_type == kInternal)) {
             } else {
                 for (const auto &err : external_errors) {
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
+                    m_errorMonitor->SetDesiredError(err);
                 }
             }
             m_default_queue->submit(cmd_buf, false);
@@ -1089,7 +1089,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     // Submit cmd buffer to put pool in-flight
     m_default_queue->submit(*m_commandBuffer);
     // Reset pool while in-flight, causing error
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetDescriptorPool-descriptorPool-00313");
+    m_errorMonitor->SetDesiredError("VUID-vkResetDescriptorPool-descriptorPool-00313");
     vk::ResetDescriptorPool(device(), descriptor_set.pool_, 0);
     m_errorMonitor->VerifyFound();
     m_default_queue->wait();
@@ -1142,7 +1142,7 @@ TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     // Break memory binding and attempt update
     image.memory().destroy();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -1174,19 +1174,19 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
     uint32_t pDynOff[2] = {0, 756};
     // Now cause error b/c too many dynOffsets in array for # of dyn descriptors
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 2, pDynOff);
     m_errorMonitor->VerifyFound();
     pDynOff[0] = 512;
     // Finally cause error due to dynamicOffset being too big
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
@@ -1238,7 +1238,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetCasesMaintenance6) {
     bind_ds_info.dynamicOffsetCount = 0;
     bind_ds_info.pDynamicOffsets = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359");
     vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1273,13 +1273,13 @@ TEST_F(NegativeDescriptors, BindDescriptorSetsInfoPipelineLayout) {
     bind_ds_info.dynamicOffsetCount = 0;
     bind_ds_info.pDynamicOffsets = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-layout-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-layout-parameter");
     vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 
     bind_ds_info.layout = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-None-09495");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindDescriptorSetsInfoKHR-layout-09496");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-None-09495");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-layout-09496");
     vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1287,7 +1287,7 @@ TEST_F(NegativeDescriptors, BindDescriptorSetsInfoPipelineLayout) {
 TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt to update a descriptor with a non-sparse buffer that doesn't have memory bound");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00329");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1381,7 +1381,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     if (partial_size > 1) {
         // non multiple of alignment
         offsets[4] = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971");
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5,
                                   offsets);
         m_errorMonitor->VerifyFound();
@@ -1391,14 +1391,14 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     // Larger than buffer
     const uint32_t partial_size32 = static_cast<uint32_t>(partial_size);
     offsets[0] = partial_size32;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[0] = 0;
 
     // Larger than buffer
     offsets[1] = partial_size32;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[1] = 0;
@@ -1409,7 +1409,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
 
     // Now an extra increment larger than buffer
     offsets[2] = partial_size32 * 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[2] = 0;
@@ -1419,7 +1419,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
 
     offsets[3] = partial_size32 * 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[3] = 0;
@@ -1431,7 +1431,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     // Now an extra increment larger than buffer
     // tests (offset + range + dynamic_offset)
     offsets[4] = partial_size32 * 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
 
@@ -1472,9 +1472,9 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     descriptor_write.pBufferInfo = buff_info;
 
     // all 3 descriptors produce this error
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-02998");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-02998");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-02998");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -1503,8 +1503,8 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
 
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
     // The 2 active descriptors produce this error
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, BINDING_COUNT, dyn_off);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
@@ -1526,7 +1526,7 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     // wrong type
     descriptor_set.WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00319");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00319");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -1664,13 +1664,13 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     //  Second disturb early and late sets and verify INFO msgs
     // VerifySetLayoutCompatibility fail cases:
     // 1. invalid VkPipelineLayout (layout) passed into vk::CmdBindDescriptorSets
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-layout-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-layout-parameter");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                               CastToHandle<VkPipelineLayout, uintptr_t>(0xbaadb1be), 0, 1, &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // 2. layoutIndex exceeds # of layouts in layout
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " attempting to bind set to index 1");
+    m_errorMonitor->SetDesiredError(" attempting to bind set to index 1");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindDescriptorSets-firstSet-00360");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, single_pipe_layout.handle(), 0, 2,
                               &descriptorSet[0], 0, NULL);
@@ -1678,19 +1678,19 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
 
     // 3. Pipeline setLayout[0] has 2 descriptors, but set being bound has 5
     // descriptors
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " has 2 total descriptors, but ");
+    m_errorMonitor->SetDesiredError(" has 2 total descriptors, but ");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_one_desc.handle(), 0, 1,
                               &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // 4. same # of descriptors but mismatch in type
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " is type 'VK_DESCRIPTOR_TYPE_SAMPLER' but binding ");
+    m_errorMonitor->SetDesiredError(" is type 'VK_DESCRIPTOR_TYPE_SAMPLER' but binding ");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_five_samp.handle(), 0, 1,
                               &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();
 
     // 5. same # of descriptors but mismatch in stageFlags
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " has stageFlags VK_SHADER_STAGE_FRAGMENT_BIT but binding 0 for ");
+    m_errorMonitor->SetDesiredError(" has stageFlags VK_SHADER_STAGE_FRAGMENT_BIT but binding 0 for ");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_fs_only.handle(), 0, 1,
                               &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();
@@ -1707,7 +1707,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
                               &descriptorSet[0], 0, NULL);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_bad_set0.handle(), 1, 1,
                               &descriptorSet[1], 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
 
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1716,7 +1716,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     // VkPipelineLayout (diff stageFlags in this case)
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2,
                               &descriptorSet[0], 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1879,7 +1879,7 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.pBufferInfo = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-08766");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-08766");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -1991,7 +1991,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
 
 TEST_F(NegativeDescriptors, DSTypeMismatch) {
     // Create DS w/ layout of one type and attempt Update w/ mis-matched type
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00319");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00319");
 
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2009,7 +2009,7 @@ TEST_F(NegativeDescriptors, DSTypeMismatch) {
 
 TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
     // For overlapping Update, have arrayIndex exceed that of layout
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
 
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2040,7 +2040,7 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
 TEST_F(NegativeDescriptors, DSUpdateIndex) {
     // Create layout w/ count of 1 and attempt update to that layout w/ binding index 2
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstBinding-00315");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00315");
 
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2070,7 +2070,7 @@ TEST_F(NegativeDescriptors, DSUpdateEmptyBinding) {
     // This is the wrong type, but empty binding error will be flagged first
     descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstBinding-00316");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -2079,7 +2079,7 @@ TEST_F(NegativeDescriptors, DSUpdateStruct) {
     // Call UpdateDS w/ struct type other than valid VK_STRUCTUR_TYPE_UPDATE_*
     // types
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, ".sType must be VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET");
+    m_errorMonitor->SetDesiredError(".sType must be VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET");
 
     RETURN_IF_SKIP(Init());
 
@@ -2108,7 +2108,7 @@ TEST_F(NegativeDescriptors, DSUpdateStruct) {
 
 TEST_F(NegativeDescriptors, SampleDescriptorUpdate) {
     // Create a single Sampler descriptor and send it an invalid Sampler
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00325");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
 
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2126,7 +2126,7 @@ TEST_F(NegativeDescriptors, ImageViewDescriptorUpdate) {
     // Create a single combined Image/Sampler descriptor and send it an invalid
     // imageView
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02996");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02996");
 
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device,
@@ -2152,7 +2152,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDescriptorUpdate) {
 
     VkImageView view = CastToHandle<VkImageView, uintptr_t>(0xbaadbeef);  // invalid imageView object
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-07683");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-07683");
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
@@ -2179,7 +2179,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
     descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-01976");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageView-01976");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -2187,7 +2187,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
 TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     // Create DS w/ layout of 2 types, write update 1 and attempt to copy-update
     // into the other
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02632");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-02632");
 
     RETURN_IF_SKIP(Init());
 
@@ -2218,7 +2218,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
 
     m_errorMonitor->VerifyFound();
     // Now perform a copy update that fails due to binding out of bounds
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcBinding-00345");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcBinding-00345");
     copy_ds_update = vku::InitStructHelper();
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 3;  // ERROR : Invalid binding for matching layout
@@ -2229,7 +2229,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
 
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-00347");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-00347");
     copy_ds_update = vku::InitStructHelper();
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 0;
@@ -2241,9 +2241,9 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 
     // Now perform a copy update that fails due to binding out of bounds
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcArrayElement-00346");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstArrayElement-00348");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02632");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcArrayElement-00346");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstArrayElement-00348");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-02632");
 
     copy_ds_update = vku::InitStructHelper();
     copy_ds_update.srcSet = descriptor_set.set_;
@@ -2256,7 +2256,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 
     // Now perform a copy into an immutable sampler
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02753");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-02753");
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 1;
     copy_ds_update.dstSet = descriptor_set_2.set_;
@@ -2291,9 +2291,8 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
                                              VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
     vkt::ImageView view(*m_device, ivci);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkDescriptorImageInfo-imageView-07796");  // missing VK_EXT_image_2d_view_of_3d
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-descriptorType-06714");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageView-07796");  // missing VK_EXT_image_2d_view_of_3d
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-descriptorType-06714");
 
     VkDescriptorImageInfo dii = {VK_NULL_HANDLE, view.handle(), VK_IMAGE_LAYOUT_GENERAL};
     auto write = vku::InitStruct<VkWriteDescriptorSet>(nullptr, descriptor_set.set_, 0u, 0u, 1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -2362,17 +2361,17 @@ TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     bad_src.layout_ = vkt::DescriptorSetLayout();
 
     // Trigger the three invalid use errors
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kWriteDestroyedLayout);
+    m_errorMonitor->SetDesiredError(kWriteDestroyedLayout);
     write_descriptor.dstSet = bad_dst.set_;
     vk::UpdateDescriptorSets(device(), 1, &write_descriptor, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kCopyDstDestroyedLayout);
+    m_errorMonitor->SetDesiredError(kCopyDstDestroyedLayout);
     copy_descriptor.dstSet = bad_dst.set_;
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_descriptor);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kCopySrcDestroyedLayout);
+    m_errorMonitor->SetDesiredError(kCopySrcDestroyedLayout);
     copy_descriptor.srcSet = bad_src.set_;
     copy_descriptor.dstSet = good_dst.set_;
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_descriptor);
@@ -2395,13 +2394,13 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_write.pBufferInfo = &buffer_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstSet-00320");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstSet-00320");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     VkDescriptorSet null_set = CastFromUint64<VkDescriptorSet>(0);
     descriptor_write.dstSet = null_set;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandle");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -2420,7 +2419,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
         VkDescriptorPoolCreateInfo invalid_dp_ci = dp_ci_template;
         invalid_dp_ci.maxSets = 0;  // invalid maxSets value
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-descriptorPoolOverallocation-09227");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-descriptorPoolOverallocation-09227");
         {
             VkDescriptorPool pool;
             vk::CreateDescriptorPool(device(), &invalid_dp_ci, nullptr, &pool);
@@ -2436,7 +2435,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
         VkDescriptorPoolCreateInfo dp_ci = dp_ci_template;
         dp_ci.pPoolSizes = &invalid_dp_size;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolSize-descriptorCount-00302");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolSize-descriptorCount-00302");
         {
             VkDescriptorPool pool;
             vk::CreateDescriptorPool(device(), &dp_ci, nullptr, &pool);
@@ -2473,7 +2472,7 @@ TEST_F(NegativeDescriptors, DuplicateDescriptorBinding) {
     ds_layout_ci.bindingCount = NUM_BINDINGS;
     ds_layout_ci.pBindings = dsl_binding;
     VkDescriptorSetLayout ds_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-binding-00279");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-binding-00279");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -2532,10 +2531,10 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         ds_layout_ci.pBindings = dslb_vec.data();
         vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02214");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02216");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
 
         VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.setLayoutCount = 1;
@@ -2552,8 +2551,8 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         VkDescriptorSetLayout ds_layout;
         ds_layout_ci.bindingCount = 1;
         ds_layout_ci.pBindings = &dslb;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-08004");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-02209");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-08004");
         vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -2574,7 +2573,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
 
     {
         VkDescriptorPool ds_pool = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolSize-type-02218");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolSize-type-02218");
         vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &ds_pool);
         m_errorMonitor->VerifyFound();
     }
@@ -2622,21 +2621,21 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     descriptor_write.pNext = &write_inline_uniform;
 
     // one for dataSiz and for descriptorCount
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02220");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02220");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
     write_inline_uniform.dataSize = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02219");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02219");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.pNext = nullptr;
     descriptor_write.dstArrayElement = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02221");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02221");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -2654,19 +2653,19 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     copy_ds_update.descriptorCount = 4;
 
     copy_ds_update.srcArrayElement = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcBinding-02223");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcBinding-02223");
     vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 
     copy_ds_update.srcArrayElement = 0;
     copy_ds_update.dstArrayElement = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02224");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-02224");
     vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 
     copy_ds_update.dstArrayElement = 0;
     copy_ds_update.descriptorCount = 5;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcBinding-02225");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcBinding-02225");
     vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 
@@ -2693,7 +2692,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &dslb;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04604");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-04604");
     VkDescriptorSetLayout ds_layout = {};
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
@@ -2715,7 +2714,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool ds_pool = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
     vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &ds_pool);
     m_errorMonitor->VerifyFound();
 
@@ -2723,7 +2722,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 0;
     ds_pool_ci.pNext = &pool_inline_info;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-09424");
     vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &ds_pool);
     m_errorMonitor->VerifyFound();
 }
@@ -2755,7 +2754,7 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
     descriptor_write.pTexelBufferView = nullptr;
 
     // sum of 3 pointing into array of 2 bindings
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
     descriptor_write.dstArrayElement = 2;
     vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
@@ -2769,7 +2768,7 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
     descriptor_write.descriptorCount = 2;
     descriptor_write.pImageInfo = image_infos;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
     descriptor_write.dstArrayElement = 3;
     vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
@@ -2801,7 +2800,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutMisc) {
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
 
     dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-01510");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-01510");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -2823,7 +2822,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
     ds_layout_ci.pBindings = &dsl_binding;
 
     VkDescriptorSetLayout ds_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorCount-09465");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorCount-09465");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -2847,8 +2846,8 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutImmutableSamplers) {
 
     VkDescriptorSetLayout ds_layout;
     // One for each descriptor count
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -2872,8 +2871,8 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutNullImmutableSamplers) {
 
     VkDescriptorSetLayout ds_layout;
     // One for each descriptor count
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-00282");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -2888,19 +2887,19 @@ TEST_F(NegativeDescriptors, NullDescriptorsDisabled) {
                                                      {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02997");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02997");
     descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set.UpdateDescriptorSets();
     descriptor_set.Clear();
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-02998");
     descriptor_set.WriteDescriptorBufferInfo(1, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
     descriptor_set.Clear();
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02995");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02995");
     VkBufferView buffer_view = VK_NULL_HANDLE;
     descriptor_set.WriteDescriptorBufferView(2, buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -2910,7 +2909,7 @@ TEST_F(NegativeDescriptors, NullDescriptorsDisabled) {
     m_commandBuffer->begin();
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceSize offset = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-04001");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-pBuffers-04001");
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
     m_errorMonitor->VerifyFound();
 }
@@ -2947,13 +2946,13 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02999");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-02999");
     descriptor_set.WriteDescriptorBufferInfo(1, VK_NULL_HANDLE, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 
     offset = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-04002");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-pBuffers-04002");
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
@@ -3097,7 +3096,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09002");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09002");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3125,7 +3124,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool bad_pool;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-flags-04607");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-flags-04607");
     vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 }
@@ -3147,13 +3146,13 @@ TEST_F(NegativeDescriptors, MissingMutableDescriptorTypeFeature) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool bad_pool;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-flags-04609");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-flags-04609");
     vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 
     ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     ds_pool_ci.flags = 0;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608");
     vk::CreateDescriptorPool(device(), &ds_pool_ci, NULL, &bad_pool);
     m_errorMonitor->VerifyFound();
 }
@@ -3199,13 +3198,13 @@ TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
 
     {
         VkDescriptorPool pool;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
         vk::CreateDescriptorPool(device(), &ds_pool_ci, nullptr, &pool);
         m_errorMonitor->VerifyFound();
 
         lists[1].pDescriptorTypes = first_types;
         mdtci.mutableDescriptorTypeListCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787");
         vk::CreateDescriptorPool(device(), &ds_pool_ci, nullptr, &pool);
         m_errorMonitor->VerifyFound();
     }
@@ -3258,7 +3257,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
     alloc_info.pSetLayouts = &set_layout;
 
     VkDescriptorSet descriptor_set;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610");
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
@@ -3430,7 +3429,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = &buffer_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstSet-04611");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstSet-04611");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
@@ -3469,38 +3468,38 @@ TEST_F(NegativeDescriptors, MutableDescriptors) {
 
     VkDescriptorSetLayout ds_layout;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-descriptorTypeCount-04599");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-descriptorTypeCount-04599");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     mutable_descriptor_type_list.descriptorTypeCount = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-descriptorTypeCount-04597");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-descriptorTypeCount-04597");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     mutable_descriptor_type_list.descriptorTypeCount = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04598");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04598");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04600");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04600");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04601");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04601");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04602");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04602");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04603");
+    m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04603");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -3566,7 +3565,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
     update_template_ci.descriptorSetLayout = ds_layout_handle;
 
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-04615");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-04615");
     vk::CreateDescriptorUpdateTemplate(device(), &update_template_ci, nullptr, &update_template);
     m_errorMonitor->VerifyFound();
 }
@@ -3587,7 +3586,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
     ds_layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayout ds_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
@@ -3609,7 +3608,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     binding.pImmutableSamplers = &sampler.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
@@ -3636,7 +3635,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
     ds_layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayout ds_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04596");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04596");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
@@ -3656,7 +3655,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
     ds_layout_ci.pNext = &mdtci;
     ds_layout_ci.flags = 0;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-mutableDescriptorType-04595");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-mutableDescriptorType-04595");
     m_errorMonitor->SetUnexpectedError(
         "VUID-VkDescriptorSetLayoutCreateInfo-pNext-pNext");  // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2457
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
@@ -3754,7 +3753,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     descriptor_write.pImageInfo = &image_info;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06537");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06537");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
@@ -3857,7 +3856,7 @@ TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     descriptor_write.pImageInfo = &image_info;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09000");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09000");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
@@ -3982,7 +3981,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
                               &descriptor_set_storage_image.set_, 0, nullptr);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
                               &descriptor_set_input_attachment.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06539");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06539");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
@@ -4072,7 +4071,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
     create_info.pBindings = &binding;
 
     VkDescriptorSetLayout setLayout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04605");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-04605");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
     vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
     m_errorMonitor->VerifyFound();
@@ -4119,7 +4118,7 @@ TEST_F(NegativeDescriptors, BindingDescriptorSetFromHostOnlyPool) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -4208,7 +4207,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         copy_set.dstBinding = 0;
         copy_set.descriptorCount = 1;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstSet-04612");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstSet-04612");
         vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
@@ -4288,7 +4287,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         copy_set.dstBinding = 0;
         copy_set.descriptorCount = 1;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstSet-04614");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstSet-04614");
         vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
@@ -4387,7 +4386,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         copy_set.descriptorCount = 2;
 
         // copying both mutables should fail because element 1 is the wrong type
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-04613");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcSet-04613");
         vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
 
@@ -4397,7 +4396,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         // copying element 1 fail because it is the wrong type
         copy_set.srcArrayElement = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-04613");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcSet-04613");
         vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
@@ -4492,7 +4491,7 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
 
     vk::DestroySampler(device(), sampler, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00325");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
     m_errorMonitor->VerifyFound();
 }
@@ -4525,8 +4524,8 @@ TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutInlineUniformBlockFlags) {
     layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayout set_layout;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingInlineUniformBlockUpdateAfterBind-02211");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingInlineUniformBlockUpdateAfterBind-02211");
     vk::CreateDescriptorSetLayout(*m_device, &layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -4575,7 +4574,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
                               1, &combined_image_set.set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
@@ -4607,7 +4606,7 @@ TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutFlags) {
     layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayout set_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-None-03011");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-None-03011");
     vk::CreateDescriptorSetLayout(*m_device, &layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -4680,7 +4679,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06479");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06479");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4699,7 +4698,7 @@ TEST_F(NegativeDescriptors, BindDescriptorWithoutPipelineLayout) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandle");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
     VkPipelineLayout null_layout = CastFromUint64<VkPipelineLayout>(0);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, null_layout, 0, 1, &descriptor_set.set_,
                               0, nullptr);
@@ -4773,7 +4772,7 @@ TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-07795");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageView-07795");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -4814,13 +4813,13 @@ TEST_F(NegativeDescriptors, CopyDescriptorSetMissingSrcFlag) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-01918");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcSet-01918");
     vk::UpdateDescriptorSets(*m_device, 0u, nullptr, 1u, &copy_descriptor_set);
     m_errorMonitor->VerifyFound();
 
     copy_descriptor_set.srcSet = dst_descriptor_set.set_;
     copy_descriptor_set.dstSet = no_flags_set.set_;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcSet-01920");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcSet-01920");
     vk::UpdateDescriptorSets(*m_device, 0u, nullptr, 1u, &copy_descriptor_set);
     m_errorMonitor->VerifyFound();
 
@@ -4843,7 +4842,7 @@ TEST_F(NegativeDescriptors, InvalidDescriptorWriteImageInfo) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493");
+    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493");
     vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -4866,7 +4865,7 @@ TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
     uint32_t dynamic_offset = alignment - 1;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &descriptor_set.set_, 1u, &dynamic_offset);
     m_errorMonitor->VerifyFound();
@@ -4898,8 +4897,7 @@ TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
     ds_layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayout set_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingPartiallyBound-03013");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingPartiallyBound-03013");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
@@ -4907,46 +4905,46 @@ TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
     binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingSampledImageUpdateAfterBind-03006");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingSampledImageUpdateAfterBind-03006");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageImageUpdateAfterBind-03007");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageImageUpdateAfterBind-03007");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageBufferUpdateAfterBind-03008");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageBufferUpdateAfterBind-03008");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageTexelBufferUpdateAfterBind-03010");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageTexelBufferUpdateAfterBind-03010");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUniformTexelBufferUpdateAfterBind-03009");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUniformTexelBufferUpdateAfterBind-03009");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     flag = VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUpdateUnusedWhilePending-03012");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUpdateUnusedWhilePending-03012");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     flag = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingVariableDescriptorCount-03014");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingVariableDescriptorCount-03014");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -4982,21 +4980,21 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
     create_info.pBindings = bindings;
 
     VkDescriptorSetLayout set_layout;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-flags-03003");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-flags-03003");
     vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     create_info.flags = 0u;
     flags_create_info.bindingCount = 2u;
     create_info.bindingCount = 2u;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03004");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03004");
     vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
     flags_create_info.bindingCount = 1u;
     create_info.bindingCount = 1u;
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03015");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03015");
     vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 
@@ -5024,8 +5022,7 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
     allocate_info.pSetLayouts = &ds_layout.handle();
 
     VkDescriptorSet descriptor_set;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045");
     vk::AllocateDescriptorSets(*m_device, &allocate_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
@@ -5072,18 +5069,18 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
 
     VkPipelineLayout pipeline_layout;
     if (binding_count > inline_uniform_block_properties.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
     }
     if (binding_count / 5 > inline_uniform_block_properties.maxPerStageDescriptorInlineUniformBlocks) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02214");
     }
     if (binding_count / 5 > inline_uniform_block_properties.maxPerStageDescriptorInlineUniformBlocks) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");
     }
     if (binding_count > inline_uniform_block_properties.maxDescriptorSetInlineUniformBlocks) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216");
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02216");
     }
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-06531");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-06531");
     vk::CreatePipelineLayout(*m_device, &pipeline_layout_ci, nullptr, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 }
@@ -5160,7 +5157,7 @@ TEST_F(NegativeDescriptors, PushDescriptorWithoutInfo) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494");
     vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();

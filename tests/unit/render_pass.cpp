@@ -753,7 +753,7 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {
     // test RenderPass 1
     refs[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     refs[1].layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-attachment-06244");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo2-attachment-06244");
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkAttachmentReference-separateDepthStencilLayouts-03313",
                          nullptr);
 }
@@ -950,15 +950,15 @@ TEST_F(NegativeRenderPass, AttachmentReferenceSync2Layout) {
     // Use READ_ONLY_OPTIMAL_KHR layout
     refs[0].layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference-synchronization2-06910");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-attachment-06922");
+        m_errorMonitor->SetDesiredError("VUID-VkAttachmentReference-synchronization2-06910");
+        m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-attachment-06922");
         vkt::RenderPass rp(*m_device, rpci);
         m_errorMonitor->VerifyFound();
     }
     {
         safe_VkRenderPassCreateInfo2 rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference2-synchronization2-06910");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06922");
+        m_errorMonitor->SetDesiredError("VUID-VkAttachmentReference2-synchronization2-06910");
+        m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-attachment-06922");
         vkt::RenderPass rp2_core(*m_device, *rpci2.ptr());
         m_errorMonitor->VerifyFound();
     }
@@ -1084,7 +1084,7 @@ TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Just use a dummy Renderpass
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-renderpass");
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     m_errorMonitor->VerifyFound();
@@ -1092,7 +1092,7 @@ TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
     if (rp2Supported) {
         auto subpassBeginInfo = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass2-renderpass");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass2-renderpass");
         vk::CmdBeginRenderPass2KHR(m_commandBuffer->handle(), &m_renderPassBeginInfo, &subpassBeginInfo);
         m_errorMonitor->VerifyFound();
     }
@@ -1408,7 +1408,7 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
         rpci.pAttachments = &depth_stencil_attachment_desc;
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass_desc;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        m_errorMonitor->SetDesiredError(vuid);
         vkt::RenderPass rp(*m_device, rpci);
         m_errorMonitor->VerifyFound();
     };
@@ -1552,7 +1552,7 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
 
     m_default_queue->submit(*m_commandBuffer);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyRenderPass-renderPass-00873");
+    m_errorMonitor->SetDesiredError("VUID-vkDestroyRenderPass-renderPass-00873");
     vk::DestroyRenderPass(device(), rp.Handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
@@ -1610,8 +1610,8 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     image_views[0] = depth_view;
     image_views[1] = resolve_view;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00880");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02634");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-00880");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-02634");
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, image_views, attachmentWidth, attachmentHeight);
     m_errorMonitor->VerifyFound();
 }
@@ -1655,7 +1655,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00099");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00099");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cb.handle());
     m_errorMonitor->VerifyFound();
 
@@ -1682,14 +1682,14 @@ TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
     cbii.framebuffer = CastFromUint64<VkFramebuffer>(0xFFFFEEEE);
     cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     cbbi.pInheritanceInfo = &cbii;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-00055");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-00055");
     vk::BeginCommandBuffer(sec_cb.handle(), &cbbi);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRenderPass, NullRenderPass) {
     // Bind a NULL RenderPass
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1728,7 +1728,7 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
 
     fb_ci.pAttachments = nullptr;
     VkFramebuffer framebuffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-02778");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-02778");
     vk::CreateFramebuffer(device(), &fb_ci, NULL, &framebuffer);
     m_errorMonitor->VerifyFound();
 
@@ -1736,7 +1736,7 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     VkImageView image_views[2] = {render_target_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
 
     fb_ci.pAttachments = image_views;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-02778");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-02778");
     vk::CreateFramebuffer(device(), &fb_ci, NULL, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1744,7 +1744,7 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
 TEST_F(NegativeRenderPass, EndCommandBufferWithinRenderPass) {
     TEST_DESCRIPTION("End a command buffer with an active render pass");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00060");
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00060");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1800,7 +1800,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
@@ -1882,7 +1882,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     m_commandBuffer->BeginRenderPass(rp1.handle(), fb.handle(), 128, 128);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
@@ -1921,7 +1921,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &iv.handle(), 100, 100);
     iv.destroy();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-framebuffer-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
@@ -2045,9 +2045,9 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
         VkRenderPass render_pass = VK_NULL_HANDLE;
 
         if (useLinearColorAttachment) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-linearColorAttachment-06498");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-linearColorAttachment-06498");
         } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-pResolveAttachments-02649");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-pResolveAttachments-02649");
         }
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription-pResolveAttachments-00850");
         vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
@@ -2057,9 +2057,9 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
             safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
             if (useLinearColorAttachment) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-linearColorAttachment-06501");
+                m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-linearColorAttachment-06501");
             } else {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pResolveAttachments-09343");
+                m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-pResolveAttachments-09343");
             }
             m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-externalFormatResolve-09339");
             vk::CreateRenderPass2KHR(device(), create_info2.ptr(), nullptr, &render_pass);
@@ -2137,8 +2137,7 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
     attachmentDescriptions[1].format = depthStencilFormat;
     subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_NONE;
     subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_NONE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
 
@@ -2147,38 +2146,34 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
     attachmentDescriptions[1].format = stencilFormat;
     subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
     subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_NONE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
     subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
 
     // Invalid use of UNUSED
     depthStencilAttachmentReference.attachment = VK_ATTACHMENT_UNUSED;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
     depthStencilAttachmentReference.attachment = 0;
 
     // attachmentCount == 2
     depthStencilResolveAttachmentReference.attachment = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pSubpasses-06473");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo2-pSubpasses-06473");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
     depthStencilResolveAttachmentReference.attachment = 1;
 
     // test invalid sample counts
     attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
     attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
 
     attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_4_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
     attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2186,15 +2181,13 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
     // test resolve and non-resolve formats are not same types
     attachmentDescriptions[0].format = stencilFormat;
     attachmentDescriptions[1].format = depthFormat;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
 
     attachmentDescriptions[0].format = depthFormat;
     attachmentDescriptions[1].format = stencilFormat;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182");
     vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
     m_errorMonitor->VerifyFound();
 
@@ -2205,24 +2198,23 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
         if (ds_resolve_props.independentResolveNone == VK_FALSE) {
             subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_NONE;
             subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-            m_errorMonitor->SetDesiredFailureMsg(
-                kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185");
             vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
             m_errorMonitor->VerifyFound();
         } else {
             if ((ds_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0) {
                 subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
                 subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-                m_errorMonitor->SetDesiredFailureMsg(
-                    kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186");
+                m_errorMonitor->SetDesiredError(
+                    "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186");
                 vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
                 m_errorMonitor->VerifyFound();
             }
             if ((ds_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0) {
                 subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
                 subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-                m_errorMonitor->SetDesiredFailureMsg(
-                    kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186");
+                m_errorMonitor->SetDesiredError(
+                    "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186");
                 vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
                 m_errorMonitor->VerifyFound();
             }
@@ -2233,15 +2225,14 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
         if ((ds_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) == 0) {
             subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
             subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183");
             vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
             m_errorMonitor->VerifyFound();
         }
         if ((ds_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) == 0) {
             subpassDescriptionDSR.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
             subpassDescriptionDSR.stencilResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184");
             vk::CreateRenderPass2KHR(device(), &renderPassCreateInfo, nullptr, &renderPass);
             m_errorMonitor->VerifyFound();
         }
@@ -2266,28 +2257,28 @@ TEST_F(NegativeRenderPass, RenderArea) {
     rpbinfo.pClearValues = m_renderPassClearValues.data();
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02850");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02850");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.offset.x = 0;
     rpbinfo.renderArea.offset.y = -128;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02851");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02851");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.offset.y = 0;
     rpbinfo.renderArea.extent.width = m_width + 128;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02852");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02852");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.extent.width = m_width;
     rpbinfo.renderArea.extent.height = m_height + 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02853");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02853");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
@@ -2325,8 +2316,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
@@ -2335,8 +2326,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     renderArea.extent.width = m_width + 1;
     renderArea.extent.height = m_height;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02856");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-02857");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02856");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02857");
     m_commandBuffer->BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
@@ -2373,8 +2364,7 @@ TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
     rp.AddDepthStencilAttachment(1);
     rp.AddDepthStencilResolveAttachment(0, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651");
     rp.CreateRenderPass();
     m_errorMonitor->VerifyFound();
 }
@@ -2405,7 +2395,7 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
     render_pass_ci.pSubpasses = &subpass;
 
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06698");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06698");
     vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
@@ -2423,7 +2413,7 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
     render_pass_ci_2.subpassCount = 1;
     render_pass_ci_2.pSubpasses = &subpass_2;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-format-09332");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription2-format-09332");
     vk::CreateRenderPass2(device(), &render_pass_ci_2, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -2573,7 +2563,7 @@ TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &image_info;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00337");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00337");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -2607,7 +2597,7 @@ TEST_F(NegativeRenderPass, StencilLoadOp) {
     render_pass_ci.pAttachments = &attach_desc;
 
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-pNext-06704");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription2-pNext-06704");
     vk::CreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
@@ -2618,7 +2608,7 @@ TEST_F(NegativeRenderPass, StencilLoadOp) {
     attach_desc_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.pNext = &attach_desc_stencil_layout;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-pNext-06705");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription2-pNext-06705");
     vk::CreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -2646,7 +2636,7 @@ TEST_F(NegativeRenderPass, ViewMask) {
     render_pass_ci.pAttachments = &attach_desc;
 
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-multiview-06558");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-multiview-06558");
     vk::CreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -2673,7 +2663,7 @@ TEST_F(NegativeRenderPass, AllViewMasksZero) {
     render_pass_ci.dependencyCount = 1;
     render_pass_ci.pDependencies = &dependency;
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-pNext-02514");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo-pNext-02514");
     vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
@@ -2682,7 +2672,7 @@ TEST_F(NegativeRenderPass, AllViewMasksZero) {
     render_pass_multiview_ci.correlationMaskCount = 1;
     render_pass_multiview_ci.pCorrelationMasks = &correlation_mask;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-pNext-02515");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo-pNext-02515");
     vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -2722,7 +2712,7 @@ TEST_F(NegativeRenderPass, AttachmentUndefinedLayout) {
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06700");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06700");
     VkRenderPass render_pass;
     vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
@@ -2785,21 +2775,21 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
 
     VkRenderPass rp;
     // attach_desc[0].samples != ms_state.rasterizationSamples
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pNext-06870");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-pNext-06870");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     attach_desc[0].samples = VK_SAMPLE_COUNT_2_BIT;
     subpass.pDepthStencilAttachment = &depthRef;
     // Depth VK_SAMPLE_COUNT_1_BIT, no VkSubpassDescriptionDepthStencilResolve in pNext
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pNext-06871");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-pNext-06871");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     VkSubpassDescriptionDepthStencilResolve depth_stencil_resolve = vku::InitStructHelper();
     ms_render_to_ss.pNext = &depth_stencil_resolve;
     // VkSubpassDescriptionDepthStencilResolve depthResolveMode and stencilResolveMode both VK_RESOLVE_MODE_NONE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06873");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06873");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
@@ -2829,7 +2819,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     if (unsupported_depth != VK_RESOLVE_MODE_NONE) {
         depth_stencil_resolve.depthResolveMode = unsupported_depth;
         // depthResolveMode unsupported
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06874");
+        m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06874");
         vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
         m_errorMonitor->VerifyFound();
         depth_stencil_resolve.depthResolveMode = VK_RESOLVE_MODE_NONE;
@@ -2839,7 +2829,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         attach_desc[1].format = VK_FORMAT_S8_UINT;
         depth_stencil_resolve.stencilResolveMode = unsupported_stencil;
         // stencilResolveMode unsupported
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06875");
+        m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06875");
         vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
         m_errorMonitor->VerifyFound();
         depth_stencil_resolve.stencilResolveMode = VK_RESOLVE_MODE_NONE;
@@ -2852,7 +2842,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         depth_stencil_resolve.stencilResolveMode = supported_stencil;
         attach_desc[1].format = VK_FORMAT_D32_SFLOAT_S8_UINT;
         // Stencil and depth resolve modes must be the same
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06876");
+        m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06876");
         vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
         m_errorMonitor->VerifyFound();
     }
@@ -2863,7 +2853,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         depth_stencil_resolve.stencilResolveMode = supported_stencil;
         attach_desc[1].format = VK_FORMAT_D32_SFLOAT_S8_UINT;
         // Stencil and depth resolve modes must be the same or one of them must be VK_RESOLVE_MODE_NONE
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06877");
+        m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06877");
         vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
         m_errorMonitor->VerifyFound();
     }
@@ -2873,7 +2863,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
     // rasterizationSamples can't be VK_SAMPLE_COUNT_1_BIT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878");
+    m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
     attach_desc[0].samples = VK_SAMPLE_COUNT_2_BIT;
@@ -2899,7 +2889,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     pipe_helper.ms_ci_ = ms_state;
 
     // ms_render_to_ss.rasterizationSamples != ms_state.rasterizationSamples
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06854");
     pipe_helper.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -2960,7 +2950,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     m_commandBuffer->begin();
     // Attachments must have a sample count that is either VK_SAMPLE_COUNT_1_BIT or
     // VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06858");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06858");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -2971,7 +2961,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.imageView = one_count_image_view.handle();
     // Attachments with a sample count of VK_SAMPLE_COUNT_1_BIT must have been created with
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06859");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06859");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -2986,14 +2976,14 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     begin_rendering_info.pNext = nullptr;
     color_attachment.imageView = good_one_count_image_view.handle();
     // If resolveMode is not VK_RESOLVE_MODE_NONE, imageView must not have a sample count of VK_SAMPLE_COUNT_1_BIT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06861");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     color_attachment.imageView = two_count_image_view.handle();
     color_attachment.resolveImageView = VK_NULL_HANDLE;
     // If resolveMode is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06862");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -3001,7 +2991,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.imageView = good_one_count_image_view.handle();
     color_attachment.resolveImageView = good_one_count_image_view.handle();
     // If imageView has a sample count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06863");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06863");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -3073,7 +3063,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         color_attachment.resolveImageView = VK_NULL_HANDLE;
         color_attachment.imageView = unsampleable_image_view.handle();
         // Attachment must have a format that supports the sample count specified in rasterizationSamples
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880");
+        m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880");
         m_commandBuffer->BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
 
@@ -3087,7 +3077,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
                                                                           &unsampleable_image_view.handle(), 64u, 64u, 1u);
 
         VkFramebuffer unsampleable_fb;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-samples-07009");
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-samples-07009");
         vk::CreateFramebuffer(device(), &unsampleable_fbci, nullptr, &unsampleable_fb);
         m_errorMonitor->VerifyFound();
         attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -3123,7 +3113,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
             renderPassBeginInfo.renderArea.extent.width = 64;
             renderPassBeginInfo.renderArea.extent.height = 64;
             renderPassBeginInfo.framebuffer = imageless_fb.handle();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
+            m_errorMonitor->SetDesiredError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
             m_commandBuffer->BeginRenderPass(renderPassBeginInfo);
             m_errorMonitor->VerifyFound();
             attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -3142,7 +3132,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     VkFramebuffer fb;
     // Framebuffer attachments with VK_SAMPLE_COUNT_1_BIT must have been created with
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-samples-06881");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-samples-06881");
     vk::CreateFramebuffer(device(), &fbci, nullptr, &fb);
     m_errorMonitor->VerifyFound();
 
@@ -3152,7 +3142,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     VkImage bad_flag_image;
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT requires VK_SAMPLE_COUNT_1_BIT
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-06883");
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-06883");
     vk::CreateImage(device(), &image_create_info, nullptr, &bad_flag_image);
     m_errorMonitor->VerifyFound();
 
@@ -3169,7 +3159,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     bad_flag_image = VK_NULL_HANDLE;
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT requires multisampledRenderToSingleSampled feature
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882");
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882");
     vk::CreateImage(second_device, &image_create_info, nullptr, &bad_flag_image);
     m_errorMonitor->VerifyFound();
     vk::DestroyDevice(second_device, nullptr);
@@ -3184,7 +3174,7 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionUndefinedFormat) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06698");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06698");
     rp.CreateRenderPass();
     m_errorMonitor->VerifyFound();
 }
@@ -3249,12 +3239,12 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_commandBuffer->BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
@@ -3336,11 +3326,11 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_commandBuffer->BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
@@ -3410,14 +3400,14 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->BeginRenderPass(render_pass1.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-02684");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3760,14 +3750,14 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
 
         {
             depth_stencil_ref.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06251");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-attachment-06251");
             vkt::RenderPass rp2(*m_device, rpci2);
             m_errorMonitor->VerifyFound();
         }
 
         {
             depth_stencil_ref.layout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06251");
+            m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-attachment-06251");
             vkt::RenderPass rp2(*m_device, rpci2);
             m_errorMonitor->VerifyFound();
         }
@@ -3779,11 +3769,11 @@ TEST_F(NegativeRenderPass, BeginInfoWithoutRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-parameter");
     m_renderPassBeginInfo.renderPass = CastFromUint64<VkRenderPass>(0xFFFFEEEE);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredHandle");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
     m_renderPassBeginInfo.renderPass = VK_NULL_HANDLE;
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
@@ -3795,7 +3785,7 @@ TEST_F(NegativeRenderPass, BeginInfoWithoutFramebuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-framebuffer-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
     m_renderPassBeginInfo.framebuffer = CastFromUint64<VkFramebuffer>(0xFFFFEEEE);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
@@ -3807,7 +3797,7 @@ TEST_F(NegativeRenderPass, EndWithoutRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRenderPass-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndRenderPass-renderpass");
     m_commandBuffer->EndRenderPass();
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -3818,7 +3808,7 @@ TEST_F(NegativeRenderPass, RenderPassBegin) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), nullptr, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -3849,7 +3839,7 @@ TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
 
     vkt::CommandBuffer secondary_cmd_buffer(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-00055");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-00055");
     vk::BeginCommandBuffer(secondary_cmd_buffer.handle(), &cmd_buffer_begin_info);
     m_errorMonitor->VerifyFound();
 }
@@ -3860,12 +3850,12 @@ TEST_F(NegativeRenderPass, ZeroRenderArea) {
     InitRenderTarget();
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-None-08996");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-None-08996");
     m_renderPassBeginInfo.renderArea.extent = {0, 64};
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-None-08997");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-None-08997");
     m_renderPassBeginInfo.renderArea.extent = {64, 0};
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
@@ -3898,13 +3888,13 @@ TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionDSLayout) {
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &description, 1u, &subpass, 0u, nullptr);
 
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06243");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06243");
     vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
     description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06242");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06242");
     vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -3931,13 +3921,13 @@ TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionColorLayout) {
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &description, 1u, &subpass, 0u, nullptr);
 
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06488");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06488");
     vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
     description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
     description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06487");
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06487");
     vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -3982,12 +3972,12 @@ TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
     framebuffer_ci.layers = 1u;
 
     VkFramebuffer framebuffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00877");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-00877");
     vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 
     framebuffer_ci.renderPass = input_attachment_render_pass.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-00879");
     vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
@@ -4028,7 +4018,7 @@ TEST_F(NegativeRenderPass, ViewMaskWithoutFeature) {
     render_pass_ci.pSubpasses = &subpass_description;
 
     VkRenderPass render_pass;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassMultiviewCreateInfo-multiview-06555");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassMultiviewCreateInfo-multiview-06555");
     vk::CreateRenderPass(*m_device, &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
@@ -4064,7 +4054,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     m_commandBuffer->begin();
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass-initialLayout-00900");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-initialLayout-00900");
     m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4076,8 +4066,8 @@ TEST_F(NegativeRenderPass, ImageSubresourceOverlapBetweenCurrentRenderPassAndDes
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
 
     const uint32_t width = 16;
     const uint32_t height = 16;
@@ -4150,7 +4140,7 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_renderPassBeginInfo.renderArea = {{0, 0}, {stripe_width * stripe_count, stripe_height}};
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-09450");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-09450");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4168,9 +4158,9 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     }
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4184,9 +4174,9 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     }
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09453");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4201,8 +4191,8 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     }
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09453");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-09539");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-09539");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4217,9 +4207,9 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     }
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09454");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09455");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4234,8 +4224,8 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     }
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeInfoARM-stripeArea-09455");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-pNext-09539");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-09539");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
@@ -4288,7 +4278,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     VkCommandBufferSubmitInfo cb_submit_info = vku::InitStructHelper();
     cb_submit_info.commandBuffer = cmd_buffer.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-09445");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferSubmitInfo-commandBuffer-09445");
     VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_submit_info;
@@ -4316,8 +4306,8 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     rp_stripe_submit_info.pStripeSemaphoreInfos = semaphore_submit_infos;
     cb_submit_info.pNext = &rp_stripe_submit_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-pNext-09446");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassStripeSubmitInfoARM-semaphore-09447");
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferSubmitInfo-pNext-09446");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeSubmitInfoARM-semaphore-09447");
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
