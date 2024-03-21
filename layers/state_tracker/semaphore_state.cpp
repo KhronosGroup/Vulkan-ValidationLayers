@@ -59,9 +59,7 @@ void vvl::Semaphore::EnqueueAcquire(vvl::Func command) {
     auto guard = WriteLock();
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto payload = next_payload_++;
-    SemOp acquire(nullptr, 0);
-    acquire.command = command;
-    timeline_.emplace(payload, TimePoint(kBinaryAcquire, acquire));
+    timeline_.emplace(payload, TimePoint(command));
 }
 
 std::optional<vvl::Semaphore::SemOpTemp> vvl::Semaphore::LastOp(const std::function<bool(OpType, uint64_t, bool)> &filter) const {
@@ -81,8 +79,8 @@ std::optional<vvl::Semaphore::SemOpTemp> vvl::Semaphore::LastOp(const std::funct
             result.emplace(SemOpTemp(*timepoint.signal_op, kSignal, payload));
             break;
         }
-        if (!result && timepoint.acquire_op && (!filter || filter(kBinaryAcquire, payload, true))) {
-            result.emplace(SemOpTemp(*timepoint.acquire_op, kBinaryAcquire, payload));
+        if (!result && timepoint.acquire_command && (!filter || filter(kBinaryAcquire, payload, true))) {
+            result.emplace(SemOpTemp(*timepoint.acquire_command, payload));
             break;
         }
     }
@@ -172,7 +170,7 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
         if (timepoint.signal_op->queue == current_queue) {
             retire_here = true;
         }
-    } else if (timepoint.acquire_op) {
+    } else if (timepoint.acquire_command) {
         retire_here = true;
     } else {
         // For external semaphores we might not have visibility to the signal op
@@ -185,8 +183,8 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
         if (timepoint.signal_op) {
             completed_ = SemOpTemp(*timepoint.signal_op, kSignal, payload);
         }
-        if (timepoint.acquire_op) {
-            completed_ = SemOpTemp(*timepoint.acquire_op, kBinaryAcquire, payload);
+        if (timepoint.acquire_command) {
+            completed_ = SemOpTemp(*timepoint.acquire_command, payload);
         }
         for (auto &wait : timepoint.wait_ops) {
             completed_ = SemOpTemp(wait, kWait, payload);
@@ -350,7 +348,7 @@ bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_st
         return false;
     }
     other_queue = last_op->queue ? last_op->queue->VkHandle() : VK_NULL_HANDLE;
-    other_command = last_op->command;
+    other_command = last_op->acquire_command ? *last_op->acquire_command : vvl::Func::Empty;
     return true;
 }
 
