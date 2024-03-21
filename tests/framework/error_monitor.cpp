@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,18 +129,24 @@ void ErrorMonitor::Reset() {
     MonitorReset();
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg) {
-    SetDesiredFailureMsg(msgFlags, msg.c_str());
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg) {
+    SetDesiredFailureMsg(msg_flags, msg.c_str());
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const char *const msg_string) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
     }
 
     auto guard = Lock();
-    desired_message_strings_.insert(msgString);
-    message_flags_ |= msgFlags;
+    desired_message_strings_.insert(msg_string);
+    message_flags_ |= msg_flags;
+}
+
+void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
+    for (uint32_t i = 0; i < count; i++) {
+        SetDesiredFailureMsg(kErrorBit, msg);
+    }
 }
 
 void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
@@ -156,13 +162,13 @@ void ErrorMonitor::SetUnexpectedError(const char *const msg) {
     ignore_message_strings_.emplace_back(msg);
 }
 
-VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
+VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msg_string) {
     VkBool32 result = VK_FALSE;
     auto guard = Lock();
     if (bailout_ != nullptr) {
         *bailout_ = true;
     }
-    std::string error_string(msgString);
+    std::string error_string(msg_string);
     bool found_expected = false;
 
     if (print_all_errors_) {

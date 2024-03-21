@@ -156,11 +156,11 @@ class VkRenderFramework : public VkTestFramework {
         return spv;
     }
 
-    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg) {
-        m_errorMonitor->SetDesiredFailureMsg(msgFlags, msg);
+    void SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg) {
+        m_errorMonitor->SetDesiredFailureMsg(msg_flags, msg);
     };
-    void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
-        m_errorMonitor->SetDesiredFailureMsg(msgFlags, msgString);
+    void SetDesiredFailureMsg(const VkFlags msg_flags, const char *const msg_string) {
+        m_errorMonitor->SetDesiredFailureMsg(msg_flags, msg_string);
     };
     void VerifyFound() { m_errorMonitor->VerifyFound(); }
 

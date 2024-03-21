@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,10 @@ class ErrorMonitor {
     void Reset();
 
     // ErrorMonitor will look for an error message containing the specified string(s)
-    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg);
-    void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString);
+    void SetDesiredFailureMsg(const VkFlags msg_flags, const char *const msg_string);
+    void SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg);
+    // Most tests check for kErrorBit so default to just using it
+    void SetDesiredError(const char *msg, uint32_t count = 1);
 
     // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
@@ -59,7 +61,7 @@ class ErrorMonitor {
     // Set an error that should not cause a test failure
     void SetAllowedFailureMsg(const char *const msg);
 
-    VkBool32 CheckForDesiredMsg(const char *const msgString);
+    VkBool32 CheckForDesiredMsg(const char *const msg_string);
     VkDebugReportFlagsEXT GetMessageFlags();
     void SetError(const char *const errorString);
     void SetBailout(std::atomic<bool> *bailout);
