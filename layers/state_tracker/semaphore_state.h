@@ -61,10 +61,8 @@ class Semaphore : public RefcountedStateObject {
     }
 
     struct SemOp {
-        SemOp(Queue *q, uint64_t queue_seq, Func command = Func::Empty)
-            : command(command), queue(q), seq(queue_seq) {}
+        SemOp(Queue *q, uint64_t queue_seq) : queue(q), seq(queue_seq) {}
 
-        Func command;
         Queue *queue;
         uint64_t seq;
 
@@ -76,24 +74,26 @@ class Semaphore : public RefcountedStateObject {
     struct SemOpTemp : SemOp {
         OpType op_type;
         uint64_t payload;
+        std::optional<Func> acquire_command;
         SemOpTemp(const SemOp &op, OpType op_type, uint64_t payload) : SemOp(op), op_type(op_type), payload(payload) {}
+        SemOpTemp(Func acquire_command, uint64_t payload)
+            : SemOp(nullptr, 0), op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
     };
 
     struct TimePoint {
         TimePoint(OpType op_type, SemOp &op) : signal_op(), completed(), waiter(completed.get_future()) {
             if (op_type == kWait) {
                 wait_ops.emplace_back(op);
-            } else if (op_type == kSignal) {
-                signal_op.emplace(op);
             } else {
-                assert(op_type == kBinaryAcquire);
-                acquire_op.emplace(op);
+                assert(op_type == kSignal);
+                signal_op.emplace(op);
             }
         }
+        TimePoint(Func command) : acquire_command(command), completed(), waiter(completed.get_future()) {}
 
         std::optional<SemOp> signal_op;
-        std::optional<SemOp> acquire_op;
         small_vector<SemOp, 1, uint32_t> wait_ops;
+        std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
 
