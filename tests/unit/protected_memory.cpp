@@ -215,33 +215,20 @@ TEST_F(NegativeProtectedMemory, Memory) {
     vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_unprotected);
     vk::GetBufferMemoryRequirements(device(), buffer_unprotected.handle(), &mem_reqs_unprotected);
 
-    // Get memory index for a protected and unprotected memory
-    VkPhysicalDeviceMemoryProperties phys_mem_props;
-    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
-    uint32_t memory_type_protected = phys_mem_props.memoryTypeCount + 1;
-    uint32_t memory_type_unprotected = phys_mem_props.memoryTypeCount + 1;
-    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
-        if ((mem_reqs_unprotected.memoryTypeBits & (1 << i)) &&
-            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
-             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-            memory_type_unprotected = i;
-        }
-        // Check just protected bit is in type at all
-        if ((mem_reqs_protected.memoryTypeBits & (1 << i)) &&
-            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)) {
-            memory_type_protected = i;
-        }
-    }
-    if ((memory_type_protected >= phys_mem_props.memoryTypeCount) || (memory_type_unprotected >= phys_mem_props.memoryTypeCount)) {
-        GTEST_SKIP() << "No valid memory type index could be found";
-    }
-
-    alloc_info.memoryTypeIndex = memory_type_protected;
     alloc_info.allocationSize = mem_reqs_protected.size;
+    bool found =
+        m_device->phy().set_memory_type(mem_reqs_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
     vkt::DeviceMemory memory_protected(*m_device, alloc_info);
 
     alloc_info.allocationSize = mem_reqs_unprotected.size;
-    alloc_info.memoryTypeIndex = memory_type_unprotected;
+    found = m_device->phy().set_memory_type(mem_reqs_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                            VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
     vkt::DeviceMemory memory_unprotected(*m_device, alloc_info);
 
     // Bind protected buffer with unprotected memory
@@ -766,21 +753,34 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     vk::GetImageMemoryRequirements(device(), image_protected.handle(), &mem_reqs_image_protected);
     vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_image_unprotected);
 
-    m_device->phy().set_memory_type(mem_reqs_buffer_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    bool found =
+        m_device->phy().set_memory_type(mem_reqs_buffer_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
     alloc_info.allocationSize = mem_reqs_buffer_protected.size;
     vkt::DeviceMemory memory_buffer_protected(*m_device, alloc_info);
 
-    m_device->phy().set_memory_type(mem_reqs_buffer_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                    VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().set_memory_type(mem_reqs_buffer_unprotected.memoryTypeBits, &alloc_info,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
     alloc_info.allocationSize = mem_reqs_buffer_unprotected.size;
     vkt::DeviceMemory memory_buffer_unprotected(*m_device, alloc_info);
 
     alloc_info.allocationSize = mem_reqs_image_protected.size;
-    m_device->phy().set_memory_type(mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().set_memory_type(mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
     vkt::DeviceMemory memory_image_protected(*m_device, alloc_info);
 
-    m_device->phy().set_memory_type(mem_reqs_image_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                    VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().set_memory_type(mem_reqs_image_unprotected.memoryTypeBits, &alloc_info,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
     alloc_info.allocationSize = mem_reqs_image_unprotected.size;
     vkt::DeviceMemory memory_image_unprotected(*m_device, alloc_info);
 
