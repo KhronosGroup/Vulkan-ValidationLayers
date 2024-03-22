@@ -3520,6 +3520,10 @@ TEST_F(NegativeCommand, ResolveUsage) {
     TEST_DESCRIPTION("Resolve image with missing usage flags.");
 
     RETURN_IF_SKIP(Init());
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
+    if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
+        GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
+    }
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;

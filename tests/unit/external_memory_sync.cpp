@@ -1668,6 +1668,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
         alloc_info_with_import.allocationSize = payload_size;
         alloc_info_with_import.memoryTypeIndex = payload_memory_type + 1;
         m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-allocationSize-01742");
+        // If device only has 1 memory type
+        m_errorMonitor->SetUnexpectedError("VUID-vkAllocateMemory-pAllocateInfo-01714");
         vk::AllocateMemory(*m_device, &alloc_info_with_import, nullptr, &imported_memory);
         m_errorMonitor->VerifyFound();
     }
