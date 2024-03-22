@@ -4974,6 +4974,11 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
     RETURN_IF_SKIP(Init());
 
+    const VkPhysicalDeviceLimits &dev_limits = m_device->phy().limits_;
+    if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
+        GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
+    }
+
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
