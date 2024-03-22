@@ -902,7 +902,7 @@ VkResult DispatchGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physical
     if (!wrap_handles) return result;
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].display = layer_data->MaybeWrapDisplay(pProperties[idx0].display, layer_data);
+            pProperties[idx0].display = layer_data->MaybeWrapDisplay(pProperties[idx0].display);
         }
     }
     return result;
@@ -916,8 +916,7 @@ VkResult DispatchGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physica
     if (!wrap_handles) return result;
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].displayProperties.display =
-                layer_data->MaybeWrapDisplay(pProperties[idx0].displayProperties.display, layer_data);
+            pProperties[idx0].displayProperties.display = layer_data->MaybeWrapDisplay(pProperties[idx0].displayProperties.display);
         }
     }
     return result;
@@ -932,7 +931,7 @@ VkResult DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice phy
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             VkDisplayKHR &opt_display = pProperties[idx0].currentDisplay;
-            if (opt_display) opt_display = layer_data->MaybeWrapDisplay(opt_display, layer_data);
+            if (opt_display) opt_display = layer_data->MaybeWrapDisplay(opt_display);
         }
     }
     return result;
@@ -947,21 +946,7 @@ VkResult DispatchGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice ph
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             VkDisplayKHR &opt_display = pProperties[idx0].displayPlaneProperties.currentDisplay;
-            if (opt_display) opt_display = layer_data->MaybeWrapDisplay(opt_display, layer_data);
-        }
-    }
-    return result;
-}
-
-VkResult DispatchGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex, uint32_t *pDisplayCount,
-                                                     VkDisplayKHR *pDisplays) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
-    VkResult result = layer_data->instance_dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex,
-                                                                                              pDisplayCount, pDisplays);
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pDisplays) {
-    if (!wrap_handles) return result;
-        for (uint32_t i = 0; i < *pDisplayCount; ++i) {
-            if (pDisplays[i]) pDisplays[i] = layer_data->MaybeWrapDisplay(pDisplays[i], layer_data);
+            if (opt_display) opt_display = layer_data->MaybeWrapDisplay(opt_display);
         }
     }
     return result;
@@ -1722,41 +1707,3 @@ VkResult DispatchReleasePerformanceConfigurationINTEL(
 
     return result;
 }
-
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-VkResult DispatchGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
-    VkDisplayKHR* pDisplay) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
-
-    VkResult result = layer_data->instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
-    if (VK_SUCCESS == result) {
-        *pDisplay = layer_data->MaybeWrapDisplay(*pDisplay, layer_data);
-    }
-    return result;
-}
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
-VkResult DispatchGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR* display) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-
-    VkResult result = layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-    if (VK_SUCCESS == result) {
-        *display = layer_data->MaybeWrapDisplay(*display, layer_data);
-    }
-    return result;
-}
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-VkResult DispatchGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
-
-    VkResult result = layer_data->instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
-    if (VK_SUCCESS == result) {
-        *pDisplay = layer_data->MaybeWrapDisplay(*pDisplay, layer_data);
-    }
-    return result;
-}
-#endif  // VK_USE_PLATFORM_WIN32_KHR

@@ -622,41 +622,38 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
                 // Unwrap a handle.
                 template <typename HandleType>
-                HandleType Unwrap(HandleType wrappedHandle) {
-                    if (wrappedHandle == (HandleType)VK_NULL_HANDLE) return wrappedHandle;
-                    auto iter = unique_id_mapping.find(CastToUint64(wrappedHandle));
+                HandleType Unwrap(HandleType wrapped_handle) {
+                    if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
+                    auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
                     if (iter == unique_id_mapping.end()) return (HandleType)0;
                     return (HandleType)iter->second;
                 }
 
                 // Wrap a newly created handle with a new unique ID, and return the new ID.
                 template <typename HandleType>
-                HandleType WrapNew(HandleType newlyCreatedHandle) {
-                    if (newlyCreatedHandle == (HandleType)VK_NULL_HANDLE) return newlyCreatedHandle;
+                HandleType WrapNew(HandleType new_created_handle) {
+                    if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
                     auto unique_id = global_unique_id++;
                     unique_id = HashedUint64::hash(unique_id);
                     assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
-                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
+                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(new_created_handle));
                     return (HandleType)unique_id;
                 }
 
-                // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
-                VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject* map_data) {
+                // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
+                // They live with the PhyiscalDevice and apps never created/destroy them.
+                // Apps needs will query for them and the first time we see it we wrap it
+                VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle) {
+                    // See if this display is already known
+                    auto it = display_id_reverse_mapping.find(handle);
+                    if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+
+                    // Unknown, so wrap
                     auto unique_id = global_unique_id++;
                     unique_id = HashedUint64::hash(unique_id);
-                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
-                    map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
+                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(handle));
+                    display_id_reverse_mapping.insert_or_assign(handle, unique_id);
                     return (VkDisplayKHR)unique_id;
-                }
-
-                // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
-                // creating another.
-                VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject* map_data) {
-                    // See if this display is already known
-                    auto it = map_data->display_id_reverse_mapping.find(handle);
-                    if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
-                    // Unknown, so wrap
-                    return WrapDisplay(handle, map_data);
                 }
             ''')
 
