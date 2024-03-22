@@ -38,8 +38,8 @@
 #include "generated/gpu_pre_trace_rays_rgen.h"
 #include "generated/gpu_inst_shader_hash.h"
 
-std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo *pCreateInfo) {
-    return std::make_shared<Buffer>(this, buf, pCreateInfo, *desc_heap);
+std::shared_ptr<vvl::Buffer> gpuav::Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *pCreateInfo) {
+    return std::make_shared<Buffer>(*this, handle, pCreateInfo, *desc_heap);
 }
 
 std::shared_ptr<vvl::BufferView> gpuav::Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv,
@@ -64,10 +64,10 @@ std::shared_ptr<vvl::DescriptorSet> gpuav::Validator::CreateDescriptorSet(
     return std::static_pointer_cast<vvl::DescriptorSet>(std::make_shared<DescriptorSet>(set, pool, layout, variable_count, this));
 }
 
-std::shared_ptr<vvl::CommandBuffer> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer cb,
+std::shared_ptr<vvl::CommandBuffer> gpuav::Validator::CreateCmdBufferState(VkCommandBuffer handle,
                                                                            const VkCommandBufferAllocateInfo *pCreateInfo,
                                                                            const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(this, cb, pCreateInfo, pool));
+    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, pCreateInfo, pool));
 }
 
 std::shared_ptr<vvl::Queue> gpuav::Validator::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,

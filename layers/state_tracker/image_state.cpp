@@ -94,14 +94,14 @@ static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo *pCreateInfo) {
     return swapchain_info ? swapchain_info->swapchain : VK_NULL_HANDLE;
 }
 
-static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker *dev_data, VkImage img,
+static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker &dev_data, VkImage img,
                                                     const VkImageCreateInfo *create_info, bool disjoint, bool is_external_ahb) {
     vvl::Image::MemoryReqs result{};
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be queried until after memory is bound
     if (!is_external_ahb) {
         if (disjoint == false) {
-            DispatchGetImageMemoryRequirements(dev_data->device, img, &result[0]);
+            DispatchGetImageMemoryRequirements(dev_data.device, img, &result[0]);
         } else {
             uint32_t plane_count = vkuFormatPlaneCount(create_info->format);
             static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
@@ -115,12 +115,12 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker
                 VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
 
                 image_plane_req.planeAspect = aspects[i];
-                switch (dev_data->device_extensions.vk_khr_get_memory_requirements2) {
+                switch (dev_data.device_extensions.vk_khr_get_memory_requirements2) {
                     case kEnabledByApiLevel:
-                        DispatchGetImageMemoryRequirements2(dev_data->device, &mem_req_info2, &mem_reqs2);
+                        DispatchGetImageMemoryRequirements2(dev_data.device, &mem_req_info2, &mem_reqs2);
                         break;
                     case kEnabledByCreateinfo:
-                        DispatchGetImageMemoryRequirements2KHR(dev_data->device, &mem_req_info2, &mem_reqs2);
+                        DispatchGetImageMemoryRequirements2KHR(dev_data.device, &mem_req_info2, &mem_reqs2);
                         break;
                     default:
                         // The VK_KHR_sampler_ycbcr_conversion extension requires VK_KHR_get_memory_requirements2,
@@ -134,13 +134,13 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker
     return result;
 }
 
-static vvl::Image::SparseReqs GetSparseRequirements(const ValidationStateTracker *dev_data, VkImage img, bool sparse_residency) {
+static vvl::Image::SparseReqs GetSparseRequirements(const ValidationStateTracker &dev_data, VkImage img, bool sparse_residency) {
     vvl::Image::SparseReqs result;
     if (sparse_residency) {
         uint32_t count = 0;
-        DispatchGetImageSparseMemoryRequirements(dev_data->device, img, &count, nullptr);
+        DispatchGetImageSparseMemoryRequirements(dev_data.device, img, &count, nullptr);
         result.resize(count);
-        DispatchGetImageSparseMemoryRequirements(dev_data->device, img, &count, result.data());
+        DispatchGetImageSparseMemoryRequirements(dev_data.device, img, &count, result.data());
     }
     return result;
 }
@@ -172,7 +172,7 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 
 namespace vvl {
 
-Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
+Image::Image(const ValidationStateTracker &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -198,9 +198,9 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
-      store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
-      supported_video_profiles(dev_data->video_profile_cache_.Get(
-          dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+      store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
+      supported_video_profiles(dev_data.video_profile_cache_.Get(
+          dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
         bool is_resident = (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
         tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
@@ -214,7 +214,7 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
     }
 }
 
-Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+Image::Image(const ValidationStateTracker &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
              uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
@@ -241,9 +241,9 @@ Image::Image(const ValidationStateTracker *dev_data, VkImage img, const VkImageC
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
-      store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
-      supported_video_profiles(dev_data->video_profile_cache_.Get(
-          dev_data->physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+      store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
+      supported_video_profiles(dev_data.video_profile_cache_.Get(
+          dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 
@@ -529,7 +529,7 @@ static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR 
 
 namespace vvl {
 
-Swapchain::Swapchain(ValidationStateTracker *dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
+Swapchain::Swapchain(ValidationStateTracker &dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
     : StateObject(handle, kVulkanObjectTypeSwapchainKHR),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
@@ -578,9 +578,9 @@ void Swapchain::Destroy() {
     for (auto &swapchain_image : images) {
         if (swapchain_image.image_state) {
             RemoveParent(swapchain_image.image_state);
-            dev_data->Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
+            dev_data.Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
         }
-        // NOTE: We don't have access to dev_data->fake_memory.Free() here, but it is currently a no-op
+        // NOTE: We don't have access to dev_data.fake_memory.Free() here, but it is currently a no-op
     }
     images.clear();
     if (surface) {

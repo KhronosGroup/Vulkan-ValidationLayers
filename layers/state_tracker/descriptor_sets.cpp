@@ -36,7 +36,7 @@ static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPool
     return counts;
 }
 
-vvl::DescriptorPool::DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool handle,
+vvl::DescriptorPool::DescriptorPool(ValidationStateTracker &dev, const VkDescriptorPool handle,
                                     const VkDescriptorPoolCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeDescriptorPool),
       safe_create_info(pCreateInfo),
@@ -64,10 +64,10 @@ void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info
     for (uint32_t i = 0; i < alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = dev_data_->CreateDescriptorSet(descriptor_sets[i], this, ds_data->layout_nodes[i], variable_count);
+        auto new_ds = dev_data_.CreateDescriptorSet(descriptor_sets[i], this, ds_data->layout_nodes[i], variable_count);
 
         sets_.emplace(descriptor_sets[i], new_ds.get());
-        dev_data_->Add(std::move(new_ds));
+        dev_data_.Add(std::move(new_ds));
     }
 }
 
@@ -89,7 +89,7 @@ void vvl::DescriptorPool::Free(uint32_t count, const VkDescriptorSet *descriptor
                 descriptor_count = layout.GetDescriptorCountFromIndex(j);
                 available_counts_[type_index] += descriptor_count;
             }
-            dev_data_->Destroy<vvl::DescriptorSet>(iter->first);
+            dev_data_.Destroy<vvl::DescriptorSet>(iter->first);
             sets_.erase(iter);
         }
     }
@@ -99,7 +99,7 @@ void vvl::DescriptorPool::Reset() {
     auto guard = WriteLock();
     // For every set off of this pool, clear it, remove from setMap, and free vvl::DescriptorSet
     for (auto entry : sets_) {
-        dev_data_->Destroy<vvl::DescriptorSet>(entry.first);
+        dev_data_.Destroy<vvl::DescriptorSet>(entry.first);
     }
     sets_.clear();
     // Reset available count for each type and available sets for this pool

@@ -69,10 +69,10 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
     return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1))/kBitsPerWord) * sizeof(uint32_t);
 }
 
-gpuav::DescriptorSet::DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
+gpuav::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool,
                                     const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                                     ValidationStateTracker *state_data)
-    : vvl::DescriptorSet(set, pool, layout, variable_count, state_data) {}
+    : vvl::DescriptorSet(handle, pool, layout, variable_count, state_data) {}
 
 gpuav::DescriptorSet::~DescriptorSet() {
     Destroy();

@@ -47,7 +47,7 @@ struct AllocateDescriptorSetsData;
 
 class DescriptorPool : public StateObject {
   public:
-    DescriptorPool(ValidationStateTracker *dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo *pCreateInfo);
+    DescriptorPool(ValidationStateTracker &dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo *pCreateInfo);
     ~DescriptorPool() { Destroy(); }
 
     VkDescriptorPool VkHandle() const { return handle_.Cast<VkDescriptorPool>(); };
@@ -90,7 +90,7 @@ class DescriptorPool : public StateObject {
     uint32_t available_sets_;        // Available descriptor sets in this pool
     TypeCountMap available_counts_;  // Available # of descriptors of each type in this pool
     vvl::unordered_map<VkDescriptorSet, vvl::DescriptorSet *> sets_;  // Collection of all sets in this pool
-    ValidationStateTracker *dev_data_;
+    ValidationStateTracker &dev_data_;
     mutable std::shared_mutex lock_;
 };
 
@@ -615,7 +615,7 @@ struct AllocateDescriptorSetsData {
     AllocateDescriptorSetsData(){};
 };
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
-void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
+void PerformUpdateDescriptorSets(ValidationStateTracker &, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                  const VkCopyDescriptorSet *);
 
 class DescriptorBinding {
@@ -724,7 +724,7 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
     std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
-    DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
+    DecodedTemplateUpdate(const ValidationStateTracker &device_data, VkDescriptorSet descriptorSet,
                           const DescriptorUpdateTemplate *template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };

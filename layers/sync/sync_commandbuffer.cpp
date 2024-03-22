@@ -1188,9 +1188,9 @@ std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
     return out.str();
 }
 
-syncval_state::CommandBuffer::CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                            const vvl::CommandPool *pool)
-    : vvl::CommandBuffer(dev, cb, pCreateInfo, pool), access_context(*dev, this) {}
+syncval_state::CommandBuffer::CommandBuffer(SyncValidator &dev, VkCommandBuffer handle,
+                                            const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
+    : vvl::CommandBuffer(dev, handle, pCreateInfo, pool), access_context(dev, this) {}
 
 void syncval_state::CommandBuffer::Destroy() {
     access_context.Destroy();  // must be first to clean up self references correctly.

@@ -148,12 +148,12 @@ VkPipelineLayoutCreateFlags GetCreateFlags(const vvl::span<const vvl::PipelineLa
 
 namespace vvl {
 
-static PipelineLayout::SetLayoutVector GetSetLayouts(ValidationStateTracker *dev_data,
+static PipelineLayout::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev_data,
                                                      const VkPipelineLayoutCreateInfo *pCreateInfo) {
     PipelineLayout::SetLayoutVector set_layouts(pCreateInfo->setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        set_layouts[i] = dev_data->Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = dev_data.Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
     }
     return set_layouts;
 }
@@ -194,7 +194,7 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(const vvl::span<const Pipel
     return set_layouts;
 }
 
-PipelineLayout::PipelineLayout(ValidationStateTracker *dev_data, VkPipelineLayout handle,
+PipelineLayout::PipelineLayout(ValidationStateTracker &dev_data, VkPipelineLayout handle,
                                const VkPipelineLayoutCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),

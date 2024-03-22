@@ -59,7 +59,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
     std::vector<BufferInfo> buffer_infos;
 
-    CommandBuffer(Validator* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info, const vvl::CommandPool* pool);
+    CommandBuffer(Validator& dp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* create_info,
+                  const vvl::CommandPool* pool);
     ~CommandBuffer();
 
     bool PreProcess() final { return !buffer_infos.empty(); }

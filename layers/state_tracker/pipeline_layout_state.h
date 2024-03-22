@@ -78,7 +78,7 @@ class PipelineLayout : public StateObject {
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     VkPipelineLayoutCreateFlags create_flags;
 
-    PipelineLayout(ValidationStateTracker *dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
+    PipelineLayout(ValidationStateTracker &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
     PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts);
     template <typename Container>

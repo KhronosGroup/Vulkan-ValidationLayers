@@ -40,7 +40,7 @@ class Buffer : public Bindable {
 
     unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
-    Buffer(ValidationStateTracker *dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo);
+    Buffer(ValidationStateTracker &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo);
 
     Buffer(Buffer const &rh_obj) = delete;
 

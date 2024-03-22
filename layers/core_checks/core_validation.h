@@ -44,9 +44,9 @@ typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRan
 // class.
 class CORE_CMD_BUFFER_STATE : public vvl::CommandBuffer {
   public:
-    CORE_CMD_BUFFER_STATE(ValidationStateTracker* dev_data, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+    CORE_CMD_BUFFER_STATE(ValidationStateTracker& dev_data, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
                           const vvl::CommandPool* cmd_pool)
-        : vvl::CommandBuffer(dev_data, cb, pCreateInfo, cmd_pool) {}
+        : vvl::CommandBuffer(dev_data, handle, pCreateInfo, cmd_pool) {}
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
@@ -2444,8 +2444,9 @@ class CoreChecks : public ValidationStateTracker {
                                                                       struct _screen_window* window,
                                                                       const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
+    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) override {
-        return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CORE_CMD_BUFFER_STATE>(this, cb, create_info, pool));
+        return std::static_pointer_cast<vvl::CommandBuffer>(
+            std::make_shared<CORE_CMD_BUFFER_STATE>(*this, handle, create_info, pool));
     }
 };  // Class CoreChecks
