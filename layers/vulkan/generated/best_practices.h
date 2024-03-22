@@ -976,9 +976,6 @@ void PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuff
 void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                          const RecordObject& record_obj) override;
 
-void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
-                                  const RecordObject& record_obj) override;
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                 VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) override;
