@@ -33,15 +33,16 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkDestroyInstance',
             'vkCreateDevice',
             'vkDestroyDevice',
-            'vkCreateSwapchainKHR',
-            'vkCreateSharedSwapchainsKHR',
+            # Need to handle Acquired swapchain image handles
             'vkGetSwapchainImagesKHR',
             'vkDestroySwapchainKHR',
+            # Have issues with generating logic to work correctly with Safe Struct
             'vkQueuePresentKHR',
             'vkCreateGraphicsPipelines',
             'vkCreateComputePipelines',
             'vkCreateRayTracingPipelinesNV',
             'vkCreateRayTracingPipelinesKHR',
+            # Need handle which pool descriptors were allocated from
             'vkResetDescriptorPool',
             'vkDestroyDescriptorPool',
             'vkAllocateDescriptorSets',
@@ -54,37 +55,41 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkUpdateDescriptorSetWithTemplateKHR',
             'vkCmdPushDescriptorSetWithTemplateKHR',
             'vkCmdPushDescriptorSetWithTemplate2KHR',
-            'vkDebugMarkerSetObjectTagEXT',
-            'vkDebugMarkerSetObjectNameEXT',
+            # Tracking renderpass state for the pipeline safe struct
             'vkCreateRenderPass',
             'vkCreateRenderPass2KHR',
             'vkCreateRenderPass2',
             'vkDestroyRenderPass',
+            # Accesses to the map itself are internally synchronized.
+            'vkDebugMarkerSetObjectTagEXT',
+            'vkDebugMarkerSetObjectNameEXT',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
+            # TODO - These have no manual source, but we still produce the headers
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateInstanceLayerProperties',
-            'vkEnumerateDeviceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateInstanceVersion',
+            # Manually track pToolCount
             'vkGetPhysicalDeviceToolProperties',
             'vkGetPhysicalDeviceToolPropertiesEXT',
-            'vkSetPrivateDataEXT',
-            'vkGetPrivateDataEXT',
+            # Track deferred operations
             'vkDeferredOperationJoinKHR',
             'vkGetDeferredOperationResultKHR',
-            'vkSetPrivateData',
-            'vkGetPrivateData',
+            # Need to deal with VkAccelerationStructureGeometryKHR
             'vkBuildAccelerationStructuresKHR',
+            'vkGetAccelerationStructureBuildSizesKHR',
+            # Depends on the VkDescriptorType
             'vkGetDescriptorEXT',
+            # Special destroy call from the Acquire
             'vkReleasePerformanceConfigurationINTEL',
+            # need to call CopyExportMetalObjects
             'vkExportMetalObjectsEXT',
             # These are for special-casing the pInheritanceInfo issue (must be ignored for primary CBs)
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
             'vkDestroyCommandPool',
             'vkBeginCommandBuffer',
-            'vkGetAccelerationStructureBuildSizesKHR',
             # Currently we don't properly generate a Wrap and will accidently unwrap the VkDisplayKHR handle
             'vkGetPhysicalDeviceDisplayPropertiesKHR',
             'vkGetPhysicalDeviceDisplayProperties2KHR',
@@ -92,6 +97,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
             'vkGetDisplayModePropertiesKHR',
             'vkGetDisplayModeProperties2KHR',
+            'vkGetDisplayPlaneSupportedDisplaysKHR',
             ]
 
         # List of all extension structs strings containing handles
@@ -215,6 +221,19 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             }
             }
             ''')
+
+        out.append('''
+            static bool NotDispatchableHandle(VkObjectType object_type) {
+                switch(object_type) {
+        ''')
+        out.extend([f'case {handle.type}:\n' for handle in self.vk.handles.values() if handle.dispatchable])
+        out.append('''return false;
+                  default:
+                    return true;
+                }
+            }
+        ''')
+
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend(guard_helper.add_guard(command.protect))
 
@@ -231,7 +250,6 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                 'vkGetWinrtDisplayNV',
                 'vkGetRandROutputDisplayEXT',
                 'vkGetDrmDisplayEXT',
-                'vkGetDisplayPlaneSupportedDisplaysKHR',
             ])
             isDestroy = any(x in command.name for x in ['vkDestroy', 'vkFree'])
 
@@ -502,4 +520,10 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                         post_code += tmp_post
                         if process_pnext:
                             pre_code += f'WrapPnextChainHandles(layer_data, {prefix}{member.name}.pNext);\n'
+            elif member.type == 'VkObjectType':
+                pre_code += '''
+                    if (NotDispatchableHandle(objectType)) {
+                        objectHandle = layer_data->Unwrap(objectHandle);
+                    }
+                '''
         return decls, pre_code, post_code

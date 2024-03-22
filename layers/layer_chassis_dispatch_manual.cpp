@@ -340,60 +340,6 @@ void DispatchDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const V
     layer_data->renderpasses_states.erase(renderPass);
 }
 
-VkResult DispatchCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-    safe_VkSwapchainCreateInfoKHR *local_pCreateInfo = nullptr;
-    if (pCreateInfo) {
-        local_pCreateInfo = new safe_VkSwapchainCreateInfoKHR(pCreateInfo);
-        local_pCreateInfo->oldSwapchain = layer_data->Unwrap(pCreateInfo->oldSwapchain);
-        // Surface is instance-level object
-        local_pCreateInfo->surface = layer_data->Unwrap(pCreateInfo->surface);
-    }
-
-    VkResult result = layer_data->device_dispatch_table.CreateSwapchainKHR(device, local_pCreateInfo->ptr(), pAllocator, pSwapchain);
-    delete local_pCreateInfo;
-
-    if (VK_SUCCESS == result) {
-        *pSwapchain = layer_data->WrapNew(*pSwapchain);
-    }
-    return result;
-}
-
-VkResult DispatchCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR *pCreateInfos,
-                                           const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator,
-                                                                           pSwapchains);
-    safe_VkSwapchainCreateInfoKHR *local_pCreateInfos = nullptr;
-    {
-        if (pCreateInfos) {
-            local_pCreateInfos = new safe_VkSwapchainCreateInfoKHR[swapchainCount];
-            for (uint32_t i = 0; i < swapchainCount; ++i) {
-                local_pCreateInfos[i].initialize(&pCreateInfos[i]);
-                if (pCreateInfos[i].surface) {
-                    // Surface is instance-level object
-                    local_pCreateInfos[i].surface = layer_data->Unwrap(pCreateInfos[i].surface);
-                }
-                if (pCreateInfos[i].oldSwapchain) {
-                    local_pCreateInfos[i].oldSwapchain = layer_data->Unwrap(pCreateInfos[i].oldSwapchain);
-                }
-            }
-        }
-    }
-    VkResult result = layer_data->device_dispatch_table.CreateSharedSwapchainsKHR(device, swapchainCount, local_pCreateInfos->ptr(),
-                                                                                  pAllocator, pSwapchains);
-    delete[] local_pCreateInfos;
-    if (VK_SUCCESS == result) {
-        for (uint32_t i = 0; i < swapchainCount; i++) {
-            pSwapchains[i] = layer_data->WrapNew(pSwapchains[i]);
-        }
-    }
-    return result;
-}
-
 VkResult DispatchGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                        VkImage *pSwapchainImages) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -952,6 +898,20 @@ VkResult DispatchGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice ph
     return result;
 }
 
+VkResult DispatchGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex, uint32_t *pDisplayCount,
+                                                     VkDisplayKHR *pDisplays) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
+    VkResult result = layer_data->instance_dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex,
+                                                                                              pDisplayCount, pDisplays);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pDisplays) {
+        if (!wrap_handles) return result;
+        for (uint32_t i = 0; i < *pDisplayCount; ++i) {
+            if (pDisplays[i]) pDisplays[i] = layer_data->MaybeWrapDisplay(pDisplays[i]);
+        }
+    }
+    return result;
+}
+
 VkResult DispatchGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount,
                                              VkDisplayModePropertiesKHR *pProperties) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
@@ -988,18 +948,6 @@ VkResult DispatchGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, V
             pProperties[idx0].displayModeProperties.displayMode = layer_data->WrapNew(pProperties[idx0].displayModeProperties.displayMode);
         }
     }
-    return result;
-}
-
-VkResult DispatchEnumerateDeviceExtensionProperties(
-    VkPhysicalDevice                            physicalDevice,
-    const char*                                 pLayerName,
-    uint32_t*                                   pPropertyCount,
-    VkExtensionProperties*                      pProperties)
-{
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
-    VkResult result = layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties);
-
     return result;
 }
 
@@ -1093,84 +1041,6 @@ VkResult DispatchGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice
     }
 
     return result;
-}
-
-bool NotDispatchableHandle(VkObjectType object_type) {
-    bool not_dispatchable = true;
-    if ((object_type == VK_OBJECT_TYPE_INSTANCE)        ||
-        (object_type == VK_OBJECT_TYPE_PHYSICAL_DEVICE) ||
-        (object_type == VK_OBJECT_TYPE_DEVICE)          ||
-        (object_type == VK_OBJECT_TYPE_QUEUE)           ||
-        (object_type == VK_OBJECT_TYPE_COMMAND_BUFFER)) {
-        not_dispatchable = false;
-    }
-    return not_dispatchable;
-}
-
-VkResult DispatchSetPrivateDataEXT(
-    VkDevice                                    device,
-    VkObjectType                                objectType,
-    uint64_t                                    objectHandle,
-    VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t                                    data)
-{
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
-    privateDataSlot = layer_data->Unwrap(privateDataSlot);
-    if (NotDispatchableHandle(objectType)) {
-        objectHandle = layer_data->Unwrap(objectHandle);
-    }
-    VkResult result = layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
-    return result;
-}
-
-VkResult DispatchSetPrivateData(
-    VkDevice                                    device,
-    VkObjectType                                objectType,
-    uint64_t                                    objectHandle,
-    VkPrivateDataSlot                           privateDataSlot,
-    uint64_t                                    data)
-{
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
-    privateDataSlot = layer_data->Unwrap(privateDataSlot);
-    if (NotDispatchableHandle(objectType)) {
-        objectHandle = layer_data->Unwrap(objectHandle);
-    }
-    VkResult result = layer_data->device_dispatch_table.SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
-    return result;
-}
-
-void DispatchGetPrivateDataEXT(
-    VkDevice                                    device,
-    VkObjectType                                objectType,
-    uint64_t                                    objectHandle,
-    VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t*                                   pData)
-{
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
-    privateDataSlot = layer_data->Unwrap(privateDataSlot);
-    if (NotDispatchableHandle(objectType)) {
-        objectHandle = layer_data->Unwrap(objectHandle);
-    }
-    layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
-}
-
-void DispatchGetPrivateData(
-    VkDevice                                    device,
-    VkObjectType                                objectType,
-    uint64_t                                    objectHandle,
-    VkPrivateDataSlot                           privateDataSlot,
-    uint64_t*                                   pData)
-{
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
-    privateDataSlot = layer_data->Unwrap(privateDataSlot);
-    if (NotDispatchableHandle(objectType)) {
-        objectHandle = layer_data->Unwrap(objectHandle);
-    }
-    layer_data->device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
 vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
