@@ -161,9 +161,9 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence>& fence_, 
 FenceSyncState::FenceSyncState(const std::shared_ptr<const vvl::Fence>& fence_, const PresentedImage& image, ResourceUsageTag tag_)
     : fence(fence_), tag(tag_), queue_id(kQueueIdInvalid), acquired(image, tag) {}
 
-syncval_state::Swapchain::Swapchain(ValidationStateTracker* dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                    VkSwapchainKHR swapchain)
-    : vvl::Swapchain(dev_data, pCreateInfo, swapchain) {}
+syncval_state::Swapchain::Swapchain(ValidationStateTracker& dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                    VkSwapchainKHR handle)
+    : vvl::Swapchain(dev_data, pCreateInfo, handle) {}
 
 void syncval_state::Swapchain::RecordPresentedImage(PresentedImage&& presented_image) {
     // All presented images are stored within the swapchain until the are reaquired.

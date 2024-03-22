@@ -45,7 +45,8 @@ class Queue : public vvl::Queue {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
+    CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const vvl::CommandPool *pool);
 
     virtual bool PreProcess() = 0;
     virtual void PostProcess(VkQueue queue, const Location &loc) = 0;

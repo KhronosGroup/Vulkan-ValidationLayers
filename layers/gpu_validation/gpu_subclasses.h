@@ -74,7 +74,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     std::vector<DescBindingInfo> di_input_buffer_list;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
 
-    CommandBuffer(Validator *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
+    CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const vvl::CommandPool *pool);
     ~CommandBuffer();
 
     bool PreProcess() final;
@@ -98,7 +99,7 @@ class Queue : public gpu_tracker::Queue {
 
 class Buffer : public vvl::Buffer {
   public:
-    Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
+    Buffer(ValidationStateTracker &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;

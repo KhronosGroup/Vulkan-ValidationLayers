@@ -226,9 +226,9 @@ VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
-gpu_tracker::CommandBuffer::CommandBuffer(gpu_tracker::Validator *ga, VkCommandBuffer cb,
+gpu_tracker::CommandBuffer::CommandBuffer(gpu_tracker::Validator &gpuav, VkCommandBuffer handle,
                                           const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
-    : vvl::CommandBuffer(ga, cb, pCreateInfo, pool) {}
+    : vvl::CommandBuffer(gpuav, handle, pCreateInfo, pool) {}
 
 ReadLockGuard gpu_tracker::Validator::ReadLock() const {
     if (fine_grained_locking) {

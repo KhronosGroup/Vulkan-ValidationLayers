@@ -79,7 +79,7 @@ class Pipeline : public StateObject {
         struct Traits {};
 
         CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const vvl::RenderPass> rpstate,
-                   const ValidationStateTracker *state_data);
+                   const ValidationStateTracker &state_data);
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoNV *ci) : raytracing(ci) {}
@@ -169,20 +169,20 @@ class Pipeline : public StateObject {
     CreateShaderModuleStates *csm_states = nullptr;
 
     // Executable or legacy pipeline
-    Pipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+    Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
              std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
-    Pipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
+    Pipeline(const ValidationStateTracker &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              CreateShaderModuleStates *csm_states = nullptr);
 
-    Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+    Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              CreateShaderModuleStates *csm_states = nullptr);
 
-    Pipeline(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
+    Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              CreateShaderModuleStates *csm_states = nullptr);
 
@@ -524,6 +524,7 @@ class Pipeline : public StateObject {
 
     // This is a helper that is meant to be used during safe_VkPipelineRenderingCreateInfo construction to determine whether or not
     // certain fields should be ignored based on graphics pipeline state
+    // TODO - This is only a pointer to ValidationStateTracker because we are trying to do state tracking outside the state tracker
     static bool PnextRenderingInfoCustomCopy(const ValidationStateTracker *state_data,
                                              const VkGraphicsPipelineCreateInfo &graphics_info, VkBaseOutStructure *safe_struct,
                                              const VkBaseOutStructure *in_struct) {

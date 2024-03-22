@@ -131,10 +131,10 @@ std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue q
     return syncval_state::GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
 }
 
-std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkCommandBuffer cb,
+std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkCommandBuffer handle,
                                                                         const VkCommandBufferAllocateInfo *pCreateInfo,
                                                                         const vvl::CommandPool *cmd_pool) {
-    auto cb_state = std::make_shared<syncval_state::CommandBuffer>(this, cb, pCreateInfo, cmd_pool);
+    auto cb_state = std::make_shared<syncval_state::CommandBuffer>(*this, handle, pCreateInfo, cmd_pool);
     if (cb_state) {
         cb_state->access_context.SetSelfReference();
     }
@@ -142,19 +142,19 @@ std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkComman
 }
 
 std::shared_ptr<vvl::Swapchain> SyncValidator::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
-                                                                    VkSwapchainKHR swapchain) {
-    return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<syncval_state::Swapchain>(this, create_info, swapchain));
+                                                                    VkSwapchainKHR handle) {
+    return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<syncval_state::Swapchain>(*this, create_info, handle));
 }
 
-std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage handle, const VkImageCreateInfo *pCreateInfo,
                                                             VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<ImageState>(this, img, pCreateInfo, features);
+    return std::make_shared<ImageState>(*this, handle, pCreateInfo, features);
 }
 
-std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage handle, const VkImageCreateInfo *pCreateInfo,
                                                             VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                             VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<ImageState>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+    return std::make_shared<ImageState>(*this, handle, pCreateInfo, swapchain, swapchain_index, features);
 }
 std::shared_ptr<vvl::ImageView> SyncValidator::CreateImageViewState(
     const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
@@ -2222,7 +2222,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    auto dst_resource = vvl::VideoPictureResource(this, pDecodeInfo->dstPictureResource);
+    auto dst_resource = vvl::VideoPictureResource(*this, pDecodeInfo->dstPictureResource);
     if (dst_resource) {
         auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
@@ -2233,7 +2233,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     }
 
     if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+        auto setup_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
         if (setup_resource && (setup_resource != dst_resource)) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
@@ -2247,7 +2247,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
 
     for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+            auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
@@ -2283,13 +2283,13 @@ void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer
         context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range, tag);
     }
 
-    auto dst_resource = vvl::VideoPictureResource(this, pDecodeInfo->dstPictureResource);
+    auto dst_resource = vvl::VideoPictureResource(*this, pDecodeInfo->dstPictureResource);
     if (dst_resource) {
         context->UpdateAccessState(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
     }
 
     if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+        auto setup_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
         if (setup_resource && (setup_resource != dst_resource)) {
             context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
         }
@@ -2297,7 +2297,7 @@ void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer
 
     for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+            auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, tag);
             }
@@ -2334,7 +2334,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    auto src_resource = vvl::VideoPictureResource(this, pEncodeInfo->srcPictureResource);
+    auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource);
     if (src_resource) {
         auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
@@ -2345,7 +2345,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     }
 
     if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+        auto setup_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
         if (setup_resource) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
@@ -2359,7 +2359,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
 
     for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+            auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
@@ -2395,13 +2395,13 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
         context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range, tag);
     }
 
-    auto src_resource = vvl::VideoPictureResource(this, pEncodeInfo->srcPictureResource);
+    auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource);
     if (src_resource) {
         context->UpdateAccessState(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
     }
 
     if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+        auto setup_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
         if (setup_resource) {
             context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, tag);
         }
@@ -2409,7 +2409,7 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
 
     for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+            auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
             }
@@ -3132,10 +3132,10 @@ ImageRangeGen syncval_state::ImageState::MakeImageRangeGen(const VkImageSubresou
     return range_gen;
 }
 
-syncval_state::ImageViewState::ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv,
+syncval_state::ImageViewState::ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
                                               const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
                                               const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
-    : vvl::ImageView(image_state, iv, ci, ff, cubic_props), view_range_gen(MakeImageRangeGen()) {}
+    : vvl::ImageView(image_state, handle, ci, ff, cubic_props), view_range_gen(MakeImageRangeGen()) {}
 
 ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen() const {
     return GetImageState()->MakeImageRangeGen(normalized_subresource_range, IsDepthSliced());
