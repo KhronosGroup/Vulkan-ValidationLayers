@@ -2977,15 +2977,6 @@ void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapc
     }
 }
 
-void BestPractices::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
-                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordLatencySleepNV(device, swapchain, pSleepInfo, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
-}
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                                VkScreenBufferPropertiesQNX* pProperties,
