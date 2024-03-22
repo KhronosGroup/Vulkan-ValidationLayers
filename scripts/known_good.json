@@ -29,7 +29,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "8b246ff75c6615ba4532fe4fde20f1be090c3764"
+            "commit": "04db24d69163114dacc43097a724aaab7165a5d2"
         },
         {
             "name": "SPIRV-Tools",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "04896c462d9f3f504c99a4698605b6524af813c1"
+            "commit": "dda7731e91c130e64980d987a02f5c75356400cc"
         },
         {
             "name": "robin-hood-hashing",
@@ -95,7 +95,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "ee2f5d09eaf8f4e8d0d598bd2172fce290d4ca60",
+            "commit": "022aea431c462f351c1120cb0b4a2144aa237a50",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
