@@ -62,13 +62,6 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkDestroyRenderPass',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
-            'vkGetPhysicalDeviceDisplayPropertiesKHR',
-            'vkGetPhysicalDeviceDisplayProperties2KHR',
-            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
-            'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
-            'vkGetDisplayPlaneSupportedDisplaysKHR',
-            'vkGetDisplayModePropertiesKHR',
-            'vkGetDisplayModeProperties2KHR',
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateInstanceLayerProperties',
             'vkEnumerateDeviceExtensionProperties',
@@ -86,15 +79,19 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkGetDescriptorEXT',
             'vkReleasePerformanceConfigurationINTEL',
             'vkExportMetalObjectsEXT',
-            'vkGetWinrtDisplayNV',
-            'vkGetRandROutputDisplayEXT',
-            'vkGetDrmDisplayEXT',
             # These are for special-casing the pInheritanceInfo issue (must be ignored for primary CBs)
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
             'vkDestroyCommandPool',
             'vkBeginCommandBuffer',
-            'vkGetAccelerationStructureBuildSizesKHR'
+            'vkGetAccelerationStructureBuildSizesKHR',
+            # Currently we don't properly generate a Wrap and will accidently unwrap the VkDisplayKHR handle
+            'vkGetPhysicalDeviceDisplayPropertiesKHR',
+            'vkGetPhysicalDeviceDisplayProperties2KHR',
+            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
+            'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
+            'vkGetDisplayModePropertiesKHR',
+            'vkGetDisplayModeProperties2KHR',
             ]
 
         # List of all extension structs strings containing handles
@@ -222,8 +219,21 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             out.extend(guard_helper.add_guard(command.protect))
 
             # Generate NDO wrapping/unwrapping code for all parameters
-            isCreate = any(x in command.name for x in ['Create', 'Allocate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL'])
-            isDestroy = any(x in command.name for x in ['Destroy', 'Free'])
+            isCreate = any(x in command.name for x in [
+                'vkCreate',
+                'vkAllocate',
+                # Create a VkFence object
+                'vkRegisterDeviceEvent',
+                'vkRegisterDisplayEvent',
+                # Create VkPerformanceConfigurationINTEL object
+                'vkAcquirePerformanceConfigurationINTEL',
+                # Special calls that we wrap because they are created statically on the driver, but users query for them
+                'vkGetWinrtDisplayNV',
+                'vkGetRandROutputDisplayEXT',
+                'vkGetDrmDisplayEXT',
+                'vkGetDisplayPlaneSupportedDisplaysKHR',
+            ])
+            isDestroy = any(x in command.name for x in ['vkDestroy', 'vkFree'])
 
             # Handle ndo create/allocate operations
             create_ndo_code = ''
@@ -232,13 +242,14 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                 handle_type = lastParam.type
                 if self.isNonDispatchable(handle_type):
                     # Check for special case where multiple handles are returned
+                    wrap_call = 'WrapNew' if handle_type != 'VkDisplayKHR' else 'MaybeWrapDisplay'
                     ndo_array = lastParam.length is not None
                     create_ndo_code += 'if (VK_SUCCESS == result) {\n'
                     ndo_dest = f'*{lastParam.name}'
                     if ndo_array:
                         create_ndo_code += f'for (uint32_t index0 = 0; index0 < {lastParam.length}; index0++) {{\n'
                         ndo_dest = f'{lastParam.name}[index0]'
-                    create_ndo_code += f'{ndo_dest} = layer_data->WrapNew({ndo_dest});\n'
+                    create_ndo_code += f'{ndo_dest} = layer_data->{wrap_call}({ndo_dest});\n'
                     if ndo_array:
                         create_ndo_code += '}\n'
                     create_ndo_code += '}\n'
