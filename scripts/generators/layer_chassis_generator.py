@@ -648,10 +648,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     auto it = display_id_reverse_mapping.find(handle);
                     if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
 
-                    // Unknown, so wrap
-                    auto unique_id = global_unique_id++;
-                    unique_id = HashedUint64::hash(unique_id);
-                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(handle));
+                    // First time see this VkDisplayKHR, so wrap
+                    const uint64_t unique_id = (uint64_t)WrapNew(handle);
                     display_id_reverse_mapping.insert_or_assign(handle, unique_id);
                     return (VkDisplayKHR)unique_id;
                 }
