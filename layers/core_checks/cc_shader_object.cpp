@@ -270,8 +270,6 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     bool tese_linked_point_mode = false;
     uint32_t tesc_linked_spacing = 0u;
     uint32_t tese_linked_spacing = 0u;
-    uint32_t tesc_output_patch_size = 0u;
-    uint32_t tese_output_patch_size = 0u;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
@@ -289,12 +287,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             // Validate tessellation stages
             if (stage_state.entrypoint && (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
                                            pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-                if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                    if (stage_state.entrypoint->execution_mode.output_vertices == vvl::kU32Max) {
-                        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08875", device, create_info_loc.dot(Field::stage),
-                                         "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but patch size is not specified.");
-                    }
-                } else if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
                     if (stage_state.entrypoint->execution_mode.tessellation_subdivision == 0) {
                         skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08872", device, create_info_loc.dot(Field::stage),
                                          "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but subdivision is not specified.");
@@ -325,14 +318,12 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                         tesc_linked_point_mode =
                             stage_state.entrypoint->execution_mode.flags & spirv::ExecutionModeSet::point_mode_bit;
                         tesc_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
-                        tesc_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
                     } else if (pCreateInfos[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
                         tese_linked_subdivision = stage_state.entrypoint->execution_mode.tessellation_subdivision;
                         tese_linked_orientation = stage_state.entrypoint->execution_mode.tessellation_orientation;
                         tese_linked_point_mode =
                             stage_state.entrypoint->execution_mode.flags & spirv::ExecutionModeSet::point_mode_bit;
                         tese_linked_spacing = stage_state.entrypoint->execution_mode.tessellation_spacing;
-                        tese_output_patch_size = stage_state.entrypoint->execution_mode.output_vertices;
                     }
                 }
             }
@@ -361,12 +352,6 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                          "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_linked_spacing), string_SpvExecutionMode(tese_linked_spacing));
-    }
-    if (tesc_output_patch_size != tese_output_patch_size && tese_output_patch_size != vvl::kU32Max) {
-        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08871", device, error_obj.location,
-                         "The output patch size in tessellation control shader (%" PRIu32
-                         ") does not match the output patch size in tessellation evaluation shader (%" PRIu32 ").",
-                         tesc_output_patch_size, tese_output_patch_size);
     }
 
     return skip;
