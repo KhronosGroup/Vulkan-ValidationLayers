@@ -1061,3 +1061,40 @@ TEST_F(PositiveCommand, DeviceLost) {
         GTEST_SKIP() << "No device lost found";
     }
 }
+
+TEST_F(PositiveCommand, NestedCommandBuffers) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
+
+    vkt::CommandBuffer secondary1(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer secondary2(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceRenderingInfoKHR cbiri = vku::InitStructHelper();
+    cbiri.colorAttachmentCount = 1;
+    cbiri.pColorAttachmentFormats = &m_render_target_fmt;
+    cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper(&cbiri);
+    cbii.occlusionQueryEnable = VK_TRUE;
+    cbii.queryFlags = 0;
+
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cbbi.pInheritanceInfo = &cbii;
+
+    secondary1.begin(&cbbi);
+    secondary1.end();
+
+    secondary2.begin(&cbbi);
+    vk::CmdBeginQuery(secondary2.handle(), query_pool, 0, 0);
+    vk::CmdExecuteCommands(secondary2.handle(), 1u, &secondary1.handle());
+    vk::CmdEndQuery(secondary2.handle(), query_pool, 0);
+    secondary2.end();
+}
