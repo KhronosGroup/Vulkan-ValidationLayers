@@ -671,6 +671,138 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveDescriptors, ImageViewAttachmentThenRead) {
+    TEST_DESCRIPTION("Make sure image layout state is updated between cbs in a single submission.");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const uint32_t width = 32;
+    const uint32_t height = 32;
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency();
+    rp.CreateRenderPass();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = format;
+    image_create_info.extent.width = width;
+    image_create_info.extent.height = height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 3;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    image_create_info.flags = 0;
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = format;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkt::ImageView image_view(*m_device, ivci);
+    VkImageView image_view_handle = image_view.handle();
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vkt::Sampler sampler(*m_device, sampler_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device,{});
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[1] = vs.GetStageCreateInfo();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.sampler = sampler.handle();
+    image_info.imageView = image_view.handle();
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    vkt::CommandBuffer cb0(*m_device, m_commandPool);
+    cb0.begin();
+    cb0.BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
+    vk::CmdBindPipeline(cb0.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(cb0.handle(), 3, 1, 0, 0);
+    cb0.EndRenderPass();
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.image = image.handle();
+    barrier.subresourceRange = ivci.subresourceRange;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    vk::CmdPipelineBarrier(cb0.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    cb0.end();
+
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = 0;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    layout_binding.pImmutableSamplers = nullptr;
+    const vkt::DescriptorSetLayout compute_ds_layout(*m_device, {layout_binding});
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, rgba8) readonly uniform image2D image;
+        void main(){
+            vec4 color = imageLoad(image, ivec2(0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe(*this);
+    compute_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    compute_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&compute_ds_layout});
+    compute_pipe.CreateComputePipeline();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.pImageInfo = &image_info;
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+
+    vkt::CommandBuffer cb1(*m_device, m_commandPool);
+    cb1.begin();
+    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    cb1.end();
+
+    vkt::Fence fence(*m_device);
+    std::vector<const vkt::CommandBuffer *> cbs({&cb0, &cb1});
+    m_default_queue->submit(cbs, fence);
+    fence.wait(kWaitTimeout);
+}
+
 TEST_F(PositiveDescriptors, UpdateImageDescriptorSetThatHasImageViewUsage) {
     TEST_DESCRIPTION("Update a descriptor set with an image view that includes VkImageViewUsageCreateInfo");
 
