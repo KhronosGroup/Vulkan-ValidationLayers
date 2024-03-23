@@ -181,9 +181,9 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
                      error_obj.location.dot(Field::drawCount), "(%" PRIu32 ") must be less than maxMultiDrawCount (%" PRIu32 ").",
                      drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
     }
-    if (stride & 3) {
-        skip |= LogError("VUID-vkCmdDrawMultiEXT-stride-04936", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         error_obj.location.dot(Field::stride), "(%" PRIu32 ") is not a multiple of 4.", stride);
+    if (drawCount > 1) {
+        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMultiEXT-drawCount-09628", stride,
+                                                Struct::VkMultiDrawInfoEXT, sizeof(VkMultiDrawInfoEXT), error_obj.location);
     }
     if (drawCount != 0 && !pVertexInfo) {
         skip |= LogError("VUID-vkCmdDrawMultiEXT-drawCount-04935", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -267,13 +267,16 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
+    if (drawCount > 1) {
+        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-09629", stride,
+                                                Struct::VkMultiDrawIndexedInfoEXT, sizeof(VkMultiDrawIndexedInfoEXT),
+                                                error_obj.location);
+    }
+
     // only index into pIndexInfo if we know parameters are sane
     if (drawCount != 0 && !pIndexInfo) {
         skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::drawCount), "is %" PRIu32 " but pIndexInfo is NULL.", drawCount);
-    } else if (stride & 3) {
-        skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-stride-04941", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         error_obj.location.dot(Field::stride), "(%" PRIu32 ") is not a multiple of 4.", stride);
     } else {
         const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
         for (uint32_t i = 0; i < drawCount; i++) {
