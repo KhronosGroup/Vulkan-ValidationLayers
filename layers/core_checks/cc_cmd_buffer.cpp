@@ -843,7 +843,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                              "vkCmdBeginRenderPass().");
         }
 
-        if (cb_state.activeRenderPass->UsesDynamicRendering() &&
+        if (cb_state.hasRenderPassInstance && cb_state.activeRenderPass->UsesDynamicRendering() &&
             !((cb_state.activeRenderPass->use_dynamic_rendering &&
                (cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
                 VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) ||
