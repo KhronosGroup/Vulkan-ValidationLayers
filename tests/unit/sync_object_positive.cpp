@@ -2351,3 +2351,46 @@ TEST_F(PositiveSyncObject, BarrierAccessSyncMicroMap) {
     vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncObject, DynamicRenderingLocalReadImageBarrier) {
+    TEST_DESCRIPTION("Test using an image memory barrier with the dynamic rendering local read extension");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandBuffer secondary(*m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR);
+
+    VkFormat colorAttachment = VK_FORMAT_R16_UNORM;
+
+    VkCommandBufferInheritanceRenderingInfo inheritanceRenderingInfo = vku::InitStructHelper();
+    inheritanceRenderingInfo.colorAttachmentCount = 1u;
+    inheritanceRenderingInfo.pColorAttachmentFormats = &colorAttachment;
+    inheritanceRenderingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkCommandBufferInheritanceInfo inheritanceInfo = vku::InitStructHelper(&inheritanceRenderingInfo);
+
+    VkCommandBufferBeginInfo beginInfo = vku::InitStructHelper();
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+    VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR;
+    imageMemoryBarrier.image = image.handle();
+    imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+
+    secondary.begin(&beginInfo);
+    vk::CmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0u, nullptr, 0u, nullptr, 1u, &imageMemoryBarrier);
+    secondary.end();
+}
