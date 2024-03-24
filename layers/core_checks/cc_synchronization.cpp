@@ -1868,17 +1868,19 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
     if ((cb_state.activeRenderPass) && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSeconary()) {
         const auto active_subpass = cb_state.GetActiveSubpass();
         const auto rp_state = cb_state.activeRenderPass;
-        const auto &sub_desc = rp_state->create_info.pSubpasses[active_subpass];
-        // Secondary CB case w/o FB specified delay validation
-        auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
-        vvl::LocationCapture loc_capture(loc);
-        const VkRenderPass render_pass = rp_state->VkHandle();
-        cb_state.cmd_execute_commands_functions.emplace_back(
-            [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
-                const vvl::CommandBuffer &secondary_cb, const vvl::CommandBuffer *primary_cb, const vvl::Framebuffer *fb) {
-                return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), secondary_cb, fb, active_subpass, sub_desc,
-                                                                render_pass, barrier, primary_cb);
-            });
+        if (active_subpass < rp_state->create_info.subpassCount) {
+            const auto &sub_desc = rp_state->create_info.pSubpasses[active_subpass];
+            // Secondary CB case w/o FB specified delay validation
+            auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
+            vvl::LocationCapture loc_capture(loc);
+            const VkRenderPass render_pass = rp_state->VkHandle();
+            cb_state.cmd_execute_commands_functions.emplace_back(
+                [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
+                    const vvl::CommandBuffer &secondary_cb, const vvl::CommandBuffer *primary_cb, const vvl::Framebuffer *fb) {
+                    return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), secondary_cb, fb, active_subpass, sub_desc,
+                                                                    render_pass, barrier, primary_cb);
+                });
+        }
     }
 }
 
