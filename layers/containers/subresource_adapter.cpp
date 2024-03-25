@@ -335,8 +335,15 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
                 }
             } else {
                 layout.offset += layout.size;
-                layout.rowPitch = static_cast<VkDeviceSize>(floor(subres_extent.width * texel_sizes_[aspect_index]));
-                layout.arrayPitch = layout.rowPitch * subres_extent.height;
+
+                const double row_pitch = subres_extent.width * texel_sizes_[aspect_index];
+                // TODO: layout.rowPitch is still computed incorrectly for ASTC_10x10,
+                // but it is less trivial fix comparing to arrayPitch, so will be fixed
+                // later. There is no known rowPitch bugs, which somehow justifies why
+                // rowPitch fix is postponed, and arrayPitch, which affected Angle, was fixed.
+                layout.rowPitch = static_cast<VkDeviceSize>(row_pitch);
+
+                layout.arrayPitch = static_cast<VkDeviceSize>(row_pitch * subres_extent.height);
                 layout.depthPitch = layout.arrayPitch;
                 if (is_3_d_) {
                     layout.size = layout.depthPitch * subres_extent.depth;
