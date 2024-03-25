@@ -104,7 +104,7 @@ class Validator : public ValidationStateTracker {
     WriteLockGuard WriteLock() override;
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
-                                   void *modified_create_info) override;
+                                   safe_VkDeviceCreateInfo *modified_create_info) override;
     void CreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
@@ -122,53 +122,62 @@ class Validator : public ValidationStateTracker {
                                        const VkDependencyInfo *pDependencyInfos, const ErrorObject &error_obj) const override;
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                           const RecordObject &record_obj, void *cpl_state_data) override;
+                                           const RecordObject &record_obj,
+                                           create_pipeline_layout_api_state *cpl_state_data) override;
     void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                             const RecordObject &record_obj) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                       const RecordObject &record_obj, void *csm_state_data) override;
+                                       const RecordObject &record_obj, create_shader_object_api_state *csm_state_data) override;
     void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                         const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                        const RecordObject &record_obj, void *state_data) override;
+                                        const RecordObject &record_obj, create_shader_object_api_state *state_data) override;
     void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator,
                                        const RecordObject &record_obj) override;
 
     void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                              const RecordObject &record_obj, void *cgpl_state_data) override;
+                                              const RecordObject &record_obj,
+                                              create_graphics_pipeline_api_state *cgpl_state_data) override;
     void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                              const VkComputePipelineCreateInfo *pCreateInfos,
                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                             const RecordObject &record_obj, void *ccpl_state_data) override;
+                                             const RecordObject &record_obj,
+                                             create_compute_pipeline_api_state *ccpl_state_data) override;
     void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                   const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                  const RecordObject &record_obj, void *crtpl_state_data) override;
+                                                  const RecordObject &record_obj,
+                                                  create_ray_tracing_pipeline_api_state *crtpl_state_data) override;
     void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                    VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const RecordObject &record_obj, void *crtpl_state_data) override;
+                                                   const RecordObject &record_obj,
+                                                   create_ray_tracing_pipeline_khr_api_state *crtpl_state_data) override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                               const RecordObject &record_obj, void *cgpl_state_data) override;
+                                               const RecordObject &record_obj,
+                                               create_graphics_pipeline_api_state *cgpl_state_data) override;
     void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkComputePipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                              const RecordObject &record_obj, void *ccpl_state_data) override;
+                                              const RecordObject &record_obj,
+                                              create_compute_pipeline_api_state *ccpl_state_data) override;
     void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const RecordObject &record_obj, void *crtpl_state_data) override;
+                                                   const RecordObject &record_obj,
+                                                   create_ray_tracing_pipeline_api_state *crtpl_state_data) override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                    const RecordObject &record_obj, void *crtpl_state_data) override;
+                                                    const RecordObject &record_obj,
+                                                    create_ray_tracing_pipeline_khr_api_state *crtpl_state_data) override;
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 

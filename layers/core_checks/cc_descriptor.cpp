@@ -3288,10 +3288,8 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
 // as well as DescriptorSetLayout ptrs used for later update.
 bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
-                                                       void *ads_state_data) const {
-    StateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ads_state_data);
-
-    vvl::AllocateDescriptorSetsData *ds_data = reinterpret_cast<vvl::AllocateDescriptorSetsData *>(ads_state_data);
+                                                       vvl::AllocateDescriptorSetsData *ds_data) const {
+    StateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ds_data);
 
     bool skip = false;
     auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
@@ -3388,7 +3386,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 
 void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                       VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
-                                                      void *ads_state) {
+                                                      vvl::AllocateDescriptorSetsData *ads_state) {
     // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
     // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY they think they over-allocated, but if they instead allocated type not
     // avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking they ran out. It was decided
