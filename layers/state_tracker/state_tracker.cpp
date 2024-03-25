@@ -3671,6 +3671,27 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
             std::copy(swapchain_present_modes_ci->pPresentModes, swapchain_present_modes_ci->pPresentModes + present_mode_count,
                       std::back_inserter(swapchain->present_modes));
         }
+
+        // Initialize swapchain image state
+        {
+            uint32_t swapchain_image_count = 0;
+            DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, nullptr);
+            std::vector<VkImage> swapchain_images(swapchain_image_count);
+            DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, swapchain_images.data());
+            swapchain->get_swapchain_image_count = swapchain_image_count;
+            swapchain->images.resize(swapchain_image_count);
+            const auto &image_ci = swapchain->image_create_info;
+            for (uint32_t i = 0; i < swapchain_image_count; ++i) {
+                auto format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
+                                                              IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier),
+                                                              device, swapchain_images[i], image_ci.format, image_ci.tiling);
+                auto image_state = CreateImageState(swapchain_images[i], image_ci.ptr(), swapchain->VkHandle(), i, format_features);
+                image_state->SetSwapchain(swapchain, i);
+                image_state->SetInitialLayoutMap();
+                swapchain->images[i].image_state = image_state.get();
+                Add(std::move(image_state));
+            }
+        }
         Add(std::move(swapchain));
     } else {
         surface_state->swapchain = nullptr;
@@ -3814,13 +3835,6 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
         // Invalidate present sync if different swapchain is used
         if (fence_state && fence_state->IsPresentSyncSwapchainChanged(swapchain_data)) {
             fence_state->SetPresentSync(vvl::PresentSync{});
-        }
-        if (*pImageIndex >= swapchain_data->images.size()) {
-            uint32_t swapchainImageCount = *pImageIndex + 1;
-            DispatchGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr);
-            std::vector<VkImage> swapchainImages(swapchainImageCount);
-            DispatchGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data());
-            RecordGetSwapchainImages(device, swapchain, &swapchainImageCount, swapchainImages.data());
         }
         swapchain_data->AcquireImage(*pImageIndex, semaphore_state, fence_state);
     }
@@ -4804,42 +4818,6 @@ void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uin
                                                     createInfoCount, pShaders, csm_state->unique_shader_ids[i]));
         }
     }
-}
-
-void ValidationStateTracker::RecordGetSwapchainImages(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                      VkImage *pSwapchainImages) {
-    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-
-    if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
-
-    if (pSwapchainImages) {
-        for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            vvl::SwapchainImage &swapchain_image = swapchain_state->images[i];
-            if (swapchain_image.image_state) continue;  // Already retrieved this.
-
-            auto format_features = GetImageFormatFeatures(
-                physical_device, has_format_feature2, IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device,
-                pSwapchainImages[i], swapchain_state->image_create_info.format, swapchain_state->image_create_info.tiling);
-
-            auto image_state =
-                CreateImageState(pSwapchainImages[i], swapchain_state->image_create_info.ptr(), swapchain, i, format_features);
-
-            image_state->SetSwapchain(swapchain_state, i);
-            swapchain_image.image_state = image_state.get();
-            Add(std::move(image_state));
-        }
-    }
-
-    if (*pSwapchainImageCount) {
-        swapchain_state->get_swapchain_image_count = *pSwapchainImageCount;
-    }
-}
-
-void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                                 uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
-                                                                 const RecordObject &record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
-    RecordGetSwapchainImages(device, swapchain, pSwapchainImageCount, pSwapchainImages);
 }
 
 void ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,

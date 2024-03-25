@@ -370,6 +370,8 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     bind_info.memoryOffset = 0;
 
     vk::BindImageMemory2(device(), 1, &bind_info);
+    // Can transition layout after the memory is bound
+    peer_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
