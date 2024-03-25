@@ -87,7 +87,7 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
                                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                const RecordObject& record_obj,
-                                                               create_compute_pipeline_api_state* pipe_state) {
+                                                               chassis::CreateComputePipelines* pipe_state) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
 }
@@ -96,7 +96,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                            const ErrorObject& error_obj,
-                                                           create_graphics_pipeline_api_state* cgpl_state) const {
+                                                           chassis::CreateGraphicsPipelines* cgpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                      pAllocator, pPipelines, error_obj, cgpl_state);
     if (skip) {
@@ -273,7 +273,7 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
                                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 const RecordObject& record_obj,
-                                                                create_graphics_pipeline_api_state* cgpl_state_data) {
+                                                                chassis::CreateGraphicsPipelines* cgpl_state_data) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
 }
@@ -282,7 +282,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
                                                           const VkComputePipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                           const ErrorObject& error_obj,
-                                                          create_compute_pipeline_api_state* ccpl_state) const {
+                                                          chassis::CreateComputePipelines* ccpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                     pAllocator, pPipelines, error_obj, ccpl_state);
 

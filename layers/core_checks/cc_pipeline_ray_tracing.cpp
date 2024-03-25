@@ -171,7 +171,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             const ErrorObject &error_obj,
-                                                            create_ray_tracing_pipeline_api_state *crtpl_state) const {
+                                                            chassis::CreateRayTracingPipelinesNV *crtpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                          pPipelines, error_obj, crtpl_state);
 
@@ -213,7 +213,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                              const ErrorObject &error_obj,
-                                                             create_ray_tracing_pipeline_khr_api_state *crtpl_state) const {
+                                                             chassis::CreateRayTracingPipelinesKHR *crtpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
         device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, error_obj, crtpl_state);
 

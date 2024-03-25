@@ -203,7 +203,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
     return true;
 }
 
-bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, create_shader_module_api_state *csm_state) {
+bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, chassis::CreateShaderModule *csm_state) {
     auto it = instrumented_shaders.find(shader_hash);
     if (it != instrumented_shaders.end()) {
         csm_state->instrumented_create_info.codeSize = it->second.first * sizeof(uint32_t);
@@ -215,8 +215,7 @@ bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t shader_hash, cr
     return false;
 }
 
-bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader_hash,
-                                                        create_shader_object_api_state *cso_state) {
+bool gpuav::Validator::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader_hash, chassis::ShaderObject *cso_state) {
     auto it = instrumented_shaders.find(shader_hash);
     if (it != instrumented_shaders.end()) {
         cso_state->instrumented_create_info[index].codeSize = it->second.first * sizeof(uint32_t);

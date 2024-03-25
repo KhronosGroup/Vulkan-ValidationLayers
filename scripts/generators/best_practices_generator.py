@@ -42,13 +42,13 @@ class BestPracticesOutputGenerator(BaseGenerator):
 
         # Commands that require an extra parameter for state sharing between validate/record steps
         self.extra_parameter_map = {
-            'vkCreateShaderModule' : 'create_shader_module_api_state',
-            'vkCreateShadersEXT' : 'create_shader_object_api_state',
-            'vkCreateGraphicsPipelines' : 'create_graphics_pipeline_api_state',
-            'vkCreateComputePipelines' : 'create_compute_pipeline_api_state',
+            'vkCreateShaderModule' : 'chassis::CreateShaderModule',
+            'vkCreateShadersEXT' : 'chassis::ShaderObject',
+            'vkCreateGraphicsPipelines' : 'chassis::CreateGraphicsPipelines',
+            'vkCreateComputePipelines' : 'chassis::CreateComputePipelines',
             'vkAllocateDescriptorSets' : 'vvl::AllocateDescriptorSetsData',
-            'vkCreateRayTracingPipelinesNV' : 'create_ray_tracing_pipeline_api_state',
-            'vkCreateRayTracingPipelinesKHR' : 'create_ray_tracing_pipeline_khr_api_state',
+            'vkCreateRayTracingPipelinesNV' : 'chassis::CreateRayTracingPipelinesNV',
+            'vkCreateRayTracingPipelinesKHR' : 'chassis::CreateRayTracingPipelinesKHR',
         }
         # Commands that have a manually written post-call-record step which needs to be called from the autogen'd fcn
         self.manual_postcallrecord_list = [

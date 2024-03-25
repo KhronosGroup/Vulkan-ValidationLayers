@@ -37,7 +37,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                         const ErrorObject &error_obj,
-                                                        create_graphics_pipeline_api_state *cgpl_state) const {
+                                                        chassis::CreateGraphicsPipelines *cgpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                      pPipelines, error_obj, cgpl_state);
 
