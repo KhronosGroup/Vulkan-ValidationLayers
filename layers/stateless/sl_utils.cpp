@@ -180,7 +180,7 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
                                               const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
-    if ((count == 0) || (array == nullptr)) {
+    if ((array == nullptr) || (count == 0)) {
         skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
                               array_required_vuid);
     } else {
@@ -329,7 +329,7 @@ bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const L
                                               const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
-    if ((count == 0) || (array == nullptr)) {
+    if ((array == nullptr) || (count == 0)) {
         skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
                               array_required_vuid);
     } else {
@@ -480,7 +480,7 @@ bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Lo
                                              const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
-    if ((count == 0) || (array == nullptr)) {
+    if ((array == nullptr) || (count == 0)) {
         // Flag arrays always need to have a valid array
         skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, true, count_required_vuid, array_required_vuid);
     } else {
