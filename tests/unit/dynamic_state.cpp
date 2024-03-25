@@ -5086,6 +5086,12 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
     RETURN_IF_SKIP(Init());
 
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_location_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_location_properties);
+    if (!sample_location_properties.variableSampleLocations) {
+        GTEST_SKIP() << "variableSampleLocations not supported";
+    }
+
     VkFormat format = FindSupportedDepthStencilFormat(gpu());
 
     vkt::Image image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
