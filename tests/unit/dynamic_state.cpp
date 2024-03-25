@@ -5142,6 +5142,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsGridSize) {
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
