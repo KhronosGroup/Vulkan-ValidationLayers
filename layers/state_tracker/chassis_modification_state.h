@@ -27,8 +27,11 @@ namespace vvl {
 class Pipeline;
 }  // namespace vvl
 
-// This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
-struct create_shader_module_api_state {
+// These structure are here as a way to bridge information down the chassis.
+// This allows the 4 different calls (PreCallValidate, PreCallRecord, Dispatch, PostCallRecord) to share information
+namespace chassis {
+
+struct CreateShaderModule {
     // allows PreCallRecord to return a value like PreCallValidate
     bool skip = false;
 
@@ -45,8 +48,8 @@ struct create_shader_module_api_state {
     std::vector<uint32_t> instrumented_spirv;
 };
 
-// same idea as create_shader_module_api_state but for VkShaderEXT (VK_EXT_shader_object)
-struct create_shader_object_api_state {
+// VkShaderEXT (VK_EXT_shader_object)
+struct ShaderObject {
     // allows PreCallRecord to return a value like PreCallValidate
     bool skip = false;
 
@@ -60,7 +63,7 @@ struct create_shader_object_api_state {
 
     std::vector<VkDescriptorSetLayout> new_layouts;
 
-    create_shader_object_api_state(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos) {
+    ShaderObject(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos) {
         instrumented_create_info = const_cast<VkShaderCreateInfoEXT*>(pCreateInfos);
         module_states.resize(createInfoCount);
         stateless_data.resize(createInfoCount);
@@ -69,47 +72,45 @@ struct create_shader_object_api_state {
     }
 };
 
-// This structure is used to save data across the CreateGraphicsPipelines down-chain API call
-// CreateShaderModuleStates[i] = ith shader state
-using CreateShaderModuleStates = std::array<create_shader_module_api_state, 32>;
-struct create_graphics_pipeline_api_state {
+// One for each shader stage
+// Currently at most, we should ever have 5 stages in a pipeline/shader object
+using CreateShaderModuleStates = std::array<CreateShaderModule, 32>;
+
+struct CreateGraphicsPipelines {
     std::vector<safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
     std::vector<CreateShaderModuleStates> shader_states;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
 
-// This structure is used to save data across the CreateComputePipelines down-chain API call
-struct create_compute_pipeline_api_state {
+struct CreateComputePipelines {
     std::vector<safe_VkComputePipelineCreateInfo> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
     std::vector<CreateShaderModuleStates> shader_states;
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
 
-// This structure is used to save data across the CreateRayTracingPipelinesNV down-chain API call.
-struct create_ray_tracing_pipeline_api_state {
+struct CreateRayTracingPipelinesNV {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
     std::vector<CreateShaderModuleStates> shader_states;
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
 };
 
-// This structure is used to save data across the CreateRayTracingPipelinesKHR down-chain API call.
-struct create_ray_tracing_pipeline_khr_api_state {
+struct CreateRayTracingPipelinesKHR {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
     std::vector<CreateShaderModuleStates> shader_states;
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
 };
 
-// This structure is used modify parameters for the CreatePipelineLayout down-chain API call
-struct create_pipeline_layout_api_state {
+struct CreatePipelineLayout {
     std::vector<VkDescriptorSetLayout> new_layouts;
     VkPipelineLayoutCreateInfo modified_create_info;
 };
 
-// This structure is used modify parameters for the CreateBuffer down-chain API call
-struct create_buffer_api_state {
+struct CreateBuffer {
     VkBufferCreateInfo modified_create_info;
 };
+
+}  // namespace chassis

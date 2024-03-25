@@ -2475,7 +2475,7 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
 // See diagram on https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6230
 void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                 const RecordObject &record_obj, create_shader_module_api_state *csm_state) {
+                                                 const RecordObject &record_obj, chassis::CreateShaderModule *csm_state) {
     // Normally would validate in PreCallValidate, but need a non-const function to update csm_state
     // This is on the stack, we don't have to worry about threading hazards and this could be moved and used const_cast
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, csm_state);
@@ -2484,7 +2484,7 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
 
 void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                               const RecordObject &record_obj, create_shader_object_api_state *csm_state) {
+                                               const RecordObject &record_obj, chassis::ShaderObject *csm_state) {
     ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                           csm_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {

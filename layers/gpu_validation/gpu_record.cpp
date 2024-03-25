@@ -35,7 +35,7 @@
 
 void gpuav::Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                 const RecordObject &record_obj, create_buffer_api_state *cb_state) {
+                                                 const RecordObject &record_obj, chassis::CreateBuffer *cb_state) {
     if (cb_state) {
         // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
         // acceleration structure build validation will find and replace invalid acceleration structure
@@ -112,7 +112,7 @@ void gpuav::Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderP
 // Create the instrumented shader data to provide to the driver.
 void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                       const RecordObject &record_obj, create_shader_module_api_state *csm_state) {
+                                                       const RecordObject &record_obj, chassis::CreateShaderModule *csm_state) {
     BaseClass::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, csm_state);
     if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
     uint32_t shader_id;
@@ -141,7 +141,7 @@ void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const Vk
 void gpuav::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                      const VkShaderCreateInfoEXT *pCreateInfos,
                                                      const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                     const RecordObject &record_obj, create_shader_object_api_state *csm_state) {
+                                                     const RecordObject &record_obj, chassis::ShaderObject *csm_state) {
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj, csm_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;

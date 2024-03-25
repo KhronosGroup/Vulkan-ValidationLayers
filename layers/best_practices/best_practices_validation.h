@@ -292,12 +292,12 @@ class BestPractices : public ValidationStateTracker {
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                 const ErrorObject& error_obj,
-                                                create_graphics_pipeline_api_state* cgpl_state) const override;
+                                                chassis::CreateGraphicsPipelines* cgpl_state) const override;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const ErrorObject& error_obj,
-                                               create_compute_pipeline_api_state* pipe_state) const override;
+                                               chassis::CreateComputePipelines* pipe_state) const override;
 
     bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& create_info, const Location& create_info_loc) const;
 
@@ -662,7 +662,7 @@ class BestPractices : public ValidationStateTracker {
                                                      const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      const RecordObject& record_obj,
-                                                     create_graphics_pipeline_api_state* cgpl_state_data);
+                                                     chassis::CreateGraphicsPipelines* cgpl_state_data);
 
     bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                             VkFence fence, uint32_t* pImageIndex, const ErrorObject& error_obj) const override;
@@ -732,7 +732,7 @@ class BestPractices : public ValidationStateTracker {
     void ManualPostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                     const VkComputePipelineCreateInfo* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const RecordObject& record_obj, create_compute_pipeline_api_state* state_data);
+                                                    const RecordObject& record_obj, chassis::CreateComputePipelines* state_data);
 
     void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                           VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,

@@ -667,7 +667,7 @@ bool gpu_tracker::Validator::PreCallValidateCmdWaitEvents2(VkCommandBuffer comma
 void gpu_tracker::Validator::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
-                                                               create_pipeline_layout_api_state *cpl_state) {
+                                                               chassis::CreatePipelineLayout *cpl_state) {
     if (aborted) {
         return;
     }
@@ -709,8 +709,7 @@ void gpu_tracker::Validator::PostCallRecordCreatePipelineLayout(VkDevice device,
 void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                            const VkShaderCreateInfoEXT *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                           const RecordObject &record_obj,
-                                                           create_shader_object_api_state *cso_state) {
+                                                           const RecordObject &record_obj, chassis::ShaderObject *cso_state) {
     if (aborted) {
         return;
     }
@@ -743,8 +742,7 @@ void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint
 void gpu_tracker::Validator::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                             const VkShaderCreateInfoEXT *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                            const RecordObject &record_obj,
-                                                            create_shader_object_api_state *cso_state) {
+                                                            const RecordObject &record_obj, chassis::ShaderObject *cso_state) {
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj, cso_state);
     if (aborted) return;
 
@@ -768,7 +766,7 @@ void gpu_tracker::Validator::PreCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                   const RecordObject &record_obj,
-                                                                  create_graphics_pipeline_api_state *cgpl_state) {
+                                                                  chassis::CreateGraphicsPipelines *cgpl_state) {
     if (aborted) return;
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, cgpl_state->pipe_state, &new_pipeline_create_infos,
@@ -781,7 +779,7 @@ void gpu_tracker::Validator::PreCallRecordCreateComputePipelines(VkDevice device
                                                                  const VkComputePipelineCreateInfo *pCreateInfos,
                                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                  const RecordObject &record_obj,
-                                                                 create_compute_pipeline_api_state *ccpl_state) {
+                                                                 chassis::CreateComputePipelines *ccpl_state) {
     if (aborted) return;
     std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, ccpl_state->pipe_state, &new_pipeline_create_infos,
@@ -795,7 +793,7 @@ void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesNV(VkDevice d
                                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                                       const VkAllocationCallbacks *pAllocator,
                                                                       VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                      create_ray_tracing_pipeline_api_state *crtpl_state) {
+                                                                      chassis::CreateRayTracingPipelinesNV *crtpl_state) {
     if (aborted) return;
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state, &new_pipeline_create_infos,
@@ -809,7 +807,7 @@ void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice 
                                                                        const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                       create_ray_tracing_pipeline_khr_api_state *crtpl_state) {
+                                                                       chassis::CreateRayTracingPipelinesKHR *crtpl_state) {
     if (aborted) return;
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state, &new_pipeline_create_infos,
@@ -836,7 +834,7 @@ void gpu_tracker::Validator::PostCallRecordCreateGraphicsPipelines(VkDevice devi
                                                                    const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                    const RecordObject &record_obj,
-                                                                   create_graphics_pipeline_api_state *cgpl_state) {
+                                                                   chassis::CreateGraphicsPipelines *cgpl_state) {
     BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                      cgpl_state);
     if (aborted) return;
@@ -849,7 +847,7 @@ void gpu_tracker::Validator::PostCallRecordCreateComputePipelines(VkDevice devic
                                                                   const VkComputePipelineCreateInfo *pCreateInfos,
                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                   const RecordObject &record_obj,
-                                                                  create_compute_pipeline_api_state *ccpl_state) {
+                                                                  chassis::CreateComputePipelines *ccpl_state) {
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     ccpl_state);
     if (aborted) return;
@@ -863,7 +861,7 @@ void gpu_tracker::Validator::PostCallRecordCreateRayTracingPipelinesNV(VkDevice 
                                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                       create_ray_tracing_pipeline_api_state *crtpl_state) {
+                                                                       chassis::CreateRayTracingPipelinesNV *crtpl_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                          record_obj, crtpl_state);
     if (aborted) return;
@@ -877,7 +875,7 @@ void gpu_tracker::Validator::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
                                                                         const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                         const VkAllocationCallbacks *pAllocator,
                                                                         VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                        create_ray_tracing_pipeline_khr_api_state *crtpl_state) {
+                                                                        chassis::CreateRayTracingPipelinesKHR *crtpl_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, crtpl_state);
     if (aborted) return;

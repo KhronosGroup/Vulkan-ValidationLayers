@@ -656,7 +656,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateGraphicsPipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_graphics_pipeline_api_state cgpl_state[LayerObjectTypeMaxEnum]{};
+    chassis::CreateGraphicsPipelines cgpl_state[LayerObjectTypeMaxEnum]{};
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         cgpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -697,7 +697,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateComputePipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_compute_pipeline_api_state ccpl_state[LayerObjectTypeMaxEnum]{};
+    chassis::CreateComputePipelines ccpl_state[LayerObjectTypeMaxEnum]{};
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         ccpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -737,7 +737,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_ray_tracing_pipeline_api_state crtpl_state[LayerObjectTypeMaxEnum]{};
+    chassis::CreateRayTracingPipelinesNV crtpl_state[LayerObjectTypeMaxEnum]{};
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -775,7 +775,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_ray_tracing_pipeline_khr_api_state crtpl_state[LayerObjectTypeMaxEnum]{};
+    chassis::CreateRayTracingPipelinesKHR crtpl_state[LayerObjectTypeMaxEnum]{};
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -820,7 +820,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePipelineLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_pipeline_layout_api_state cpl_state{};
+    chassis::CreatePipelineLayout cpl_state{};
     cpl_state.modified_create_info = *pCreateInfo;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
@@ -852,7 +852,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_shader_module_api_state csm_state{};
+    chassis::CreateShaderModule csm_state{};
     csm_state.instrumented_create_info = *pCreateInfo;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
@@ -891,7 +891,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     for (uint32_t i = 0; i < createInfoCount; i++) {
         new_shader_create_infos.push_back(pCreateInfos[i]);
     }
-    create_shader_object_api_state csm_state(createInfoCount, new_shader_create_infos.data());
+    chassis::ShaderObject csm_state(createInfoCount, new_shader_create_infos.data());
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
@@ -960,7 +960,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_buffer_api_state cb_state{};
+    chassis::CreateBuffer cb_state{};
     cb_state.modified_create_info = *pCreateInfo;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
