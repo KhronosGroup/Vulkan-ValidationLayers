@@ -5613,3 +5613,12 @@ std::shared_ptr<vvl::DeviceMemory> ValidationStateTracker::CreateDeviceMemorySta
     return std::make_shared<vvl::DeviceMemory>(handle, pAllocateInfo, fake_address, memory_type, memory_heap,
                                                std::move(dedicated_binding), physical_device_count);
 }
+
+void ValidationStateTracker::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                              uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                              const VkDeviceSize *pOffsets,
+                                                                              const VkDeviceSize *pSizes,
+                                                                              const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    cb_state->transform_feedback_buffers_bound = bindingCount;
+}
