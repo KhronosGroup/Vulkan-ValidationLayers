@@ -5209,10 +5209,16 @@ TEST_F(NegativeDynamicState, InterpolateAtSample) {
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
     AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_location_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_location_properties);
+    if (!sample_location_properties.variableSampleLocations) {
+        GTEST_SKIP() << "variableSampleLocations not supported";
+    }
 
     static const char vs_src[] = R"glsl(
         #version 460
