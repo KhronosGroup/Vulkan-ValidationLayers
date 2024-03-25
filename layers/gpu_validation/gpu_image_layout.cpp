@@ -166,38 +166,6 @@ void gpuav::Validator::PreCallRecordDestroyImage(VkDevice device, VkImage image,
     BaseClass::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
 
-void gpuav::Validator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                           uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
-                                                           const RecordObject &record_obj) {
-    // This function will run twice. The first is to get pSwapchainImageCount. The second is to get pSwapchainImages.
-    // The first time in StateTracker::PostCallRecordGetSwapchainImagesKHR only generates the container's size.
-    // The second time in StateTracker::PostCallRecordGetSwapchainImagesKHR will create VKImage and vvl::Image.
-
-    // So GlobalImageLayoutMap saving new vvl::Images has to run in the second time.
-    // pSwapchainImages is not nullptr and it needs to wait until StateTracker::PostCallRecordGetSwapchainImagesKHR.
-
-    uint32_t new_swapchain_image_index = 0;
-    if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
-        auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-        const auto image_vector_size = swapchain_state->images.size();
-
-        for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
-            if ((new_swapchain_image_index >= image_vector_size) ||
-                !swapchain_state->images[new_swapchain_image_index].image_state) {
-                break;
-            }
-        }
-    }
-    BaseClass::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
-
-    if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
-        for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
-            auto image_state = Get<vvl::Image>(pSwapchainImages[new_swapchain_image_index]);
-            image_state->SetInitialLayoutMap();
-        }
-    }
-}
-
 void gpuav::Validator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                        const VkClearColorValue *pColor, uint32_t rangeCount,
                                                        const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {

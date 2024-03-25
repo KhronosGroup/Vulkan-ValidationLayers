@@ -727,43 +727,12 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         auto swapchain_data = Get<vvl::Swapchain>(swapchain);
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
-                if (!swapchain_image.image_state) continue;
+                assert(swapchain_image.image_state);
                 qfo_release_image_barrier_map.erase(swapchain_image.image_state->VkHandle());
             }
         }
     }
     StateTracker::PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator, record_obj);
-}
-
-void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                     VkImage *pSwapchainImages, const RecordObject &record_obj) {
-    // This function will run twice. The first is to get pSwapchainImageCount. The second is to get pSwapchainImages.
-    // The first time in StateTracker::PostCallRecordGetSwapchainImagesKHR only generates the container's size.
-    // The second time in StateTracker::PostCallRecordGetSwapchainImagesKHR will create VKImage and vvl::Image.
-
-    // So GlobalImageLayoutMap saving new vvl::Images has to run in the second time.
-    // pSwapchainImages is not nullptr and it needs to wait until StateTracker::PostCallRecordGetSwapchainImagesKHR.
-
-    uint32_t new_swapchain_image_index = 0;
-    if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
-        auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-        const auto image_vector_size = swapchain_state->images.size();
-
-        for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
-            if ((new_swapchain_image_index >= image_vector_size) ||
-                !swapchain_state->images[new_swapchain_image_index].image_state) {
-                break;
-            }
-        }
-    }
-    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
-
-    if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
-        for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
-            auto image_state = Get<vvl::Image>(pSwapchainImages[new_swapchain_image_index]);
-            image_state->SetInitialLayoutMap();
-        }
-    }
 }
 
 bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_image, uint32_t image_index,
@@ -858,8 +827,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 skip |= LogError("VUID-VkPresentInfoKHR-pImageIndices-01430", pPresentInfo->pSwapchains[i], swapchain_loc,
                                  "image index is too large (%" PRIu32 "), There are only %" PRIu32 " images in this swapchain.",
                                  pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
-            } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state ||
-                       !swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired) {
+            } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired) {
+                assert(swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state);
                 skip |= LogError("VUID-VkPresentInfoKHR-pImageIndices-01430", pPresentInfo->pSwapchains[i], swapchain_loc,
                                  "image at index %" PRIu32 " was not acquired from the swapchain.", pPresentInfo->pImageIndices[i]);
             } else {
@@ -1072,8 +1041,8 @@ bool CoreChecks::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const
                                  release_info_loc.dot(Field::pImageIndices, i),
                                  "%" PRIu32 " is too large, there are only %" PRIu32 " images in this swapchain.",
                                  pReleaseInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_state->images.size()));
-            } else if (!swapchain_state->images[pReleaseInfo->pImageIndices[i]].image_state ||
-                       !swapchain_state->images[pReleaseInfo->pImageIndices[i]].acquired) {
+            } else if (!swapchain_state->images[pReleaseInfo->pImageIndices[i]].acquired) {
+                assert(swapchain_state->images[pReleaseInfo->pImageIndices[i]].image_state);
                 skip |= LogError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785", pReleaseInfo->swapchain,
                                  release_info_loc.dot(Field::pImageIndices, i), "%" PRIu32 " was not acquired from the swapchain.",
                                  pReleaseInfo->pImageIndices[i]);

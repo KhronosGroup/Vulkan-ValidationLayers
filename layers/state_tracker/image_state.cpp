@@ -549,10 +549,7 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
         images[image_index].acquire_semaphore.reset();
         images[image_index].acquire_fence.reset();
     } else {
-        vvl::Image *image_state = images[image_index].image_state;
-        if (image_state) {
-            image_state->layout_locked = true;
-        }
+        images[image_index].image_state->layout_locked = true;
     }
     if (present_id > max_present_id) {
         max_present_id = present_id;
@@ -561,25 +558,19 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
 
 void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
                              const std::shared_ptr<vvl::Fence> &fence_state) {
-    assert(acquired_images < std::numeric_limits<uint32_t>::max());
     acquired_images++;
     images[image_index].acquired = true;
     images[image_index].acquire_semaphore = semaphore_state;
     images[image_index].acquire_fence = fence_state;
     if (shared_presentable) {
-        vvl::Image *image_state = images[image_index].image_state;
-        if (image_state) {
-            image_state->shared_presentable = shared_presentable;
-        }
+        images[image_index].image_state->shared_presentable = shared_presentable;
     }
 }
 
 void Swapchain::Destroy() {
     for (auto &swapchain_image : images) {
-        if (swapchain_image.image_state) {
-            RemoveParent(swapchain_image.image_state);
-            dev_data.Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
-        }
+        RemoveParent(swapchain_image.image_state);
+        dev_data.Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
         // NOTE: We don't have access to dev_data.fake_memory.Free() here, but it is currently a no-op
     }
     images.clear();
