@@ -200,7 +200,7 @@ class StatelessValidation : public ValidationObject {
                                  const char *stype_vuid, const char *param_vuid, const char *count_required_vuid) const {
         bool skip = false;
 
-        if ((count == 0) || (array == nullptr)) {
+        if ((array == nullptr) || (count == 0)) {
             skip |=
                 ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid, param_vuid);
         } else {
@@ -238,7 +238,7 @@ class StatelessValidation : public ValidationObject {
                                         const char *stype_vuid, const char *param_vuid, const char *count_required_vuid) const {
         bool skip = false;
 
-        if ((count == 0) || (array == nullptr)) {
+        if ((array == nullptr) || (count == 0)) {
             skip |=
                 ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid, param_vuid);
         } else {
@@ -337,7 +337,7 @@ class StatelessValidation : public ValidationObject {
                              bool count_required, bool array_required, const char *count_required_vuid) const {
         bool skip = false;
 
-        if ((count == 0) || (array == nullptr)) {
+        if ((array == nullptr) || (count == 0)) {
             skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, array_required, count_required_vuid,
                                   kVUIDUndefined);
         } else {
@@ -443,7 +443,7 @@ class StatelessValidation : public ValidationObject {
                                  const char *array_required_vuid) const {
         bool skip = false;
 
-        if ((count == 0) || (array == nullptr)) {
+        if ((array == nullptr) || (count == 0)) {
             skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
                                   array_required_vuid);
         } else {
