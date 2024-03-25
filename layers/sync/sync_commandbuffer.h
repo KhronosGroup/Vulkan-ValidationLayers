@@ -432,7 +432,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 
 // Message Creation Helpers
 struct SyncNodeFormatter {
-    const debug_report_data *report_data;
+    const DebugReport *debug_report;
     const vvl::StateObject *node;
     const char *label;
 

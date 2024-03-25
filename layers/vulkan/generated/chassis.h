@@ -2251,10 +2251,10 @@ typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 class ValidationObject {
   public:
     APIVersion api_version;
-    debug_report_data* report_data = nullptr;
+    DebugReport* debug_report = nullptr;
     template <typename T>
     std::string FormatHandle(T&& h) const {
-        return report_data->FormatHandle(std::forward<T>(h));
+        return debug_report->FormatHandle(std::forward<T>(h));
     }
 
     std::vector<std::vector<ValidationObject*>> intercept_vectors;
@@ -2353,7 +2353,7 @@ class ValidationObject {
         LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kErrorBit, objlist, &loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMsg(kErrorBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -2363,7 +2363,7 @@ class ValidationObject {
                                                  const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMsg(kWarningBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -2372,7 +2372,7 @@ class ValidationObject {
         LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMsg(kWarningBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -2381,7 +2381,7 @@ class ValidationObject {
                                                      const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -2390,7 +2390,7 @@ class ValidationObject {
         LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kInformationBit, objlist, &loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMsg(kInformationBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -2399,7 +2399,7 @@ class ValidationObject {
         LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = LogMsg(report_data, kVerboseBit, objlist, &loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMsg(kVerboseBit, objlist, &loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
     }

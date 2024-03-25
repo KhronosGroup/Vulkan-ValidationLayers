@@ -446,10 +446,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
             class ValidationObject {
             public:
                 APIVersion api_version;
-                debug_report_data* report_data = nullptr;
+                DebugReport* debug_report = nullptr;
                 template <typename T>
                 std::string FormatHandle(T&& h) const {
-                    return report_data->FormatHandle(std::forward<T>(h));
+                    return debug_report->FormatHandle(std::forward<T>(h));
                 }
 
                 std::vector<std::vector<ValidationObject*>> intercept_vectors;
@@ -548,7 +548,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kErrorBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kErrorBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -557,7 +557,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kWarningBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -565,7 +565,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kWarningBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -573,7 +573,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -581,7 +581,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kInformationBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kInformationBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -589,7 +589,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 bool DECORATE_PRINTF(5, 6) LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
-                    const bool result = LogMsg(report_data, kVerboseBit, objlist, &loc, vuid_text, format, argptr);
+                    const bool result = debug_report->LogMsg(kVerboseBit, objlist, &loc, vuid_text, format, argptr);
                     va_end(argptr);
                     return result;
                 }
@@ -1095,9 +1095,9 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 APIVersion api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
                                                             VK_API_VERSION_MINOR(specified_version), 0);
 
-                auto report_data = new debug_report_data{};
-                report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
-                ActivateInstanceDebugCallbacks(report_data);
+                auto debug_report = new DebugReport{};
+                debug_report->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
+                ActivateInstanceDebugCallbacks(debug_report);
 
                 // Set up enable and disable features flags
                 CHECK_ENABLED local_enables{};
@@ -1108,12 +1108,12 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                                                                 pCreateInfo,
                                                                 local_enables,
                                                                 local_disables,
-                                                                report_data->filter_message_ids,
-                                                                &report_data->duplicate_message_limit,
+                                                                debug_report->filter_message_ids,
+                                                                &debug_report->duplicate_message_limit,
                                                                 &lock_setting,
                                                                 &local_gpuav_settings};
                 ProcessConfigAndEnvSettings(&config_and_env_settings_data);
-                layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
+                LayerDebugMessengerActions(debug_report, OBJECT_LAYER_DESCRIPTION);
 
                 // Create temporary dispatch vector for pre-calls until instance is created
                 std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(local_enables, local_disables);
@@ -1126,14 +1126,14 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 // Initialize the validation objects
                 for (auto* intercept : local_object_dispatch) {
                     intercept->api_version = api_version;
-                    intercept->report_data = report_data;
+                    intercept->debug_report = debug_report;
                 }
 
                 // Define logic to cleanup everything in case of an error
-                auto cleanup_allocations = [report_data, &local_object_dispatch]() {
-                    DeactivateInstanceDebugCallbacks(report_data);
-                    FreePnextChain(report_data->instance_pnext_chain);
-                    LayerDebugUtilsDestroyInstance(report_data);
+                auto cleanup_allocations = [debug_report, &local_object_dispatch]() {
+                    DeactivateInstanceDebugCallbacks(debug_report);
+                    FreePnextChain(debug_report->instance_pnext_chain);
+                    LayerDebugUtilsDestroyInstance(debug_report);
                     for (ValidationObject* object : local_object_dispatch) {
                         delete object;
                     }
@@ -1174,7 +1174,7 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
 
                 framework->instance = *pInstance;
                 layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
-                framework->report_data = report_data;
+                framework->debug_report = debug_report;
                 framework->api_version = api_version;
                 framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
@@ -1199,14 +1199,14 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 }
 
                 InstanceExtensionWhitelist(framework, pCreateInfo, *pInstance);
-                DeactivateInstanceDebugCallbacks(report_data);
+                DeactivateInstanceDebugCallbacks(debug_report);
                 return result;
             }
 
             VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
                 dispatch_key key = GetDispatchKey(instance);
                 auto layer_data = GetLayerDataPtr(key, layer_data_map);
-                ActivateInstanceDebugCallbacks(layer_data->report_data);
+                ActivateInstanceDebugCallbacks(layer_data->debug_report);
                 ErrorObject error_obj(vvl::Func::vkDestroyInstance, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
 
                 for (const ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1227,10 +1227,10 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                     intercept->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
                 }
 
-                DeactivateInstanceDebugCallbacks(layer_data->report_data);
-                FreePnextChain(layer_data->report_data->instance_pnext_chain);
+                DeactivateInstanceDebugCallbacks(layer_data->debug_report);
+                FreePnextChain(layer_data->debug_report->instance_pnext_chain);
 
-                LayerDebugUtilsDestroyInstance(layer_data->report_data);
+                LayerDebugUtilsDestroyInstance(layer_data->debug_report);
 
                 for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
                     delete *item;
@@ -1301,9 +1301,9 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 device_interceptor->device = *pDevice;
                 device_interceptor->physical_device = gpu;
                 device_interceptor->instance = instance_interceptor->instance;
-                device_interceptor->report_data = instance_interceptor->report_data;
+                device_interceptor->debug_report = instance_interceptor->debug_report;
 
-                instance_interceptor->report_data->device_created++;
+                instance_interceptor->debug_report->device_created++;
 
                 InitDeviceObjectDispatch(instance_interceptor, device_interceptor);
 
@@ -1312,7 +1312,7 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                     object->device = device_interceptor->device;
                     object->physical_device = device_interceptor->physical_device;
                     object->instance = instance_interceptor->instance;
-                    object->report_data = instance_interceptor->report_data;
+                    object->debug_report = instance_interceptor->debug_report;
                     object->device_dispatch_table = device_interceptor->device_dispatch_table;
                     object->api_version = device_interceptor->api_version;
                     object->disabled = instance_interceptor->disabled;
@@ -1363,7 +1363,7 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
                 }
 
                 auto instance_interceptor = GetLayerDataPtr(GetDispatchKey(layer_data->physical_device), layer_data_map);
-                instance_interceptor->report_data->device_created--;
+                instance_interceptor->debug_report->device_created--;
 
                 for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
                     delete *item;
@@ -1902,10 +1902,10 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
 
             # Insert pre-dispatch debug utils function call
             pre_dispatch_debug_utils_functions = {
-                'vkDebugMarkerSetObjectNameEXT' : 'layer_data->report_data->DebugReportSetMarkerObjectName(pNameInfo);',
-                'vkSetDebugUtilsObjectNameEXT' : 'layer_data->report_data->DebugReportSetUtilsObjectName(pNameInfo);',
-                'vkQueueBeginDebugUtilsLabelEXT' : 'BeginQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);',
-                'vkQueueInsertDebugUtilsLabelEXT' : 'InsertQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);',
+                'vkDebugMarkerSetObjectNameEXT' : 'layer_data->debug_report->SetMarkerObjectName(pNameInfo);',
+                'vkSetDebugUtilsObjectNameEXT' : 'layer_data->debug_report->SetUtilsObjectName(pNameInfo);',
+                'vkQueueBeginDebugUtilsLabelEXT' : 'layer_data->debug_report->BeginQueueDebugUtilsLabel(queue, pLabelInfo);',
+                'vkQueueInsertDebugUtilsLabelEXT' : 'layer_data->debug_report->InsertQueueDebugUtilsLabel(queue, pLabelInfo);',
             }
             if command.name in pre_dispatch_debug_utils_functions:
                 out.append(f'    {pre_dispatch_debug_utils_functions[command.name]}\n')
@@ -1917,11 +1917,11 @@ vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 valu
 
             # Insert post-dispatch debug utils function call
             post_dispatch_debug_utils_functions = {
-                'vkQueueEndDebugUtilsLabelEXT' : 'EndQueueDebugUtilsLabel(layer_data->report_data, queue);',
-                'vkCreateDebugReportCallbackEXT' : 'LayerCreateReportCallback(layer_data->report_data, false, pCreateInfo, pCallback);',
-                'vkDestroyDebugReportCallbackEXT' : 'LayerDestroyCallback(layer_data->report_data, callback);',
-                'vkCreateDebugUtilsMessengerEXT' : 'LayerCreateMessengerCallback(layer_data->report_data, false, pCreateInfo, pMessenger);',
-                'vkDestroyDebugUtilsMessengerEXT' : 'LayerDestroyCallback(layer_data->report_data, messenger);',
+                'vkQueueEndDebugUtilsLabelEXT' : 'layer_data->debug_report->EndQueueDebugUtilsLabel(queue);',
+                'vkCreateDebugReportCallbackEXT' : 'LayerCreateReportCallback(layer_data->debug_report, false, pCreateInfo, pCallback);',
+                'vkDestroyDebugReportCallbackEXT' : 'LayerDestroyCallback(layer_data->debug_report, callback);',
+                'vkCreateDebugUtilsMessengerEXT' : 'LayerCreateMessengerCallback(layer_data->debug_report, false, pCreateInfo, pMessenger);',
+                'vkDestroyDebugUtilsMessengerEXT' : 'LayerDestroyCallback(layer_data->debug_report, messenger);',
             }
             if command.name in post_dispatch_debug_utils_functions:
                 out.append(f'    {post_dispatch_debug_utils_functions[command.name]}\n')

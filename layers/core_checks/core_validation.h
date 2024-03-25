@@ -474,9 +474,8 @@ class CoreChecks : public ValidationStateTracker {
                                     const Location& loc) const;
 
     template <typename Barrier, typename Scoreboard>
-    bool ValidateAndUpdateQFOScoreboard(const debug_report_data* report_data, const vvl::CommandBuffer& cb_state,
-                                        const char* operation, const Barrier& barrier, Scoreboard* scoreboard,
-                                        const Location& loc) const;
+    bool ValidateAndUpdateQFOScoreboard(const vvl::CommandBuffer& cb_state, const char* operation, const Barrier& barrier,
+                                        Scoreboard* scoreboard, const Location& loc) const;
     template <typename Barrier, typename TransferBarrier>
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const Barrier& barrier,
                                      QFOTransferBarrierSets<TransferBarrier>& barrier_sets);

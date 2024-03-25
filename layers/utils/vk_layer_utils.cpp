@@ -34,7 +34,7 @@
 // If a vk_layer_settings.txt file is present and an application defines a debug callback, both callbacks
 // will be active.  If no vk_layer_settings.txt file is present, creating an application-defined debug
 // callback will cause the default callbacks to be unregisterd and removed.
-void layer_debug_messenger_actions(debug_report_data *report_data, const char *layer_identifier) {
+void LayerDebugMessengerActions(DebugReport *debug_report, const char *layer_identifier) {
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
 
     std::string report_flags_key = layer_identifier;
@@ -88,7 +88,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
         FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
         dbg_create_info.pfnUserCallback = MessengerLogCallback;
         dbg_create_info.pUserData = (void *)log_output;
-        LayerCreateMessengerCallback(report_data, default_layer_callback, &dbg_create_info, &messenger);
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
     }
 
     messenger = VK_NULL_HANDLE;
@@ -96,7 +96,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
         dbg_create_info.pfnUserCallback = MessengerWin32DebugOutputMsg;
         dbg_create_info.pUserData = NULL;
-        LayerCreateMessengerCallback(report_data, default_layer_callback, &dbg_create_info, &messenger);
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
     }
 
     messenger = VK_NULL_HANDLE;
@@ -104,7 +104,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
         dbg_create_info.pfnUserCallback = MessengerBreakCallback;
         dbg_create_info.pUserData = NULL;
-        LayerCreateMessengerCallback(report_data, default_layer_callback, &dbg_create_info, &messenger);
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
     }
 }
 

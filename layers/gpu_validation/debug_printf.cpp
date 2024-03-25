@@ -387,8 +387,9 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
             std::string common_message;
             std::string filename_message;
             std::string source_message;
-            UtilGenerateCommonMessage(report_data, command_buffer, &debug_output_buffer[index], shader_module_handle,
-                                      pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
+            UtilGenerateCommonMessage(debug_report, command_buffer, &debug_output_buffer[index], shader_module_handle,
+                                      pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index,
+                                      common_message);
             UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
                 std::cout << "WARNING-DEBUG-PRINTF " << common_message.c_str() << " "

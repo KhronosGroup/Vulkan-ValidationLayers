@@ -426,7 +426,7 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-void layer_debug_messenger_actions(debug_report_data *report_data, const char *layer_identifier);
+void LayerDebugMessengerActions(DebugReport *debug_report, const char *layer_identifier);
 
 std::string GetTempFilePath();
 
