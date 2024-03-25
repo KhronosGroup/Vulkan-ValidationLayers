@@ -4177,7 +4177,7 @@ void ValidationStateTracker::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBu
                                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
-    BeginCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
+    debug_report->BeginCmdDebugUtilsLabel(commandBuffer, pLabelInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,
@@ -4191,13 +4191,13 @@ void ValidationStateTracker::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuf
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
     cb_state->EndLabel();
-    EndCmdDebugUtilsLabel(report_data, commandBuffer);
+    debug_report->EndCmdDebugUtilsLabel(commandBuffer);
 }
 
 void ValidationStateTracker::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,
                                                                       const VkDebugUtilsLabelEXT *pLabelInfo,
                                                                       const RecordObject &record_obj) {
-    InsertCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
+    debug_report->InsertCmdDebugUtilsLabel(commandBuffer, pLabelInfo);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);

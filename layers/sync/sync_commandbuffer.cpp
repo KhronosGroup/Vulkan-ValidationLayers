@@ -1011,17 +1011,17 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
 // VK_SYNCVAL_DEBUG_RESET_COUNT: (optional, default value is 1) command buffer reset count
 // VK_SYNCVAL_DEBUG_CMDBUF_PATTERN: (optional, empty string by default) pattern to match command buffer debug name
 void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
-    auto get_cmdbuf_name = [](const debug_report_data &debug_report, uint64_t cmdbuf_handle) {
+    auto get_cmdbuf_name = [](const DebugReport &debug_report, uint64_t cmdbuf_handle) {
         std::unique_lock<std::mutex> lock(debug_report.debug_output_mutex);
-        std::string object_name = debug_report.DebugReportGetUtilsObjectNameNoLock(cmdbuf_handle);
+        std::string object_name = debug_report.GetUtilsObjectNameNoLock(cmdbuf_handle);
         if (object_name.empty()) {
-            object_name = debug_report.DebugReportGetMarkerObjectNameNoLock(cmdbuf_handle);
+            object_name = debug_report.GetMarkerObjectNameNoLock(cmdbuf_handle);
         }
         vvl::ToLower(object_name);
         return object_name;
     };
     if (sync_state_->debug_command_number == command_number_ && sync_state_->debug_reset_count == reset_count_) {
-        const auto cmdbuf_name = get_cmdbuf_name(*sync_state_->report_data, cb_state_->Handle().handle);
+        const auto cmdbuf_name = get_cmdbuf_name(*sync_state_->debug_report, cb_state_->Handle().handle);
         const auto &pattern = sync_state_->debug_cmdbuf_pattern;
         const bool cmdbuf_match = pattern.empty() || (cmdbuf_name.find(pattern) != std::string::npos);
         if (cmdbuf_match) {
@@ -1089,7 +1089,7 @@ std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) 
         out << formatter.label << ": ";
     }
     if (formatter.node) {
-        out << formatter.report_data->FormatHandle(*formatter.node).c_str();
+        out << formatter.debug_report->FormatHandle(*formatter.node).c_str();
         if (formatter.node->Destroyed()) {
             out << " (destroyed)";
         }
@@ -1169,16 +1169,16 @@ std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &haz
 }
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state)
-    : report_data(sync_state.report_data), node(cb_state), label("command_buffer") {}
+    : debug_report(sync_state.debug_report), node(cb_state), label("command_buffer") {}
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image)
-    : report_data(sync_state.report_data), node(image), label("image") {}
+    : debug_report(sync_state.debug_report), node(image), label("image") {}
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
-    : report_data(sync_state.report_data), node(q_state), label("queue") {}
+    : debug_report(sync_state.debug_report), node(q_state), label("queue") {}
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_)
-    : report_data(sync_state.report_data), node(state_object), label(label_) {}
+    : debug_report(sync_state.debug_report), node(state_object), label(label_) {}
 
 std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
     std::stringstream out;

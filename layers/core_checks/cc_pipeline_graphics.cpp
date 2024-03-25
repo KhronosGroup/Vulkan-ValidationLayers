@@ -3364,31 +3364,32 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_s
             skip |=
                 LogError(vuid.task_mesh_shader_08694, objlist, loc,
                          "Mesh shader %s was created without VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but no task shader is bound.",
-                         report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
+                         debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
         } else if (validMeshShader &&
                    (last_bound_state.GetShaderState(ShaderObjectStage::MESH)->create_info.flags &
                     VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0 &&
                    validTaskShader) {
             skip |= LogError(vuid.task_mesh_shader_08695, objlist, loc,
                              "Mesh shader %s was created with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but a task shader is bound.",
-                             report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
+                             debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
         }
     }
     if (validVertShader && (validTaskShader || validMeshShader)) {
         std::stringstream msg;
         if (validTaskShader && validMeshShader) {
-            msg << "task shader " << report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::TASK))
-                << "and mesh shader " << report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
+            msg << "task shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::TASK))
+                << "and mesh shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
                 << " are bound as well";
         } else if (validTaskShader) {
-            msg << "task shader " << report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::TASK))
+            msg << "task shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::TASK))
                 << " is bound as well";
         } else if (validMeshShader) {
-            msg << "mesh shader " << report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
+            msg << "mesh shader " << debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
                 << " is bound as well";
         }
-        skip |= LogError(vuid.vert_task_mesh_shader_08696, objlist, loc, "Vertex shader %s is bound, but %s.",
-                         report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str(), msg.str().c_str());
+        skip |=
+            LogError(vuid.vert_task_mesh_shader_08696, objlist, loc, "Vertex shader %s is bound, but %s.",
+                     debug_report->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str(), msg.str().c_str());
     }
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         if (i != static_cast<uint32_t>(ShaderObjectStage::COMPUTE) && last_bound_state.shader_object_states[i]) {
@@ -3406,9 +3407,9 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LastBound &last_bound_s
                         LogError(vuid.linked_shaders_08698, objlist, loc,
                                  "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
                                  "shader (%s) is not bound.",
-                                 report_data->FormatHandle(last_bound_state.GetShader(static_cast<ShaderObjectStage>(i))).c_str(),
+                                 debug_report->FormatHandle(last_bound_state.GetShader(static_cast<ShaderObjectStage>(i))).c_str(),
                                  string_VkShaderStageFlagBits(last_bound_state.shader_object_states[i]->create_info.stage),
-                                 report_data->FormatHandle(linkedShader).c_str(),
+                                 debug_report->FormatHandle(linkedShader).c_str(),
                                  string_VkShaderStageFlagBits(missingShader->create_info.stage));
                     break;
                 }

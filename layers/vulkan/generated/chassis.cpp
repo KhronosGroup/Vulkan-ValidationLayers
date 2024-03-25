@@ -371,9 +371,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     APIVersion api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
                                                  VK_API_VERSION_MINOR(specified_version), 0);
 
-    auto report_data = new debug_report_data{};
-    report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
-    ActivateInstanceDebugCallbacks(report_data);
+    auto debug_report = new DebugReport{};
+    debug_report->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
+    ActivateInstanceDebugCallbacks(debug_report);
 
     // Set up enable and disable features flags
     CHECK_ENABLED local_enables{};
@@ -384,12 +384,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
                                                       pCreateInfo,
                                                       local_enables,
                                                       local_disables,
-                                                      report_data->filter_message_ids,
-                                                      &report_data->duplicate_message_limit,
+                                                      debug_report->filter_message_ids,
+                                                      &debug_report->duplicate_message_limit,
                                                       &lock_setting,
                                                       &local_gpuav_settings};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
-    layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
+    LayerDebugMessengerActions(debug_report, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(local_enables, local_disables);
@@ -402,14 +402,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     // Initialize the validation objects
     for (auto* intercept : local_object_dispatch) {
         intercept->api_version = api_version;
-        intercept->report_data = report_data;
+        intercept->debug_report = debug_report;
     }
 
     // Define logic to cleanup everything in case of an error
-    auto cleanup_allocations = [report_data, &local_object_dispatch]() {
-        DeactivateInstanceDebugCallbacks(report_data);
-        FreePnextChain(report_data->instance_pnext_chain);
-        LayerDebugUtilsDestroyInstance(report_data);
+    auto cleanup_allocations = [debug_report, &local_object_dispatch]() {
+        DeactivateInstanceDebugCallbacks(debug_report);
+        FreePnextChain(debug_report->instance_pnext_chain);
+        LayerDebugUtilsDestroyInstance(debug_report);
         for (ValidationObject* object : local_object_dispatch) {
             delete object;
         }
@@ -450,7 +450,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
-    framework->report_data = report_data;
+    framework->debug_report = debug_report;
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
@@ -475,14 +475,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     }
 
     InstanceExtensionWhitelist(framework, pCreateInfo, *pInstance);
-    DeactivateInstanceDebugCallbacks(report_data);
+    DeactivateInstanceDebugCallbacks(debug_report);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
     dispatch_key key = GetDispatchKey(instance);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
-    ActivateInstanceDebugCallbacks(layer_data->report_data);
+    ActivateInstanceDebugCallbacks(layer_data->debug_report);
     ErrorObject error_obj(vvl::Func::vkDestroyInstance, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
@@ -503,10 +503,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         intercept->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
-    DeactivateInstanceDebugCallbacks(layer_data->report_data);
-    FreePnextChain(layer_data->report_data->instance_pnext_chain);
+    DeactivateInstanceDebugCallbacks(layer_data->debug_report);
+    FreePnextChain(layer_data->debug_report->instance_pnext_chain);
 
-    LayerDebugUtilsDestroyInstance(layer_data->report_data);
+    LayerDebugUtilsDestroyInstance(layer_data->debug_report);
 
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;
@@ -577,9 +577,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->device = *pDevice;
     device_interceptor->physical_device = gpu;
     device_interceptor->instance = instance_interceptor->instance;
-    device_interceptor->report_data = instance_interceptor->report_data;
+    device_interceptor->debug_report = instance_interceptor->debug_report;
 
-    instance_interceptor->report_data->device_created++;
+    instance_interceptor->debug_report->device_created++;
 
     InitDeviceObjectDispatch(instance_interceptor, device_interceptor);
 
@@ -588,7 +588,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->device = device_interceptor->device;
         object->physical_device = device_interceptor->physical_device;
         object->instance = instance_interceptor->instance;
-        object->report_data = instance_interceptor->report_data;
+        object->debug_report = instance_interceptor->debug_report;
         object->device_dispatch_table = device_interceptor->device_dispatch_table;
         object->api_version = device_interceptor->api_version;
         object->disabled = instance_interceptor->disabled;
@@ -639,7 +639,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     }
 
     auto instance_interceptor = GetLayerDataPtr(GetDispatchKey(layer_data->physical_device), layer_data_map);
-    instance_interceptor->report_data->device_created--;
+    instance_interceptor->debug_report->device_created--;
 
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;
@@ -9765,7 +9765,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
         intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
     }
     VkResult result = DispatchCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
-    LayerCreateReportCallback(layer_data->report_data, false, pCreateInfo, pCallback);
+    LayerCreateReportCallback(layer_data->debug_report, false, pCreateInfo, pCallback);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
@@ -9790,7 +9790,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
         intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
     }
     DispatchDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    LayerDestroyCallback(layer_data->report_data, callback);
+    LayerDestroyCallback(layer_data->debug_report, callback);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
@@ -9860,7 +9860,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, cons
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
     }
-    layer_data->report_data->DebugReportSetMarkerObjectName(pNameInfo);
+    layer_data->debug_report->SetMarkerObjectName(pNameInfo);
     VkResult result = DispatchDebugMarkerSetObjectNameEXT(device, pNameInfo);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDebugMarkerSetObjectNameEXT]) {
@@ -10933,7 +10933,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
     }
-    layer_data->report_data->DebugReportSetUtilsObjectName(pNameInfo);
+    layer_data->debug_report->SetUtilsObjectName(pNameInfo);
     VkResult result = DispatchSetDebugUtilsObjectNameEXT(device, pNameInfo);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordSetDebugUtilsObjectNameEXT]) {
@@ -10981,7 +10981,7 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
-    BeginQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);
+    layer_data->debug_report->BeginQueueDebugUtilsLabel(queue, pLabelInfo);
     DispatchQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
@@ -11004,7 +11004,7 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
         intercept->PreCallRecordQueueEndDebugUtilsLabelEXT(queue, record_obj);
     }
     DispatchQueueEndDebugUtilsLabelEXT(queue);
-    EndQueueDebugUtilsLabel(layer_data->report_data, queue);
+    layer_data->debug_report->EndQueueDebugUtilsLabel(queue);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueEndDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordQueueEndDebugUtilsLabelEXT(queue, record_obj);
@@ -11026,7 +11026,7 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo, record_obj);
     }
-    InsertQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);
+    layer_data->debug_report->InsertQueueDebugUtilsLabel(queue, pLabelInfo);
     DispatchQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueueInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->WriteLock();
@@ -11117,7 +11117,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
         intercept->PreCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
     }
     VkResult result = DispatchCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
-    LayerCreateMessengerCallback(layer_data->report_data, false, pCreateInfo, pMessenger);
+    LayerCreateMessengerCallback(layer_data->debug_report, false, pCreateInfo, pMessenger);
     record_obj.result = result;
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
@@ -11142,7 +11142,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
         intercept->PreCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
     }
     DispatchDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
-    LayerDestroyCallback(layer_data->report_data, messenger);
+    LayerDestroyCallback(layer_data->debug_report, messenger);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);

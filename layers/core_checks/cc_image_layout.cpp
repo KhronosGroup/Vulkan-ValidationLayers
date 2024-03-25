@@ -1029,7 +1029,7 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLay
             LogError(vuid, objlist, loc,
                      "expected to be %s. Incorrect image layout for %s %s. Current layout is %s for subresource in region %" PRIu32
                      " (aspectMask=%s, mipLevel=%" PRIu32 ", arrayLayer=%" PRIu32 ")",
-                     string_VkImageLayout(expected_layout), image_label, report_data->FormatHandle(image_state.Handle()).c_str(),
+                     string_VkImageLayout(expected_layout), image_label, debug_report->FormatHandle(image_state.Handle()).c_str(),
                      string_VkImageLayout(check_state.found_layout), region_index,
                      string_VkImageAspectFlags(subres.aspectMask).c_str(), subres.mipLevel, subres.arrayLayer);
     }

@@ -225,7 +225,7 @@ void CommandBuffer::ResetCBState() {
     transform_feedback_active = false;
 
     // Clean up the label data
-    ResetCmdDebugUtilsLabel(dev_data.report_data, VkHandle());
+    dev_data.debug_report->ResetCmdDebugUtilsLabel(VkHandle());
 }
 
 void CommandBuffer::Reset() {
@@ -274,7 +274,7 @@ void CommandBuffer::ResetPushConstantDataIfIncompatible(const vvl::PipelineLayou
 
 void CommandBuffer::Destroy() {
     // Remove the cb debug labels
-    EraseCmdDebugUtilsLabel(dev_data.report_data, VkHandle());
+    dev_data.debug_report->EraseCmdDebugUtilsLabel(VkHandle());
     {
         auto guard = WriteLock();
         ResetCBState();

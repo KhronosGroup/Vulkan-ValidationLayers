@@ -108,8 +108,8 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
 // The lock (debug_output_mutex) is held by the caller (UtilGenerateCommonMessage),
 // because the latter has code paths that make multiple calls of this function,
 // and all such calls have to access the same debug reporting state to ensure consistency of output information.
-static std::string LookupDebugUtilsNameNoLock(const debug_report_data *report_data, const uint64_t object) {
-    auto object_label = report_data->DebugReportGetUtilsObjectNameNoLock(object);
+static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, const uint64_t object) {
+    auto object_label = debug_report->GetUtilsObjectNameNoLock(object);
     if (object_label != "") {
         object_label = "(" + object_label + ")";
     }
@@ -117,22 +117,22 @@ static std::string LookupDebugUtilsNameNoLock(const debug_report_data *report_da
 }
 
 // Generate message from the common portion of the debug report record.
-void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
-                               const uint32_t *debug_record, const VkShaderModule shader_module_handle,
-                               const VkPipeline pipeline_handle, const VkShaderEXT shader_object_handle,
-                               const VkPipelineBindPoint pipeline_bind_point, const uint32_t operation_index, std::string &msg) {
+void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandBuffer commandBuffer, const uint32_t *debug_record,
+                               const VkShaderModule shader_module_handle, const VkPipeline pipeline_handle,
+                               const VkShaderEXT shader_object_handle, const VkPipelineBindPoint pipeline_bind_point,
+                               const uint32_t operation_index, std::string &msg) {
     using namespace spvtools;
     std::ostringstream strm;
     if (shader_module_handle == VK_NULL_HANDLE && shader_object_handle == VK_NULL_HANDLE) {
-        std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+        std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
         strm << std::hex << std::showbase << "Internal Error: Unable to locate information for shader used in command buffer "
-             << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
+             << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
              << "). ";
         assert(true);
     } else {
-        std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+        std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
         strm << std::hex << std::showbase << "Command buffer "
-             << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
+             << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
              << "). ";
         if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             strm << "Draw ";
@@ -146,13 +146,13 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
         }
         if (shader_module_handle) {
             strm << "Index " << operation_index << ". "
-                 << "Pipeline " << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(pipeline_handle)) << "("
+                 << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(pipeline_handle)) << "("
                  << HandleToUint64(pipeline_handle) << "). "
-                 << "Shader Module " << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(shader_module_handle)) << "("
+                 << "Shader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_module_handle)) << "("
                  << HandleToUint64(shader_module_handle) << "). ";
         } else {
             strm << "Index " << operation_index << ". "
-                 << "Shader Object " << LookupDebugUtilsNameNoLock(report_data, HandleToUint64(shader_object_handle)) << "("
+                 << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(shader_object_handle)) << "("
                  << HandleToUint64(shader_object_handle) << "). ";
         }
     }
@@ -599,7 +599,7 @@ bool gpuav::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer cmd_buffer, Vk
         std::string filename_message;
         std::string source_message;
         GenerateStageMessage(debug_record, stage_message);
-        UtilGenerateCommonMessage(report_data, cmd_buffer, debug_record, shader_module_handle, pipeline_handle,
+        UtilGenerateCommonMessage(debug_report, cmd_buffer, debug_record, shader_module_handle, pipeline_handle,
                                   shader_object_handle, cmd_resources.pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
 

@@ -1951,9 +1951,8 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, co
 }
 
 template <typename TransferBarrier, typename Scoreboard>
-bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const vvl::CommandBuffer &cb_state,
-                                                const char *operation, const TransferBarrier &barrier, Scoreboard *scoreboard,
-                                                const Location &loc) const {
+bool CoreChecks::ValidateAndUpdateQFOScoreboard(const vvl::CommandBuffer &cb_state, const char *operation,
+                                                const TransferBarrier &barrier, Scoreboard *scoreboard, const Location &loc) const {
     // Record to the scoreboard or report that we have a duplication
     bool skip = false;
     auto inserted = scoreboard->emplace(barrier, &cb_state);
@@ -1995,7 +1994,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
                                    found->dstQueueFamilyIndex);
             }
         }
-        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "releasing", release, &scoreboards->release, loc);
+        skip |= ValidateAndUpdateQFOScoreboard(cb_state, "releasing", release, &scoreboards->release, loc);
     }
     // Each acquire must have a matching release (ERROR)
     for (const auto &acquire : cb_barriers.acquire) {
@@ -2012,7 +2011,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
                              barrier_name, handle_name, FormatHandle(acquire.handle).c_str(), acquire.srcQueueFamilyIndex,
                              acquire.dstQueueFamilyIndex);
         }
-        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "acquiring", acquire, &scoreboards->acquire, loc);
+        skip |= ValidateAndUpdateQFOScoreboard(cb_state, "acquiring", acquire, &scoreboards->acquire, loc);
     }
     return skip;
 }
