@@ -1707,3 +1707,118 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImage) {
     vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC) {
+    TEST_DESCRIPTION("Copy from a buffer to 20x10 ASTC-compressed image without overlap.");
+
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkFormatProperties format_properties;
+    VkFormat format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
+        GTEST_SKIP()
+            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+    }
+
+    const VkDeviceSize buffer_size = 32;  // enough for 20x10 ASTC_10x10 region
+    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Image dst_image(*m_device, 20, 10, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferImageCopy buffer_copy[2] = {};
+    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    buffer_copy[0].imageSubresource.mipLevel = 0;
+    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
+    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageOffset = {0, 0, 0};
+    buffer_copy[0].imageExtent = {10, 10, 1};
+    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageOffset = {10, 0, 0};
+    buffer_copy[1].imageExtent = {10, 10, 1};
+
+    m_commandBuffer->begin();
+    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC2) {
+    TEST_DESCRIPTION("Copy from a buffer to 10x20 ASTC-compressed image without overlap.");
+
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkFormatProperties format_properties;
+    VkFormat format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
+        GTEST_SKIP()
+            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+    }
+
+    const VkDeviceSize buffer_size = 32;  // enough for 10x20 ASTC_10x10 region
+    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Image dst_image(*m_device, 10, 20, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferImageCopy buffer_copy[2] = {};
+    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    buffer_copy[0].imageSubresource.mipLevel = 0;
+    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
+    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageOffset = {0, 0, 0};
+    buffer_copy[0].imageExtent = {10, 10, 1};
+    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageOffset = {0, 10, 0};
+    buffer_copy[1].imageExtent = {10, 10, 1};
+
+    m_commandBuffer->begin();
+    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
+    TEST_DESCRIPTION("Copy from a buffer to 20x20 ASTC-compressed with overlap protected by a barrier.");
+
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkFormatProperties format_properties;
+    VkFormat format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
+        GTEST_SKIP()
+            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+    }
+
+    const VkDeviceSize buffer_size = 64;  // enough for 20x20 ASTC_10x10 region
+    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Image dst_image(*m_device, 20, 20, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferImageCopy buffer_copy[2] = {};
+    buffer_copy[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    buffer_copy[0].imageSubresource.mipLevel = 0;
+    buffer_copy[0].imageSubresource.baseArrayLayer = 0;
+    buffer_copy[0].imageSubresource.layerCount = 1;
+    buffer_copy[0].imageOffset = {10, 10, 0};
+    buffer_copy[0].imageExtent = {10, 10, 1};
+    buffer_copy[1].imageSubresource = buffer_copy[0].imageSubresource;
+    buffer_copy[1].imageOffset = {10, 0, 0};
+    buffer_copy[1].imageExtent = {10, 20, 1};
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.image = dst_image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_commandBuffer->begin();
+    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &barrier);
+    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_commandBuffer->end();
+}
