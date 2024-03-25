@@ -1891,3 +1891,421 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     m_default_queue->wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
+    TEST_DESCRIPTION(
+        "Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors in multiple command "
+        "buffers. At time of writing, this text is a combination of above tests ArrayOOBFragment and ArrayOOBCompute.");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    // 1st Command Buffer
+    // ---
+
+    vkt::CommandBuffer cb_1(*m_device, m_commandPool);
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    VkDescriptorBindingFlags ds_binding_flags_cb_1[2] = {
+        0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags_cb_1 = vku::InitStructHelper();
+    layout_createinfo_binding_flags_cb_1.bindingCount = 2;
+    layout_createinfo_binding_flags_cb_1.pBindingFlags = ds_binding_flags_cb_1;
+
+    // Prepare descriptors
+    OneOffDescriptorSet descriptor_set_cb_1(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr},
+                                            },
+                                            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+                                            &layout_createinfo_binding_flags_cb_1,
+                                            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout_cb_1(*m_device, {&descriptor_set_cb_1.layout_});
+
+    vkt::Image image_cb_1(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_cb_1.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view_cb_1 = image_cb_1.CreateView();
+    vkt::Sampler sampler_cb_1(*m_device, SafeSaneSamplerCreateInfo());
+
+    {
+        VkDescriptorBufferInfo buffer_info[1] = {};
+        buffer_info[0].buffer = buffer0.handle();
+        buffer_info[0].offset = 0;
+        buffer_info[0].range = sizeof(uint32_t);
+
+        VkDescriptorImageInfo image_info[6] = {};
+        for (int i = 0; i < 6; i++) {
+            image_info[i] = {sampler_cb_1.handle(), image_view_cb_1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        }
+
+        VkWriteDescriptorSet descriptor_writes[2] = {};
+        descriptor_writes[0] = vku::InitStructHelper();
+        descriptor_writes[0].dstSet = descriptor_set_cb_1.set_;  // descriptor_set;
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].pBufferInfo = buffer_info;
+        descriptor_writes[1] = vku::InitStructHelper();
+        descriptor_writes[1].dstSet = descriptor_set_cb_1.set_;  // descriptor_set;
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].pImageInfo = image_info;
+        vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
+    }
+
+    // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
+    // - The fragment shader makes the invalid array access.
+    char const *vs_source = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+        )glsl";
+    char const *fs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+        )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe_cb_1(*this);
+    pipe_cb_1.shader_stages_.clear();
+    pipe_cb_1.shader_stages_.push_back(vs.GetStageCreateInfo());
+    pipe_cb_1.shader_stages_.push_back(fs.GetStageCreateInfo());
+    pipe_cb_1.gp_ci_.layout = pipeline_layout_cb_1.handle();
+    pipe_cb_1.CreateGraphicsPipeline();
+
+    cb_1.begin();
+    cb_1.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(cb_1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_cb_1.Handle());
+    vk::CmdBindDescriptorSets(cb_1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_cb_1.handle(), 0, 1,
+                              &descriptor_set_cb_1.set_, 0, nullptr);
+    vk::CmdDraw(cb_1.handle(), 3, 1, 0, 0);
+    cb_1.EndRenderPass();
+    cb_1.end();
+    {
+        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        data[0] = 25;
+        buffer0.memory().unmap();
+    }
+
+    // 2nd Command Buffer
+    // ---
+
+    vkt::CommandBuffer cb_2(*m_device, m_commandPool);
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer buffer0_cb_2(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    // Make another buffer to populate the buffer array to be indexed
+    vkt::Buffer buffer1_cb_2(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDescriptorBindingFlags ds_binding_flags_cb_2[2] = {0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT};
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags_cb_2 = vku::InitStructHelper();
+    layout_createinfo_binding_flags_cb_2.bindingCount = 2;
+    layout_createinfo_binding_flags_cb_2.pBindingFlags = ds_binding_flags_cb_2;
+
+    OneOffDescriptorSet descriptor_set_cb_2(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 6, VK_SHADER_STAGE_ALL, nullptr},
+                                            },
+                                            0, &layout_createinfo_binding_flags_cb_2, 0);
+
+    const vkt::PipelineLayout pipeline_layout_cb_2(*m_device, {&descriptor_set_cb_2.layout_});
+    {
+        VkDescriptorBufferInfo buffer_info_cb_2[7] = {};
+
+        buffer_info_cb_2[0].buffer = buffer0_cb_2.handle();
+        buffer_info_cb_2[0].offset = 0;
+        buffer_info_cb_2[0].range = sizeof(uint32_t);
+
+        for (int i = 1; i < 7; i++) {
+            buffer_info_cb_2[i].buffer = buffer1_cb_2.handle();
+            buffer_info_cb_2[i].offset = 0;
+            buffer_info_cb_2[i].range = 4 * sizeof(float);
+        }
+
+        VkWriteDescriptorSet descriptor_writes_cb_2[2] = {};
+
+        descriptor_writes_cb_2[0] = vku::InitStructHelper();
+        descriptor_writes_cb_2[0].dstSet = descriptor_set_cb_2.set_;
+        descriptor_writes_cb_2[0].dstBinding = 0;
+        descriptor_writes_cb_2[0].descriptorCount = 1;
+        descriptor_writes_cb_2[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes_cb_2[0].pBufferInfo = &buffer_info_cb_2[0];
+
+        descriptor_writes_cb_2[1] = vku::InitStructHelper();
+        descriptor_writes_cb_2[1].dstSet = descriptor_set_cb_2.set_;
+        descriptor_writes_cb_2[1].dstBinding = 1;
+        descriptor_writes_cb_2[1].descriptorCount = 5;  // Intentionally don't write index 5
+        descriptor_writes_cb_2[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptor_writes_cb_2[1].pBufferInfo = &buffer_info_cb_2[1];
+        vk::UpdateDescriptorSets(device(), 2, descriptor_writes_cb_2, 0, nullptr);
+    }
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform ufoo { uint index; } u_index;
+        layout(set = 0, binding = 1) buffer StorageBuffer {
+            uint data;
+        } Data[];
+        void main() {
+            Data[(u_index.index - 1)].data = Data[u_index.index].data;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_cb_2(*this);
+    pipe_cb_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_cb_2.cp_ci_.layout = pipeline_layout_cb_2.handle();
+    pipe_cb_2.CreateComputePipeline();
+
+    cb_2.begin();
+    vk::CmdBindPipeline(cb_2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_cb_2.Handle());
+    vk::CmdBindDescriptorSets(cb_2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_cb_2.handle(), 0, 1,
+                              &descriptor_set_cb_2.set_, 0, nullptr);
+    vk::CmdDispatch(cb_2.handle(), 1, 1, 1);
+    cb_2.end();
+    {
+        uint32_t *data = (uint32_t *)buffer0_cb_2.memory().map();
+        data[0] = 25;
+        buffer0_cb_2.memory().unmap();
+    }
+
+    m_errorMonitor->SetDesiredError("vkCmdDraw():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
+                                    gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->submit(cb_1, false);
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
+    m_default_queue->submit(cb_2, false);
+
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
+    TEST_DESCRIPTION(
+        "Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors coming from both "
+        "graphics and compute pipelines in one command buffer. At time of writing, this text is a combination of above tests "
+        "ArrayOOBFragment and ArrayOOBCompute.");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    VkDescriptorBindingFlags ds_binding_flags_cb_1[2] = {
+        0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags_cb_1 = vku::InitStructHelper();
+    layout_createinfo_binding_flags_cb_1.bindingCount = 2;
+    layout_createinfo_binding_flags_cb_1.pBindingFlags = ds_binding_flags_cb_1;
+
+    // Prepare descriptors
+    OneOffDescriptorSet descriptor_set_cb_1(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr},
+                                            },
+                                            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+                                            &layout_createinfo_binding_flags_cb_1,
+                                            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout_cb_1(*m_device, {&descriptor_set_cb_1.layout_});
+
+    vkt::Image image_cb_1(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_cb_1.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view_cb_1 = image_cb_1.CreateView();
+    vkt::Sampler sampler_cb_1(*m_device, SafeSaneSamplerCreateInfo());
+
+    {
+        VkDescriptorBufferInfo buffer_info[1] = {};
+        buffer_info[0].buffer = buffer0.handle();
+        buffer_info[0].offset = 0;
+        buffer_info[0].range = sizeof(uint32_t);
+
+        VkDescriptorImageInfo image_info[6] = {};
+        for (int i = 0; i < 6; i++) {
+            image_info[i] = {sampler_cb_1.handle(), image_view_cb_1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        }
+
+        VkWriteDescriptorSet descriptor_writes[2] = {};
+        descriptor_writes[0] = vku::InitStructHelper();
+        descriptor_writes[0].dstSet = descriptor_set_cb_1.set_;  // descriptor_set;
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].pBufferInfo = buffer_info;
+        descriptor_writes[1] = vku::InitStructHelper();
+        descriptor_writes[1].dstSet = descriptor_set_cb_1.set_;  // descriptor_set;
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].pImageInfo = image_info;
+        vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
+    }
+
+    // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
+    // - The fragment shader makes the invalid array access.
+    char const *vs_source = R"glsl(
+        #version 450
+
+        layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(location = 0) out flat uint index;
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           index = uniform_index_buffer.tex_index[0];
+        }
+        )glsl";
+    char const *fs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        layout(location = 0) out vec4 uFragColor;
+        layout(location = 0) in flat uint index;
+        void main(){
+           uFragColor = texture(tex[index], vec2(0, 0));
+        }
+        )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe_cb_1(*this);
+    pipe_cb_1.shader_stages_.clear();
+    pipe_cb_1.shader_stages_.push_back(vs.GetStageCreateInfo());
+    pipe_cb_1.shader_stages_.push_back(fs.GetStageCreateInfo());
+    pipe_cb_1.gp_ci_.layout = pipeline_layout_cb_1.handle();
+    pipe_cb_1.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_cb_1.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_cb_1.handle(), 0, 1,
+                              &descriptor_set_cb_1.set_, 0, nullptr);
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    {
+        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        data[0] = 25;
+        buffer0.memory().unmap();
+    }
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer buffer0_cb_2(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    // Make another buffer to populate the buffer array to be indexed
+    vkt::Buffer buffer1_cb_2(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+
+    VkDescriptorBindingFlags ds_binding_flags_cb_2[2] = {0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT};
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags_cb_2 = vku::InitStructHelper();
+    layout_createinfo_binding_flags_cb_2.bindingCount = 2;
+    layout_createinfo_binding_flags_cb_2.pBindingFlags = ds_binding_flags_cb_2;
+
+    OneOffDescriptorSet descriptor_set_cb_2(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 6, VK_SHADER_STAGE_ALL, nullptr},
+                                            },
+                                            0, &layout_createinfo_binding_flags_cb_2, 0);
+
+    const vkt::PipelineLayout pipeline_layout_cb_2(*m_device, {&descriptor_set_cb_2.layout_});
+    {
+        VkDescriptorBufferInfo buffer_info_cb_2[7] = {};
+
+        buffer_info_cb_2[0].buffer = buffer0_cb_2.handle();
+        buffer_info_cb_2[0].offset = 0;
+        buffer_info_cb_2[0].range = sizeof(uint32_t);
+
+        for (int i = 1; i < 7; i++) {
+            buffer_info_cb_2[i].buffer = buffer1_cb_2.handle();
+            buffer_info_cb_2[i].offset = 0;
+            buffer_info_cb_2[i].range = 4 * sizeof(float);
+        }
+
+        VkWriteDescriptorSet descriptor_writes_cb_2[2] = {};
+
+        descriptor_writes_cb_2[0] = vku::InitStructHelper();
+        descriptor_writes_cb_2[0].dstSet = descriptor_set_cb_2.set_;
+        descriptor_writes_cb_2[0].dstBinding = 0;
+        descriptor_writes_cb_2[0].descriptorCount = 1;
+        descriptor_writes_cb_2[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes_cb_2[0].pBufferInfo = &buffer_info_cb_2[0];
+
+        descriptor_writes_cb_2[1] = vku::InitStructHelper();
+        descriptor_writes_cb_2[1].dstSet = descriptor_set_cb_2.set_;
+        descriptor_writes_cb_2[1].dstBinding = 1;
+        descriptor_writes_cb_2[1].descriptorCount = 5;  // Intentionally don't write index 5
+        descriptor_writes_cb_2[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptor_writes_cb_2[1].pBufferInfo = &buffer_info_cb_2[1];
+        vk::UpdateDescriptorSets(device(), 2, descriptor_writes_cb_2, 0, nullptr);
+    }
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform ufoo { uint index; } u_index;
+        layout(set = 0, binding = 1) buffer StorageBuffer {
+            uint data;
+        } Data[];
+        void main() {
+            Data[(u_index.index - 1)].data = Data[u_index.index].data;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_cb_2(*this);
+    pipe_cb_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_cb_2.cp_ci_.layout = pipeline_layout_cb_2.handle();
+    pipe_cb_2.CreateComputePipeline();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_cb_2.Handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_cb_2.handle(), 0, 1,
+                              &descriptor_set_cb_2.set_, 0, nullptr);
+    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    m_commandBuffer->end();
+    {
+        uint32_t *data = (uint32_t *)buffer0_cb_2.memory().map();
+        data[0] = 25;
+        buffer0_cb_2.memory().unmap();
+    }
+
+    m_errorMonitor->SetDesiredError("vkCmdDraw():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
+                                    gpuav::glsl::kMaxErrorsPerCmd);
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
+    m_default_queue->submit(*m_commandBuffer, false);
+
+    m_default_queue->wait();
+    m_errorMonitor->VerifyFound();
+}
