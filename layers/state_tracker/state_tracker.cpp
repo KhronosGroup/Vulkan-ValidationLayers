@@ -1891,10 +1891,10 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateGraphicsPipelineSta
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                    const ErrorObject &error_obj, void *cgpl_state_data) const {
+                                                                    const ErrorObject &error_obj,
+                                                                    create_graphics_pipeline_api_state *cgpl_state) const {
     bool skip = false;
     // Set up the state that CoreChecks, gpu_validation and later StateTracker Record will use.
-    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
@@ -1928,8 +1928,8 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
 void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                    const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                   const RecordObject &record_obj, void *cgpl_state_data) {
-    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
+                                                                   const RecordObject &record_obj,
+                                                                   create_graphics_pipeline_api_state *cgpl_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
@@ -1949,8 +1949,8 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineStat
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                    const VkComputePipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                   const ErrorObject &error_obj, void *ccpl_state_data) const {
-    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+                                                                   const ErrorObject &error_obj,
+                                                                   create_compute_pipeline_api_state *ccpl_state) const {
     ccpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     ccpl_state->pipe_state.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
@@ -1965,9 +1965,8 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
 void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                   const VkComputePipelineCreateInfo *pCreateInfos,
                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                  const RecordObject &record_obj, void *ccpl_state_data) {
-    create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-
+                                                                  const RecordObject &record_obj,
+                                                                  create_compute_pipeline_api_state *ccpl_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
@@ -1984,10 +1983,12 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineS
     return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
 }
 
-bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj, void *crtpl_state_data) const {
-    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
+bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
+                                                                        uint32_t count,
+                                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkPipeline *pPipelines, const ErrorObject &error_obj,
+                                                                        create_ray_tracing_pipeline_api_state *crtpl_state) const {
     crtpl_state->pipe_state.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
@@ -1998,10 +1999,12 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
     return false;
 }
 
-void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const RecordObject &record_obj, void *crtpl_state_data) {
-    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
+void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
+                                                                       uint32_t count,
+                                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                                       const VkAllocationCallbacks *pAllocator,
+                                                                       VkPipeline *pPipelines, const RecordObject &record_obj,
+                                                                       create_ray_tracing_pipeline_api_state *crtpl_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
@@ -2018,13 +2021,10 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineS
     return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
 }
 
-bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                         VkPipelineCache pipelineCache, uint32_t count,
-                                                                         const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-                                                                         const VkAllocationCallbacks *pAllocator,
-                                                                         VkPipeline *pPipelines, const ErrorObject &error_obj,
-                                                                         void *crtpl_state_data) const {
-    auto crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
+bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    const ErrorObject &error_obj, create_ray_tracing_pipeline_khr_api_state *crtpl_state) const {
     crtpl_state->pipe_state.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
@@ -2040,8 +2040,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
                                                                         const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                         const VkAllocationCallbacks *pAllocator,
                                                                         VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                        void *crtpl_state_data) {
-    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
+                                                                        create_ray_tracing_pipeline_khr_api_state *crtpl_state) {
     const bool operation_is_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
     // This API may create pipelines regardless of the return value
 
@@ -2143,10 +2142,8 @@ void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, 
 bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice device,
                                                                    const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                                    VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
-                                                                   void *ads_state_data) const {
+                                                                   vvl::AllocateDescriptorSetsData *ads_state) const {
     // Always update common data
-    vvl::AllocateDescriptorSetsData *ads_state =
-        reinterpret_cast<vvl::AllocateDescriptorSetsData *>(ads_state_data);
     UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
 
     return false;
@@ -2155,11 +2152,9 @@ bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice devi
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
 void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                                   VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
-                                                                  void *ads_state_data) {
+                                                                  vvl::AllocateDescriptorSetsData *ads_state) {
     if (VK_SUCCESS != record_obj.result) return;
     // All the updates are contained in a single vvl function
-    vvl::AllocateDescriptorSetsData *ads_state =
-        reinterpret_cast<vvl::AllocateDescriptorSetsData *>(ads_state_data);
     auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
     if (pool_state) {
         pool_state->Allocate(pAllocateInfo, pDescriptorSets, ads_state);
@@ -4745,12 +4740,12 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuf
 
 void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                             const RecordObject &record_obj, void *csm_state_data) {
+                                                             const RecordObject &record_obj,
+                                                             create_shader_module_api_state *csm_state) {
     if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
         return;
     }
 
-    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     csm_state->module_state =
         std::make_shared<spirv::Module>(pCreateInfo->codeSize, pCreateInfo->pCode, &csm_state->stateless_data);
     if (csm_state->module_state && csm_state->stateless_data.has_group_decoration) {
@@ -4775,8 +4770,8 @@ void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, co
 void ValidationStateTracker::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                            const VkShaderCreateInfoEXT *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                           const RecordObject &record_obj, void *csm_state_data) {
-    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+                                                           const RecordObject &record_obj,
+                                                           create_shader_object_api_state *csm_state) {
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pCreateInfos[i].codeSize == 0 || !pCreateInfos[i].pCode) {
             continue;
@@ -4792,18 +4787,17 @@ void ValidationStateTracker::PreCallRecordCreateShadersEXT(VkDevice device, uint
 void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkShaderModule *pShaderModule, const RecordObject &record_obj,
-                                                              void *csm_state_data) {
+                                                              create_shader_module_api_state *csm_state) {
     if (VK_SUCCESS != record_obj.result) return;
-    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     Add(std::make_shared<vvl::ShaderModule>(*pShaderModule, csm_state->module_state, csm_state->unique_shader_id));
 }
 
 void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                             const VkShaderCreateInfoEXT *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                            const RecordObject &record_obj, void *csm_state_data) {
+                                                            const RecordObject &record_obj,
+                                                            create_shader_object_api_state *csm_state) {
     if (VK_SUCCESS != record_obj.result) return;
-    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pShaders[i] != VK_NULL_HANDLE) {
             Add(std::make_shared<vvl::ShaderObject>(*this, pCreateInfos[i], pShaders[i], csm_state->module_states[i],

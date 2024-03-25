@@ -2475,21 +2475,18 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
 // See diagram on https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6230
 void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                 const RecordObject &record_obj, void *csm_state_data) {
+                                                 const RecordObject &record_obj, create_shader_module_api_state *csm_state) {
     // Normally would validate in PreCallValidate, but need a non-const function to update csm_state
     // This is on the stack, we don't have to worry about threading hazards and this could be moved and used const_cast
-    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
-                                                            csm_state_data);
-    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
+    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, csm_state);
     csm_state->skip |= ValidateSpirvStateless(*csm_state->module_state, csm_state->stateless_data, record_obj.location);
 }
 
 void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                               const RecordObject &record_obj, void *csm_state_data) {
+                                               const RecordObject &record_obj, create_shader_object_api_state *csm_state) {
     ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                                          csm_state_data);
-    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+                                                          csm_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (csm_state->module_states[i]) {
             csm_state->skip |= ValidateSpirvStateless(*csm_state->module_states[i], csm_state->stateless_data[i],

@@ -36,10 +36,10 @@
 bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        const ErrorObject &error_obj, void *cgpl_state_data) const {
+                                                        const ErrorObject &error_obj,
+                                                        create_graphics_pipeline_api_state *cgpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                     pPipelines, error_obj, cgpl_state_data);
-    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
+                                                                     pPipelines, error_obj, cgpl_state);
 
     for (uint32_t i = 0; i < count; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);

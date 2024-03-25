@@ -31,11 +31,10 @@ bool CoreChecks::ValidateComputePipelineShaderState(const vvl::Pipeline &pipelin
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const ErrorObject &error_obj, void *ccpl_state_data) const {
+                                                       const ErrorObject &error_obj,
+                                                       create_compute_pipeline_api_state *ccpl_state) const {
     bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                    pPipelines, error_obj, ccpl_state_data);
-
-    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+                                                                    pPipelines, error_obj, ccpl_state);
     for (uint32_t i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = ccpl_state->pipe_state[i].get();
         if (!pipeline) {

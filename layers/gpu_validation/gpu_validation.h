@@ -198,16 +198,17 @@ class Validator : public gpu_tracker::Validator {
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                   VkBuffer* pBuffer, const RecordObject& record_obj, void* cb_state_data) override;
+                                   VkBuffer* pBuffer, const RecordObject& record_obj,
+                                   create_buffer_api_state* cb_state_data) override;
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
 
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                         const RecordObject& record_obj, void* csm_state_data) override;
+                                         const RecordObject& record_obj, create_shader_module_api_state* csm_state_data) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                       const RecordObject& record_obj, void* csm_state_data) override;
+                                       const RecordObject& record_obj, create_shader_object_api_state* csm_state_data) override;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);

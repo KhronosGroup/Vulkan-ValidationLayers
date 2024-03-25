@@ -538,7 +538,7 @@ void BestPractices::PostCallRecordCreateImageView(VkDevice device, const VkImage
 
 void BestPractices::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                                     const RecordObject& record_obj, void* state_data) {
+                                                     const RecordObject& record_obj, create_shader_module_api_state* state_data) {
     ValidationStateTracker::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
                                                              state_data);
 
@@ -582,7 +582,8 @@ void BestPractices::PostCallRecordMergePipelineCaches(VkDevice device, VkPipelin
 void BestPractices::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                           const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                          const RecordObject& record_obj, void* state_data) {
+                                                          const RecordObject& record_obj,
+                                                          create_graphics_pipeline_api_state* state_data) {
     ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                   pPipelines, record_obj, state_data);
     ManualPostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
@@ -600,7 +601,8 @@ void BestPractices::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPip
 void BestPractices::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                          const VkComputePipelineCreateInfo* pCreateInfos,
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                         const RecordObject& record_obj, void* state_data) {
+                                                         const RecordObject& record_obj,
+                                                         create_compute_pipeline_api_state* state_data) {
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                  pPipelines, record_obj, state_data);
     ManualPostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
@@ -657,7 +659,7 @@ void BestPractices::PostCallRecordCreateDescriptorPool(VkDevice device, const Vk
 
 void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                          VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
-                                                         void* state_data) {
+                                                         vvl::AllocateDescriptorSetsData* state_data) {
     ValidationStateTracker::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, state_data);
     ManualPostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, state_data);
 
@@ -2191,7 +2193,8 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, V
                                                               uint32_t createInfoCount,
                                                               const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                              const RecordObject& record_obj, void* state_data) {
+                                                              const RecordObject& record_obj,
+                                                              create_ray_tracing_pipeline_api_state* state_data) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                       pAllocator, pPipelines, record_obj, state_data);
 
@@ -2926,7 +2929,7 @@ void BestPractices::PostCallRecordBindOpticalFlowSessionImageNV(VkDevice device,
 void BestPractices::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                    const VkShaderCreateInfoEXT* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                                   const RecordObject& record_obj, void* state_data) {
+                                                   const RecordObject& record_obj, create_shader_object_api_state* state_data) {
     ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                            state_data);
 
@@ -3081,7 +3084,8 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, 
                                                                VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                                const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                               const RecordObject& record_obj, void* state_data) {
+                                                               const RecordObject& record_obj,
+                                                               create_ray_tracing_pipeline_khr_api_state* state_data) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
         device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj, state_data);
 
