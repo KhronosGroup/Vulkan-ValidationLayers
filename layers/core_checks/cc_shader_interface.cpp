@@ -684,8 +684,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
             const auto attachment = location_it.second.attachment;
             const auto output = location_it.second.output;
             if (attachment && !output) {
-                const auto &attachments = pipeline.Attachments();
-                if (location < attachments.size() && attachments[location].colorWriteMask != 0) {
+                const auto &attachment_states = pipeline.AttachmentStates();
+                if (location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
                     skip |= LogUndefinedValue("Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
                                               "Attachment %" PRIu32
                                               " not written by fragment shader; undefined values will be written to attachment",
@@ -743,8 +743,8 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const spirv:
         const auto output = location_map[location].output;
 
         const auto &rp_state = pipeline.RenderPassState();
-        const auto &attachments = pipeline.Attachments();
-        if (!output && location < attachments.size() && attachments[location].colorWriteMask != 0) {
+        const auto &attachment_states = pipeline.AttachmentStates();
+        if (!output && location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
             skip |= LogUndefinedValue(
                 "Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
                 "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment", location);

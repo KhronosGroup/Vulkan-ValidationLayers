@@ -382,11 +382,11 @@ class Pipeline : public StateObject {
         return create_info.graphics.subpass;
     }
 
-    const FragmentOutputState::AttachmentVector &Attachments() const {
+    const FragmentOutputState::AttachmentStateVector &AttachmentStates() const {
         if (fragment_output_state) {
-            return fragment_output_state->attachments;
+            return fragment_output_state->attachment_states;
         }
-        static FragmentOutputState::AttachmentVector empty_vec = {};
+        static FragmentOutputState::AttachmentStateVector empty_vec = {};
         return empty_vec;
     }
 

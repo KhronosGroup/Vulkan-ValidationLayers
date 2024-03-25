@@ -161,7 +161,7 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
 }
 
 struct FragmentOutputState : public PipelineSubState {
-    using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;
+    using AttachmentStateVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
     FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp);
     // For a graphics library, a "non-safe" create info must be passed in in order for pColorBlendState and pMultisampleState to not
@@ -177,10 +177,10 @@ struct FragmentOutputState : public PipelineSubState {
             if (cbci.pAttachments) {
                 dual_source_blending = GetDualSourceBlending(color_blend_state.get());
                 if (cbci.attachmentCount) {
-                    attachments.reserve(cbci.attachmentCount);
-                    std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachments));
+                    attachment_states.reserve(cbci.attachmentCount);
+                    std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachment_states));
                 }
-                blend_constants_enabled = IsBlendConstantsEnabled(attachments);
+                blend_constants_enabled = IsBlendConstantsEnabled(attachment_states);
             }
         }
 
@@ -193,7 +193,7 @@ struct FragmentOutputState : public PipelineSubState {
         // auto format_ci = vku::FindStructInPNextChain<VkPipelineRenderingFormatCreateInfoKHR>(gpci->pNext);
     }
 
-    static bool IsBlendConstantsEnabled(const AttachmentVector &attachments);
+    static bool IsBlendConstantsEnabled(const AttachmentStateVector &attachment_states);
     static bool GetDualSourceBlending(const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state);
 
     std::shared_ptr<const vvl::RenderPass> rp_state;
@@ -202,7 +202,7 @@ struct FragmentOutputState : public PipelineSubState {
     std::unique_ptr<const safe_VkPipelineColorBlendStateCreateInfo> color_blend_state;
     std::unique_ptr<const safe_VkPipelineMultisampleStateCreateInfo> ms_state;
 
-    AttachmentVector attachments;
+    AttachmentStateVector attachment_states;
 
     bool blend_constants_enabled = false;  // Blend constants enabled for any attachments
     bool sample_location_enabled = false;

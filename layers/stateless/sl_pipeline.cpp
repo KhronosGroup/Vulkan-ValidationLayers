@@ -320,25 +320,19 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                   "VUID-VkGraphicsPipelineCreateInfo-None-09497");
         }
 
-        // Values needed from either dynamic rendering or the subpass description
-        uint32_t color_attachment_count = 0;
-
         if (!create_info.renderPass) {
             // Pipeline has fragment output state
             if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0 ||
                 (create_info.pColorBlendState && create_info.pMultisampleState)) {
                 const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
                 if (rendering_struct) {
-                    color_attachment_count = rendering_struct->colorAttachmentCount;
                     skip |= ValidatePipelineRenderingCreateInfo(*rendering_struct, create_info_loc);
                 }
 
                 // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
                 auto attachment_sample_count_info = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(create_info.pNext);
                 if (attachment_sample_count_info && attachment_sample_count_info->pColorAttachmentSamples) {
-                    color_attachment_count = attachment_sample_count_info->colorAttachmentCount;
-
-                    for (uint32_t j = 0; j < color_attachment_count; ++j) {
+                    for (uint32_t j = 0; j < attachment_sample_count_info->colorAttachmentCount; ++j) {
                         skip |= ValidateFlags(
                             create_info_loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::pColorAttachmentSamples),
                             vvl::FlagBitmask::VkSampleCountFlagBits, AllVkSampleCountFlagBits,
@@ -929,7 +923,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
             bool uses_color_attachment = false;
             bool uses_depthstencil_attachment = false;
-            VkSubpassDescriptionFlags subpass_flags = 0;
             {
                 std::unique_lock<std::mutex> lock(renderpass_map_mutex);
                 const auto subpasses_uses_it = renderpasses_states.find(create_info.renderPass);
@@ -941,195 +934,20 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     if (subpasses_uses.subpasses_using_depthstencil_attachment.count(create_info.subpass)) {
                         uses_depthstencil_attachment = true;
                     }
-                    if (create_info.subpass < subpasses_uses.subpasses_flags.size()) {
-                        subpass_flags = subpasses_uses.subpasses_flags[create_info.subpass];
-                    }
-
-                    color_attachment_count = subpasses_uses.color_attachment_count;
                 }
                 lock.unlock();
             }
 
-            const auto *rasterization_order_attachment_access_feature =
-                vku::FindStructInPNextChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT>(device_createinfo_pnext);
             if (create_info.pDepthStencilState != nullptr && uses_depthstencil_attachment) {
                 const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
                 auto const &ds_state = *create_info.pDepthStencilState;
                 skip |= ValidatePipelineDepthStencilStateCreateInfo(ds_state, ds_loc);
-
-                if ((ds_state.flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT) !=
-                    0) {
-                    if (!rasterization_order_attachment_access_feature ||
-                        !rasterization_order_attachment_access_feature->rasterizationOrderDepthAttachmentAccess) {
-                        skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderDepthAttachmentAccess-06463",
-                                         device, ds_loc.dot(Field::flags),
-                                         "(%s) but rasterizationOrderDepthAttachmentAccess feature is not enabled",
-                                         string_VkPipelineDepthStencilStateCreateFlags(ds_state.flags).c_str());
-                    }
-
-                    if (create_info.renderPass &&
-                        (subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT) == 0) {
-                        skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09528", create_info.renderPass,
-                                     ds_loc.dot(Field::flags), "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                                     string_VkPipelineDepthStencilStateCreateFlags(ds_state.flags).c_str(),
-                                     string_VkSubpassDescriptionFlags(subpass_flags).c_str());
-                    }
-                }
-
-                if ((ds_state.flags &
-                     VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT) != 0) {
-                    if (!rasterization_order_attachment_access_feature ||
-                        !rasterization_order_attachment_access_feature->rasterizationOrderStencilAttachmentAccess) {
-                        skip |= LogError(
-                            "VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464", device,
-                            ds_loc.dot(Field::flags), "(%s) but rasterizationOrderStencilAttachmentAccess feature is not enabled",
-                            string_VkPipelineDepthStencilStateCreateFlags(ds_state.flags).c_str());
-                    }
-
-                    if (create_info.renderPass &&
-                        (subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT) == 0) {
-                        skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09529", create_info.renderPass,
-                                     ds_loc.dot(Field::flags), "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                                     string_VkPipelineDepthStencilStateCreateFlags(ds_state.flags).c_str(),
-                                     string_VkSubpassDescriptionFlags(subpass_flags).c_str());
-                    }
-                }
             }
 
             if (create_info.pColorBlendState != nullptr && uses_color_attachment) {
                 const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
                 auto const &color_blend_state = *create_info.pColorBlendState;
                 skip |= ValidatePipelineColorBlendStateCreateInfo(color_blend_state, color_loc);
-
-                if ((color_blend_state.flags &
-                     VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT) != 0) {
-                    if (!rasterization_order_attachment_access_feature ||
-                        !rasterization_order_attachment_access_feature->rasterizationOrderColorAttachmentAccess) {
-                        skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-rasterizationOrderColorAttachmentAccess-06465",
-                                         device, color_loc.dot(Field::flags),
-                                         "(%s) but rasterizationOrderColorAttachmentAccess feature is not enabled",
-                                         string_VkPipelineColorBlendStateCreateFlags(color_blend_state.flags).c_str());
-                    }
-
-                    if (create_info.renderPass &&
-                        (subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT) == 0) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09527", create_info.renderPass,
-                                         color_loc.dot(Field::flags),
-                                         "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                                         string_VkPipelineColorBlendStateCreateFlags(color_blend_state.flags).c_str(),
-                                         string_VkSubpassDescriptionFlags(subpass_flags).c_str());
-                    }
-                }
-
-                if (color_blend_state.pAttachments != nullptr) {
-                    const VkBlendOp first_color_blend_op = color_blend_state.pAttachments[0].colorBlendOp;
-                    const VkBlendOp first_alpha_blend_op = color_blend_state.pAttachments[0].alphaBlendOp;
-                    for (uint32_t attachment_index = 0; attachment_index < color_blend_state.attachmentCount; ++attachment_index) {
-                        const Location attachment_loc = color_loc.dot(Field::pAttachments, attachment_index);
-                        const VkPipelineColorBlendAttachmentState attachment_state =
-                            color_blend_state.pAttachments[attachment_index];
-
-                        // if blendEnabled is false, these values are ignored
-                        if (attachment_state.blendEnable) {
-                            bool advance_blend = false;
-                            if (IsAdvanceBlendOperation(attachment_state.colorBlendOp)) {
-                                advance_blend = true;
-                                if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendAllOperations == VK_FALSE) {
-                                    // This VUID checks if a subset of advance blend ops are allowed
-                                    switch (attachment_state.colorBlendOp) {
-                                        case VK_BLEND_OP_ZERO_EXT:
-                                        case VK_BLEND_OP_SRC_EXT:
-                                        case VK_BLEND_OP_DST_EXT:
-                                        case VK_BLEND_OP_SRC_OVER_EXT:
-                                        case VK_BLEND_OP_DST_OVER_EXT:
-                                        case VK_BLEND_OP_SRC_IN_EXT:
-                                        case VK_BLEND_OP_DST_IN_EXT:
-                                        case VK_BLEND_OP_SRC_OUT_EXT:
-                                        case VK_BLEND_OP_DST_OUT_EXT:
-                                        case VK_BLEND_OP_SRC_ATOP_EXT:
-                                        case VK_BLEND_OP_DST_ATOP_EXT:
-                                        case VK_BLEND_OP_XOR_EXT:
-                                        case VK_BLEND_OP_INVERT_EXT:
-                                        case VK_BLEND_OP_INVERT_RGB_EXT:
-                                        case VK_BLEND_OP_LINEARDODGE_EXT:
-                                        case VK_BLEND_OP_LINEARBURN_EXT:
-                                        case VK_BLEND_OP_VIVIDLIGHT_EXT:
-                                        case VK_BLEND_OP_LINEARLIGHT_EXT:
-                                        case VK_BLEND_OP_PINLIGHT_EXT:
-                                        case VK_BLEND_OP_HARDMIX_EXT:
-                                        case VK_BLEND_OP_PLUS_EXT:
-                                        case VK_BLEND_OP_PLUS_CLAMPED_EXT:
-                                        case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
-                                        case VK_BLEND_OP_PLUS_DARKER_EXT:
-                                        case VK_BLEND_OP_MINUS_EXT:
-                                        case VK_BLEND_OP_MINUS_CLAMPED_EXT:
-                                        case VK_BLEND_OP_CONTRAST_EXT:
-                                        case VK_BLEND_OP_INVERT_OVG_EXT:
-                                        case VK_BLEND_OP_RED_EXT:
-                                        case VK_BLEND_OP_GREEN_EXT:
-                                        case VK_BLEND_OP_BLUE_EXT: {
-                                            skip |= LogError(
-                                                "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409", device,
-                                                attachment_loc.dot(Field::colorBlendOp),
-                                                "(%s) but "
-                                                "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::"
-                                                "advancedBlendAllOperations is "
-                                                "VK_FALSE",
-                                                string_VkBlendOp(attachment_state.colorBlendOp));
-                                            break;
-                                        }
-                                        default:
-                                            break;
-                                    }
-                                }
-
-                                if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend == VK_FALSE &&
-                                    attachment_state.colorBlendOp != first_color_blend_op) {
-                                    skip |= LogError(
-                                        "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407", device,
-                                        attachment_loc.dot(Field::colorBlendOp), "(%s) is not same the other attachments (%s).",
-                                        string_VkBlendOp(attachment_state.colorBlendOp), string_VkBlendOp(first_color_blend_op));
-                                }
-                            }
-
-                            if (IsAdvanceBlendOperation(attachment_state.alphaBlendOp)) {
-                                advance_blend = true;
-                                if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend == VK_FALSE &&
-                                    attachment_state.alphaBlendOp != first_alpha_blend_op) {
-                                    skip |= LogError(
-                                        "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408", device,
-                                        attachment_loc.dot(Field::alphaBlendOp), "(%s) is not same the other attachments (%s).",
-                                        string_VkBlendOp(attachment_state.alphaBlendOp), string_VkBlendOp(first_alpha_blend_op));
-                                }
-                            }
-
-                            if (advance_blend) {
-                                if (attachment_state.colorBlendOp != attachment_state.alphaBlendOp) {
-                                    skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01406", device,
-                                                     attachment_loc,
-                                                     "has different colorBlendOp (%s) and alphaBlendOp (%s) but one of "
-                                                     "them is an advance blend operation.",
-                                                     string_VkBlendOp(attachment_state.colorBlendOp),
-                                                     string_VkBlendOp(attachment_state.alphaBlendOp));
-                                } else if (color_attachment_count >
-                                           phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
-                                    // color_attachment_count is found one of multiple spots above
-                                    //
-                                    // error can guarantee it is the same VkBlendOp
-                                    skip |= LogError(
-                                        "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410", device, attachment_loc,
-                                        "has an advance blend operation (%s) but the colorAttachmentCount (%" PRIu32
-                                        ") for the subpass is larger than advancedBlendMaxColorAttachments (%" PRIu32 ").",
-                                        string_VkBlendOp(attachment_state.colorBlendOp), color_attachment_count,
-                                        phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
-                                    break;  // if this fails once, will fail every iteration
-                                }
-                            }
-                        }
-                    }
-                }
 
                 // If logicOpEnable is VK_TRUE, logicOp must be a valid VkLogicOp value
                 if (color_blend_state.logicOpEnable == VK_TRUE) {

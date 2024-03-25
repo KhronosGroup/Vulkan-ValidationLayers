@@ -400,14 +400,6 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
             vertex_attribute_divisor_props.maxVertexAttribDivisor;
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
-        // Get the needed blend operation advanced properties
-        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&blend_operation_advanced_props);
-        GetPhysicalDeviceProperties2(physicalDevice, prop2);
-        phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
-    }
-
     if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
         // Get the needed maintenance4 properties
         VkPhysicalDeviceMaintenance4PropertiesKHR maintance4_props = vku::InitStructHelper();
