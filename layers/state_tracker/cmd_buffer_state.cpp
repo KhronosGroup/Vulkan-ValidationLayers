@@ -223,6 +223,7 @@ void CommandBuffer::ResetCBState() {
     small_indexed_draw_call_count = 0;
 
     transform_feedback_active = false;
+    transform_feedback_buffers_bound = 0;
 
     // Clean up the label data
     dev_data.debug_report->ResetCmdDebugUtilsLabel(VkHandle());

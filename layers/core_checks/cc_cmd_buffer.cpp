@@ -1484,6 +1484,14 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
         }
     }
 
+    if ((counterBufferCount + firstCounterBuffer) > cb_state->transform_feedback_buffers_bound) {
+        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630", commandBuffer,
+                         error_obj.location.dot(Field::firstCounterBuffer),
+                         "is %" PRIu32 " and counterBufferCount is %" PRIu32
+                         " but vkCmdBindTransformFeedbackBuffersEXT only bound %" PRIu32 " buffers.",
+                         firstCounterBuffer, counterBufferCount, cb_state->transform_feedback_buffers_bound);
+    }
+
     // pCounterBuffers and pCounterBufferOffsets are optional and may be nullptr. Additionaly, pCounterBufferOffsets must be nullptr
     // if pCounterBuffers is nullptr.
     if (pCounterBuffers == nullptr) {

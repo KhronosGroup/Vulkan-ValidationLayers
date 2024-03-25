@@ -448,6 +448,8 @@ class CommandBuffer : public RefcountedStateObject {
     VideoSessionUpdateMap video_session_updates;
 
     bool transform_feedback_active{false};
+    uint32_t transform_feedback_buffers_bound;
+
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
