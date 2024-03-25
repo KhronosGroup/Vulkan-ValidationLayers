@@ -88,7 +88,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const L
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
-    skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
@@ -387,10 +387,9 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
     }
 
     if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-        const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
         if (gpl_info) {
-            skip |= ValidatePipelineLibraryFlags(gpl_info->flags, library_create_info, rendering_struct, create_info_loc, -1,
-                                                 "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
+            skip |= ValidatePipelineLibraryFlags(gpl_info->flags, library_create_info, pipeline.rendering_create_info,
+                                                 create_info_loc, -1, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
 
             const uint32_t flags_count =
                 GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
@@ -428,8 +427,8 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
 
 // Using memcmp will fail sometimes as the alignment/padding in the struct can have undefined values, so because we can't ensure the
 // memory was zero-intialized, we need to just do a normal compare on each member
-static bool ComparePipelineMultisampleStateCreateInfo(VkPipelineMultisampleStateCreateInfo a,
-                                                      VkPipelineMultisampleStateCreateInfo b) {
+static bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &a,
+                                                      const VkPipelineMultisampleStateCreateInfo &b) {
     bool valid_mask = true;
     if (a.pSampleMask && b.pSampleMask && (a.rasterizationSamples == b.rasterizationSamples)) {
         uint32_t length = (SampleCountSize(a.rasterizationSamples) + 31) / 32;
@@ -452,20 +451,21 @@ static bool ComparePipelineMultisampleStateCreateInfo(VkPipelineMultisampleState
            (a.alphaToCoverageEnable == b.alphaToCoverageEnable) && (a.alphaToOneEnable == b.alphaToOneEnable);
 }
 
-static bool CompareDescriptorSetLayoutBinding(VkDescriptorSetLayoutBinding a, VkDescriptorSetLayoutBinding b) {
+static bool CompareDescriptorSetLayoutBinding(const VkDescriptorSetLayoutBinding &a, const VkDescriptorSetLayoutBinding &b) {
     return (a.binding == b.binding) && (a.descriptorType == b.descriptorType) && (a.descriptorCount == b.descriptorCount) &&
            (a.stageFlags == b.stageFlags) && (a.pImmutableSamplers == b.pImmutableSamplers);
 }
 
-static bool ComparePipelineColorBlendAttachmentState(VkPipelineColorBlendAttachmentState a, VkPipelineColorBlendAttachmentState b) {
+static bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &a,
+                                                     const VkPipelineColorBlendAttachmentState &b) {
     return (a.blendEnable == b.blendEnable) && (a.srcColorBlendFactor == b.srcColorBlendFactor) &&
            (a.dstColorBlendFactor == b.dstColorBlendFactor) && (a.colorBlendOp == b.colorBlendOp) &&
            (a.srcAlphaBlendFactor == b.srcAlphaBlendFactor) && (a.dstAlphaBlendFactor == b.dstAlphaBlendFactor) &&
            (a.alphaBlendOp == b.alphaBlendOp) && (a.colorWriteMask == b.colorWriteMask);
 }
 
-static bool ComparePipelineFragmentShadingRateStateCreateInfo(VkPipelineFragmentShadingRateStateCreateInfoKHR a,
-                                                              VkPipelineFragmentShadingRateStateCreateInfoKHR b) {
+static bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR &a,
+                                                              const VkPipelineFragmentShadingRateStateCreateInfoKHR &b) {
     // Since this is chained in a pnext, we don't want to check the pNext/sType
     return (a.fragmentSize.width == b.fragmentSize.width) && (a.fragmentSize.height == b.fragmentSize.height) &&
            (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
@@ -1192,7 +1192,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
         const auto subpass = pipeline.Subpass();
         const auto *subpass_desc = &rp_state->create_info.pSubpasses[subpass];
 
-        for (uint32_t i = 0; i < pipeline.Attachments().size() && i < subpass_desc->colorAttachmentCount; ++i) {
+        for (uint32_t i = 0; i < pipeline.AttachmentStates().size() && i < subpass_desc->colorAttachmentCount; ++i) {
             const auto attachment = subpass_desc->pColorAttachments[i].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
 
@@ -1200,7 +1200,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
             VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_desc.format);
 
             const auto *raster_state = pipeline.RasterizationState();
-            if (raster_state && !raster_state->rasterizerDiscardEnable && pipeline.Attachments()[i].blendEnable &&
+            if (raster_state && !raster_state->rasterizerDiscardEnable && pipeline.AttachmentStates()[i].blendEnable &&
                 !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041", device,
                                  color_loc.dot(Field::pAttachments, i).dot(Field::blendEnable),
@@ -1298,7 +1298,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
         }
     } else {
         const uint64_t external_format = GetExternalFormat(pipeline.PNext());
-        const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
+        const auto *rendering_struct = pipeline.rendering_create_info;
         if (external_format == 0 || !rendering_struct) {
             return false;
         }
@@ -1539,6 +1539,165 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeli
     return skip;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pipeline &pipeline,
+                                                                   const safe_VkSubpassDescription2 *subpass_desc,
+                                                                   const Location &color_loc) const {
+    bool skip = false;
+    const auto &attachment_states = pipeline.AttachmentStates();
+    if (attachment_states.empty()) {
+        return skip;
+    }
+    if (!enabled_features.independentBlend) {
+        if (attachment_states.size() > 1) {
+            for (size_t i = 1; i < attachment_states.size(); i++) {
+                if (!ComparePipelineColorBlendAttachmentState(attachment_states[0], attachment_states[i])) {
+                    skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605", device,
+                                     color_loc.dot(Field::pAttachments, (uint32_t)i),
+                                     "is different than pAttachments[0] and independentBlend feature was not enabled.");
+                    break;
+                }
+            }
+        }
+    }
+
+    const VkBlendOp first_color_blend_op = attachment_states[0].colorBlendOp;
+    const VkBlendOp first_alpha_blend_op = attachment_states[0].alphaBlendOp;
+
+    for (size_t i = 0; i < attachment_states.size(); i++) {
+        const VkPipelineColorBlendAttachmentState &attachment_state = attachment_states[i];
+        const Location &attachment_loc = color_loc.dot(Field::pAttachments, (uint32_t)i);
+        if (IsSecondaryColorInputBlendFactor(attachment_state.srcColorBlendFactor)) {
+            if (!enabled_features.dualSrcBlend) {
+                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608", device,
+                                 attachment_loc.dot(Field::srcColorBlendFactor),
+                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
+                                 string_VkBlendFactor(attachment_state.srcColorBlendFactor));
+            }
+        }
+        if (IsSecondaryColorInputBlendFactor(attachment_state.dstColorBlendFactor)) {
+            if (!enabled_features.dualSrcBlend) {
+                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609", device,
+                                 attachment_loc.dot(Field::dstColorBlendFactor),
+                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
+                                 string_VkBlendFactor(attachment_state.dstColorBlendFactor));
+            }
+        }
+        if (IsSecondaryColorInputBlendFactor(attachment_state.srcAlphaBlendFactor)) {
+            if (!enabled_features.dualSrcBlend) {
+                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610", device,
+                                 attachment_loc.dot(Field::srcAlphaBlendFactor),
+                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
+                                 string_VkBlendFactor(attachment_state.srcAlphaBlendFactor));
+            }
+        }
+        if (IsSecondaryColorInputBlendFactor(attachment_state.dstAlphaBlendFactor)) {
+            if (!enabled_features.dualSrcBlend) {
+                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611", device,
+                                 attachment_loc.dot(Field::dstAlphaBlendFactor),
+                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
+                                 string_VkBlendFactor(attachment_state.dstAlphaBlendFactor));
+            }
+        }
+
+        // if blendEnabled is false, these values are ignored
+        if (attachment_state.blendEnable) {
+            bool advance_blend = false;
+            if (IsAdvanceBlendOperation(attachment_state.colorBlendOp)) {
+                advance_blend = true;
+                if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendAllOperations == VK_FALSE) {
+                    // This VUID checks if a subset of advance blend ops are allowed
+                    switch (attachment_state.colorBlendOp) {
+                        case VK_BLEND_OP_ZERO_EXT:
+                        case VK_BLEND_OP_SRC_EXT:
+                        case VK_BLEND_OP_DST_EXT:
+                        case VK_BLEND_OP_SRC_OVER_EXT:
+                        case VK_BLEND_OP_DST_OVER_EXT:
+                        case VK_BLEND_OP_SRC_IN_EXT:
+                        case VK_BLEND_OP_DST_IN_EXT:
+                        case VK_BLEND_OP_SRC_OUT_EXT:
+                        case VK_BLEND_OP_DST_OUT_EXT:
+                        case VK_BLEND_OP_SRC_ATOP_EXT:
+                        case VK_BLEND_OP_DST_ATOP_EXT:
+                        case VK_BLEND_OP_XOR_EXT:
+                        case VK_BLEND_OP_INVERT_EXT:
+                        case VK_BLEND_OP_INVERT_RGB_EXT:
+                        case VK_BLEND_OP_LINEARDODGE_EXT:
+                        case VK_BLEND_OP_LINEARBURN_EXT:
+                        case VK_BLEND_OP_VIVIDLIGHT_EXT:
+                        case VK_BLEND_OP_LINEARLIGHT_EXT:
+                        case VK_BLEND_OP_PINLIGHT_EXT:
+                        case VK_BLEND_OP_HARDMIX_EXT:
+                        case VK_BLEND_OP_PLUS_EXT:
+                        case VK_BLEND_OP_PLUS_CLAMPED_EXT:
+                        case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
+                        case VK_BLEND_OP_PLUS_DARKER_EXT:
+                        case VK_BLEND_OP_MINUS_EXT:
+                        case VK_BLEND_OP_MINUS_CLAMPED_EXT:
+                        case VK_BLEND_OP_CONTRAST_EXT:
+                        case VK_BLEND_OP_INVERT_OVG_EXT:
+                        case VK_BLEND_OP_RED_EXT:
+                        case VK_BLEND_OP_GREEN_EXT:
+                        case VK_BLEND_OP_BLUE_EXT: {
+                            skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409", device,
+                                             attachment_loc.dot(Field::colorBlendOp),
+                                             "(%s) but "
+                                             "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::"
+                                             "advancedBlendAllOperations is "
+                                             "VK_FALSE",
+                                             string_VkBlendOp(attachment_state.colorBlendOp));
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+
+                if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend == VK_FALSE &&
+                    attachment_state.colorBlendOp != first_color_blend_op) {
+                    skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407", device,
+                                     attachment_loc.dot(Field::colorBlendOp), "(%s) is not same the other attachments (%s).",
+                                     string_VkBlendOp(attachment_state.colorBlendOp), string_VkBlendOp(first_color_blend_op));
+                }
+            }
+
+            if (IsAdvanceBlendOperation(attachment_state.alphaBlendOp)) {
+                advance_blend = true;
+                if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend == VK_FALSE &&
+                    attachment_state.alphaBlendOp != first_alpha_blend_op) {
+                    skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408", device,
+                                     attachment_loc.dot(Field::alphaBlendOp), "(%s) is not same the other attachments (%s).",
+                                     string_VkBlendOp(attachment_state.alphaBlendOp), string_VkBlendOp(first_alpha_blend_op));
+                }
+            }
+
+            if (advance_blend) {
+                const uint32_t color_attachment_count = pipeline.rendering_create_info
+                                                            ? pipeline.rendering_create_info->colorAttachmentCount
+                                                            : subpass_desc->colorAttachmentCount;
+                if (attachment_state.colorBlendOp != attachment_state.alphaBlendOp) {
+                    skip |=
+                        LogError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01406", device, attachment_loc,
+                                 "has different colorBlendOp (%s) and alphaBlendOp (%s) but one of "
+                                 "them is an advance blend operation.",
+                                 string_VkBlendOp(attachment_state.colorBlendOp), string_VkBlendOp(attachment_state.alphaBlendOp));
+                } else if (color_attachment_count >
+                           phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                    // color_attachment_count is found one of multiple spots above
+                    //
+                    // error can guarantee it is the same VkBlendOp
+                    skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410", device, attachment_loc,
+                                     "has an advance blend operation (%s) but the colorAttachmentCount (%" PRIu32
+                                     ") is larger than advancedBlendMaxColorAttachments (%" PRIu32 ").",
+                                     string_VkBlendOp(attachment_state.colorBlendOp), color_attachment_count,
+                                     phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
+                    break;  // if this fails once, will fail every iteration
+                }
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pipeline,
                                                          const safe_VkSubpassDescription2 *subpass_desc,
                                                          const Location &create_info_loc) const {
@@ -1549,19 +1708,37 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
         return skip;
     }
     const auto &rp_state = pipeline.RenderPassState();
-    if (!enabled_features.dynamicRenderingLocalRead &&
-        ((color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT) != 0) &&
-        (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE)) {
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06482", device, color_loc.dot(Field::flags),
-                         "includes "
-                         "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT, but "
-                         "renderpass is not VK_NULL_HANDLE.");
+    const bool null_rp = (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE);
+    const bool raster_order_attach_color =
+        color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT;
+
+    if (raster_order_attach_color) {
+        if (!enabled_features.rasterizationOrderColorAttachmentAccess) {
+            skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-rasterizationOrderColorAttachmentAccess-06465", device,
+                             color_loc.dot(Field::flags), "(%s) but rasterizationOrderColorAttachmentAccess feature is not enabled",
+                             string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str());
+        }
+
+        if (!enabled_features.dynamicRenderingLocalRead && null_rp) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06482", device, color_loc.dot(Field::flags),
+                             "includes "
+                             "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_EXT, but "
+                             "renderpass is not VK_NULL_HANDLE.");
+        }
+
+        if (!null_rp && subpass_desc &&
+            (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT) == 0) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09527", rp_state->Handle(), color_loc.dot(Field::flags),
+                             "(%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                             string_VkPipelineColorBlendStateCreateFlags(color_blend_state->flags).c_str(),
+                             string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
+        }
     }
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
     const auto *attachment_sample_count_info = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
-    const auto *rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
-    if (rendering_struct && attachment_sample_count_info &&
+    const auto *rendering_struct = pipeline.rendering_create_info;
+    if (null_rp && rendering_struct && attachment_sample_count_info &&
         (attachment_sample_count_info->colorAttachmentCount != rendering_struct->colorAttachmentCount)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06063", device,
                          create_info_loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::attachmentCount),
@@ -1570,7 +1747,7 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
                          rendering_struct->colorAttachmentCount);
     }
 
-    if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
+    if (!null_rp && subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
         // attachmentCount can be ignored
         const bool ignored =
             pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
@@ -1584,59 +1761,14 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline &pi
                              subpass_desc->colorAttachmentCount);
         }
     }
-    const auto &pipe_attachments = pipeline.Attachments();
-    if (!enabled_features.independentBlend) {
-        if (pipe_attachments.size() > 1) {
-            const auto *const attachments = &pipe_attachments[0];
-            for (size_t i = 1; i < pipe_attachments.size(); i++) {
-                if (!ComparePipelineColorBlendAttachmentState(attachments[0], attachments[i])) {
-                    skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605", device,
-                                     color_loc.dot(Field::pAttachments, (uint32_t)i),
-                                     "is different than pAttachments[0] and independentBlend feature was not enabled.");
-                    break;
-                }
-            }
-        }
-    }
+
+    skip |= ValidateGraphicsPipelineColorBlendAttachmentState(pipeline, subpass_desc, color_loc);
+
     if (!enabled_features.logicOp && (color_blend_state->logicOpEnable != VK_FALSE)) {
         skip |= LogError("VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606", device,
                          color_loc.dot(Field::logicOpEnable), "is VK_TRUE, but the logicOp feature was not enabled.");
     }
-    for (size_t i = 0; i < pipe_attachments.size(); i++) {
-        const Location &attachment_loc = color_loc.dot(Field::pAttachments, (uint32_t)i);
-        if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcColorBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
-                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608", device,
-                                 attachment_loc.dot(Field::srcColorBlendFactor),
-                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
-                                 string_VkBlendFactor(pipe_attachments[i].srcColorBlendFactor));
-            }
-        }
-        if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstColorBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
-                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609", device,
-                                 attachment_loc.dot(Field::dstColorBlendFactor),
-                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
-                                 string_VkBlendFactor(pipe_attachments[i].dstColorBlendFactor));
-            }
-        }
-        if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcAlphaBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
-                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610", device,
-                                 attachment_loc.dot(Field::srcAlphaBlendFactor),
-                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
-                                 string_VkBlendFactor(pipe_attachments[i].srcAlphaBlendFactor));
-            }
-        }
-        if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstAlphaBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
-                skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611", device,
-                                 attachment_loc.dot(Field::dstAlphaBlendFactor),
-                                 "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
-                                 string_VkBlendFactor(pipe_attachments[i].dstAlphaBlendFactor));
-            }
-        }
-    }
+
     auto color_write = vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state->pNext);
     if (color_write) {
         if (color_write->attachmentCount > phys_dev_props.limits.maxColorAttachments) {
@@ -2240,25 +2372,65 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const vvl::Pipeline &pipeline,
+                                                           const safe_VkSubpassDescription2 *subpass_desc,
+                                                           const Location &create_info_loc) const {
     bool skip = false;
     const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
     const auto ds_state = pipeline.DepthStencilState();
     const auto &rp_state = pipeline.RenderPassState();
     const bool null_rp = (!rp_state || rp_state->VkHandle() == VK_NULL_HANDLE);
-    if (null_rp) {
-        if (ds_state) {
-            if (!enabled_features.dynamicRenderingLocalRead &&
-                ((ds_state->flags &
-                  (VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT |
-                   VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT)) != 0)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09526", device, ds_loc.dot(Field::flags),
-                                 "is %s but renderPass is VK_NULL_HANDLE.",
-                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
-            }
-        } else if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+    if (!ds_state) {
+        if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
             if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, ds_loc, "is NULL.");
+            }
+        }
+        return skip;  // nothing else to validate if Depth Stencil state is empty
+    }
+
+    const bool raster_order_attach_depth =
+        ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT;
+    const bool raster_order_attach_stencil =
+        ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT;
+
+    if (null_rp) {
+        if (!enabled_features.dynamicRenderingLocalRead && (raster_order_attach_depth || raster_order_attach_stencil)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09526", device, ds_loc.dot(Field::flags),
+                             "is %s but renderPass is VK_NULL_HANDLE.",
+                             string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+        }
+    } else if (!rp_state->UsesDynamicRendering()) {
+        if (raster_order_attach_depth) {
+            if (!enabled_features.rasterizationOrderDepthAttachmentAccess) {
+                skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderDepthAttachmentAccess-06463", device,
+                                 ds_loc.dot(Field::flags),
+                                 "is (%s) but rasterizationOrderDepthAttachmentAccess feature was not enabled",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+            }
+
+            if (subpass_desc &&
+                (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT) == 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09528", rp_state->Handle(), ds_loc.dot(Field::flags),
+                                 "is (%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str(),
+                                 string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
+            }
+        }
+        if (raster_order_attach_stencil) {
+            if (!enabled_features.rasterizationOrderStencilAttachmentAccess) {
+                skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464",
+                                 device, ds_loc.dot(Field::flags),
+                                 "is (%s) but rasterizationOrderStencilAttachmentAccess feature was not enabled",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+            }
+
+            if (subpass_desc &&
+                (subpass_desc->flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT) == 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09529", rp_state->Handle(), ds_loc.dot(Field::flags),
+                                 "is (%s) but VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                 string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str(),
+                                 string_VkSubpassDescriptionFlags(subpass_desc->flags).c_str());
             }
         }
     }
@@ -2755,7 +2927,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
     }
 
     const auto color_blend_state = pipeline.ColorBlendState();
-    const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
+    const auto *rendering_struct = pipeline.rendering_create_info;
     if (!rendering_struct) {
         // The spec says when thie struct is not included it is same as
         // viewMask = 0, colorAttachmentCount = 0, formats = VK_FORMAT_UNDEFINED.

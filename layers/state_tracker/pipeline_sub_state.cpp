@@ -237,9 +237,9 @@ FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr
     : PipelineSubState(p), rp_state(rp), subpass(sp) {}
 
 // static
-bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentVector &attachments) {
+bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentStateVector &attachment_states) {
     bool result = false;
-    for (const auto &attachment : attachments) {
+    for (const auto &attachment : attachment_states) {
         if (VK_TRUE == attachment.blendEnable) {
             if (((attachment.dstAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
                  (attachment.dstAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||

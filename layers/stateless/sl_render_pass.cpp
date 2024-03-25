@@ -424,10 +424,8 @@ void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRend
     auto &renderpass_state = renderpasses_states[renderPass];
     lock.unlock();
 
-    renderpass_state.subpasses_flags.resize(pCreateInfo->subpassCount);
     for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
         bool uses_color = false;
-        renderpass_state.color_attachment_count = pCreateInfo->pSubpasses[subpass].colorAttachmentCount;
 
         for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i)
             if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
@@ -439,7 +437,6 @@ void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRend
 
         if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpass);
         if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
-        renderpass_state.subpasses_flags[subpass] = pCreateInfo->pSubpasses[subpass].flags;
     }
 }
 void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,

@@ -58,7 +58,6 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vertex_attribute_divisor_props;
-        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
         VkPhysicalDeviceMaintenance4PropertiesKHR maintenance4_props;
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
@@ -70,8 +69,6 @@ class StatelessValidation : public ValidationObject {
     struct SubpassesUsageStates {
         vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
         vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
-        std::vector<VkSubpassDescriptionFlags> subpasses_flags;
-        uint32_t color_attachment_count;
     };
 
     // Though this validation object is predominantly statless, the Framebuffer checks are greatly simplified by creating and
