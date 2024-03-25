@@ -240,6 +240,11 @@ static bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, 
 void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *debug_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg) {
     using namespace spvtools;
+    if (pgm.empty()) {
+        // TODO - We currently don't have a good single code path if the shader_map can't find the shader module handle
+        return;
+    }
+
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
     spirv::Module module_state(pgm);
