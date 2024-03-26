@@ -243,10 +243,10 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevic
                                               info_loc.dot(Field::accelerationStructure).dot(Field::buffer),
                                               "VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09541");
 
-        if (!(accel_struct->buffer_state->create_info.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+        if (!(accel_struct->buffer_state->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
             skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09542", LogObjectList(device),
                              info_loc.dot(Field::accelerationStructure).dot(Field::buffer), "was created with usage flag(s) %s.",
-                             string_VkBufferUsageFlags(accel_struct->buffer_state->create_info.usage).c_str());
+                             string_VkBufferUsageFlags2KHR(accel_struct->buffer_state->usage).c_str());
         }
     }
 
