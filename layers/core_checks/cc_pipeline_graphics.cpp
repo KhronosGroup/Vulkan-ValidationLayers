@@ -37,14 +37,14 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                         const ErrorObject &error_obj,
-                                                        chassis::CreateGraphicsPipelines *chassis_state) const {
+                                                        chassis::CreateGraphicsPipelines &chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                      pPipelines, error_obj, chassis_state);
 
     for (uint32_t i = 0; i < count; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateGraphicsPipeline(*chassis_state->pipe_state[i].get(), create_info_loc);
-        skip |= ValidateGraphicsPipelineDerivatives(chassis_state->pipe_state, i, create_info_loc);
+        skip |= ValidateGraphicsPipeline(*chassis_state.pipe_state[i].get(), create_info_loc);
+        skip |= ValidateGraphicsPipelineDerivatives(chassis_state.pipe_state, i, create_info_loc);
     }
     return skip;
 }

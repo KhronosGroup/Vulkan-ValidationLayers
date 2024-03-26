@@ -53,7 +53,7 @@ class DescriptorPool : public StateObject {
     VkDescriptorPool VkHandle() const { return handle_.Cast<VkDescriptorPool>(); };
 
     void Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
-                  const vvl::AllocateDescriptorSetsData *ds_data);
+                  const vvl::AllocateDescriptorSetsData &ds_data);
     void Free(uint32_t count, const VkDescriptorSet *descriptor_sets);
     void Reset();
     void Destroy() override;

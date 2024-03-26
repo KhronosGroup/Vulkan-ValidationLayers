@@ -681,11 +681,11 @@ bool gpu_tracker::Validator::PreCallValidateCmdWaitEvents2(VkCommandBuffer comma
 void gpu_tracker::Validator::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
-                                                               chassis::CreatePipelineLayout *chassis_state) {
+                                                               chassis::CreatePipelineLayout &chassis_state) {
     if (aborted) {
         return;
     }
-    if (chassis_state->modified_create_info.setLayoutCount >= adjusted_max_desc_sets) {
+    if (chassis_state.modified_create_info.setLayoutCount >= adjusted_max_desc_sets) {
         std::ostringstream strm;
         strm << "Pipeline Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
              << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
@@ -697,15 +697,15 @@ void gpu_tracker::Validator::PreCallRecordCreatePipelineLayout(VkDevice device, 
         // 1. Copying the caller's descriptor set desc_layouts
         // 2. Fill in dummy descriptor layouts up to the max binding
         // 3. Fill in with the debug descriptor layout at the max binding slot
-        chassis_state->new_layouts.reserve(adjusted_max_desc_sets);
-        chassis_state->new_layouts.insert(chassis_state->new_layouts.end(), &pCreateInfo->pSetLayouts[0],
-                                          &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
+        chassis_state.new_layouts.reserve(adjusted_max_desc_sets);
+        chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
+                                         &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
         for (uint32_t i = pCreateInfo->setLayoutCount; i < adjusted_max_desc_sets - 1; ++i) {
-            chassis_state->new_layouts.push_back(dummy_desc_layout_);
+            chassis_state.new_layouts.push_back(dummy_desc_layout_);
         }
-        chassis_state->new_layouts.push_back(debug_desc_layout_);
-        chassis_state->modified_create_info.pSetLayouts = chassis_state->new_layouts.data();
-        chassis_state->modified_create_info.setLayoutCount = adjusted_max_desc_sets;
+        chassis_state.new_layouts.push_back(debug_desc_layout_);
+        chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
+        chassis_state.modified_create_info.setLayoutCount = adjusted_max_desc_sets;
     }
     BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
 }
@@ -723,12 +723,12 @@ void gpu_tracker::Validator::PostCallRecordCreatePipelineLayout(VkDevice device,
 void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                            const VkShaderCreateInfoEXT *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                           const RecordObject &record_obj, chassis::ShaderObject *chassis_state) {
+                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     if (aborted) {
         return;
     }
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (chassis_state->instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets) {
+        if (chassis_state.instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets) {
             std::ostringstream strm;
             strm << "Descriptor Set Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
                  << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
@@ -740,15 +740,15 @@ void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
             // 3. Fill in with the debug descriptor layout at the max binding slot
-            chassis_state->new_layouts.reserve(adjusted_max_desc_sets);
-            chassis_state->new_layouts.insert(chassis_state->new_layouts.end(), pCreateInfos[i].pSetLayouts,
-                                              &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
+            chassis_state.new_layouts.reserve(adjusted_max_desc_sets);
+            chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), pCreateInfos[i].pSetLayouts,
+                                             &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
             for (uint32_t j = pCreateInfos[i].setLayoutCount; j < adjusted_max_desc_sets - 1; ++j) {
-                chassis_state->new_layouts.push_back(dummy_desc_layout_);
+                chassis_state.new_layouts.push_back(dummy_desc_layout_);
             }
-            chassis_state->new_layouts.push_back(debug_desc_layout_);
-            chassis_state->instrumented_create_info->pSetLayouts = chassis_state->new_layouts.data();
-            chassis_state->instrumented_create_info->setLayoutCount = adjusted_max_desc_sets;
+            chassis_state.new_layouts.push_back(debug_desc_layout_);
+            chassis_state.instrumented_create_info->pSetLayouts = chassis_state.new_layouts.data();
+            chassis_state.instrumented_create_info->setLayoutCount = adjusted_max_desc_sets;
         }
     }
 }
@@ -756,14 +756,14 @@ void gpu_tracker::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint
 void gpu_tracker::Validator::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                             const VkShaderCreateInfoEXT *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                            const RecordObject &record_obj, chassis::ShaderObject *chassis_state) {
+                                                            const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
     if (aborted) return;
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        shader_map.insert_or_assign(chassis_state->unique_shader_ids[i], VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
-                                    chassis_state->instrumented_spirv[i]);
+        shader_map.insert_or_assign(chassis_state.unique_shader_ids[i], VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
+                                    chassis_state.instrumented_spirv[i]);
     }
 }
 
@@ -781,26 +781,26 @@ void gpu_tracker::Validator::PreCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                   const RecordObject &record_obj,
-                                                                  chassis::CreateGraphicsPipelines *chassis_state) {
+                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
     if (aborted) return;
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state->pipe_state,
-                                   &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj, *chassis_state);
-    chassis_state->modified_create_infos = new_pipeline_create_infos;
-    chassis_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(chassis_state->modified_create_infos.data());
+    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.pipe_state,
+                                   &new_pipeline_create_infos, record_obj, chassis_state);
+    chassis_state.modified_create_infos = new_pipeline_create_infos;
+    chassis_state.pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
 void gpu_tracker::Validator::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                  const VkComputePipelineCreateInfo *pCreateInfos,
                                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                  const RecordObject &record_obj,
-                                                                 chassis::CreateComputePipelines *chassis_state) {
+                                                                 chassis::CreateComputePipelines &chassis_state) {
     if (aborted) return;
     std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state->pipe_state,
-                                   &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj, *chassis_state);
-    chassis_state->modified_create_infos = new_pipeline_create_infos;
-    chassis_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(chassis_state->modified_create_infos.data());
+    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.pipe_state,
+                                   &new_pipeline_create_infos, record_obj, chassis_state);
+    chassis_state.modified_create_infos = new_pipeline_create_infos;
+    chassis_state.pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
 void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
@@ -808,13 +808,13 @@ void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesNV(VkDevice d
                                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                                       const VkAllocationCallbacks *pAllocator,
                                                                       VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                      chassis::CreateRayTracingPipelinesNV *chassis_state) {
+                                                                      chassis::CreateRayTracingPipelinesNV &chassis_state) {
     if (aborted) return;
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state->pipe_state,
-                                   &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, record_obj, *chassis_state);
-    chassis_state->modified_create_infos = new_pipeline_create_infos;
-    chassis_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(chassis_state->modified_create_infos.data());
+    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.pipe_state,
+                                   &new_pipeline_create_infos, record_obj, chassis_state);
+    chassis_state.modified_create_infos = new_pipeline_create_infos;
+    chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(chassis_state.modified_create_infos.data());
 }
 
 void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -822,14 +822,13 @@ void gpu_tracker::Validator::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice 
                                                                        const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                       chassis::CreateRayTracingPipelinesKHR *chassis_state) {
+                                                                       chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     if (aborted) return;
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
-    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state->pipe_state,
-                                   &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj, *chassis_state);
-    chassis_state->modified_create_infos = new_pipeline_create_infos;
-    chassis_state->pCreateInfos =
-        reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(chassis_state->modified_create_infos.data());
+    PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.pipe_state,
+                                   &new_pipeline_create_infos, record_obj, chassis_state);
+    chassis_state.modified_create_infos = new_pipeline_create_infos;
+    chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(chassis_state.modified_create_infos.data());
 }
 
 template <typename CreateInfos, typename SafeCreateInfos>
@@ -850,26 +849,24 @@ void gpu_tracker::Validator::PostCallRecordCreateGraphicsPipelines(VkDevice devi
                                                                    const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                    const RecordObject &record_obj,
-                                                                   chassis::CreateGraphicsPipelines *chassis_state) {
+                                                                   chassis::CreateGraphicsPipelines &chassis_state) {
     BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                      chassis_state);
     if (aborted) return;
-    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    chassis_state->modified_create_infos.data());
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
 
 void gpu_tracker::Validator::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                   const VkComputePipelineCreateInfo *pCreateInfos,
                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                   const RecordObject &record_obj,
-                                                                  chassis::CreateComputePipelines *chassis_state) {
+                                                                  chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     chassis_state);
     if (aborted) return;
-    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    chassis_state->modified_create_infos.data());
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
 
 void gpu_tracker::Validator::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
@@ -877,13 +874,12 @@ void gpu_tracker::Validator::PostCallRecordCreateRayTracingPipelinesNV(VkDevice 
                                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
                                                                        VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                       chassis::CreateRayTracingPipelinesNV *chassis_state) {
+                                                                       chassis::CreateRayTracingPipelinesNV &chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                          record_obj, chassis_state);
     if (aborted) return;
-    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
-                                    chassis_state->modified_create_infos.data());
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
 
 void gpu_tracker::Validator::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -891,13 +887,12 @@ void gpu_tracker::Validator::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
                                                                         const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                         const VkAllocationCallbacks *pAllocator,
                                                                         VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                        chassis::CreateRayTracingPipelinesKHR *chassis_state) {
+                                                                        chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, chassis_state);
     if (aborted) return;
-    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                    chassis_state->modified_create_infos.data());
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, chassis_state.modified_create_infos.data());
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, chassis_state.modified_create_infos.data());
 }
 
 // Remove all the shader trackers associated with this destroyed pipeline.
@@ -976,13 +971,7 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             std::vector<std::shared_ptr<vvl::Pipeline>> &pipe_state,
                                                             std::vector<SafeCreateInfo> *new_pipeline_create_infos,
-                                                            const VkPipelineBindPoint bind_point, const RecordObject &record_obj,
-                                                            ChassisState &chassis_state) {
-    if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
-        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        return;
-    }
-
+                                                            const RecordObject &record_obj, ChassisState &chassis_state) {
     // Walk through all the pipelines, make a copy of each and flag each pipeline that contains a shader that uses the debug
     // descriptor set index.
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
@@ -1028,8 +1017,8 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
                     if (!module_state->Handle()) {
                         // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
                         // case above. Otherwise, it is being defined during CGPL time
-                        if (chassis_state.shader_states.size() <= pipeline) {
-                            chassis_state.shader_states.resize(pipeline + 1);
+                        if (chassis_state.shader_unique_id_maps.size() <= pipeline) {
+                            chassis_state.shader_unique_id_maps.resize(pipeline + 1);
                         }
                         const VkShaderStageFlagBits stage = stage_state.GetStage();
                         // Now find the corresponding VkShaderModuleCreateInfo
@@ -1040,37 +1029,39 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
                             const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
                                 vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
                         if (gpuav_settings.select_instrumented_shaders && sm_ci && !CheckForGpuAvEnabled(sm_ci->pNext)) continue;
-                        auto &csm_state = chassis_state.shader_states[pipeline][stage];
+                        uint32_t unique_shader_id = 0;
                         bool cached = false;
                         bool pass = false;
+                        std::vector<uint32_t> instrumented_spirv;
                         if (gpuav_settings.cache_instrumented_shaders) {
-                            csm_state.unique_shader_id =
+                            unique_shader_id =
                                 hash_util::ShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
-                            auto it = instrumented_shaders.find(csm_state.unique_shader_id);
+                            auto it = instrumented_shaders.find(unique_shader_id);
                             if (it != instrumented_shaders.end()) {
-                                csm_state.instrumented_spirv = it->second.second;
+                                instrumented_spirv = it->second.second;
                                 cached = true;
                             }
                         } else {
-                            csm_state.unique_shader_id = unique_shader_module_id++;
+                            unique_shader_id = unique_shader_module_id++;
                         }
                         if (!cached) {
-                            pass = InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv,
-                                                    csm_state.unique_shader_id, record_obj.location);
+                            pass = InstrumentShader(module_state->spirv->words_, instrumented_spirv, unique_shader_id,
+                                                    record_obj.location);
                         }
                         if (cached || pass) {
-                            module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
+                            module_state->gpu_validation_shader_id = unique_shader_id;
                             // Now we need to update the shader code in VkShaderModuleCreateInfo
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
-                                sm_ci->SetCode(csm_state.instrumented_spirv);
+                                sm_ci->SetCode(instrumented_spirv);
                             }
                             if (gpuav_settings.cache_instrumented_shaders && !cached) {
-                                instrumented_shaders.emplace(
-                                    csm_state.unique_shader_id,
-                                    std::make_pair(csm_state.instrumented_spirv.size(), csm_state.instrumented_spirv));
+                                instrumented_shaders.emplace(unique_shader_id,
+                                                             std::make_pair(instrumented_spirv.size(), instrumented_spirv));
                             }
                         }
+
+                        chassis_state.shader_unique_id_maps[pipeline][stage] = unique_shader_id;
                     }
                 }
             }
@@ -1087,12 +1078,7 @@ void gpu_tracker::Validator::PreCallRecordPipelineCreations(uint32_t count, cons
 template <typename CreateInfo, typename SafeCreateInfo>
 void gpu_tracker::Validator::PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                             const VkPipelineBindPoint bind_point,
                                                              const SafeCreateInfo &modified_create_infos) {
-    if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
-        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        return;
-    }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         auto pipeline_state = Get<vvl::Pipeline>(pPipelines[pipeline]);
         if (!pipeline_state) continue;
