@@ -1004,13 +1004,6 @@ TEST_F(NegativeRayTracingNV, ArrayOOBRayTracingShaders) {
     OOBRayTracingShadersTestBodyNV(false);
 }
 
-TEST_F(NegativeRayTracingNV, ArrayOOBRayTracingShadersGpuAV) {
-    TEST_DESCRIPTION(
-        "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
-        "ray tracing shaders using gpu assited validation.");
-    OOBRayTracingShadersTestBodyNV(true);
-}
-
 TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());

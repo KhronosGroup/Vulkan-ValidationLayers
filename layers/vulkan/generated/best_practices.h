@@ -142,12 +142,12 @@ void PostCallRecordMergePipelineCaches(VkDevice device, VkPipelineCache dstCache
 void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                           const RecordObject& record_obj,
+                                           const RecordObject& record_obj, PipelineStates& pipeline_states,
                                            chassis::CreateGraphicsPipelines& chassis_state) override;
 
 void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                           const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                          VkPipeline* pPipelines, const RecordObject& record_obj,
+                                          VkPipeline* pPipelines, const RecordObject& record_obj, PipelineStates& pipeline_states,
                                           chassis::CreateComputePipelines& chassis_state) override;
 
 void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
@@ -700,7 +700,7 @@ void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t b
 void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               const RecordObject& record_obj,
+                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                chassis::CreateRayTracingPipelinesNV& chassis_state) override;
 
 void PostCallRecordGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
@@ -1013,7 +1013,7 @@ void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOpera
                                                 VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                 const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                const RecordObject& record_obj,
+                                                const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                 chassis::CreateRayTracingPipelinesKHR& chassis_state) override;
 
 void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,

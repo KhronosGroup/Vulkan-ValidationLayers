@@ -582,12 +582,12 @@ void BestPractices::PostCallRecordMergePipelineCaches(VkDevice device, VkPipelin
 void BestPractices::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                           const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                          const RecordObject& record_obj,
+                                                          const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                           chassis::CreateGraphicsPipelines& chassis_state) {
     ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines, record_obj, chassis_state);
+                                                                  pPipelines, record_obj, pipeline_states, chassis_state);
     ManualPostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                record_obj, chassis_state);
+                                                record_obj, pipeline_states, chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -601,12 +601,12 @@ void BestPractices::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPip
 void BestPractices::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                          const VkComputePipelineCreateInfo* pCreateInfos,
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                         const RecordObject& record_obj,
+                                                         const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                          chassis::CreateComputePipelines& chassis_state) {
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                 pPipelines, record_obj, chassis_state);
+                                                                 pPipelines, record_obj, pipeline_states, chassis_state);
     ManualPostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                               record_obj, chassis_state);
+                                               record_obj, pipeline_states, chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2193,10 +2193,10 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, V
                                                               uint32_t createInfoCount,
                                                               const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                              const RecordObject& record_obj,
+                                                              const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                               chassis::CreateRayTracingPipelinesNV& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos,
-                                                                      pAllocator, pPipelines, record_obj, chassis_state);
+    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
+        device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj, pipeline_states, chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3075,10 +3075,11 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, 
                                                                VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                                const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                               const RecordObject& record_obj,
+                                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                chassis::CreateRayTracingPipelinesKHR& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
-        device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj, chassis_state);
+    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                       pCreateInfos, pAllocator, pPipelines, record_obj,
+                                                                       pipeline_states, chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
