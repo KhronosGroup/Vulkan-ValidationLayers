@@ -50,7 +50,7 @@ vvl::Semaphore::Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
-      completed_{SubmissionReference{}, type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone,
+      completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, SubmissionReference{},
                  type_create_info ? type_create_info->initialValue : 0},
       next_payload_(completed_.payload + 1),
       dev_data_(dev) {
@@ -79,7 +79,7 @@ void vvl::Semaphore::EnqueueWait(vvl::Queue *queue, uint64_t queue_seq, uint64_t
     SubmissionReference wait_ref(queue, queue_seq);
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         if (timeline_.empty()) {
-            completed_ = SemOp(wait_ref, kWait, payload);
+            completed_ = SemOp(kWait, wait_ref, payload);
             return;
         }
         payload = timeline_.rbegin()->first;
@@ -110,12 +110,12 @@ std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<
         auto &timepoint = pos->second;
         for (auto &op : timepoint.wait_refs) {
             if (!filter || filter(kWait, payload, true)) {
-                result.emplace(SemOp(op, kWait, payload));
+                result.emplace(SemOp(kWait, op, payload));
                 break;
             }
         }
         if (!result && timepoint.signal_ref && (!filter || filter(kSignal, payload, true))) {
-            result.emplace(SemOp(*timepoint.signal_ref, kSignal, payload));
+            result.emplace(SemOp(kSignal, *timepoint.signal_ref, payload));
             break;
         }
         if (!result && timepoint.acquire_command && (!filter || filter(kBinaryAcquire, payload, true))) {
@@ -210,13 +210,13 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
 
     if (retire_here) {
         if (timepoint.signal_ref) {
-            completed_ = SemOp(*timepoint.signal_ref, kSignal, payload);
+            completed_ = SemOp(kSignal, *timepoint.signal_ref, payload);
         }
         if (timepoint.acquire_command) {
             completed_ = SemOp(*timepoint.acquire_command, payload);
         }
-        for (auto &wait : timepoint.wait_refs) {
-            completed_ = SemOp(wait, kWait, payload);
+        for (auto &wait_ref : timepoint.wait_refs) {
+            completed_ = SemOp(kWait, wait_ref, payload);
         }
         timepoint.completed.set_value();
         timeline_.erase(timeline_.begin());

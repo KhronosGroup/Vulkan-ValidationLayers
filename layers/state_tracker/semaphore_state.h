@@ -50,7 +50,7 @@ class Semaphore : public RefcountedStateObject {
         OpType op_type;
         uint64_t payload;
         std::optional<Func> acquire_command;
-        SemOp(const SubmissionReference &submit_ref, OpType op_type, uint64_t payload)
+        SemOp(OpType op_type, const SubmissionReference &submit_ref, uint64_t payload)
             : SubmissionReference(submit_ref), op_type(op_type), payload(payload) {}
         SemOp(Func acquire_command, uint64_t payload)
             : op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
