@@ -46,20 +46,6 @@ class Semaphore : public RefcountedStateObject {
         kExternalPermanent,
     };
 
-    static inline const char *OpTypeName(OpType t) {
-        switch (t) {
-            case kWait:
-                return "wait";
-            case kSignal:
-                return "signal";
-            case kBinaryAcquire:
-                return "acquire";
-            case kNone:
-            default:
-                return "NONE";
-        }
-    }
-
     struct SemOp : SubmissionReference {
         OpType op_type;
         uint64_t payload;
@@ -71,86 +57,25 @@ class Semaphore : public RefcountedStateObject {
     };
 
     struct TimePoint {
-        TimePoint(OpType op_type, SubmissionReference &submit_ref) : signal_op(), completed(), waiter(completed.get_future()) {
-            if (op_type == kWait) {
-                wait_ops.emplace_back(submit_ref);
-            } else {
-                assert(op_type == kSignal);
-                signal_op.emplace(submit_ref);
-            }
-        }
+        TimePoint(OpType op_type, SubmissionReference &submit_ref);
         TimePoint(Func command) : acquire_command(command), completed(), waiter(completed.get_future()) {}
 
-        std::optional<SubmissionReference> signal_op;
-        small_vector<SubmissionReference, 1, uint32_t> wait_ops;
+        std::optional<SubmissionReference> signal_ref;
+        small_vector<SubmissionReference, 1, uint32_t> wait_refs;
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
 
-        bool HasSignaler() const { return signal_op.has_value(); }
-        bool HasWaiters() const { return !wait_ops.empty(); }
+        bool HasSignaler() const { return signal_ref.has_value(); }
+        bool HasWaiters() const { return !wait_refs.empty(); }
         void Notify() const;
     };
-
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    static bool GetMetalExport(const VkSemaphoreCreateInfo *info) {
-        bool retval = false;
-        auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
-        while (export_metal_object_info) {
-            if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
-                retval = true;
-                break;
-            }
-            export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
-        }
-        return retval;
-    }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-    VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo) {
-        auto export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
-        return export_info ? export_info->handleTypes : 0;
-    }
 
     Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
         : Semaphore(dev, handle, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
-    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
-              const VkSemaphoreCreateInfo *pCreateInfo)
-        : RefcountedStateObject(handle, kVulkanObjectTypeSemaphore),
-#ifdef VK_USE_PLATFORM_METAL_EXT
-          metal_semaphore_export(GetMetalExport(pCreateInfo)),
-#endif  // VK_USE_PLATFORM_METAL_EXT
-          type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
-          flags(pCreateInfo->flags),
-          exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          completed_{SubmissionReference{}, type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone,
-                     type_create_info ? type_create_info->initialValue : 0},
-          next_payload_(completed_.payload + 1),
-          dev_data_(dev) {
-    }
-
     VkSemaphore VkHandle() const { return handle_.Cast<VkSemaphore>(); }
-    Scope Scope() const {
-        auto guard = ReadLock();
-        return scope_;
-    }
-
-    // used to catch if GetSemaphore() is called multiple times
-    bool HasImportedHandleType() const {
-        auto guard = ReadLock();
-        return imported_handle_type_.has_value();
-    }
-    VkExternalSemaphoreHandleTypeFlagBits ImportedHandleType() const {
-        auto guard = ReadLock();
-        assert(imported_handle_type_.has_value());
-        return imported_handle_type_.value();
-    }
-    // This is the most recently completed operation. It is returned by value so that the caller
-    // has a correct copy even if something else is completing on this queue in a different thread.
-    SemOp Completed() const {
-        auto guard = ReadLock();
-        return completed_;
-    }
+    enum Scope Scope() const;
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
@@ -160,44 +85,54 @@ class Semaphore : public RefcountedStateObject {
     // Binary only special cases enqueue functions
     void EnqueueAcquire(Func command);
 
-    // Signal queue(s) that need to retire because a wait on this payload has finished
-    void Notify(uint64_t payload);
-
-    std::shared_future<void> Wait(uint64_t payload);
-
     // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
     void NotifyAndWait(const Location &loc, uint64_t payload);
 
     // Remove completed operations and signal any waiters. This should only be called by Queue
     void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
 
-    // look for most recent / highest payload operation that matches
+    // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(
         const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter = nullptr) const;
 
     // Returns queue submission associated with the last binary signal.
     std::optional<SubmissionReference> GetLastBinarySignalSubmission() const;
 
+    // This is the most recently completed operation. It is returned by value so that the caller
+    // has a correct copy even if something else is completing on this queue in a different thread.
+    SemOp Completed() const;
+
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
-    bool HasPendingOps() const {
-        auto guard = ReadLock();
-        return !timeline_.empty();
-    }
 
+    bool HasImportedHandleType() const;
+    VkExternalSemaphoreHandleTypeFlagBits ImportedHandleType() const;
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    const bool metal_semaphore_export;
-#endif  // VK_USE_PLATFORM_METAL_EXT
+
     const VkSemaphoreType type;
     const VkSemaphoreCreateFlags flags;
     const VkExternalSemaphoreHandleTypeFlags exportHandleTypes;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    static bool GetMetalExport(const VkSemaphoreCreateInfo *info);
+    const bool metal_semaphore_export;
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
   private:
+    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
+              const VkSemaphoreCreateInfo *pCreateInfo);
+    VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo);
+
+    // Signal queue(s) that need to retire because a wait on this payload has finished
+    void Notify(uint64_t payload);
+
+    std::shared_future<void> Wait(uint64_t payload);
+
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
+  private:
     enum Scope scope_ { kInternal };
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
 
