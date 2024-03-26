@@ -92,8 +92,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkPipelineLibraryCreateInfoKHR& link_info,
                                       const VkPipelineRenderingCreateInfo* rendering_struct, const Location& loc, int lib_index,
                                       const char* vuid) const;
-    bool ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<vvl::Pipeline>> const& pipelines, uint32_t pipe_index,
-                                             const Location& loc) const;
+    bool ValidateGraphicsPipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
     bool ValidateMultiViewShaders(const vvl::Pipeline& pipeline, const Location& multiview_loc, uint32_t view_mask,
                                   bool dynamic_rendering) const;
     bool ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
@@ -1132,12 +1131,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                const ErrorObject& error_obj,
+                                                const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                 chassis::CreateGraphicsPipelines& chassis_state) const override;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               const ErrorObject& error_obj,
+                                               const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                chassis::CreateComputePipelines& chassis_state) const override;
     bool PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                            uint32_t* pExecutableCount,
@@ -1169,13 +1168,13 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const ErrorObject& error_obj,
+                                                    const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                     chassis::CreateRayTracingPipelinesNV& chassis_state) const override;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                     const ErrorObject& error_obj,
+                                                     const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                      chassis::CreateRayTracingPipelinesKHR& chassis_state) const override;
     bool PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                        VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,

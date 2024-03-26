@@ -656,13 +656,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateGraphicsPipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreateGraphicsPipelines chassis_states[LayerObjectTypeMaxEnum]{};
+    PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
+    chassis::CreateGraphicsPipelines chassis_state{};
+    chassis_state.pCreateInfos = pCreateInfos;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
-        chassis_states[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines, error_obj, chassis_states[intercept->container_type]);
+                                                                  pPipelines, error_obj, pipeline_states[intercept->container_type],
+                                                                  chassis_state);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
@@ -670,24 +672,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                        pPipelines, record_obj, chassis_states[intercept->container_type]);
-    }
-
-    auto dispath_pCreateInfos = pCreateInfos;
-    if (chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos;
-    } else if (chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos;
+                                                        pPipelines, record_obj, pipeline_states[intercept->container_type],
+                                                        chassis_state);
     }
 
     VkResult result =
-        DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, dispath_pCreateInfos, pAllocator, pPipelines);
+        DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos, pAllocator, pPipelines);
     record_obj.result = result;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                         pPipelines, record_obj, chassis_states[intercept->container_type]);
+                                                         pPipelines, record_obj, pipeline_states[intercept->container_type],
+                                                         chassis_state);
     }
     return result;
 }
@@ -700,13 +697,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateComputePipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreateComputePipelines chassis_states[LayerObjectTypeMaxEnum]{};
+    PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
+    chassis::CreateComputePipelines chassis_state{};
+    chassis_state.pCreateInfos = pCreateInfos;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
-        chassis_states[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                 pPipelines, error_obj, chassis_states[intercept->container_type]);
+                                                                 pPipelines, error_obj, pipeline_states[intercept->container_type],
+                                                                 chassis_state);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
@@ -714,24 +713,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                       record_obj, chassis_states[intercept->container_type]);
-    }
-
-    auto dispath_pCreateInfos = pCreateInfos;
-    if (chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos;
-    } else if (chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos;
+                                                       record_obj, pipeline_states[intercept->container_type], chassis_state);
     }
 
     VkResult result =
-        DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, dispath_pCreateInfos, pAllocator, pPipelines);
+        DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos, pAllocator, pPipelines);
     record_obj.result = result;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                        pPipelines, record_obj, chassis_states[intercept->container_type]);
+                                                        pPipelines, record_obj, pipeline_states[intercept->container_type],
+                                                        chassis_state);
     }
     return result;
 }
@@ -743,14 +736,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreateRayTracingPipelinesNV chassis_states[LayerObjectTypeMaxEnum]{};
+    PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
+    chassis::CreateRayTracingPipelinesNV chassis_state{};
+    chassis_state.pCreateInfos = pCreateInfos;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
-        chassis_states[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
-        skip |=
-            intercept->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines, error_obj, chassis_states[intercept->container_type]);
+        skip |= intercept->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos,
+                                                                      pAllocator, pPipelines, error_obj,
+                                                                      pipeline_states[intercept->container_type], chassis_state);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
@@ -758,24 +752,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                            pPipelines, record_obj, chassis_states[intercept->container_type]);
+                                                            pPipelines, record_obj, pipeline_states[intercept->container_type],
+                                                            chassis_state);
     }
 
-    auto dispath_pCreateInfos = pCreateInfos;
-    if (chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos;
-    } else if (chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos;
-    }
-
-    VkResult result =
-        DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, dispath_pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
+                                                          pAllocator, pPipelines);
     record_obj.result = result;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                             pPipelines, record_obj, chassis_states[intercept->container_type]);
+                                                             pPipelines, record_obj, pipeline_states[intercept->container_type],
+                                                             chassis_state);
     }
     return result;
 }
@@ -788,14 +777,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    chassis::CreateRayTracingPipelinesKHR chassis_states[LayerObjectTypeMaxEnum]{};
+    PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
+    chassis::CreateRayTracingPipelinesKHR chassis_state{};
+    chassis_state.pCreateInfos = pCreateInfos;
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
-        chassis_states[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                        pCreateInfos, pAllocator, pPipelines, error_obj,
-                                                                       chassis_states[intercept->container_type]);
+                                                                       pipeline_states[intercept->container_type], chassis_state);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
@@ -804,25 +794,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                              pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                             chassis_states[intercept->container_type]);
-    }
-
-    auto dispath_pCreateInfos = pCreateInfos;
-    if (chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeGpuAssisted].pCreateInfos;
-    } else if (chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos) {
-        dispath_pCreateInfos = chassis_states[LayerObjectTypeDebugPrintf].pCreateInfos;
+                                                             pipeline_states[intercept->container_type], chassis_state);
     }
 
     VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
-                                                           dispath_pCreateInfos, pAllocator, pPipelines);
+                                                           chassis_state.pCreateInfos, pAllocator, pPipelines);
     record_obj.result = result;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                               pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                              chassis_states[intercept->container_type]);
+                                                              pipeline_states[intercept->container_type], chassis_state);
     }
     return result;
 }

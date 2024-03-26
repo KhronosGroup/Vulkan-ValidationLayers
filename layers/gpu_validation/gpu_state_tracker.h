@@ -136,44 +136,44 @@ class Validator : public ValidationStateTracker {
     void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                              const RecordObject &record_obj,
+                                              const RecordObject &record_obj, PipelineStates &pipeline_states,
                                               chassis::CreateGraphicsPipelines &chassis_state) override;
     void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                              const VkComputePipelineCreateInfo *pCreateInfos,
                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                             const RecordObject &record_obj,
+                                             const RecordObject &record_obj, PipelineStates &pipeline_states,
                                              chassis::CreateComputePipelines &chassis_state) override;
     void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                   const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                  const RecordObject &record_obj,
+                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                   chassis::CreateRayTracingPipelinesNV &chassis_state) override;
     void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                    VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const RecordObject &record_obj,
+                                                   const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                    chassis::CreateRayTracingPipelinesKHR &chassis_state) override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                               const RecordObject &record_obj,
+                                               const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                chassis::CreateGraphicsPipelines &chassis_state) override;
     void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkComputePipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                              const RecordObject &record_obj,
+                                              const RecordObject &record_obj, PipelineStates &pipeline_states,
                                               chassis::CreateComputePipelines &chassis_state) override;
     void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const RecordObject &record_obj,
+                                                   const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                    chassis::CreateRayTracingPipelinesNV &chassis_state) override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                    const RecordObject &record_obj,
+                                                    const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                     chassis::CreateRayTracingPipelinesKHR &chassis_state) override;
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
@@ -188,7 +188,7 @@ class Validator : public ValidationStateTracker {
 
     template <typename CreateInfo, typename SafeCreateInfo, typename ChassisState>
     void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                        VkPipeline *pPipelines, std::vector<std::shared_ptr<vvl::Pipeline>> &pipe_state,
+                                        VkPipeline *pPipelines, PipelineStates &pipeline_states,
                                         std::vector<SafeCreateInfo> *new_pipeline_create_infos, const RecordObject &record_obj,
                                         ChassisState &chassis_state);
     template <typename CreateInfo, typename SafeCreateInfo>

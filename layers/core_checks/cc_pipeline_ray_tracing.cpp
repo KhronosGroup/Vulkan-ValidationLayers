@@ -170,13 +170,13 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                            const ErrorObject &error_obj,
+                                                            const ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                             chassis::CreateRayTracingPipelinesNV &chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                         pPipelines, error_obj, chassis_state);
+                                                                         pPipelines, error_obj, pipeline_states, chassis_state);
 
     for (uint32_t i = 0; i < count; i++) {
-        const vvl::Pipeline *pipeline = chassis_state.pipe_state[i].get();
+        const vvl::Pipeline *pipeline = pipeline_states[i].get();
         if (!pipeline) {
             continue;
         }
@@ -188,7 +188,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             const auto bpi = create_info.basePipelineIndex;
             const auto bph = create_info.basePipelineHandle;
             if (bpi != -1) {
-                base_pipeline = chassis_state.pipe_state[bpi];
+                base_pipeline = pipeline_states[bpi];
             } else if (bph != VK_NULL_HANDLE) {
                 base_pipeline = Get<vvl::Pipeline>(bph);
             }
@@ -212,16 +212,17 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              VkPipelineCache pipelineCache, uint32_t count,
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                             const ErrorObject &error_obj,
+                                                             const ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                              chassis::CreateRayTracingPipelinesKHR &chassis_state) const {
-    bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
-        device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, error_obj, chassis_state);
+    bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count,
+                                                                          pCreateInfos, pAllocator, pPipelines, error_obj,
+                                                                          pipeline_states, chassis_state);
 
     skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
                                       "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03678");
 
     for (uint32_t i = 0; i < count; i++) {
-        const vvl::Pipeline *pipeline = chassis_state.pipe_state[i].get();
+        const vvl::Pipeline *pipeline = pipeline_states[i].get();
         if (!pipeline) {
             continue;
         }
@@ -233,7 +234,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             const auto bpi = create_info.basePipelineIndex;
             const auto bph = create_info.basePipelineHandle;
             if (bpi != -1) {
-                base_pipeline = chassis_state.pipe_state[bpi];
+                base_pipeline = pipeline_states[bpi];
             } else if (bph != VK_NULL_HANDLE) {
                 base_pipeline = Get<vvl::Pipeline>(bph);
             }

@@ -291,12 +291,12 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                const ErrorObject& error_obj,
+                                                const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                 chassis::CreateGraphicsPipelines& chassis_state) const override;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               const ErrorObject& error_obj,
+                                               const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                chassis::CreateComputePipelines& chassis_state) const override;
 
     bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& create_info, const Location& create_info_loc) const;
@@ -661,7 +661,7 @@ class BestPractices : public ValidationStateTracker {
     void ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                     const RecordObject& record_obj,
+                                                     const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                      chassis::CreateGraphicsPipelines& chassis_state);
 
     bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
@@ -732,7 +732,8 @@ class BestPractices : public ValidationStateTracker {
     void ManualPostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                     const VkComputePipelineCreateInfo* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const RecordObject& record_obj, chassis::CreateComputePipelines& chassis_state);
+                                                    const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                    chassis::CreateComputePipelines& chassis_state);
 
     void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                           VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,

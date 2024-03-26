@@ -1891,11 +1891,11 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateGraphicsPipelineSta
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                    const ErrorObject &error_obj,
+                                                                    const ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                                     chassis::CreateGraphicsPipelines &chassis_state) const {
     bool skip = false;
     // Set up the state that CoreChecks, gpu_validation and later StateTracker Record will use.
-    chassis_state.pipe_state.reserve(count);
+    pipeline_states.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         const auto &create_info = pCreateInfos[i];
@@ -1920,8 +1920,8 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
 
         auto shader_unique_id_map =
             (chassis_state.shader_unique_id_maps.size() > i) ? &chassis_state.shader_unique_id_maps[i] : nullptr;
-        chassis_state.pipe_state.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
-                                                                       std::move(layout_state), shader_unique_id_map));
+        pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
+                                                              std::move(layout_state), shader_unique_id_map));
     }
     return skip;
 }
@@ -1929,16 +1929,16 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
 void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                    const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                   const RecordObject &record_obj,
+                                                                   const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                    chassis::CreateGraphicsPipelines &chassis_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
-            (chassis_state.pipe_state)[i]->SetHandle(pPipelines[i]);
-            Add(std::move((chassis_state.pipe_state)[i]));
+            pipeline_states[i]->SetHandle(pPipelines[i]);
+            Add(std::move(pipeline_states[i]));
         }
     }
-    chassis_state.pipe_state.clear();
+    pipeline_states.clear();
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineState(
@@ -1950,13 +1950,13 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateComputePipelineStat
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                    const VkComputePipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                   const ErrorObject &error_obj,
+                                                                   const ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                                    chassis::CreateComputePipelines &chassis_state) const {
-    chassis_state.pipe_state.reserve(count);
+    pipeline_states.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        chassis_state.pipe_state.push_back(
+        pipeline_states.push_back(
             CreateComputePipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
@@ -1965,16 +1965,16 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
 void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                   const VkComputePipelineCreateInfo *pCreateInfos,
                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                  const RecordObject &record_obj,
+                                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                   chassis::CreateComputePipelines &chassis_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
-            (chassis_state.pipe_state)[i]->SetHandle(pPipelines[i]);
-            Add(std::move((chassis_state.pipe_state)[i]));
+            pipeline_states[i]->SetHandle(pPipelines[i]);
+            Add(std::move(pipeline_states[i]));
         }
     }
-    chassis_state.pipe_state.clear();
+    pipeline_states.clear();
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
@@ -1983,36 +1983,32 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineS
     return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout));
 }
 
-bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
-                                                                        uint32_t count,
-                                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                        VkPipeline *pPipelines, const ErrorObject &error_obj,
-                                                                        chassis::CreateRayTracingPipelinesNV &chassis_state) const {
-    chassis_state.pipe_state.reserve(count);
+bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
+    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj, PipelineStates &pipeline_states,
+    chassis::CreateRayTracingPipelinesNV &chassis_state) const {
+    pipeline_states.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        chassis_state.pipe_state.push_back(
+        pipeline_states.push_back(
             CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
 
-void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
-                                                                       uint32_t count,
-                                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                                       const VkAllocationCallbacks *pAllocator,
-                                                                       VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                       chassis::CreateRayTracingPipelinesNV &chassis_state) {
+void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
+    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const RecordObject &record_obj,
+    PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesNV &chassis_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
-            (chassis_state.pipe_state)[i]->SetHandle(pPipelines[i]);
-            Add(std::move((chassis_state.pipe_state)[i]));
+            pipeline_states[i]->SetHandle(pPipelines[i]);
+            Add(std::move(pipeline_states[i]));
         }
     }
-    chassis_state.pipe_state.clear();
+    pipeline_states.clear();
 }
 
 std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineState(
@@ -2024,31 +2020,29 @@ std::shared_ptr<vvl::Pipeline> ValidationStateTracker::CreateRayTracingPipelineS
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-    const ErrorObject &error_obj, chassis::CreateRayTracingPipelinesKHR &chassis_state) const {
-    chassis_state.pipe_state.reserve(count);
+    const ErrorObject &error_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) const {
+    pipeline_states.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        chassis_state.pipe_state.push_back(
+        pipeline_states.push_back(
             CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
 
-void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                        VkPipelineCache pipelineCache, uint32_t count,
-                                                                        const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                        VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                        chassis::CreateRayTracingPipelinesKHR &chassis_state) {
+void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     const bool operation_is_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
     // This API may create pipelines regardless of the return value
 
     if (!operation_is_deferred) {
         for (uint32_t i = 0; i < count; i++) {
             if (pPipelines[i] != VK_NULL_HANDLE) {
-                (chassis_state.pipe_state)[i]->SetHandle(pPipelines[i]);
-                Add(std::move((chassis_state.pipe_state)[i]));
+                pipeline_states[i]->SetHandle(pPipelines[i]);
+                Add(std::move(pipeline_states[i]));
             }
         }
     } else {
@@ -2061,7 +2055,6 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
         if (find_res->first) {
             cleanup_fn = std::move(find_res->second);
         }
-        auto &pipeline_states = chassis_state.pipe_state;
         // Mutable lambda because we want to move the shared pointer contained in the copied vector
         cleanup_fn.emplace_back([this, pipeline_states](const std::vector<VkPipeline> &pipelines) mutable {
             for (size_t i = 0; i < pipeline_states.size(); ++i) {
@@ -2071,7 +2064,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
         });
         layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
     }
-    chassis_state.pipe_state.clear();
+    pipeline_states.clear();
 }
 
 std::shared_ptr<vvl::Sampler> ValidationStateTracker::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *pCreateInfo) {

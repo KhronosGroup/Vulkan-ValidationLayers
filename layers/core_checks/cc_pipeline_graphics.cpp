@@ -36,15 +36,15 @@
 bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        const ErrorObject &error_obj,
+                                                        const ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                         chassis::CreateGraphicsPipelines &chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                     pPipelines, error_obj, chassis_state);
+                                                                     pPipelines, error_obj, pipeline_states, chassis_state);
 
     for (uint32_t i = 0; i < count; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateGraphicsPipeline(*chassis_state.pipe_state[i].get(), create_info_loc);
-        skip |= ValidateGraphicsPipelineDerivatives(chassis_state.pipe_state, i, create_info_loc);
+        skip |= ValidateGraphicsPipeline(*pipeline_states[i].get(), create_info_loc);
+        skip |= ValidateGraphicsPipelineDerivatives(pipeline_states, i, create_info_loc);
     }
     return skip;
 }
@@ -4344,10 +4344,10 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr<vvl::Pipeline>> const &pipelines,
-                                                     uint32_t pipe_index, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDerivatives(PipelineStates &pipeline_states, uint32_t pipe_index,
+                                                     const Location &loc) const {
     bool skip = false;
-    const auto &pipeline = *pipelines[pipe_index].get();
+    const auto &pipeline = *pipeline_states[pipe_index].get();
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
@@ -4355,14 +4355,14 @@ bool CoreChecks::ValidateGraphicsPipelineDerivatives(std::vector<std::shared_ptr
         std::shared_ptr<const vvl::Pipeline> base_pipeline;
         const VkPipeline base_handle = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().basePipelineHandle;
         const int32_t base_index = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().basePipelineIndex;
-        if (base_index != -1 && base_index < static_cast<int32_t>(pipelines.size())) {
+        if (base_index != -1 && base_index < static_cast<int32_t>(pipeline_states.size())) {
             if (static_cast<uint32_t>(base_index) >= pipe_index) {
                 skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00720", base_handle, loc,
                                  "base pipeline (index %" PRId32
                                  ") must occur earlier in array than derivative pipeline (index %" PRIu32 ").",
                                  base_index, pipe_index);
             } else {
-                base_pipeline = pipelines[base_index];
+                base_pipeline = pipeline_states[base_index];
             }
         } else if (base_handle != VK_NULL_HANDLE) {
             base_pipeline = Get<vvl::Pipeline>(base_handle);
