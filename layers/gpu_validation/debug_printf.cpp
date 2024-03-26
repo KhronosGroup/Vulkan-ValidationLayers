@@ -124,32 +124,34 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
 void debug_printf::Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkShaderModule *pShaderModule, const RecordObject &record_obj,
-                                                              chassis::CreateShaderModule *csm_state) {
-    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, csm_state);
-    csm_state->unique_shader_id = unique_shader_module_id++;
+                                                              chassis::CreateShaderModule *chassis_state) {
+    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
+                                                            chassis_state);
+    chassis_state->unique_shader_id = unique_shader_module_id++;
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_spirv, csm_state->unique_shader_id, record_obj.location);
+                                       chassis_state->instrumented_spirv, chassis_state->unique_shader_id, record_obj.location);
     if (pass) {
-        csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
-        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
+        chassis_state->instrumented_create_info.pCode = chassis_state->instrumented_spirv.data();
+        chassis_state->instrumented_create_info.codeSize = chassis_state->instrumented_spirv.size() * sizeof(uint32_t);
     }
 }
 
 void debug_printf::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                             const VkShaderCreateInfoEXT *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                            const RecordObject &record_obj, chassis::ShaderObject *csm_state) {
+                                                            const RecordObject &record_obj, chassis::ShaderObject *chassis_state) {
     ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                                          csm_state);
-    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj, csm_state);
+                                                          chassis_state);
+    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                             chassis_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        csm_state->unique_shader_ids[i] = unique_shader_module_id++;
+        chassis_state->unique_shader_ids[i] = unique_shader_module_id++;
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i], record_obj.location);
+            chassis_state->instrumented_spirv[i], chassis_state->unique_shader_ids[i], record_obj.location);
         if (pass) {
-            csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
-            csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
+            chassis_state->instrumented_create_info[i].pCode = chassis_state->instrumented_spirv[i].data();
+            chassis_state->instrumented_create_info[i].codeSize = chassis_state->instrumented_spirv[i].size() * sizeof(uint32_t);
         }
     }
 }

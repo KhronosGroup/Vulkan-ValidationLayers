@@ -110,8 +110,8 @@ class Validator : public gpu_tracker::Validator {
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
                           const Location& loc) override;
-    bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule* csm_state);
-    bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, chassis::ShaderObject* cso_state);
+    bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule* chassis_state);
+    bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, chassis::ShaderObject* chassis_state);
     void UpdateInstrumentationBuffer(CommandBuffer* cb_node);
     void UpdateBDABuffer(const Location& loc);
 
@@ -214,16 +214,16 @@ class Validator : public gpu_tracker::Validator {
                                     const RecordObject& record_obj) override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj,
-                                   chassis::CreateBuffer* cb_state_data) override;
+                                   chassis::CreateBuffer* chassis_state) override;
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
 
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                         const RecordObject& record_obj, chassis::CreateShaderModule* csm_state_data) override;
+                                         const RecordObject& record_obj, chassis::CreateShaderModule* chassis_state) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                       const RecordObject& record_obj, chassis::ShaderObject* csm_state_data) override;
+                                       const RecordObject& record_obj, chassis::ShaderObject* chassis_state) override;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);

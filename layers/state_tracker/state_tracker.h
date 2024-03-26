@@ -698,11 +698,12 @@ class ValidationStateTracker : public ValidationObject {
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const ErrorObject& error_obj,
-                                               chassis::CreateComputePipelines* pipe_state) const override;
+                                               chassis::CreateComputePipelines* chassis_state) const override;
     void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkComputePipelineCreateInfo* pCreateInfos,
                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                              const RecordObject& record_obj, chassis::CreateComputePipelines* pipe_state) override;
+                                              const RecordObject& record_obj,
+                                              chassis::CreateComputePipelines* chassis_state) override;
     void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                            const RecordObject& record_obj) override;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
@@ -754,12 +755,12 @@ class ValidationStateTracker : public ValidationObject {
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                 const ErrorObject& error_obj,
-                                                chassis::CreateGraphicsPipelines* cgpl_state) const override;
+                                                chassis::CreateGraphicsPipelines* chassis_state) const override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const RecordObject& record_obj,
-                                               chassis::CreateGraphicsPipelines* cgpl_state) override;
+                                               chassis::CreateGraphicsPipelines* chassis_state) override;
 
     virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* pCreateInfo,
                                                          VkFormatFeatureFlags2KHR features);
@@ -785,7 +786,7 @@ class ValidationStateTracker : public ValidationObject {
                                       const RecordObject& record_obj) override;
     void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                         const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                        const RecordObject& record_obj, chassis::ShaderObject* csm_state_data) override;
+                                        const RecordObject& record_obj, chassis::ShaderObject* chassis_state) override;
     void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
                                        const RecordObject& record_obj) override;
     void PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
@@ -812,12 +813,12 @@ class ValidationStateTracker : public ValidationObject {
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const ErrorObject& error_obj,
-                                                    chassis::CreateRayTracingPipelinesNV* pipe_state) const override;
+                                                    chassis::CreateRayTracingPipelinesNV* chassis_state) const override;
     void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                    const RecordObject& record_obj,
-                                                   chassis::CreateRayTracingPipelinesNV* pipe_state) override;
+                                                   chassis::CreateRayTracingPipelinesNV* chassis_state) override;
     virtual std::shared_ptr<vvl::Pipeline> CreateRayTracingPipelineState(const VkRayTracingPipelineCreateInfoKHR* pCreateInfo,
                                                                          std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                          std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
@@ -826,13 +827,13 @@ class ValidationStateTracker : public ValidationObject {
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      const ErrorObject& error_obj,
-                                                     chassis::CreateRayTracingPipelinesKHR* pipe_state) const override;
+                                                     chassis::CreateRayTracingPipelinesKHR* chassis_state) const override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const RecordObject& record_obj,
-                                                    chassis::CreateRayTracingPipelinesKHR* pipe_state) override;
+                                                    chassis::CreateRayTracingPipelinesKHR* chassis_state) override;
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                         const RecordObject& record_obj) override;
@@ -888,14 +889,14 @@ class ValidationStateTracker : public ValidationObject {
 
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                         const RecordObject& record_obj, chassis::CreateShaderModule* csm_state_data) override;
+                                         const RecordObject& record_obj, chassis::CreateShaderModule* chassis_state) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                       const RecordObject& record_obj, chassis::ShaderObject* csm_state_data) override;
+                                       const RecordObject& record_obj, chassis::ShaderObject* chassis_state) override;
 
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                          const RecordObject& record_obj, chassis::CreateShaderModule* csm_state_data) override;
+                                          const RecordObject& record_obj, chassis::CreateShaderModule* chassis_state) override;
     void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator,
                                           const RecordObject& record_obj) override;
     void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
