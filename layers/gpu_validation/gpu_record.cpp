@@ -35,23 +35,23 @@
 
 void gpuav::Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                 const RecordObject &record_obj, chassis::CreateBuffer *cb_state) {
-    if (cb_state) {
+                                                 const RecordObject &record_obj, chassis::CreateBuffer *chassis_state) {
+    if (chassis_state) {
         // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
         // acceleration structure build validation will find and replace invalid acceleration structure
         // handles inside of a compute shader.
-        if (cb_state->modified_create_info.usage & VK_BUFFER_USAGE_RAY_TRACING_BIT_NV) {
-            cb_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        if (chassis_state->modified_create_info.usage & VK_BUFFER_USAGE_RAY_TRACING_BIT_NV) {
+            chassis_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         }
 
         // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
         if (gpuav_settings.validate_indirect_buffer &&
-            cb_state->modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
-            cb_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            chassis_state->modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+            chassis_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         }
     }
 
-    BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, cb_state);
+    BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
 }
 
 void gpuav::Validator::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
@@ -112,13 +112,13 @@ void gpuav::Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderP
 // Create the instrumented shader data to provide to the driver.
 void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                       const RecordObject &record_obj, chassis::CreateShaderModule *csm_state) {
-    BaseClass::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, csm_state);
+                                                       const RecordObject &record_obj, chassis::CreateShaderModule *chassis_state) {
+    BaseClass::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
     if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
     uint32_t shader_id;
     if (gpuav_settings.cache_instrumented_shaders) {
         const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
-        if (gpuav_settings.cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, csm_state)) {
+        if (gpuav_settings.cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, chassis_state)) {
             return;
         }
         shader_id = shader_hash;
@@ -126,14 +126,14 @@ void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const Vk
         shader_id = unique_shader_module_id++;
     }
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_spirv, shader_id, record_obj.location);
+                                       chassis_state->instrumented_spirv, shader_id, record_obj.location);
     if (pass) {
-        csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
-        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
-        csm_state->unique_shader_id = shader_id;
+        chassis_state->instrumented_create_info.pCode = chassis_state->instrumented_spirv.data();
+        chassis_state->instrumented_create_info.codeSize = chassis_state->instrumented_spirv.size() * sizeof(uint32_t);
+        chassis_state->unique_shader_id = shader_id;
         if (gpuav_settings.cache_instrumented_shaders) {
-            instrumented_shaders.emplace(shader_id,
-                                         std::make_pair(csm_state->instrumented_spirv.size(), csm_state->instrumented_spirv));
+            instrumented_shaders.emplace(
+                shader_id, std::make_pair(chassis_state->instrumented_spirv.size(), chassis_state->instrumented_spirv));
         }
     }
 }
@@ -141,29 +141,30 @@ void gpuav::Validator::PreCallRecordCreateShaderModule(VkDevice device, const Vk
 void gpuav::Validator::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                      const VkShaderCreateInfoEXT *pCreateInfos,
                                                      const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                     const RecordObject &record_obj, chassis::ShaderObject *csm_state) {
-    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj, csm_state);
+                                                     const RecordObject &record_obj, chassis::ShaderObject *chassis_state) {
+    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                             chassis_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
         if (gpuav_settings.cache_instrumented_shaders) {
             const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
-            if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) {
+            if (CheckForCachedInstrumentedShader(i, chassis_state->unique_shader_ids[i], chassis_state)) {
                 continue;
             }
-            csm_state->unique_shader_ids[i] = shader_hash;
+            chassis_state->unique_shader_ids[i] = shader_hash;
         } else {
-            csm_state->unique_shader_ids[i] = unique_shader_module_id++;
+            chassis_state->unique_shader_ids[i] = unique_shader_module_id++;
         }
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i], record_obj.location);
+            chassis_state->instrumented_spirv[i], chassis_state->unique_shader_ids[i], record_obj.location);
         if (pass) {
-            csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
-            csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
+            chassis_state->instrumented_create_info[i].pCode = chassis_state->instrumented_spirv[i].data();
+            chassis_state->instrumented_create_info[i].codeSize = chassis_state->instrumented_spirv[i].size() * sizeof(uint32_t);
             if (gpuav_settings.cache_instrumented_shaders) {
                 instrumented_shaders.emplace(
-                    csm_state->unique_shader_ids[i],
-                    std::make_pair(csm_state->instrumented_spirv[i].size(), csm_state->instrumented_spirv[i]));
+                    chassis_state->unique_shader_ids[i],
+                    std::make_pair(chassis_state->instrumented_spirv[i].size(), chassis_state->instrumented_spirv[i]));
             }
         }
     }

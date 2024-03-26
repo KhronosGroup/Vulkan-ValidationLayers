@@ -601,10 +601,10 @@ class CoreChecks : public ValidationStateTracker {
                                                                const ErrorObject& error_obj) const override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                         const RecordObject& record_obj, chassis::CreateShaderModule* csm_state_data) override;
+                                         const RecordObject& record_obj, chassis::CreateShaderModule* chassis_state) override;
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                       const RecordObject& record_obj, chassis::ShaderObject* csm_state_data) override;
+                                       const RecordObject& record_obj, chassis::ShaderObject* chassis_state) override;
     bool RunSpirvValidation(spv_const_binary_t& binary, const Location& loc) const;
     bool ValidateSpirvStateless(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                                 const Location& loc) const;
@@ -1133,12 +1133,12 @@ class CoreChecks : public ValidationStateTracker {
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                 const ErrorObject& error_obj,
-                                                chassis::CreateGraphicsPipelines* cgpl_state) const override;
+                                                chassis::CreateGraphicsPipelines* chassis_state) const override;
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const ErrorObject& error_obj,
-                                               chassis::CreateComputePipelines* pipe_state) const override;
+                                               chassis::CreateComputePipelines* chassis_state) const override;
     bool PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                            uint32_t* pExecutableCount,
                                                            VkPipelineExecutablePropertiesKHR* pProperties,
@@ -1170,13 +1170,13 @@ class CoreChecks : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const ErrorObject& error_obj,
-                                                    chassis::CreateRayTracingPipelinesNV* pipe_state) const override;
+                                                    chassis::CreateRayTracingPipelinesNV* chassis_state) const override;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      const ErrorObject& error_obj,
-                                                     chassis::CreateRayTracingPipelinesKHR* pipe_state) const override;
+                                                     chassis::CreateRayTracingPipelinesKHR* chassis_state) const override;
     bool PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                        VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                        VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
