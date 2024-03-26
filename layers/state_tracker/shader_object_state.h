@@ -19,7 +19,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <unordered_map>
 #include <vector>
 
 #include "state_tracker/state_object.h"

@@ -1524,7 +1524,7 @@ bool CoreChecks::ValidateTransformFeedbackDecorations(const spirv::Module &modul
         }
     }
 
-    std::unordered_map<uint32_t, uint32_t> stream_data_size;
+    vvl::unordered_map<uint32_t, uint32_t> stream_data_size;
     for (const spirv::Instruction *xfb_stream : xfb_streams) {
         for (const auto &bds : buffer_data_sizes) {
             if (xfb_stream->Word(1) == bds.first) {

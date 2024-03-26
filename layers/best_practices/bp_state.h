@@ -179,7 +179,7 @@ struct CommandBufferStateNV {
 
     TessGeometryMesh tess_geometry_mesh;
 
-    std::unordered_map<VkImage, ZcullTree> zcull_per_image;
+    vvl::unordered_map<VkImage, ZcullTree> zcull_per_image;
     ZcullScope zcull_scope;
     ZcullDirection zcull_direction = ZcullDirection::Unknown;
 

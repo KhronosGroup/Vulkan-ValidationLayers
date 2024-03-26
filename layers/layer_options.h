@@ -1,6 +1,6 @@
-/* Copyright (c) 2022-2023 The Khronos Group Inc.
- * Copyright (c) 2022-2023 Valve Corporation
- * Copyright (c) 2022-2023 LunarG, Inc.
+/* Copyright (c) 2022-2024 The Khronos Group Inc.
+ * Copyright (c) 2022-2024 Valve Corporation
+ * Copyright (c) 2022-2024 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ typedef struct {
     const VkInstanceCreateInfo *create_info;
     CHECK_ENABLED &enables;
     CHECK_DISABLED &disables;
-    std::unordered_set<uint32_t> &message_filter_list;
+    vvl::unordered_set<uint32_t> &message_filter_list;
     uint32_t *duplicate_message_limit;
     bool *fine_grained_locking;
     GpuAVSettings *gpuav_settings;

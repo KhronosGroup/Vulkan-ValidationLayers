@@ -20,7 +20,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <unordered_map>
 #include <vector>
 
 #include "state_tracker/shader_instruction.h"
@@ -220,7 +219,7 @@ struct ImageAccess {
 using ImageAccessMap = vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<const ImageAccess>>>;
 // < Variable ID, [ OpAccessChain ] >
 // Allows for grouping the access chains by which variables they are actually accessing
-using AccessChainVariableMap = std::unordered_map<uint32_t, std::vector<const Instruction *>>;
+using AccessChainVariableMap = vvl::unordered_map<uint32_t, std::vector<const Instruction *>>;
 
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
@@ -452,8 +451,8 @@ struct EntryPoint {
 
     // Lookup map from Interface slot to the variable in that spot
     // spirv-val guarantees no overlap so 2 variables won't have same slot
-    std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> input_interface_slots;
-    std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> output_interface_slots;
+    vvl::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> input_interface_slots;
+    vvl::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> output_interface_slots;
     // Uesd for limit check
     const StageInteraceVariable *max_input_slot_variable = nullptr;
     const StageInteraceVariable *max_output_slot_variable = nullptr;

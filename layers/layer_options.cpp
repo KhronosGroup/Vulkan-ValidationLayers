@@ -286,7 +286,7 @@ uint32_t TokenToUint(std::string &token) {
     return int_id;
 }
 
-void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, std::unordered_set<uint32_t> &filter_list) {
+void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, vvl::unordered_set<uint32_t> &filter_list) {
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
