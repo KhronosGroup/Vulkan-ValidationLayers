@@ -431,13 +431,19 @@ class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
 
 class HostImageCopyTest : public VkLayerTest {
   public:
-    void InitHostImageCopyTest(const VkImageCreateInfo &image_ci);
+    void InitHostImageCopyTest(const VkImageCreateInfo &create_info);
     bool CopyLayoutSupported(const std::vector<VkImageLayout> &copy_src_layouts, const std::vector<VkImageLayout> &copy_dst_layouts,
                              VkImageLayout layout);
     VkFormat compressed_format = VK_FORMAT_UNDEFINED;
     bool separate_depth_stencil = false;
     std::vector<VkImageLayout> copy_src_layouts;
     std::vector<VkImageLayout> copy_dst_layouts;
+
+    // Every test will use these, set the default most will use
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageCreateInfo image_ci;
 };
 class NegativeHostImageCopy : public HostImageCopyTest {};
 class PositiveHostImageCopy : public HostImageCopyTest {};
