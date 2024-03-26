@@ -23,7 +23,7 @@
 
 bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                           VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
-                                                          vvl::AllocateDescriptorSetsData* ads_state_data) const {
+                                                          vvl::AllocateDescriptorSetsData& ads_state_data) const {
     bool skip = false;
     skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj,
                                                                           ads_state_data);
@@ -58,7 +58,7 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
 
 void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                                VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
-                                                               vvl::AllocateDescriptorSetsData* ads_state) {
+                                                               vvl::AllocateDescriptorSetsData& ads_state) {
     if (record_obj.result == VK_SUCCESS) {
         auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
         if (pool_state) {

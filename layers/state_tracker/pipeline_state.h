@@ -168,26 +168,20 @@ class Pipeline : public StateObject {
     const bool uses_pipeline_robustness;
     bool ignore_color_attachments;
 
-    using CreateShaderModuleStates = std::array<chassis::CreateShaderModule, 32>;
-    CreateShaderModuleStates *csm_states = nullptr;
-
     // Executable or legacy pipeline
     Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
-             std::shared_ptr<const vvl::PipelineLayout> &&layout, CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, ShaderModuleUniqueIds *shader_unique_id_map = nullptr);
 
     // Compute pipeline
     Pipeline(const ValidationStateTracker &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-             CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout);
 
     Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-             CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout);
 
     Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-             CreateShaderModuleStates *csm_states = nullptr);
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout);
 
     VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 
@@ -415,7 +409,7 @@ class Pipeline : public StateObject {
     const void *PNext() const { return create_info.graphics.pNext; }
 
     static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
-                                        CreateShaderModuleStates *csm_states);
+                                        ShaderModuleUniqueIds *shader_unique_id_map);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const VkDynamicState state) const { return dynamic_state.test(ConvertToCBDynamicState(state)); }

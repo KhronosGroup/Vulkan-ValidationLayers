@@ -19,7 +19,7 @@
  */
 
 #pragma once
-#include <array>
+#include <unordered_map>
 #include <vector>
 #include "state_tracker/shader_module.h"
 
@@ -72,35 +72,36 @@ struct ShaderObject {
     }
 };
 
-// One for each shader stage
-// Currently at most, we should ever have 5 stages in a pipeline/shader object
-using CreateShaderModuleStates = std::array<CreateShaderModule, 32>;
+// We hold one slot for each potential graphics stage
+// This is used to pass the unique_shader_id around for GPL
+// Tried to use `vvl::unordered_map` but caused compiler errors
+using ShaderModuleUniqueIds = std::unordered_map<VkShaderStageFlagBits, uint32_t>;
 
 struct CreateGraphicsPipelines {
     std::vector<safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
+    std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
 
 struct CreateComputePipelines {
     std::vector<safe_VkComputePipelineCreateInfo> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
+    std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
 
 struct CreateRayTracingPipelinesNV {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
+    std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
 };
 
 struct CreateRayTracingPipelinesKHR {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<std::shared_ptr<vvl::Pipeline>> pipe_state;
-    std::vector<CreateShaderModuleStates> shader_states;
+    std::vector<ShaderModuleUniqueIds> shader_unique_id_maps;  // not used, here for template function
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
 };
 

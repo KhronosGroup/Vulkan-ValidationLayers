@@ -213,7 +213,7 @@ class Pipeline : public vvl::Pipeline {
   public:
     Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
-             std::shared_ptr<const vvl::PipelineLayout>&& layout, CreateShaderModuleStates* csm_states);
+             std::shared_ptr<const vvl::PipelineLayout>&& layout, ShaderModuleUniqueIds* shader_unique_id_map);
 
     const std::vector<AttachmentInfo> access_framebuffer_attachments;
 };

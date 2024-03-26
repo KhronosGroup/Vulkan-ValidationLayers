@@ -48,12 +48,12 @@ vvl::DescriptorPool::DescriptorPool(ValidationStateTracker &dev, const VkDescrip
       dev_data_(dev) {}
 
 void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
-                                     const vvl::AllocateDescriptorSetsData *ds_data) {
+                                   const vvl::AllocateDescriptorSetsData &ds_data) {
     auto guard = WriteLock();
     // Account for sets and individual descriptors allocated from pool
     available_sets_ -= alloc_info->descriptorSetCount;
-    for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
-        available_counts_[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
+    for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
+        available_counts_[it->first] -= ds_data.required_descriptors_by_type.at(it->first);
     }
 
     const auto *variable_count_info = vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
@@ -64,7 +64,7 @@ void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info
     for (uint32_t i = 0; i < alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = dev_data_.CreateDescriptorSet(descriptor_sets[i], this, ds_data->layout_nodes[i], variable_count);
+        auto new_ds = dev_data_.CreateDescriptorSet(descriptor_sets[i], this, ds_data.layout_nodes[i], variable_count);
 
         sets_.emplace(descriptor_sets[i], new_ds.get());
         dev_data_.Add(std::move(new_ds));

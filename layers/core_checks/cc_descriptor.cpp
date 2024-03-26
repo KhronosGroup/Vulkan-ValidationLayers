@@ -3288,7 +3288,7 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
 // as well as DescriptorSetLayout ptrs used for later update.
 bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
-                                                       vvl::AllocateDescriptorSetsData *ds_data) const {
+                                                       vvl::AllocateDescriptorSetsData &ds_data) const {
     StateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ds_data);
 
     bool skip = false;
@@ -3339,15 +3339,15 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                              pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(), pool_state->GetAvailableSets());
         }
         // Determine whether descriptor counts are satisfiable
-        for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
+        for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
             auto available_count = pool_state->GetAvailableCount(it->first);
 
-            if (ds_data->required_descriptors_by_type.at(it->first) > available_count) {
+            if (ds_data.required_descriptors_by_type.at(it->first) > available_count) {
                 skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07896", pool_state->Handle(), error_obj.location,
                                  "Unable to allocate %" PRIu32
                                  " descriptors of type %s from %s"
                                  ". This pool only has %" PRIu32 " descriptors of this type remaining.",
-                                 ds_data->required_descriptors_by_type.at(it->first),
+                                 ds_data.required_descriptors_by_type.at(it->first),
                                  string_VkDescriptorType(VkDescriptorType(it->first)), FormatHandle(*pool_state).c_str(),
                                  available_count);
             }
@@ -3386,7 +3386,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 
 void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                       VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
-                                                      vvl::AllocateDescriptorSetsData *ads_state) {
+                                                      vvl::AllocateDescriptorSetsData &ads_state) {
     // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
     // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY they think they over-allocated, but if they instead allocated type not
     // avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking they ran out. It was decided

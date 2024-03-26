@@ -32,11 +32,11 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        const ErrorObject &error_obj,
-                                                       chassis::CreateComputePipelines *chassis_state) const {
+                                                       chassis::CreateComputePipelines &chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                     pPipelines, error_obj, chassis_state);
     for (uint32_t i = 0; i < count; i++) {
-        const vvl::Pipeline *pipeline = chassis_state->pipe_state[i].get();
+        const vvl::Pipeline *pipeline = chassis_state.pipe_state[i].get();
         if (!pipeline) {
             continue;
         }

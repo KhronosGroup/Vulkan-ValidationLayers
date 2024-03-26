@@ -125,7 +125,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
             prototype = prototype.replace(') {', ') override;\n')
             if command.name in self.extra_parameter_map:
-                prototype = prototype.replace(')', f', {self.extra_parameter_map[command.name]}* chassis_state)')
+                prototype = prototype.replace(')', f', {self.extra_parameter_map[command.name]}& chassis_state)')
             out.append(prototype)
         out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
@@ -195,7 +195,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             prototype = f'void BestPractices::PostCallRecord{prototype[2:]}'
             prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
             if command.name in self.extra_parameter_map:
-                prototype = prototype.replace(')', f', {self.extra_parameter_map[command.name]}* chassis_state)')
+                prototype = prototype.replace(')', f', {self.extra_parameter_map[command.name]}& chassis_state)')
             out.append(prototype)
 
             if command.alias:

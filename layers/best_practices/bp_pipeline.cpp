@@ -87,7 +87,7 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
                                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                const RecordObject& record_obj,
-                                                               chassis::CreateComputePipelines* chassis_state) {
+                                                               chassis::CreateComputePipelines& chassis_state) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
 }
@@ -96,7 +96,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                            const ErrorObject& error_obj,
-                                                           chassis::CreateGraphicsPipelines* chassis_state) const {
+                                                           chassis::CreateGraphicsPipelines& chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                      pAllocator, pPipelines, error_obj, chassis_state);
     if (skip) {
@@ -112,7 +112,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const auto& create_info = pCreateInfos[i];
-        const auto& pipeline = *chassis_state->pipe_state[i].get();
+        const auto& pipeline = *chassis_state.pipe_state[i].get();
 
         if (!(pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
             const auto& vertex_input = *create_info.pVertexInputState;
@@ -256,24 +256,24 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
 bp_state::Pipeline::Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
                              std::shared_ptr<const vvl::PipelineCache>&& pipe_cache,
                              std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                             CreateShaderModuleStates* csm_states)
-    : vvl::Pipeline(state_data, pCreateInfo, std::move(pipe_cache), std::move(rpstate), std::move(layout), csm_states),
+                             ShaderModuleUniqueIds* shader_unique_id_map)
+    : vvl::Pipeline(state_data, pCreateInfo, std::move(pipe_cache), std::move(rpstate), std::move(layout), shader_unique_id_map),
       access_framebuffer_attachments(GetAttachmentAccess(*this)) {}
 
 std::shared_ptr<vvl::Pipeline> BestPractices::CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
                                                                           std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                           std::shared_ptr<const vvl::RenderPass>&& render_pass,
                                                                           std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                                                                          CreateShaderModuleStates* csm_states) const {
+                                                                          ShaderModuleUniqueIds* shader_unique_id_map) const {
     return std::static_pointer_cast<vvl::Pipeline>(std::make_shared<bp_state::Pipeline>(
-        *this, pCreateInfo, std::move(pipeline_cache), std::move(render_pass), std::move(layout), csm_states));
+        *this, pCreateInfo, std::move(pipeline_cache), std::move(render_pass), std::move(layout), shader_unique_id_map));
 }
 
 void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 const RecordObject& record_obj,
-                                                                chassis::CreateGraphicsPipelines* chassis_state) {
+                                                                chassis::CreateGraphicsPipelines& chassis_state) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
 }
@@ -282,7 +282,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
                                                           const VkComputePipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                           const ErrorObject& error_obj,
-                                                          chassis::CreateComputePipelines* chassis_state) const {
+                                                          chassis::CreateComputePipelines& chassis_state) const {
     bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                     pAllocator, pPipelines, error_obj, chassis_state);
 
