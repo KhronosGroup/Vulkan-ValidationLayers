@@ -4163,7 +4163,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                           "VUID-vkCmdEncodeVideoKHR-commandBuffer-08203", where);
     }
 
-    if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
+    if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
         const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
         skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBuffer-08236", objlist, encode_info_loc.dot(Field::dstBuffer),
                          "(%s) was not created with "
