@@ -106,6 +106,9 @@ bool DebugReport::UpdateLogMsgCounts(int32_t vuid_hash) const {
     }
 }
 
+// Global instance name, set to the last created instance's name
+std::string instance_application_name = "";
+
 bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *message, const char *text_vuid) const {
     bool bail = false;
     std::vector<VkDebugUtilsLabelEXT> queue_labels;
@@ -182,6 +185,9 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
     callback_data.pObjects = object_name_infos.data();
 
     std::ostringstream oss;
+    if (instance_application_name.size()) {
+        oss << "[AppName: " << instance_application_name << "] ";
+    }
     if (msg_flags & kErrorBit) {
         oss << "Validation Error: ";
     } else if (msg_flags & kWarningBit) {

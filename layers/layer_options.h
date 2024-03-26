@@ -23,6 +23,7 @@
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
+extern std::string instance_application_name;
 
 // Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
 
