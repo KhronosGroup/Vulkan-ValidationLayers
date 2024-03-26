@@ -33,8 +33,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.opnames = []
         self.atomicsOps = []
         self.groupOps = []
-        self.debugOps = []
-        self.annotationOps = []
         self.imageGatherOps = []
         self.imageSampleOps = []
         self.imageFetchOps = []
@@ -162,10 +160,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     self.atomicsOps.append(opname)
                 if instruction['class'] == 'Non-Uniform':
                     self.groupOps.append(opname)
-                if instruction['class'] == 'Debug':
-                    self.debugOps.append(opname)
-                if instruction['class'] == 'Annotation':
-                    self.annotationOps.append(opname)
                 if re.search("OpImage.*Gather", opname) is not None:
                     self.imageGatherOps.append(opname)
                 if re.search("OpImageFetch.*", opname) is not None:
@@ -331,8 +325,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         # \n is not allowed in f-string until 3.12
         atomicCase = "\n".join([f"        case spv::{f}:" for f in self.atomicsOps])
         groupCase = "\n".join([f"        case spv::{f}:" for f in self.groupOps])
-        debugCase = "\n".join([f"        case spv::{f}:" for f in self.debugOps])
-        annotationCase = "\n".join([f"        case spv::{f}:" for f in self.annotationOps])
         out.append(f'''
             // Any non supported operation will be covered with other VUs
             static constexpr bool AtomicOperation(uint32_t opcode) {{
@@ -348,24 +340,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             static constexpr bool GroupOperation(uint32_t opcode) {{
                 switch (opcode) {{
             {groupCase}
-                        return true;
-                    default:
-                        return false;
-                }}
-            }}
-
-           static constexpr  bool DebugOperation(uint32_t opcode) {{
-                switch (opcode) {{
-            {debugCase}
-                        return true;
-                    default:
-                        return false;
-                }}
-            }}
-
-            static constexpr bool AnnotationOperation(uint32_t opcode) {{
-                switch (opcode) {{
-            {annotationCase}
                         return true;
                     default:
                         return false;
