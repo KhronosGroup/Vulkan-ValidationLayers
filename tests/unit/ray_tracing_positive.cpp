@@ -898,3 +898,48 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     m_commandBuffer->QueueCommandBuffer();
     m_device->wait();
 }
+
+TEST_F(PositiveRayTracing, GetAccelerationStructureAddressBabBuffer) {
+    TEST_DESCRIPTION(
+        "Call vkGetAccelerationStructureDeviceAddressKHR on an acceleration structure whose buffer is missing usage "
+        "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, and whose memory has been destroyed");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkBufferUsageFlags2CreateInfoKHR buffer_usage = vku::InitStructHelper();
+    buffer_usage.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage);
+    buffer_ci.size = 4096;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 4096;
+    vkt::DeviceMemory mem(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
+
+    VkAccelerationStructureKHR as;
+    VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
+    as_create_info.buffer = buffer.handle();
+    as_create_info.size = 4096;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
+    vk::CreateAccelerationStructureKHR(device(), &as_create_info, nullptr, &as);
+
+    VkAccelerationStructureDeviceAddressInfoKHR as_address_info = vku::InitStructHelper();
+    as_address_info.accelerationStructure = as;
+    vk::GetAccelerationStructureDeviceAddressKHR(device(), &as_address_info);
+    vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
+}
