@@ -609,7 +609,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
 
     auto walk_to_variables = [this, &module_state, &sampler_insn_to_search](const Instruction* insn, bool sampler) {
         // Protect from loops
-        std::unordered_set<uint32_t> visited;
+        vvl::unordered_set<uint32_t> visited;
 
         // stack of function call sites to search through
         std::queue<const Instruction*> insn_to_search;
@@ -827,7 +827,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
 
     uint32_t last_func_id = 0;
     // < Function ID, OpFunctionParameter Ids >
-    std::unordered_map<uint32_t, std::vector<uint32_t>> func_parameter_list;
+    vvl::unordered_map<uint32_t, std::vector<uint32_t>> func_parameter_list;
 
     // Loop through once and build up the static data
     // Also process the entry points
