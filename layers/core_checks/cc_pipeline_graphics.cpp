@@ -3289,7 +3289,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LastBound &last_bound_state
             if (!buffer_state) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
                 skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, loc,
-                                 "pVertexAttributeDescriptions[%" PRIu32 "].binding (%" PRIu32 ") points to an inavlid buffer.",
+                                 "pVertexAttributeDescriptions[%" PRIu32 "].binding (%" PRIu32 ") points to an invalid buffer.",
                                  vertex_binding, i);
                 break;
             }
