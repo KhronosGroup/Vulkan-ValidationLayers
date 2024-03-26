@@ -839,39 +839,6 @@ static constexpr bool GroupOperation(uint32_t opcode) {
     }
 }
 
-static constexpr bool DebugOperation(uint32_t opcode) {
-    switch (opcode) {
-        case spv::OpSourceContinued:
-        case spv::OpSource:
-        case spv::OpSourceExtension:
-        case spv::OpName:
-        case spv::OpMemberName:
-        case spv::OpString:
-        case spv::OpLine:
-        case spv::OpNoLine:
-        case spv::OpModuleProcessed:
-            return true;
-        default:
-            return false;
-    }
-}
-
-static constexpr bool AnnotationOperation(uint32_t opcode) {
-    switch (opcode) {
-        case spv::OpDecorate:
-        case spv::OpMemberDecorate:
-        case spv::OpDecorationGroup:
-        case spv::OpGroupDecorate:
-        case spv::OpGroupMemberDecorate:
-        case spv::OpDecorateId:
-        case spv::OpDecorateString:
-        case spv::OpMemberDecorateString:
-            return true;
-        default:
-            return false;
-    }
-}
-
 static constexpr bool ImageGatherOperation(uint32_t opcode) {
     switch (opcode) {
         case spv::OpImageGather:

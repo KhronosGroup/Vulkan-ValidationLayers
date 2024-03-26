@@ -42,55 +42,87 @@ Module::Module(std::vector<uint32_t> words, uint32_t shader_id, uint32_t output_
         }
         auto new_inst = std::make_unique<Instruction>(it, instruction_count++);
 
-        SpvType spv_type = GetSpvType(new_inst->Opcode());
+        switch (opcode) {
+            case spv::OpCapability:
+                capabilities_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpExtension:
+                extensions_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpExtInstImport:
+                ext_inst_imports_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpMemoryModel:
+                memory_model_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpEntryPoint:
+                entry_points_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpExecutionMode:
+            case spv::OpExecutionModeId:
+                execution_modes_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpString:
+            case spv::OpSourceExtension:
+            case spv::OpSource:
+            case spv::OpSourceContinued:
+                debug_source_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpName:
+            case spv::OpMemberName:
+                debug_name_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpModuleProcessed:
+                debug_module_processed_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpLine:
+            case spv::OpNoLine:
+                // OpLine must not be groupped in between other debug operations
+                // https://github.com/KhronosGroup/SPIRV-Tools/issues/5513
+                types_values_constants_.emplace_back(std::move(new_inst));
+                break;
+            case spv::OpDecorate:
+            case spv::OpMemberDecorate:
+            case spv::OpDecorationGroup:
+            case spv::OpGroupDecorate:
+            case spv::OpGroupMemberDecorate:
+            case spv::OpDecorateId:
+            case spv::OpDecorateString:
+            case spv::OpMemberDecorateString:
+                annotations_.emplace_back(std::move(new_inst));
+                break;
 
-        if (opcode == spv::OpCapability) {
-            capabilities_.emplace_back(std::move(new_inst));
-        } else if (opcode == spv::Op::OpExtension) {
-            extensions_.emplace_back(std::move(new_inst));
-        } else if (opcode == spv::Op::OpExtInstImport) {
-            ext_inst_imports_.emplace_back(std::move(new_inst));
-        } else if (opcode == spv::Op::OpMemoryModel) {
-            memory_model_.emplace_back(std::move(new_inst));
-        } else if (opcode == spv::Op::OpEntryPoint) {
-            entry_points_.emplace_back(std::move(new_inst));
-        } else if (opcode == spv::Op::OpExecutionMode || opcode == spv::Op::OpExecutionModeId) {
-            execution_modes_.emplace_back(std::move(new_inst));
-        } else if (opcode == spv::Op::OpLine || opcode == spv::Op::OpNoLine) {
-            // OpLine must no be groupped in between other debug operations
-            // https://github.com/KhronosGroup/SPIRV-Tools/issues/5513
-            types_values_constants_.emplace_back(std::move(new_inst));
-        } else if (DebugOperation(opcode)) {
-            debug_infos_.emplace_back(std::move(new_inst));
-        } else if (AnnotationOperation(opcode)) {
-            annotations_.emplace_back(std::move(new_inst));
-        } else if (ConstantOperation(opcode)) {
-            const Type* type = nullptr;
-            switch (opcode) {
-                case spv::OpConstantTrue:
-                case spv::OpConstantFalse:
-                    type = &type_manager_.GetTypeBool();
-                    break;
-                case spv::OpConstant:
-                case spv::OpConstantNull:
-                case spv::OpConstantComposite:
-                    type = type_manager_.FindTypeById(new_inst->TypeId());
-                    break;
-                default:
-                    assert(false && "unhandled constant");
-                    break;
+            case spv::OpConstantTrue:
+            case spv::OpConstantFalse: {
+                const Type& type = type_manager_.GetTypeBool();
+                type_manager_.AddConstant(std::move(new_inst), type);
+                break;
             }
-            type_manager_.AddConstant(std::move(new_inst), *type);
-        } else if (opcode == spv::OpVariable) {
-            const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
-            type_manager_.AddVariable(std::move(new_inst), *type);
-        } else if (spv_type != SpvType::Empty) {
-            type_manager_.AddType(std::move(new_inst), spv_type);
-        } else {
-            // unknown instruction, try and just keep in last section to not just crash
-            // example: OpSpecConstant
-            types_values_constants_.emplace_back(std::move(new_inst));
+            case spv::OpConstant:
+            case spv::OpConstantNull:
+            case spv::OpConstantComposite: {
+                const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+                type_manager_.AddConstant(std::move(new_inst), *type);
+                break;
+            }
+            case spv::OpVariable: {
+                const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+                type_manager_.AddVariable(std::move(new_inst), *type);
+                break;
+            }
+            default: {
+                SpvType spv_type = GetSpvType(new_inst->Opcode());
+                if (spv_type != SpvType::Empty) {
+                    type_manager_.AddType(std::move(new_inst), spv_type);
+                } else {
+                    // unknown instruction, try and just keep in last section to not just crash
+                    // example: OpSpecConstant
+                    types_values_constants_.emplace_back(std::move(new_inst));
+                }
+                break;
+            }
         }
+
         it += length;
     }
 
@@ -210,7 +242,13 @@ void Module::ToBinary(std::vector<uint32_t>& out) {
     for (const auto& inst : execution_modes_) {
         inst->ToBinary(out);
     }
-    for (const auto& inst : debug_infos_) {
+    for (const auto& inst : debug_source_) {
+        inst->ToBinary(out);
+    }
+    for (const auto& inst : debug_name_) {
+        inst->ToBinary(out);
+    }
+    for (const auto& inst : debug_module_processed_) {
         inst->ToBinary(out);
     }
     for (const auto& inst : annotations_) {
@@ -446,7 +484,7 @@ void Module::LinkFunction(const LinkInfo& info) {
         StringToSpirv(info.opname, words);
         auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpName);
         new_inst->Fill(words);
-        debug_infos_.emplace_back(std::move(new_inst));
+        debug_name_.emplace_back(std::move(new_inst));
     }
 
     // Add function and copy all instructions to it, while adjusting any IDs
