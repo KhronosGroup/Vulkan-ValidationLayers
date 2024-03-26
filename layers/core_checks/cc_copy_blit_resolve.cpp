@@ -2367,7 +2367,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffe
     }
 }
 
-bool CoreChecks::UsageHostTransferCheck(VkDevice device, const vvl::Image &image_state, bool has_stencil, bool has_non_stencil,
+bool CoreChecks::UsageHostTransferCheck(const vvl::Image &image_state, bool has_stencil, bool has_non_stencil,
                                         const char *vuid_09111, const char *vuid_09112, const char *vuid_09113,
                                         const Location &loc) const {
     bool skip = false;
@@ -2375,9 +2375,8 @@ bool CoreChecks::UsageHostTransferCheck(VkDevice device, const vvl::Image &image
         const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-                LogObjectList objlist(device, image_state.Handle());
                 skip |= LogError(
-                    vuid_09112, objlist, loc,
+                    vuid_09112, image_state.Handle(), loc,
                     "An element of pRegions has an aspectMask that includes "
                     "VK_IMAGE_ASPECT_STENCIL_BIT "
                     "and the image was created with separate stencil usage, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not "
@@ -2385,9 +2384,8 @@ bool CoreChecks::UsageHostTransferCheck(VkDevice device, const vvl::Image &image
             }
         } else {
             if ((image_state.create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-                LogObjectList objlist(device, image_state.Handle());
                 skip |= LogError(
-                    vuid_09111, objlist, loc,
+                    vuid_09111, image_state.Handle(), loc,
                     "An element of pRegions has an aspectMask that includes "
                     "VK_IMAGE_ASPECT_STENCIL_BIT and the "
                     "image was not created with separate stencil usage, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
@@ -2397,9 +2395,8 @@ bool CoreChecks::UsageHostTransferCheck(VkDevice device, const vvl::Image &image
     }
     if (has_non_stencil) {
         if ((image_state.create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-            LogObjectList objlist(device, image_state.Handle());
             skip |= LogError(
-                vuid_09113, objlist, loc,
+                vuid_09113, image_state.Handle(), loc,
                 "An element of pRegions has an aspectMask that includes "
                 "aspects other than VK_IMAGE_ASPECT_STENCIL_BIT, but  VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
                 "in VkImageCreateInfo::usage used to create image");
@@ -2433,7 +2430,7 @@ VkImage GetImage<VkCopyImageToMemoryInfoEXT>(VkCopyImageToMemoryInfoEXT data) {
     return data.srcImage;
 }
 template <typename InfoPointer>
-bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info_ptr, const Location &loc) const {
+bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Location &loc) const {
     bool skip = false;
     VkImage image = GetImage(*info_ptr);
     auto image_state = Get<vvl::Image>(image);
@@ -2441,7 +2438,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     auto regionCount = info_ptr->regionCount;
     const bool from_image = loc.function == Func::vkCopyImageToMemoryEXT;
     const Location image_loc = loc.dot(from_image ? Field::srcImage : Field::dstImage);
-    const char *info_type = from_image ? "pCopyImageToMemoryInfo" : "pCopyMemoryToImageInfo";
+    const Field info_type = from_image ? Field::pCopyImageToMemoryInfo : Field::pCopyMemoryToImageInfo;
     const char *source_or_destination = from_image ? "source" : "destination";
     const char *image_layout_vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09064"
                                                : "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059";
@@ -2454,21 +2451,19 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
 
     skip |= ValidateHeterogeneousCopyData(device, regionCount, info_ptr->pRegions, *image_state, loc);
     skip |= ValidateMemoryIsBoundToImage(
-        LogObjectList(device, image), *image_state, image_loc,
+        image, *image_state, image_loc,
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07966" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07966");
 
     if (image_state->sparse && (!image_state->HasFullRangeBound())) {
         const char *vuid =
             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09109" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09109";
-        LogObjectList objlist(device, image_state->Handle());
-        skip |= LogError(vuid, objlist, image_loc, "is a sparse image with no memory bound");
+        skip |= LogError(vuid, image_state->Handle(), image_loc, "is a sparse image with no memory bound");
     }
 
     if (image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         const char *vuid =
             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07969" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969";
-        const LogObjectList objlist(device, image);
-        skip |= LogError(vuid, objlist, image_loc,
+        skip |= LogError(vuid, image, image_loc,
                          "must not have been created with flags containing "
                          "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
     }
@@ -2500,39 +2495,36 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
             if (region.imageOffset.x != 0 || region.imageOffset.y != 0 || region.imageOffset.z != 0) {
                 const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09114"
                                               : "VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09114";
-                LogObjectList objlist(device);
-                LogError(vuid, objlist, loc,
+                LogError(vuid, device, loc,
                          "%s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
                          "means that pRegions[%" PRIu32 "].imageOffset x(%" PRIu32 "), y(%" PRIu32 ") and z(%" PRIu32
                          ") must all be zero",
-                         info_type, i, region.imageOffset.x, region.imageOffset.y, region.imageOffset.z);
+                         String(info_type), i, region.imageOffset.x, region.imageOffset.y, region.imageOffset.z);
             }
             const VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
             if (!IsExtentEqual(region.imageExtent, subresource_extent)) {
                 const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09115"
                                               : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09115";
-                LogObjectList objlist(device, image_state->Handle());
-                skip |= LogError(vuid, objlist, loc,
+                skip |= LogError(vuid, image_state->Handle(), loc,
                                  "pRegion[%" PRIu32
                                  "].imageExtent (%s) must match the image's subresource "
                                  "extents (%s) %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
                                  i, string_VkExtent3D(region.imageExtent).c_str(), string_VkExtent3D(subresource_extent).c_str(),
-                                 info_type);
+                                 String(info_type));
             }
             if ((region.memoryRowLength != 0) || (region.memoryImageHeight != 0)) {
                 const char *vuid =
                     from_image ? "VUID-VkCopyImageToMemoryInfoEXT-flags-09394" : "VUID-VkCopyMemoryToImageInfoEXT-flags-09393";
-                LogObjectList objlist(device, image_state->Handle());
-                skip |= LogError(vuid, objlist, loc,
+                skip |= LogError(vuid, image_state->Handle(), loc,
                                  "pRegion[%" PRIu32 "].memoryRowLength (%" PRIu32 "), and pRegion[%" PRIu32
                                  "].memoryImageHeight (%" PRIu32
                                  ") must both be zero if %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
-                                 i, region.memoryRowLength, i, region.memoryImageHeight, info_type);
+                                 i, region.memoryRowLength, i, region.memoryImageHeight, String(info_type));
             }
         }
 
         Field field = from_image ? Field::srcImageLayout : Field::dstImageLayout;
-        skip |= ValidateHostCopyCurrentLayout(device, image_layout, region.imageSubresource, i, *image_state, region_loc.dot(field),
+        skip |= ValidateHostCopyCurrentLayout(image_layout, region.imageSubresource, i, *image_state, region_loc.dot(field),
                                               source_or_destination, image_layout_vuid);
     }
 
@@ -2542,7 +2534,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09112" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09112";
     const char *vuid_09113 =
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09113" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09113";
-    skip |= UsageHostTransferCheck(device, *image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, loc);
+    skip |= UsageHostTransferCheck(*image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, loc);
 
     const auto &memory_states = image_state->GetBoundMemoryStates();
     for (const auto &state : memory_states) {
@@ -2568,8 +2560,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                     (region.pHostPointer <= state->p_driver_data && copy_end > mapped_end)) {
                     const char *vuid =
                         from_image ? "VUID-VkImageToMemoryCopyEXT-pRegions-09067" : "VUID-VkMemoryToImageCopyEXT-pRegions-09062";
-                    LogObjectList objlist(device, image_state->Handle());
-                    skip |= LogError(vuid, objlist, loc.dot(Field::pRegions, i).dot(Field::pHostPointer),
+                    skip |= LogError(vuid, image_state->Handle(), loc.dot(Field::pRegions, i).dot(Field::pHostPointer),
                                      "points to memory spanning %p through %p, which overlaps with image memory"
                                      "mapped %p through %p",
                                      region.pHostPointer, copy_end, state->p_driver_data, mapped_end);
@@ -2581,8 +2572,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     return skip;
 }
 
-bool CoreChecks::ValidateHostCopyImageCreateInfos(VkDevice device, const vvl::Image &src_image_state,
-                                                  const vvl::Image &dst_image_state, const Location &loc) const {
+bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image &src_image_state, const vvl::Image &dst_image_state,
+                                                  const Location &loc) const {
     bool skip = false;
     std::stringstream mismatch_stream{};
     const VkImageCreateInfo &src_info = src_image_state.create_info;
@@ -2637,15 +2628,15 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(VkDevice device, const vvl::Im
     if (mismatch_stream.str().length() > 0) {
         std::stringstream ss;
         ss << "The creation parameters for srcImage and dstImage differ:\n" << mismatch_stream.str();
-        LogObjectList objlist(device, src_image_state.Handle(), dst_image_state.Handle());
+        LogObjectList objlist(src_image_state.Handle(), dst_image_state.Handle());
         skip |= LogError("VUID-VkCopyImageToImageInfoEXT-srcImage-09069", objlist, loc, "%s.", ss.str().c_str());
     }
     return skip;
 }
 
-bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
+bool CoreChecks::ValidateHostCopyImageLayout(const VkImage image, const uint32_t layout_count,
                                              const VkImageLayout *supported_image_layouts, const VkImageLayout image_layout,
-                                             const Location &loc, const char *supported_name, const char *vuid) const {
+                                             const Location &loc, vvl::Field supported_name, const char *vuid) const {
     bool skip = false;
     for (uint32_t i = 0; i < layout_count; ++i) {
         if (supported_image_layouts[i] == image_layout) {
@@ -2653,11 +2644,10 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImag
         }
     }
 
-    LogObjectList objlist(device, image);
-    skip |= LogError(vuid, objlist, loc,
+    skip |= LogError(vuid, image, loc,
                      "is %s which is not one of the layouts returned in "
                      "VkPhysicalDeviceHostImageCopyPropertiesEXT::%s",
-                     string_VkImageLayout(image_layout), supported_name);
+                     string_VkImageLayout(image_layout), String(supported_name));
 
     return skip;
 }
@@ -2669,11 +2659,11 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCo
     auto dst_image = pCopyMemoryToImageInfo->dstImage;
     auto image_state = Get<vvl::Image>(dst_image);
 
-    skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, copy_loc);
+    skip |= ValidateMemoryImageCopyCommon(pCopyMemoryToImageInfo, copy_loc);
     auto *props = &phys_dev_ext_props.host_image_copy_props;
-    skip |= ValidateHostCopyImageLayout(device, dst_image, props->copyDstLayoutCount, props->pCopyDstLayouts,
+    skip |= ValidateHostCopyImageLayout(dst_image, props->copyDstLayoutCount, props->pCopyDstLayouts,
                                         pCopyMemoryToImageInfo->dstImageLayout, copy_loc.dot(Field::dstImageLayout),
-                                        "pCopyDstLayouts", "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
+                                        Field::pCopyDstLayouts, "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
     return skip;
 }
 
@@ -2684,15 +2674,15 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCo
     auto src_image = pCopyImageToMemoryInfo->srcImage;
     auto image_state = Get<vvl::Image>(src_image);
 
-    skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, copy_loc);
+    skip |= ValidateMemoryImageCopyCommon(pCopyImageToMemoryInfo, copy_loc);
     auto *props = &phys_dev_ext_props.host_image_copy_props;
-    skip |= ValidateHostCopyImageLayout(device, src_image, props->copySrcLayoutCount, props->pCopySrcLayouts,
+    skip |= ValidateHostCopyImageLayout(src_image, props->copySrcLayoutCount, props->pCopySrcLayouts,
                                         pCopyImageToMemoryInfo->srcImageLayout, copy_loc.dot(Field::srcImageLayout),
-                                        "pCopySrcLayouts", "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
+                                        Field::pCopySrcLayouts, "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
     return skip;
 }
 
-bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, const vvl::Image &image_state, bool is_src,
+bool CoreChecks::ValidateMemcpyExtents(const VkImageCopy2 region, const vvl::Image &image_state, bool is_src,
                                        const Location &region_loc) const {
     bool skip = false;
     if (region.srcOffset.x != 0 || region.srcOffset.y != 0 || region.srcOffset.z != 0) {
@@ -2700,15 +2690,13 @@ bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 regio
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcOffset-09114" : "VUID-VkCopyImageToImageInfoEXT-dstOffset-09114";
         Field field = is_src ? Field::srcOffset : Field::dstOffset;
         VkOffset3D offset = is_src ? region.srcOffset : region.dstOffset;
-        const LogObjectList objlist(device);
-        skip |= LogError(vuid, objlist, region_loc.dot(field), "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT.",
+        skip |= LogError(vuid, device, region_loc.dot(field), "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT.",
                          string_VkOffset3D(offset).c_str());
     }
     if (!IsExtentEqual(region.extent, image_state.create_info.extent)) {
         const char *vuid =
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-09115" : "VUID-VkCopyImageToImageInfoEXT-dstImage-09115";
-        const LogObjectList objlist(device, image_state.Handle());
-        skip |= LogError(vuid, objlist, region_loc.dot(Field::imageExtent),
+        skip |= LogError(vuid, image_state.Handle(), region_loc.dot(Field::imageExtent),
                          "(%s) must match the image's subresource "
                          "extents (%s) when VkCopyImageToImageInfoEXT->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
                          string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(image_state.create_info.extent).c_str());
@@ -2716,7 +2704,7 @@ bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 regio
     return skip;
 }
 
-bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, const vvl::Image &image_state, bool is_src,
+bool CoreChecks::ValidateHostCopyMultiplane(VkImageCopy2 region, const vvl::Image &image_state, bool is_src,
                                             const Location &region_loc) const {
     bool skip = false;
     auto aspect_mask = is_src ? region.srcSubresource.aspectMask : region.dstSubresource.aspectMask;
@@ -2725,8 +2713,7 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
         const char *vuid =
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07981" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07981";
         Field field = is_src ? Field::srcSubresource : Field::dstSubresource;
-        LogObjectList objlist(device, image_state.Handle());
-        skip |= LogError(vuid, objlist, region_loc.dot(field), "is %s but %s has 2-plane format (%s).",
+        skip |= LogError(vuid, image_state.Handle(), region_loc.dot(field), "is %s but %s has 2-plane format (%s).",
                          string_VkImageAspectFlags(aspect_mask).c_str(), is_src ? "srcImage" : "dstImage",
                          string_VkFormat(image_state.create_info.format));
     }
@@ -2736,8 +2723,7 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
         const char *vuid =
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07981" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07981";
         Field field = is_src ? Field::srcSubresource : Field::dstSubresource;
-        LogObjectList objlist(device, image_state.Handle());
-        skip |= LogError(vuid, objlist, region_loc.dot(field), "is %s but %s has 3-plane format (%s).",
+        skip |= LogError(vuid, image_state.Handle(), region_loc.dot(field), "is %s but %s has 3-plane format (%s).",
                          string_VkImageAspectFlags(aspect_mask).c_str(), is_src ? "srcImage" : "dstImage",
                          string_VkFormat(image_state.create_info.format));
     }
@@ -2764,7 +2750,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
                          "the hostImageCopy feature was not enabled");
     }
 
-    skip |= ValidateHostCopyImageCreateInfos(device, *src_image_state, *dst_image_state, error_obj.location);
+    skip |= ValidateHostCopyImageCreateInfos(*src_image_state, *dst_image_state, error_obj.location);
     skip |= ValidateImageCopyData(device, regionCount, pRegions, *src_image_state, *dst_image_state, true, error_obj.location);
     skip |= ValidateCopyImageCommon(device, *src_image_state, *dst_image_state, regionCount, pRegions, error_obj.location);
     skip |= ValidateImageBounds(device, *src_image_state, regionCount, pRegions, loc,
@@ -2772,21 +2758,19 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     skip |= ValidateImageBounds(device, *dst_image_state, regionCount, pRegions, loc,
                                 "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970", false);
     auto *props = &phys_dev_ext_props.host_image_copy_props;
-    skip |= ValidateHostCopyImageLayout(device, info_ptr->srcImage, props->copySrcLayoutCount, props->pCopySrcLayouts,
-                                        info_ptr->srcImageLayout, loc.dot(Field::srcImageLayout), "pCopySrcLayouts",
+    skip |= ValidateHostCopyImageLayout(info_ptr->srcImage, props->copySrcLayoutCount, props->pCopySrcLayouts,
+                                        info_ptr->srcImageLayout, loc.dot(Field::srcImageLayout), Field::pCopySrcLayouts,
                                         "VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09072");
-    skip |= ValidateHostCopyImageLayout(device, info_ptr->dstImage, props->copyDstLayoutCount, props->pCopyDstLayouts,
-                                        info_ptr->dstImageLayout, loc.dot(Field::dstImageLayout), "pCopyDstLayouts",
+    skip |= ValidateHostCopyImageLayout(info_ptr->dstImage, props->copyDstLayoutCount, props->pCopyDstLayouts,
+                                        info_ptr->dstImageLayout, loc.dot(Field::dstImageLayout), Field::pCopyDstLayouts,
                                         "VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09073");
 
     if (src_image_state->sparse && (!src_image_state->HasFullRangeBound())) {
-        LogObjectList objlist(device, src_image_state->Handle());
-        skip |= LogError("VUID-VkCopyImageToImageInfoEXT-srcImage-09109", objlist, loc.dot(Field::srcImage),
+        skip |= LogError("VUID-VkCopyImageToImageInfoEXT-srcImage-09109", src_image_state->Handle(), loc.dot(Field::srcImage),
                          "is a sparse image with no memory bound");
     }
     if (dst_image_state->sparse && (!dst_image_state->HasFullRangeBound())) {
-        LogObjectList objlist(device, dst_image_state->Handle());
-        skip |= LogError("VUID-VkCopyImageToImageInfoEXT-dstImage-09109", objlist, loc.dot(Field::dstImage),
+        skip |= LogError("VUID-VkCopyImageToImageInfoEXT-dstImage-09109", dst_image_state->Handle(), loc.dot(Field::dstImage),
                          "is a sparse image with no memory bound");
     }
 
@@ -2796,12 +2780,12 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
         const Location region_loc = loc.dot(Field::pRegions, i);
         const auto &region = info_ptr->pRegions[i];
         if (check_memcpy) {
-            skip |= ValidateMemcpyExtents(device, region, *src_image_state, true, region_loc);
-            skip |= ValidateMemcpyExtents(device, region, *dst_image_state, false, region_loc);
+            skip |= ValidateMemcpyExtents(region, *src_image_state, true, region_loc);
+            skip |= ValidateMemcpyExtents(region, *dst_image_state, false, region_loc);
         }
         if (check_multiplane) {
-            skip |= ValidateHostCopyMultiplane(device, region, *src_image_state, true, region_loc);
-            skip |= ValidateHostCopyMultiplane(device, region, *dst_image_state, false, region_loc);
+            skip |= ValidateHostCopyMultiplane(region, *src_image_state, true, region_loc);
+            skip |= ValidateHostCopyMultiplane(region, *dst_image_state, false, region_loc);
         }
 
         if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
@@ -2811,20 +2795,20 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
             has_non_stencil = true;
         }
 
-        skip |= ValidateHostCopyCurrentLayout(device, info_ptr->srcImageLayout, region.srcSubresource, i, *src_image_state,
+        skip |= ValidateHostCopyCurrentLayout(info_ptr->srcImageLayout, region.srcSubresource, i, *src_image_state,
                                               region_loc.dot(Field::srcImageLayout), "source",
                                               "VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09070");
-        skip |= ValidateHostCopyCurrentLayout(device, info_ptr->dstImageLayout, region.dstSubresource, i, *dst_image_state,
+        skip |= ValidateHostCopyCurrentLayout(info_ptr->dstImageLayout, region.dstSubresource, i, *dst_image_state,
                                               region_loc.dot(Field::dstImageLayout), "destination",
                                               "VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09071");
     }
 
-    skip |= UsageHostTransferCheck(device, *src_image_state, has_stencil, has_non_stencil,
-                                   "VUID-VkCopyImageToImageInfoEXT-srcImage-09111", "VUID-VkCopyImageToImageInfoEXT-srcImage-09112",
-                                   "VUID-VkCopyImageToImageInfoEXT-srcImage-09113", error_obj.location);
-    skip |= UsageHostTransferCheck(device, *dst_image_state, has_stencil, has_non_stencil,
-                                   "VUID-VkCopyImageToImageInfoEXT-dstImage-09111", "VUID-VkCopyImageToImageInfoEXT-dstImage-09112",
-                                   "VUID-VkCopyImageToImageInfoEXT-dstImage-09113", error_obj.location);
+    skip |= UsageHostTransferCheck(*src_image_state, has_stencil, has_non_stencil, "VUID-VkCopyImageToImageInfoEXT-srcImage-09111",
+                                   "VUID-VkCopyImageToImageInfoEXT-srcImage-09112", "VUID-VkCopyImageToImageInfoEXT-srcImage-09113",
+                                   error_obj.location);
+    skip |= UsageHostTransferCheck(*dst_image_state, has_stencil, has_non_stencil, "VUID-VkCopyImageToImageInfoEXT-dstImage-09111",
+                                   "VUID-VkCopyImageToImageInfoEXT-dstImage-09112", "VUID-VkCopyImageToImageInfoEXT-dstImage-09113",
+                                   error_obj.location);
     return skip;
 }
 

@@ -710,32 +710,31 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const vvl::ImageView& image_view_state,
                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                      const Location& layout_loc) const;
-    bool ValidateHostCopyImageCreateInfos(VkDevice device, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
+    bool ValidateHostCopyImageCreateInfos(const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
                                           const Location& loc) const;
     bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const vvl::Image& image_state) const;
     template <typename HandleT, typename RegionType>
     bool ValidateHeterogeneousCopyData(const HandleT handle, uint32_t regionCount, const RegionType* pRegions,
                                        const vvl::Image& image_state, const Location& loc) const;
-    bool UsageHostTransferCheck(VkDevice device, const vvl::Image& image_state, bool has_stencil, bool has_non_stencil,
-                                const char* vuid_09111, const char* vuid_09112, const char* vuid_09113, const Location& loc) const;
+    bool UsageHostTransferCheck(const vvl::Image& image_state, bool has_stencil, bool has_non_stencil, const char* vuid_09111,
+                                const char* vuid_09112, const char* vuid_09113, const Location& loc) const;
     template <typename InfoPointer>
-    bool ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer iPointer, const Location& loc) const;
+    bool ValidateMemoryImageCopyCommon(InfoPointer iPointer, const Location& loc) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state, uint32_t regionCount, const RegionType* pRegions,
                                      const vvl::Image& image_state, const Location& loc) const;
-    bool ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
-                                     const VkImageLayout* supported_image_layouts, const VkImageLayout image_layout,
-                                     const Location& loc, const char* supported_name, const char* vuid) const;
-    bool ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
+    bool ValidateHostCopyImageLayout(const VkImage image, const uint32_t layout_count, const VkImageLayout* supported_image_layouts,
+                                     const VkImageLayout image_layout, const Location& loc, vvl::Field supported_name,
+                                     const char* vuid) const;
+    bool ValidateMemcpyExtents(const VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
                                const Location& region_loc) const;
-    bool ValidateHostCopyCurrentLayout(VkDevice device, VkImageLayout expected_layout,
-                                       const VkImageSubresourceLayers& subres_layers, uint32_t region,
-                                       const vvl::Image& image_state, const Location& loc, const char* image_label,
-                                       const char* vuid) const;
-    bool ValidateHostCopyCurrentLayout(VkDevice device, VkImageLayout expected_layout, const VkImageSubresourceRange& subres_range,
+    bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceLayers& subres_layers,
                                        uint32_t region, const vvl::Image& image_state, const Location& loc, const char* image_label,
                                        const char* vuid) const;
-    bool ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
+    bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceRange& subres_range, uint32_t region,
+                                       const vvl::Image& image_state, const Location& loc, const char* image_label,
+                                       const char* vuid) const;
+    bool ValidateHostCopyMultiplane(VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
                                     const Location& region_loc) const;
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                  const Location& loc) const;

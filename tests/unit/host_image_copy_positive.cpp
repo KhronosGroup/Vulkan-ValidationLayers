@@ -20,7 +20,7 @@ bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &sr
             (std::find(dst_layouts.begin(), dst_layouts.end(), layout) != dst_layouts.end()));
 }
 
-void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci) {
+void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &create_info) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -46,8 +46,9 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci)
 
     RETURN_IF_SKIP(InitState(nullptr, &host_copy_features));
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
-                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), create_info.format,
+                                                                 create_info.imageType, create_info.tiling, create_info.usage,
+                                                                 create_info.flags, &img_prop)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -64,14 +65,9 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &image_ci)
     }
 }
 
-
 TEST_F(PositiveHostImageCopy, BasicUsage) {
     TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy to and from host memory");
-
-    uint32_t width = 32;
-    uint32_t height = 32;
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = vkt::Image::ImageCreateInfo2D(
+    image_ci = vkt::Image::ImageCreateInfo2D(
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
@@ -103,7 +99,6 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     region_to_image.imageExtent.depth = 1;
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
-    copy_to_image.flags = 0;
     copy_to_image.dstImage = image;
     copy_to_image.dstImageLayout = layout;
     copy_to_image.regionCount = 1;
@@ -124,7 +119,6 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     region_from_image.imageExtent.depth = 1;
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
-    copy_from_image.flags = 0;
     copy_from_image.srcImage = image;
     copy_from_image.srcImageLayout = layout;
     copy_from_image.regionCount = 1;
@@ -198,17 +192,12 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     image_format_info.type = VK_IMAGE_TYPE_2D;
     image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_format_info.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
-    image_format_info.flags = 0;
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
 }
 
 TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     TEST_DESCRIPTION("Use only selected image mip level to memory");
-
-    constexpr uint32_t width = 32;
-    constexpr uint32_t height = 32;
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = vkt::Image::ImageCreateInfo2D(
+    image_ci = vkt::Image::ImageCreateInfo2D(
         width, height, 4, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
