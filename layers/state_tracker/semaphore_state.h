@@ -46,28 +46,29 @@ class Semaphore : public RefcountedStateObject {
         kExternalPermanent,
     };
 
-    struct SemOp : SubmissionReference {
+    struct SemOp {
         OpType op_type;
         uint64_t payload;
+        SubmissionReference submit_ref;
         std::optional<Func> acquire_command;
+        
         SemOp(OpType op_type, const SubmissionReference &submit_ref, uint64_t payload)
-            : SubmissionReference(submit_ref), op_type(op_type), payload(payload) {}
+            : op_type(op_type), payload(payload), submit_ref(submit_ref) {}
         SemOp(Func acquire_command, uint64_t payload)
             : op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
     };
 
     struct TimePoint {
-        TimePoint(OpType op_type, SubmissionReference &submit_ref);
-        TimePoint(Func command) : acquire_command(command), completed(), waiter(completed.get_future()) {}
-
         std::optional<SubmissionReference> signal_ref;
         small_vector<SubmissionReference, 1, uint32_t> wait_refs;
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
 
+        TimePoint() : completed(), waiter(completed.get_future()) {}
         bool HasSignaler() const { return signal_ref.has_value(); }
         bool HasWaiters() const { return !wait_refs.empty(); }
+        bool HasAcquireSignal() const { return acquire_command.has_value(); }
         void Notify() const;
     };
 
@@ -79,8 +80,8 @@ class Semaphore : public RefcountedStateObject {
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
-    void EnqueueSignal(Queue *queue, uint64_t queue_seq, uint64_t &payload);
-    void EnqueueWait(Queue *queue, uint64_t queue_seq, uint64_t &payload);
+    void EnqueueSignal(const SubmissionReference &signal_ref, uint64_t &payload);
+    void EnqueueWait(const SubmissionReference &wait_ref, uint64_t &payload);
 
     // Binary only special cases enqueue functions
     void EnqueueAcquire(Func command);
