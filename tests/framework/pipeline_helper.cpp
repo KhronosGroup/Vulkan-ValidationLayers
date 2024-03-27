@@ -420,3 +420,62 @@ void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer) {
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
 }
+
+namespace vkt {
+
+GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage) : spv(spv) {
+    shader_ci = vku::InitStructHelper();
+    shader_ci.codeSize = spv.size() * sizeof(uint32_t);
+    shader_ci.pCode = spv.data();
+
+    stage_ci = vku::InitStructHelper(&shader_ci);
+    stage_ci.stage = stage;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+}
+
+SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *vertex_shader, const char *fragment_shader)
+    : vertex_input_lib_(test), pre_raster_lib_(test), frag_shader_lib_(test), frag_out_lib_(test) {
+    auto device = test.DeviceObj();
+
+    vertex_input_lib_.InitVertexInputLibInfo();
+    vertex_input_lib_.CreateGraphicsPipeline(false);
+
+    // For GPU-AV tests this shrinks things so only a single fragment is executed
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+
+    const auto vs_spv = test.GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader ? vertex_shader : kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib_.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib_.vp_state_ci_.pViewports = &viewport;
+    pre_raster_lib_.vp_state_ci_.pScissors = &scissor;
+    pre_raster_lib_.gp_ci_.layout = layout;
+    pre_raster_lib_.CreateGraphicsPipeline();
+
+    const auto fs_spv = test.GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader ? fragment_shader : kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    frag_shader_lib_.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib_.gp_ci_.layout = layout;
+    frag_shader_lib_.CreateGraphicsPipeline(false);
+
+    frag_out_lib_.InitFragmentOutputLibInfo();
+    frag_out_lib_.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib_.Handle(),
+        pre_raster_lib_.Handle(),
+        frag_shader_lib_.Handle(),
+        frag_out_lib_.Handle(),
+    };
+
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = layout;
+    pipe_.init(*device, exe_pipe_ci);
+}
+
+}  // namespace vkt
