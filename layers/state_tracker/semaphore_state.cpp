@@ -134,6 +134,26 @@ std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinarySignalSu
     return signal_submit;
 }
 
+std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinaryWaitSubmission() const {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
+    auto guard = ReadLock();
+    if (timeline_.empty()) {
+        return {};
+    }
+    const auto &timepoint = timeline_.rbegin()->second;
+    assert(timepoint.wait_submits.empty() || timepoint.wait_submits.size() == 1);
+
+    // No waits
+    if (timepoint.wait_submits.empty()) {
+        return {};
+    }
+    // Skip waits that are not associated with a queue
+    if (timepoint.wait_submits[0].queue == nullptr) {
+        return {};
+    }
+    return timepoint.wait_submits[0];
+}
+
 vvl::Semaphore::SemOp vvl::Semaphore::Completed() const {
     auto guard = ReadLock();
     return completed_;
@@ -355,18 +375,13 @@ bool SemaphoreSubmitState::CannotWaitBinary(const vvl::Semaphore &semaphore_stat
 }
 
 VkQueue SemaphoreSubmitState::AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const {
-    // spec (for 003871 but all submit functions have a similar VUID):
-    // "When a semaphore wait operation for a binary semaphore is **executed**,
-    // as defined by the semaphore member of any element of the pWaitSemaphoreInfos
-    // member of any element of pSubmits, there must be no other queues waiting on the same semaphore"
-    //
-    // For binary semaphores there can be only 1 wait per signal so we just need to check that the
-    // last operation isn't a wait. Prior waits will have been removed by prior signals by the time
-    // this wait executes.
-    auto last_op = semaphore_state.LastOp();
-    auto last_op_queue = last_op->submit.queue;
-    if (last_op && !CanWaitBinarySemaphoreAfterOperation(last_op->op_type) && last_op_queue && last_op_queue->VkHandle() != queue) {
-        return last_op_queue->VkHandle();
+    // VUID-vkQueueSubmit-pWaitSemaphores-00068 (and similar VUs):
+    // "When a semaphore wait operation referring to a binary semaphore defined
+    //  by any element of the pWaitSemaphores member of any element of pSubmits
+    //  executes on queue, there must be no other queues waiting on the same semaphore"
+    auto pending_wait_submit = semaphore_state.GetPendingBinaryWaitSubmission();
+    if (pending_wait_submit && pending_wait_submit->queue->VkHandle() != queue) {
+        return pending_wait_submit->queue->VkHandle();
     }
     return VK_NULL_HANDLE;
 }
