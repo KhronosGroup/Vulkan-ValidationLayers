@@ -33,7 +33,6 @@ class Queue;
 
 class Semaphore : public RefcountedStateObject {
   public:
-    // possible payload values for binary semaphore
     enum OpType {
         kNone,
         kWait,
@@ -49,26 +48,25 @@ class Semaphore : public RefcountedStateObject {
     struct SemOp {
         OpType op_type;
         uint64_t payload;
-        SubmissionReference submit_ref;
+        SubmissionReference submit;
         std::optional<Func> acquire_command;
-        
-        SemOp(OpType op_type, const SubmissionReference &submit_ref, uint64_t payload)
-            : op_type(op_type), payload(payload), submit_ref(submit_ref) {}
+
+        SemOp(OpType op_type, const SubmissionReference &submit, uint64_t payload)
+            : op_type(op_type), payload(payload), submit(submit) {}
         SemOp(Func acquire_command, uint64_t payload)
             : op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
     };
 
     struct TimePoint {
-        std::optional<SubmissionReference> signal_ref;
-        small_vector<SubmissionReference, 1, uint32_t> wait_refs;
+        std::optional<SubmissionReference> signal_submit;
+        small_vector<SubmissionReference, 1, uint32_t> wait_submits;
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
 
         TimePoint() : completed(), waiter(completed.get_future()) {}
-        bool HasSignaler() const { return signal_ref.has_value(); }
-        bool HasWaiters() const { return !wait_refs.empty(); }
-        bool HasAcquireSignal() const { return acquire_command.has_value(); }
+        bool HasSignaler() const { return signal_submit.has_value() || acquire_command.has_value(); }
+        bool HasWaiters() const { return !wait_submits.empty(); }
         void Notify() const;
     };
 
@@ -80,11 +78,11 @@ class Semaphore : public RefcountedStateObject {
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
-    void EnqueueSignal(const SubmissionReference &signal_ref, uint64_t &payload);
-    void EnqueueWait(const SubmissionReference &wait_ref, uint64_t &payload);
+    void EnqueueSignal(const SubmissionReference &signal_submit, uint64_t &payload);
+    void EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload);
 
-    // Binary only special cases enqueue functions
-    void EnqueueAcquire(Func command);
+    // Enqueue binary semaphore signal from swapchain image acquire command
+    void EnqueueAcquire(Func acquire_command);
 
     // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
     void NotifyAndWait(const Location &loc, uint64_t payload);
