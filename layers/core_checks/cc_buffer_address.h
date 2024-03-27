@@ -90,7 +90,7 @@ class BufferAddressValidation {
         }
         return skip;
     }
-    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker, vvl::span<const vvl::Buffer*> buffer_list,
+    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
                                                      const Location& device_address_loc, const LogObjectList& objlist,
                                                      VkDeviceAddress device_address) const noexcept {
         bool skip = false;
@@ -235,7 +235,7 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker, vv
         const auto& error = errors[i];
         if (!error.Empty()) {
             skip |=
-                checker.LogError(vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s", error.error_msg.c_str());
+                checker.LogError(vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s\n", error.error_msg.c_str());
         }
     }
 
