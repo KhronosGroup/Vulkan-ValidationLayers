@@ -98,8 +98,8 @@ class Validator : public gpu_tracker::Validator {
                                        const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
     std::vector<Substring> ParseFormatString(const std::string& format_string);
     std::string FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id);
-    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info,
-                                    uint32_t operation_index, uint32_t* const debug_output_buffer);
+    void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
+                                   uint32_t* const debug_output_buffer, const Location& loc);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,

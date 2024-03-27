@@ -282,8 +282,9 @@ std::string debug_printf::Validator::FindFormatString(vvl::span<const uint32_t> 
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
-void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo &buffer_info,
-                                                         uint32_t operation_index, uint32_t *const debug_output_buffer) {
+void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo &buffer_info,
+                                                        uint32_t operation_index, uint32_t *const debug_output_buffer,
+                                                        const Location &loc) {
     // Word         Content
     //    0         Must be zero
     //    1         Size of output record, including this word
@@ -294,9 +295,6 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
     //    6         Printf Values Word 1 (optional)
     uint32_t expect = debug_output_buffer[1];
     if (!expect) return;
-
-    // TODO - have Loc passed in correctly
-    Location loc(vvl::Func::vkQueueSubmit);
 
     uint32_t index = spvtools::kDebugOutputDataOffset;
     while (debug_output_buffer[index]) {
@@ -401,13 +399,13 @@ void debug_printf::Validator::AnalyzeAndGenerateMessages(VkCommandBuffer command
                 std::cout << shader_message.str();
             } else {
                 // Don't let LogInfo process any '%'s in the string
-                LogInfo("WARNING-DEBUG-PRINTF", device, loc, "%s", shader_message.str().c_str());
+                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s", shader_message.str().c_str());
             }
         }
         index += debug_record->size;
     }
     if ((index - spvtools::kDebugOutputDataOffset) != expect) {
-        LogWarning("WARNING-DEBUG-PRINTF", device, loc,
+        LogWarning("WARNING-DEBUG-PRINTF", queue, loc,
                    "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));
@@ -441,7 +439,7 @@ void debug_printf::CommandBuffer::PostProcess(VkQueue queue, const Location &loc
 
             VkResult result = vmaMapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&data);
             if (result == VK_SUCCESS) {
-                device_state->AnalyzeAndGenerateMessages(VkHandle(), queue, buffer_info, operation_index, (uint32_t *)data);
+                device_state->AnalyzeAndGenerateMessage(VkHandle(), queue, buffer_info, operation_index, (uint32_t *)data, loc);
                 vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
             }
         }
