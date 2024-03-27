@@ -1367,7 +1367,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
 
     // Only need to perform validation for depth image having a depth format that is not unsigned normalized.
     // For unsigned normalized formats, depth is by definition in range [0, 1]
-    if (!IsValueIn(image_state->safe_create_info.format, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT})) {
+    if (!IsValueIn(image_state->create_info.format, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT})) {
         return nullptr;
     }
 
@@ -1446,7 +1446,7 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
             return nullptr;
         }
 
-        const uint32_t block_size = image_state->safe_create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
+        const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;
         BufferImageCopy *gpu_regions_ptr =
             reinterpret_cast<BufferImageCopy *>(&gpu_regions_u32_ptr[uniform_block_constants_byte_size / sizeof(uint32_t)]);
@@ -1467,10 +1467,10 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
             gpu_region.src_buffer_byte_offset = static_cast<uint32_t>(cpu_region.bufferOffset);
             gpu_region.start_layer = cpu_region.imageSubresource.baseArrayLayer;
             gpu_region.layer_count = cpu_region.imageSubresource.layerCount;
-            gpu_region.row_extent = std::max(cpu_region.bufferRowLength, image_state->safe_create_info.extent.width * block_size);
+            gpu_region.row_extent = std::max(cpu_region.bufferRowLength, image_state->create_info.extent.width * block_size);
             gpu_region.slice_extent =
-                std::max(cpu_region.bufferImageHeight, image_state->safe_create_info.extent.height * gpu_region.row_extent);
-            gpu_region.layer_extent = image_state->safe_create_info.extent.depth * gpu_region.slice_extent;
+                std::max(cpu_region.bufferImageHeight, image_state->create_info.extent.height * gpu_region.row_extent);
+            gpu_region.layer_extent = image_state->create_info.extent.depth * gpu_region.slice_extent;
             gpu_region.image_offset[0] = cpu_region.imageOffset.x;
             gpu_region.image_offset[1] = cpu_region.imageOffset.y;
             gpu_region.image_offset[2] = cpu_region.imageOffset.z;
@@ -1493,9 +1493,9 @@ std::unique_ptr<gpuav::CommandResources> gpuav::Validator::AllocatePreCopyBuffer
             return nullptr;
         }
 
-        gpu_regions_u32_ptr[0] = image_state->safe_create_info.extent.width;
-        gpu_regions_u32_ptr[1] = image_state->safe_create_info.extent.height;
-        gpu_regions_u32_ptr[2] = image_state->safe_create_info.extent.depth;
+        gpu_regions_u32_ptr[0] = image_state->create_info.extent.width;
+        gpu_regions_u32_ptr[1] = image_state->create_info.extent.height;
+        gpu_regions_u32_ptr[2] = image_state->create_info.extent.depth;
         gpu_regions_u32_ptr[3] = 0;
         gpu_regions_u32_ptr[4] = block_size;
         gpu_regions_u32_ptr[5] = gpu_regions_count;

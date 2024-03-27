@@ -1147,7 +1147,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         cb_state.GetActiveAttachmentImageViewState(subpass_desc->pDepthStencilAttachment->attachment);
                     stencil_view_state = depth_view_state;
 
-                    const VkFormat image_view_format = depth_view_state->safe_create_info.format;
+                    const VkFormat image_view_format = depth_view_state->create_info.format;
                     if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) && !vkuFormatHasDepth(image_view_format)) {
                         const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(), depth_view_state->Handle());
                         skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07884", objlist, attachment_loc,
