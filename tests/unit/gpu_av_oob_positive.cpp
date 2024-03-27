@@ -268,47 +268,11 @@ TEST_F(PositiveGpuAVOOB, GPL) {
             }
         }
     )glsl";
-    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
-    vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-
-    CreatePipelineHelper vi(*this);
-    vi.InitVertexInputLibInfo();
-    vi.CreateGraphicsPipeline(false);
-
-    CreatePipelineHelper pre_raster(*this);
-    pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
-    pre_raster.gp_ci_.layout = pipeline_layout.handle();
-    pre_raster.CreateGraphicsPipeline(false);
-
-    const auto render_pass = pre_raster.gp_ci_.renderPass;
-    const auto subpass = pre_raster.gp_ci_.subpass;
-
-    CreatePipelineHelper fragment(*this);
-    fragment.InitFragmentLibInfo(nullptr);
-    fragment.gp_ci_.stageCount = 0;
-    fragment.shader_stages_.clear();
-    fragment.gp_ci_.layout = pipeline_layout.handle();
-    fragment.gp_ci_.renderPass = render_pass;
-    fragment.gp_ci_.subpass = subpass;
-    fragment.CreateGraphicsPipeline(false);
-
-    CreatePipelineHelper frag_out(*this);
-    frag_out.InitFragmentOutputLibInfo();
-    frag_out.gp_ci_.renderPass = render_pass;
-    frag_out.gp_ci_.subpass = subpass;
-    frag_out.CreateGraphicsPipeline(false);
-
-    std::array<VkPipeline, 4> libraries = {
-        vi.Handle(),
-        pre_raster.Handle(),
-        fragment.Handle(),
-        frag_out.Handle(),
-    };
-    vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
+    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vs_source);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

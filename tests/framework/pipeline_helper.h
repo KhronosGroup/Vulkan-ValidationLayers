@@ -189,3 +189,32 @@ class CreateComputePipelineHelper {
 
 // Set all dynamic states needed when using shader objects
 void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer);
+
+namespace vkt {
+
+struct GraphicsPipelineLibraryStage {
+    vvl::span<const uint32_t> spv;
+    VkShaderModuleCreateInfo shader_ci;
+    VkPipelineShaderStageCreateInfo stage_ci;
+
+    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage);
+};
+
+// Used when need a Graphics Pipeline Library with the most basic components
+// For GPU-AV tests, this will only run a single fragment pixel
+class SimpleGPL {
+  public:
+    SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *vertex_shader = nullptr,
+              const char *fragment_shader = nullptr);
+
+    const VkPipeline &Handle() const { return pipe_.handle(); }
+
+  private:
+    CreatePipelineHelper vertex_input_lib_;
+    CreatePipelineHelper pre_raster_lib_;
+    CreatePipelineHelper frag_shader_lib_;
+    CreatePipelineHelper frag_out_lib_;
+    vkt::Pipeline pipe_;
+};
+
+}  // namespace vkt
