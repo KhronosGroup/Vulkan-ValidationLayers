@@ -22,10 +22,15 @@ layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer) buffer
     uint errors_count;
     uint errors_buffer[];
 };
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) buffer ActionIndexBuffer { uint action_index[]; };
+
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) buffer ActionIndexBuffer {
+    uint action_index[];
+};
+
 layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdResourceIndex) buffer ResourceIndexBuffer {
     uint resource_index[];
 };
+
 layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdErrorsCount) buffer CmdErrorsCountBuffer {
     uint cmd_errors_count[];
 };
@@ -36,7 +41,7 @@ bool MaxCmdErrorsCountReached() {
     return cmd_errors_count >= kMaxErrorsPerCmd;
 }
 
-void gpuavLogError(uint error_group, uint error_sub_code, uint param_0, uint param_1) {
+void GpuavLogError(uint error_group, uint error_sub_code, uint param_0, uint param_1) {
     if (MaxCmdErrorsCountReached()) return;
 
     uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);

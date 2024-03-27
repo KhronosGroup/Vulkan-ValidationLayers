@@ -56,8 +56,13 @@ layout(push_constant) uniform UniformInfo {
 #define max_workgroup_total_count push_constant_word_10
 
 // CountBuffer won't be bound for non-count draws
-layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer CountBuffer { uint count_buffer[]; };
-layout(set = kDiagPerCmdDescriptorSet, binding = 1) buffer DrawBuffer { uint draws_buffer[]; };
+layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer CountBuffer {
+    uint count_buffer[];
+};
+
+layout(set = kDiagPerCmdDescriptorSet, binding = 1) buffer DrawBuffer {
+    uint draws_buffer[];
+};
 
 void main() {
     if (gl_VertexIndex == 0) {
@@ -66,17 +71,16 @@ void main() {
             // Validate count buffer
             uint count_in = count_buffer[count_offset];
             if (count_in > max_writes) {
-                gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawBufferSize, count_in, 0);
-            }
-            else if (count_in > count_limit) {
-                gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawCountLimit, count_in, 0);
+                GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawBufferSize, count_in, 0);
+            } else if (count_in > count_limit) {
+                GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawCountLimit, count_in, 0);
             }
         } else if (validation_select == kPreDrawSelectDrawBuffer) {
             // Validate firstInstances
             uint fi_index = first_instance_offset;
             for (uint i = 0; i < draw_count; i++) {
                 if (draws_buffer[fi_index] != 0) {
-                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawFirstInstance, i, i);
+                    GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawFirstInstance, i, i);
                     break;
 				}
                 fi_index += draw_stride;
@@ -89,26 +93,27 @@ void main() {
             uint draw_buffer_index = mesh_draw_buffer_offset;
             uint stride = mesh_draw_buffer_stride;
             uint draw_count;
-            if (validation_select == kPreDrawSelectMeshCountBuffer)
+            if (validation_select == kPreDrawSelectMeshCountBuffer) {
                 draw_count = count_buffer[count_offset];
-            else
+            } else {
                 draw_count = mesh_draw_buffer_num_draws;
+            }
             for (uint i = 0; i < draw_count; i++){
                 uint count_x_in = draws_buffer[draw_buffer_index];
                 uint count_y_in = draws_buffer[draw_buffer_index + 1];
                 uint count_z_in = draws_buffer[draw_buffer_index + 2];
                 if (count_x_in > max_workgroup_count_x) {
-                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountX, count_x_in, i);
+                    GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountX, count_x_in, i);
                 }
                 if (count_y_in > max_workgroup_count_y) {
-                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountY, count_y_in, i);
+                    GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountY, count_y_in, i);
                 }
                 if (count_z_in > max_workgroup_count_z) {
-                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountZ, count_z_in, i);
+                    GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountZ, count_z_in, i);
                 }
                 uint total = count_x_in * count_y_in * count_z_in;
                 if (total > max_workgroup_total_count) {
-                    gpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountTotal, total, i);
+                    GpuavLogError(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountTotal, total, i);
                 }
                 draw_buffer_index += stride;
             }

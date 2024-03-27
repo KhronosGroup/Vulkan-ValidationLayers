@@ -14,22 +14,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, std430) buffer inst_OutputBuffer {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, std430) buffer OutputBuffer {
     uint flags;
     uint written_count;
     uint data[];
-}
-inst_errors_buffer;
+} inst_errors_buffer;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, std430) buffer ActionIndexBuffer { uint index[]; }
-inst_action_index_buffer;
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, std430) buffer ActionIndexBuffer {
+    uint index[];
+} inst_action_index_buffer;
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdResourceIndex, std430) buffer CmdResourceIndexBuffer {
     uint index[];
-}
-inst_cmd_resource_index_buffer;
+} inst_cmd_resource_index_buffer;
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdErrorsCount, std430) buffer CmdErrorsCountBuffer {
     uint errors_count[];
-}
-inst_cmd_errors_count_buffer;
+} inst_cmd_errors_count_buffer;
