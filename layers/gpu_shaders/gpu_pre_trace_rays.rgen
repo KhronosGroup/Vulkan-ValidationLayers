@@ -47,12 +47,12 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
     if (indirect_data.ray_query_dimensions.width > ray_query_width_limit) {
-        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, indirect_data.ray_query_dimensions.width, 0);
+        GpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, indirect_data.ray_query_dimensions.width, 0);
     }
     if (indirect_data.ray_query_dimensions.height > ray_query_height_limit) {
-        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, indirect_data.ray_query_dimensions.height, 0);
+        GpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, indirect_data.ray_query_dimensions.height, 0);
     }
     if (indirect_data.ray_query_dimensions.depth > ray_query_depth_limit) {
-        gpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, indirect_data.ray_query_dimensions.depth, 0);
+        GpuavLogError(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, indirect_data.ray_query_dimensions.depth, 0);
     }
 }

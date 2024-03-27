@@ -107,8 +107,9 @@ def write(words, filename, apiname, outdir = None):
     for i in range(0, len(words), COLUMNS):
         columns = ["0x%08x" % word for word in words[i:(i + COLUMNS)]]
         literals.append(" " * INDENT + ", ".join(columns) + ",")
+    literals = "\n".join(literals)
 
-    header = f"""// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+    header = f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See generate_spirv.py for modifications
 
 /***************************************************************************
@@ -138,9 +139,9 @@ def write(words, filename, apiname, outdir = None):
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
 extern const uint32_t {name}_size;
 extern const uint32_t {name}[];
-""" 
+'''
 
-    source = f"""// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+    source = f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See generate_spirv.py for modifications
 
 /***************************************************************************
@@ -167,8 +168,8 @@ extern const uint32_t {name}[];
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
 [[maybe_unused]] const uint32_t {name}_size = {len(words)};
-[[maybe_unused]] const uint32_t {name}[{len(words)}] = {{ {"\n".join(literals)} }};
-""" 
+[[maybe_unused]] const uint32_t {name}[{len(words)}] = {{ {literals} }};
+'''
 
     if outdir:
       out_file_dir = os.path.join(outdir, f'layers/{apiname}/generated')

@@ -42,12 +42,11 @@ layout(set = kDiagPerCmdDescriptorSet, binding = 1, std430) buffer CopySrcRegion
     uvec4 image_extent;
     uint block_size;
     uint copy_regions_count;
-    uint pad_[2]; 
-    BufferImageCopy copy_regions[]; 
+    uint pad_[2];
+    BufferImageCopy copy_regions[];
 };
 
-uint GetTexelByteOffset(uint tid, uint region_i, uint layer_i)
-{
+uint GetTexelByteOffset(uint tid, uint region_i, uint layer_i) {
     ivec3 region_offset = copy_regions[region_i].region_offset.xyz;
     uvec3 region_extent = copy_regions[region_i].region_extent.xyz;
     ivec3 pos;
@@ -57,11 +56,11 @@ uint GetTexelByteOffset(uint tid, uint region_i, uint layer_i)
 
     // See Vulkan spec for details: https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#copies-buffers-images-addressing
     uint texel_byte_offset = copy_regions[region_i].src_buffer_byte_offset +
-        pos.x * block_size + 
-        pos.y * copy_regions[region_i].row_extent + 
-        pos.z * copy_regions[region_i].slice_extent + 
+        pos.x * block_size +
+        pos.y * copy_regions[region_i].row_extent +
+        pos.z * copy_regions[region_i].slice_extent +
         layer_i * copy_regions[region_i].layer_extent;
-    
+
     return texel_byte_offset;
 }
 
@@ -70,8 +69,7 @@ struct Texel {
     float value;
 };
 
-Texel SearchOobDepthValue(uint tid, uint region_i)
-{
+Texel SearchOobDepthValue(uint tid, uint region_i) {
     for (uint layer_i = copy_regions[region_i].start_layer; layer_i < copy_regions[region_i].layer_count; ++layer_i) {
         uint texel_byte_offset = GetTexelByteOffset(tid, region_i, layer_i);
 
@@ -83,13 +81,13 @@ Texel SearchOobDepthValue(uint tid, uint region_i)
         uint b3 = src_buffer[texel_byte_offset + 3];
         uint float_bits = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 
-        float depth = uintBitsToFloat(float_bits);        
+        float depth = uintBitsToFloat(float_bits);
 
         if (depth < 0 || depth > 1) {
             return Texel(texel_byte_offset, depth);
         }
     }
-    
+
     return Texel(0, 0);
 }
 
@@ -104,14 +102,14 @@ void main() {
         uint texels_count = copy_regions[region_i].region_extent.x *
             copy_regions[region_i].region_extent.y *
             copy_regions[region_i].region_extent.z;
-        
+
         if (tid >= texels_count) {
             continue;
         }
 
         Texel texel = SearchOobDepthValue(tid, region_i);
         if (texel.value < 0 || texel.value > 1) {
-            gpuavLogError(kErrorGroupGpuCopyBufferToImage, kErrorSubCodePreCopyBufferToImageBufferTexel, texel.byte_offset, 0);
+            GpuavLogError(kErrorGroupGpuCopyBufferToImage, kErrorSubCodePreCopyBufferToImageBufferTexel, texel.byte_offset, 0);
         }
     }
 }
