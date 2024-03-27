@@ -35,6 +35,7 @@ namespace spirv {
 class Instruction {
   public:
     Instruction(std::vector<uint32_t>::const_iterator it);
+    Instruction(const uint32_t* it);
     ~Instruction() = default;
 
     // The word used to define the Instruction
@@ -78,6 +79,9 @@ class Instruction {
     bool operator!=(Instruction const& other) const { return words_ != other.words_; }
 
   private:
+    void SetResultTypeIndex();
+    void UpdateDebugInfo();
+
     // When this class was created, for SPIR-V Instructions that could be used in Vulkan,
     //   414 of 423 had 6 or less operands
     //   361 of 423 had 5 or less operands
@@ -100,5 +104,7 @@ class Instruction {
     uint32_t d_words_[12];
 #endif
 };
+
+void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<spirv::Instruction>& instructions);
 
 }  // namespace spirv

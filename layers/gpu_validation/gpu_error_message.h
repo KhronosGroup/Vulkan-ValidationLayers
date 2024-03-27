@@ -17,9 +17,13 @@
 #pragma once
 #include "generated/chassis.h"
 
+namespace spirv {
+class Instruction;
+}  // namespace spirv
+
 void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandBuffer commandBuffer, const uint32_t *debug_record,
                                const VkShaderModule shader_module_handle, const VkPipeline pipeline_handle,
                                const VkShaderEXT shader_object_handle, const VkPipelineBindPoint pipeline_bind_point,
                                const uint32_t operation_index, std::string &msg);
-void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *debug_record, bool from_printf,
+void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructions, const uint32_t *debug_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg);

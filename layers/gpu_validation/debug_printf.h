@@ -88,8 +88,8 @@ class Validator : public gpu_tracker::Validator {
     }
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
-                          const Location& loc) override;
+    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
+                          uint32_t unique_shader_id, const Location& loc) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) override;
@@ -97,7 +97,7 @@ class Validator : public gpu_tracker::Validator {
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
     std::vector<Substring> ParseFormatString(const std::string& format_string);
-    std::string FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id);
+    std::string FindFormatString(const std::vector<spirv::Instruction>& instructions, uint32_t string_id);
     void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
                                    uint32_t* const debug_output_buffer, const Location& loc);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,

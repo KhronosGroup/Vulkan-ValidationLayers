@@ -20,7 +20,7 @@
 #include "gpu_validation/gpu_subclasses.h"
 #include "gpu_validation/gpu_vuids.h"
 #include "spirv-tools/instrument.hpp"
-#include "state_tracker/shader_module.h"
+#include "state_tracker/shader_instruction.h"
 #include "gpu_shaders/gpu_error_header.h"
 
 #include <algorithm>
@@ -163,9 +163,8 @@ void UtilGenerateCommonMessage(const DebugReport *debug_report, const VkCommandB
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const spirv::Module &module_state, const uint32_t reported_file_id,
+static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, const uint32_t reported_file_id,
                          std::vector<std::string> &opsource_lines) {
-    const std::vector<spirv::Instruction> &instructions = module_state.GetInstructions();
     for (size_t i = 0; i < instructions.size(); i++) {
         const spirv::Instruction &insn = instructions[i];
         if ((insn.Opcode() == spv::OpSource) && (insn.Length() >= 5) && (insn.Word(3) == reported_file_id)) {
@@ -237,27 +236,23 @@ static bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, 
 
 // Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
 // Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
-void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *error_record, bool from_printf,
+void UtilGenerateSourceMessages(const std::vector<spirv::Instruction> &instructions, const uint32_t *error_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg) {
     using namespace spvtools;
-    if (pgm.empty()) {
+    if (instructions.empty()) {
         // TODO - We currently don't have a good single code path if the shader_map can't find the shader module handle
         return;
     }
 
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
-    spirv::Module module_state(pgm);
-    if (module_state.words_.empty()) {
-        return;
-    }
     // Find the OpLine just before the failing instruction indicated by the debug info.
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
     uint32_t instruction_index = 0;
     uint32_t reported_file_id = 0;
     uint32_t reported_line_number = 0;
     uint32_t reported_column_number = 0;
-    for (const spirv::Instruction &insn : module_state.GetInstructions()) {
+    for (const spirv::Instruction &insn : instructions) {
         if (insn.Opcode() == spv::OpLine) {
             reported_file_id = insn.Word(1);
             reported_line_number = insn.Word(2);
@@ -282,10 +277,10 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *e
             prefix = "Shader validation error occurred ";
         }
 
-        for (const spirv::Instruction *insn : module_state.static_data_.debug_string_inst) {
-            if (insn->Length() >= 3 && insn->Word(1) == reported_file_id) {
+        for (const spirv::Instruction &insn : instructions) {
+            if (insn.Opcode() == spv::OpString && insn.Length() >= 3 && insn.Word(1) == reported_file_id) {
                 found_opstring = true;
-                reported_filename = insn->GetAsString(2);
+                reported_filename = insn.GetAsString(2);
                 if (reported_filename.empty()) {
                     filename_stream << prefix << "at line " << reported_line_number;
                 } else {
@@ -312,7 +307,7 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *e
     if ((reported_file_id != 0)) {
         // Read the source code and split it up into separate lines.
         std::vector<std::string> opsource_lines;
-        ReadOpSource(module_state, reported_file_id, opsource_lines);
+        ReadOpSource(instructions, reported_file_id, opsource_lines);
         // Find the line in the OpSource content that corresponds to the reported error file and line.
         if (!opsource_lines.empty()) {
             uint32_t saved_line_number = 0;
@@ -580,7 +575,7 @@ bool gpuav::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQ
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
         VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
-        vvl::span<const uint32_t> pgm;
+        vvl::span<const uint32_t> instrumented_spirv;
 
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
@@ -589,8 +584,11 @@ bool gpuav::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQ
             shader_module_handle = it->second.shader_module;
             pipeline_handle = it->second.pipeline;
             shader_object_handle = it->second.shader_object;
-            pgm = it->second.pgm;
+            instrumented_spirv = it->second.instrumented_spirv;
         }
+
+        std::vector<spirv::Instruction> instructions;
+        spirv::GenerateInstructions(instrumented_spirv, instructions);
 
         std::string stage_message;
         std::string common_message;
@@ -599,7 +597,7 @@ bool gpuav::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer cmd_buffer, VkQ
         GenerateStageMessage(error_record, stage_message);
         UtilGenerateCommonMessage(debug_report, cmd_buffer, error_record, shader_module_handle, pipeline_handle,
                                   shader_object_handle, cmd_resources.pipeline_bind_point, operation_index, common_message);
-        UtilGenerateSourceMessages(pgm, error_record, false, filename_message, source_message);
+        UtilGenerateSourceMessages(instructions, error_record, false, filename_message, source_message);
 
         if (cmd_resources.uses_robustness && oob_access) {
             if (gpuav_settings.warn_on_robust_oob) {

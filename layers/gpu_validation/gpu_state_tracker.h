@@ -91,7 +91,7 @@ struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     VkShaderEXT shader_object;
-    std::vector<uint32_t> pgm;
+    std::vector<uint32_t> instrumented_spirv;
 };
 
 class Validator : public ValidationStateTracker {
@@ -196,8 +196,8 @@ class Validator : public ValidationStateTracker {
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                          const SafeCreateInfo &modified_create_infos);
 
-    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm, uint32_t unique_shader_id,
-                                  const Location &loc) = 0;
+    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
+                                  uint32_t unique_shader_id, const Location &loc) = 0;
 
   public:
     mutable bool aborted = false;

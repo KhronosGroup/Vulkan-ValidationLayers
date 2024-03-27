@@ -811,7 +811,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 }
             }
 
-            instructions.push_back(insn);
+            instructions.emplace_back(insn);
             it += insn.Length();
         }
         instructions.shrink_to_fit();
@@ -887,10 +887,6 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 if (stateless_data) {
                     stateless_data->transform_feedback_stream_inst.push_back(&insn);
                 }
-                break;
-
-            case spv::OpString:
-                debug_string_inst.push_back(&insn);
                 break;
 
             // Execution Mode

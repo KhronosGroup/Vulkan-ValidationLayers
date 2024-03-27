@@ -535,8 +535,6 @@ struct Module {
         std::vector<const Instruction *> variable_inst;
         // both OpDecorate and OpMemberDecorate builtin instructions
         std::vector<const Instruction *> builtin_decoration_inst;
-        // OpString - used to find debug information
-        std::vector<const Instruction *> debug_string_inst;
         // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT
         bool has_shader_tile_image_depth_read{false};
         bool has_shader_tile_image_stencil_read{false};
