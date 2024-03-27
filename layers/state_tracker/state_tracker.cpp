@@ -1424,7 +1424,7 @@ void ValidationStateTracker::PreCallRecordSignalSemaphore(VkDevice device, const
     auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
     if (semaphore_state) {
         auto value = pSignalInfo->value;  // const workaround
-        semaphore_state->EnqueueSignal(nullptr, 0, value);
+        semaphore_state->EnqueueSignal(vvl::SubmissionReference{}, value);
     }
 }
 
@@ -1481,7 +1481,7 @@ void ValidationStateTracker::PreCallRecordWaitSemaphores(VkDevice device, const 
         auto semaphore_state = Get<vvl::Semaphore>(pWaitInfo->pSemaphores[i]);
         if (semaphore_state) {
             auto value = pWaitInfo->pValues[i];  // const workaround
-            semaphore_state->EnqueueWait(nullptr, 0, value);
+            semaphore_state->EnqueueWait(vvl::SubmissionReference{}, value);
         }
     }
 }

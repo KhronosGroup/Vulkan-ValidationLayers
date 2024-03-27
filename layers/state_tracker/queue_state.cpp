@@ -70,11 +70,11 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) 
         submission.seq = ++seq_;
         submission.BeginUse();
         for (auto &wait : submission.wait_semaphores) {
-            wait.semaphore->EnqueueWait(this, submission.seq, wait.payload);
+            wait.semaphore->EnqueueWait(SubmissionReference(this, submission.seq), wait.payload);
         }
 
         for (auto &signal : submission.signal_semaphores) {
-            signal.semaphore->EnqueueSignal(this, submission.seq, signal.payload);
+            signal.semaphore->EnqueueSignal(SubmissionReference(this, submission.seq), signal.payload);
         }
 
         if (submission.fence) {
