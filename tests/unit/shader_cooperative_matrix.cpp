@@ -167,6 +167,12 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        GTEST_SKIP() << "Compute stage is not supported";
+    }
+
     // Tests are assume that Float16 3*5 is not available
     char const *csSource = R"glsl(
         #version 450
@@ -314,6 +320,12 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        GTEST_SKIP() << "Compute stage is not supported";
+    }
+
     if (HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 8, 8, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property found, need invalid to test";
     }
@@ -351,6 +363,12 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        GTEST_SKIP() << "Compute stage is not supported";
+    }
 
     // OpExtension "SPV_KHR_storage_buffer_storage_class"
     const std::string csSourceTemplate = R"glsl(
