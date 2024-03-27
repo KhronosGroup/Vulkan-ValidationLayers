@@ -484,7 +484,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             blas.SetScratchBuffer(scratch_buffer);
             blas.SetDeviceScratchOffset(consumed_buffer_size);
-            consumed_buffer_size = blas.GetSizeInfo().buildScratchSize;
+            consumed_buffer_size += blas.GetSizeInfo().buildScratchSize;
             consumed_buffer_size = Align<VkDeviceSize>(consumed_buffer_size, 4096);
             blas_vec.emplace_back(std::move(blas));
         }
