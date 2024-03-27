@@ -94,8 +94,8 @@ class Semaphore : public RefcountedStateObject {
     std::optional<SemOp> LastOp(
         const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter = nullptr) const;
 
-    // Returns queue submission associated with the last binary signal.
-    std::optional<SubmissionReference> GetLastBinarySignalSubmission() const;
+    // Returns pending queue submission associated with the last binary signal.
+    std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
 
     // This is the most recently completed operation. It is returned by value so that the caller
     // has a correct copy even if something else is completing on this queue in a different thread.
