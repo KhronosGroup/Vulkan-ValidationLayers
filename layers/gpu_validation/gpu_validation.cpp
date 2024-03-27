@@ -101,7 +101,7 @@ static bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRe
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
+bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
                                         const uint32_t unique_shader_id, const Location &loc) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
@@ -157,19 +157,20 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         module.LinkFunction(info);
     }
 
-    module.ToBinary(new_pgm);
+    module.ToBinary(instrumented_spirv);
 
     if (gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
         std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-        debug_file.write(reinterpret_cast<char *>(new_pgm.data()), static_cast<std::streamsize>(new_pgm.size() * sizeof(uint32_t)));
+        debug_file.write(reinterpret_cast<char *>(instrumented_spirv.data()),
+                         static_cast<std::streamsize>(instrumented_spirv.size() * sizeof(uint32_t)));
     }
 
     // (Maybe) validate the instrumented and linked shader
     if (gpuav_settings.gpuav_debug_validate_instrumented_shaders) {
         std::string instrumented_error;
-        if (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout, device_extensions.vk_ext_scalar_block_layout,
-                               target_env, instrumented_error)) {
+        if (!GpuValidateShader(instrumented_spirv, device_extensions.vk_khr_relaxed_block_layout,
+                               device_extensions.vk_ext_scalar_block_layout, target_env, instrumented_error)) {
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
                  << instrumented_error << " Proceeding with non instrumented shader.";
@@ -186,7 +187,7 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         dce_pass.SetMessageConsumer(gpu_console_message_consumer);
         // Call CreateAggressiveDCEPass with preserve_interface == true
         dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
-        if (!dce_pass.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options)) {
+        if (!dce_pass.Run(instrumented_spirv.data(), instrumented_spirv.size(), &instrumented_spirv, opt_options)) {
             ReportSetupProblem(device, loc,
                                "Failure to run spirv-opt DCE on instrumented shader.  Proceeding with non-instrumented shader.");
             assert(false);
@@ -196,8 +197,8 @@ bool gpuav::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, 
         if (gpuav_settings.gpuav_debug_dump_instrumented_shaders) {
             std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_opt.spv";
             std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-            debug_file.write(reinterpret_cast<char *>(new_pgm.data()),
-                             static_cast<std::streamsize>(new_pgm.size() * sizeof(uint32_t)));
+            debug_file.write(reinterpret_cast<char *>(instrumented_spirv.data()),
+                             static_cast<std::streamsize>(instrumented_spirv.size() * sizeof(uint32_t)));
         }
     }
 

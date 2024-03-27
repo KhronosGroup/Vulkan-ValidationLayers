@@ -78,15 +78,15 @@ void debug_printf::Validator::DestroyBuffer(BufferInfo &buffer_info) {
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
+bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &instrumented_spirv,
                                                uint32_t unique_shader_id, const Location &loc) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
     // Load original shader SPIR-V
-    new_pgm.clear();
-    new_pgm.reserve(input.size());
-    new_pgm.insert(new_pgm.end(), &input.front(), &input.back() + 1);
+    instrumented_spirv.clear();
+    instrumented_spirv.reserve(input.size());
+    instrumented_spirv.insert(instrumented_spirv.end(), &input.front(), &input.back() + 1);
 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
@@ -114,7 +114,7 @@ bool debug_printf::Validator::InstrumentShader(const vvl::span<const uint32_t> &
     };
     optimizer.SetMessageConsumer(debug_printf_console_message_consumer);
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_id));
-    const bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
+    const bool pass = optimizer.Run(instrumented_spirv.data(), instrumented_spirv.size(), &instrumented_spirv, opt_options);
     if (!pass) {
         ReportSetupProblem(device, loc, "Failure to instrument shader in spirv-opt. Proceeding with non-instrumented shader.");
     }
@@ -258,20 +258,14 @@ std::vector<debug_printf::Substring> debug_printf::Validator::ParseFormatString(
     return parsed_strings;
 }
 
-std::string debug_printf::Validator::FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id) {
+std::string debug_printf::Validator::FindFormatString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
     std::string format_string;
-    spirv::Module module_state(pgm);
-    if (module_state.words_.empty()) {
-        return {};
-    }
-
-    for (const spirv::Instruction *insn : module_state.static_data_.debug_string_inst) {
-        if (insn->Word(1) == string_id) {
-            format_string = insn->GetAsString(2);
+    for (const spirv::Instruction &insn : instructions) {
+        if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
+            format_string = insn.GetAsString(2);
             break;
         }
     }
-
     return format_string;
 }
 
@@ -302,7 +296,7 @@ void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
         VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
-        vvl::span<const uint32_t> pgm;
+        vvl::span<const uint32_t> instrumented_spirv;
 
         OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
@@ -312,11 +306,14 @@ void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_
             shader_module_handle = it->second.shader_module;
             pipeline_handle = it->second.pipeline;
             shader_object_handle = it->second.shader_object;
-            pgm = it->second.pgm;
+            instrumented_spirv = it->second.instrumented_spirv;
         }
-        assert(pgm.size() != 0);
+        assert(instrumented_spirv.size() != 0);
+        std::vector<spirv::Instruction> instructions;
+        spirv::GenerateInstructions(instrumented_spirv, instructions);
+
         // Search through the shader source for the printf format string for this invocation
-        const auto format_string = FindFormatString(pgm, debug_record->format_string_id);
+        const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
         // Break the format string into strings with 1 or 0 value
         auto format_substrings = ParseFormatString(format_string);
         void *values = static_cast<void *>(&debug_record->values);
@@ -386,7 +383,7 @@ void debug_printf::Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_
             UtilGenerateCommonMessage(debug_report, command_buffer, &debug_output_buffer[index], shader_module_handle,
                                       pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index,
                                       common_message);
-            UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
+            UtilGenerateSourceMessages(instructions, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
                 std::cout << "WARNING-DEBUG-PRINTF " << common_message.c_str() << " "
                           << shader_message.str().c_str() << " " << filename_message.c_str() << " " << source_message.c_str();

@@ -21,8 +21,6 @@
 #include "gpu_validation/gpu_error_message.h"
 #include "gpu_validation/gpu_descriptor_set.h"
 #include "gpu_validation/gpu_resources.h"
-#include "state_tracker/pipeline_state.h"
-#include "state_tracker/shader_object_state.h"
 
 #include <typeinfo>
 #include <unordered_map>
@@ -108,8 +106,8 @@ class Validator : public gpu_tracker::Validator {
   public:
     VkDeviceAddress GetBufferDeviceAddress(VkBuffer buffer, const Location& loc) const;
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
-    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm, uint32_t unique_shader_id,
-                          const Location& loc) override;
+    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& instrumented_spirv,
+                          uint32_t unique_shader_id, const Location& loc) override;
     bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, chassis::CreateShaderModule& chassis_state);
     bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, chassis::ShaderObject& chassis_state);
     void UpdateInstrumentationBuffer(CommandBuffer* cb_node);

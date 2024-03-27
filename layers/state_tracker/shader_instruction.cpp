@@ -25,7 +25,23 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
     for (uint32_t i = 1; i < Length(); i++) {
         words_.emplace_back(*it++);
     }
+    SetResultTypeIndex();
+    UpdateDebugInfo();
+}
 
+Instruction::Instruction(const uint32_t* it) {
+    words_.emplace_back(*it);
+    it++;
+    words_.reserve(Length());
+    for (uint32_t i = 1; i < Length(); i++) {
+        words_.emplace_back(*it);
+        it++;
+    }
+    SetResultTypeIndex();
+    UpdateDebugInfo();
+}
+
+void Instruction::SetResultTypeIndex() {
     const bool has_result = OpcodeHasResult(Opcode());
     if (OpcodeHasType(Opcode())) {
         type_id_index_ = 1;
@@ -35,7 +51,9 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
     } else if (has_result) {
         result_id_index_ = 1;
     }
+}
 
+void Instruction::UpdateDebugInfo() {
 #ifndef NDEBUG
     d_opcode_ = std::string(string_SpvOpcode(Opcode()));
     d_length_ = Length();
@@ -166,6 +184,22 @@ spv::StorageClass Instruction::StorageClass() const {
             break;
     }
     return storage_class;
+}
+
+// All post SPIR-V processing we do is just needing to inspect single instructions without knowledge of the rest of the module.
+// It is very wasteful (both time and memory) to create an entire spirv::Module object for this, so do the simple parsing here
+void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<spirv::Instruction>& instructions) {
+    if (spirv.empty()) {
+        return;  // We *should not* get here, but incase, rather not report the SPIR-V debug info than crash
+    }
+    auto it = spirv.begin();
+    it += 5;  // skip first 5 word of header
+    while (it != spirv.end()) {
+        spirv::Instruction insn(it);
+        instructions.emplace_back(insn);
+        it += insn.Length();
+    }
+    instructions.shrink_to_fit();
 }
 
 }  // namespace spirv
